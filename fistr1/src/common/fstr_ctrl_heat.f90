@@ -22,7 +22,6 @@ contains
     real(kind=kreal),pointer :: eps(:)
     character(len=*), intent(out) :: tpname
     integer(kind=kint) :: fstr_ctrl_get_HEAT
-    integer(kind=kint) :: result
     real(kind=kreal) :: beta, t_beta
 
     fstr_ctrl_get_HEAT = -1

@@ -35,8 +35,6 @@ contains
     real(kind=kreal),intent(inout)    :: matval(:)
 
     integer(kind=kint) :: ipt
-    character(len=HECMW_NAME_LEN) :: data_fmt
-    character(len=256) :: s, fname
 
     fstr_ctrl_get_USERMATERIAL = -1
     mattype = USERMATERIAL
@@ -58,7 +56,7 @@ contains
     real(kind=kreal),intent(inout)    :: matval(:)
     type(DICT_STRUCT), pointer        :: dict
 
-    integer(kind=kint) :: i,j, rcode, depends, ipt, n
+    integer(kind=kint) :: i, rcode, depends, ipt, n
     real(kind=kreal), allocatable :: fval(:,:)
     character(len=HECMW_NAME_LEN) :: data_fmt
     type( tTable )        :: mattable
@@ -228,7 +226,7 @@ contains
     integer(kind=kint), intent(out)   :: nlgeom
     real(kind=kreal),intent(inout)    :: matval(:)
 
-    integer(kind=kint) :: i,j, rcode, depends, ipt
+    integer(kind=kint) :: rcode, depends, ipt
     real(kind=kreal), allocatable :: fval(:,:)
     character(len=HECMW_NAME_LEN) :: data_fmt
     character(len=256) :: s
@@ -387,7 +385,7 @@ contains
     integer(kind=kint), intent(out)   :: nlgeom
     type(DICT_STRUCT), pointer        :: dict
 
-    integer(kind=kint) :: i,j, rcode, depends, ipt, n
+    integer(kind=kint) :: rcode, depends, ipt, n
     real(kind=kreal), allocatable :: fval(:,:)
     character(len=HECMW_NAME_LEN) :: data_fmt
     type( tTable )        :: mattable
@@ -735,7 +733,7 @@ contains
     integer(kind=kint), intent(out)   :: nlgeom
     type(DICT_STRUCT), pointer        :: dict
 
-    integer(kind=kint) :: i,j, rcode, depends, ipt, n
+    integer(kind=kint) :: rcode, depends, ipt, n
     real(kind=kreal), allocatable :: fval(:,:)
     character(len=HECMW_NAME_LEN) :: data_fmt
     type( tTable )        :: mattable
@@ -1035,11 +1033,10 @@ contains
     real(kind=kreal),intent(inout)    :: matval(:)
     type(DICT_STRUCT), pointer        :: dict
 
-    integer(kind=kint) :: i,j, rcode, depends, ipt, n
+    integer(kind=kint) :: rcode, depends, ipt, n
     real(kind=kreal), allocatable :: fval(:,:)
     character(len=HECMW_NAME_LEN) :: data_fmt
     type( tTable )        :: mattable
-    logical            :: isok
     character(len=256) :: s
 
     fstr_ctrl_get_FLUID = -1
@@ -1106,18 +1103,15 @@ contains
     integer(kind=kint), intent(inout) :: matval_i(:)
     type(DICT_STRUCT), pointer        :: dict
 
-    integer(kind=kint) :: i,j, rcode, depends, ipt, n, dof1, dof2
+    integer(kind=kint) :: i, depends, n
     real(kind=kreal), allocatable :: fval(:,:)
     integer(kind=kint), allocatable :: ival(:,:)
     character(len=HECMW_NAME_LEN) :: data_fmt
     type( tTable )        :: mattable
-    logical            :: isok
     character(len=DICT_KEY_LENGTH) :: spkey
 
     fstr_ctrl_get_SPRING_D = -1
     depends = 0
-    !rcode = fstr_ctrl_get_param_ex( ctrl, 'DEPENDENCIES  ', '# ',           0,   'I',   depends )
-    !if( depends>1 ) depends=1   ! temperature depends only currently
     nlgeom = INFINITESIMAL   !default value
 
     n = fstr_ctrl_get_data_line_n( ctrl )
@@ -1169,11 +1163,10 @@ contains
     integer(kind=kint), intent(inout) :: matval_i(:)
     type(DICT_STRUCT), pointer        :: dict
 
-    integer(kind=kint) :: i,j, rcode, depends, ipt, n, dof1, dof2
+    integer(kind=kint) :: i, depends, n
     real(kind=kreal), allocatable :: fval(:,:)
     character(len=HECMW_NAME_LEN) :: data_fmt
     type( tTable )        :: mattable
-    logical            :: isok
     character(len=DICT_KEY_LENGTH) :: spkey
 
     fstr_ctrl_get_SPRING_A = -1
@@ -1220,18 +1213,15 @@ contains
     integer(kind=kint), intent(inout) :: matval_i(:)
     type(DICT_STRUCT), pointer        :: dict
 
-    integer(kind=kint) :: i,j, rcode, depends, ipt, n, dof1, dof2
+    integer(kind=kint) :: i, depends, n
     real(kind=kreal), allocatable :: fval(:,:)
     integer(kind=kint), allocatable :: ival(:,:)
     character(len=HECMW_NAME_LEN) :: data_fmt
     type( tTable )        :: mattable
-    logical            :: isok
     character(len=DICT_KEY_LENGTH) :: spkey
 
     fstr_ctrl_get_DASHPOT_D = -1
     depends = 0
-    !rcode = fstr_ctrl_get_param_ex( ctrl, 'DEPENDENCIES  ', '# ',           0,   'I',   depends )
-    !if( depends>1 ) depends=1   ! temperature depends only currently
     nlgeom = INFINITESIMAL   !default value
 
     n = fstr_ctrl_get_data_line_n( ctrl )
@@ -1283,11 +1273,10 @@ contains
     integer(kind=kint), intent(inout) :: matval_i(:)
     type(DICT_STRUCT), pointer        :: dict
 
-    integer(kind=kint) :: i,j, rcode, depends, ipt, n, dof1, dof2
+    integer(kind=kint) :: i, depends, n
     real(kind=kreal), allocatable :: fval(:,:)
     character(len=HECMW_NAME_LEN) :: data_fmt
     type( tTable )        :: mattable
-    logical            :: isok
     character(len=DICT_KEY_LENGTH) :: spkey
 
     fstr_ctrl_get_DASHPOT_A = -1
