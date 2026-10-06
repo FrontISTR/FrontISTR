@@ -76,7 +76,7 @@ contains
     integer(kind=kint) :: n_rot, rid, n_nodes, idof, ndof
     integer(kind=kint) :: ig0, ig, ityp, iS0, iE0, ik, in, grpid, jj_n_amp
     real(kind=kreal)   :: aval, fval, tval
-    real(kind=kreal)   :: normal(3), direc(3), ccoord(3), cdisp(3), cdiff(3)
+    real(kind=kreal)   :: normal(3), ccoord(3), cdisp(3), cdiff(3)
     real(kind=kreal)   :: vect(60)
     type(tRotInfo)     :: rinfo
     
@@ -381,7 +381,7 @@ contains
     
     integer(kind=kint) :: ndof, ig0, ig, iS0, iE0, ik, in, grpid
     integer(kind=kint) :: itype, is, iE, icel, ic_type, nn, isect, cdsys_ID, id, iset
-    integer(kind=kint) :: i, j, ihead, tstep, nodLocal(20), iwk(60)
+    integer(kind=kint) :: i, j, ihead, nodLocal(20), iwk(60)
     real(kind=kreal)   :: factor, fval, pa1
     real(kind=kreal)   :: xx(20), yy(20), zz(20), tt(20), tt0(20), coords(3,3), vect(60)
     real(kind=kreal)   :: local_coords(3,3)  ! Local copy for coordinate transformation

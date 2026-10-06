@@ -100,7 +100,7 @@ contains
     type (hecmwST_matrix), pointer :: hecMATmpc
     type (hecmwST_ebc) :: hecEBC
     integer(kind=kint) :: ndof
-    integer(kind=kint) :: i, iter
+    integer(kind=kint) :: iter
     integer(kind=kint) :: stepcnt
     integer(kind=kint) :: restrt_step_num
     real(kind=kreal)   :: tincr
@@ -217,11 +217,11 @@ contains
     type (hecmwST_ebc) :: hecEBC
     integer(kind=kint) :: ndof
     integer(kind=kint) :: ctAlgo
-    integer(kind=kint) :: i, iter
+    integer(kind=kint) :: iter
     integer(kind=kint) :: al_step, n_al_step, stepcnt, count_step
     real(kind=kreal)   :: tincr
     integer(kind=kint) :: restart_step_num, restart_substep_num
-    logical            :: convg, ctchange
+    logical            :: ctchange
     integer(kind=kint) :: contact_changed_global
     logical            :: need_prof_refresh
     real(kind=kreal), allocatable :: coord(:)
@@ -464,7 +464,7 @@ contains
     type (hecmwST_ebc) :: hecEBC
     integer(kind=kint) :: ndof
     integer(kind=kint) :: ctAlgo
-    integer(kind=kint) :: i, iter, max_iter_contact
+    integer(kind=kint) :: i, iter
     integer(kind=kint) :: stepcnt, count_step
     real(kind=kreal)   :: tincr
     integer(kind=kint) :: restart_step_num, restart_substep_num

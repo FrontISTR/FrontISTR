@@ -21,7 +21,7 @@ contains
     real(kind=kreal), pointer   :: tnstrain(:), testrain(:), yield_ratio(:)
     integer(kind=kint), pointer :: is_rot(:)
     !C** local variables
-    integer(kind=kint) :: itype, icel, ic, is, iE, jS, i, j, k, m, ic_type, nn, ni, ID_area, nbase
+    integer(kind=kint) :: itype, icel, ic, is, iE, jS, i, j, ic_type, nn, ni, ID_area, nbase
     integer(kind=kint) :: nodlocal(20), ntemp
     integer(kind=kint), allocatable :: nnumber(:)
     real(kind=kreal)   :: estrain(6), estress(6), naturalCoord(3)
@@ -33,8 +33,8 @@ contains
     real(kind=kreal), allocatable :: func(:,:), inv_func(:,:)
 
     !C** Shell33 variables
-    integer(kind=kint) :: isect, ihead, ntot_lyr, nlyr, flag33, cid, truss
-    real(kind=kreal)   :: thick, thick_lyr, dtot_lyr
+    integer(kind=kint) :: isect, ihead, ntot_lyr, nlyr, flag33, truss
+    real(kind=kreal)   :: thick
     call fstr_solid_phys_clear(fstrSOLID)
 
     allocate( nnumber(hecMESH%n_node) )
@@ -367,13 +367,13 @@ contains
     integer(kind=kint) :: nsize, nid(2), idx(2), nd
     integer(kind=kint) :: nnode, nlen
     type(hecmwST_varray_int), allocatable :: nodal_sections(:)
-    real(kind=kreal)   :: tmpval(6), hydval, nsecdup
-    integer(kind=kint), allocatable :: irow(:), jcol(:), asect(:)
+    real(kind=kreal)   :: tmpval(6), nsecdup
+    integer(kind=kint), allocatable :: irow(:), asect(:)
     real(kind=kreal), allocatable :: stress_hyd(:), strain_hyd(:)
     real(kind=kreal), allocatable :: stress_dev(:)
     real(kind=kreal), allocatable :: plstrain_dev(:)
     real(kind=kreal) :: stress_hyd_ndave(6), strain_hyd_ndave(6)
-    real(kind=kreal) :: stress_dev_ndave(6), strain_dev_ndave(6)
+    real(kind=kreal) :: stress_dev_ndave(6)
     real(kind=kreal), allocatable :: n_dup_dev(:), n_dup_hyd(:)
     real(kind=kreal)   :: edstrain(6), edstress(6)
     real(kind=kreal)   :: edplstrain
@@ -545,7 +545,7 @@ contains
     implicit none
     type(fstr_solid)   :: fstrSOLID
     integer(kind=kint) :: nodLOCAL(20)
-    integer(kind=kint) :: nn, i, j, k, m, nlyr, weight, icel, flag
+    integer(kind=kint) :: nn, i, j, k, m, nlyr, icel, flag
     real(kind=kreal)   :: strain(nn, 6), stress(nn, 6)
     type(fstr_solid_physic_val), pointer :: layer => null()
 
@@ -572,7 +572,7 @@ contains
     implicit none
     type (fstr_solid)  :: fstrSOLID
     integer(kind=kint) :: nodLOCAL(20)
-    integer(kind=kint) :: nn, i, j, k, m, nlyr, icel, flag, ntot_lyr
+    integer(kind=kint) :: nn, i, j, k, nlyr, icel, ntot_lyr
     real(kind=kreal)   :: strain(nn,6), stress(nn,6), estrain(6), estress(6), weight
     type(fstr_solid_physic_val), pointer :: layer => null()
 
@@ -903,9 +903,9 @@ contains
     real(kind=kreal), pointer :: tnstrain(:), testrain(:)
     !C** local variables
     integer(kind=kint) :: itype, icel, ic, is, iE, jS, i, j, ic_type, nn, ni, ID_area
-    real(kind=kreal)   :: estrain(4), estress(4), tstrain(4), naturalCoord(4)
+    real(kind=kreal)   :: estrain(4), estress(4), naturalCoord(4)
     real(kind=kreal)   :: edstrain(8,4), edstress(8,4), tdstrain(8,4)
-    real(kind=kreal)   :: s11, s22, s33, s12, s23, s13, ps, smises
+    real(kind=kreal)   :: s11, s22, s12, smises
     real(kind=kreal), allocatable :: func(:,:), inv_func(:,:)
     integer(kind=kint), allocatable :: nnumber(:)
 
@@ -992,7 +992,6 @@ contains
         !--- calculate elemental stress and strain
         !        if( ID_area == hecMESH%my_rank ) then
         call ElementStress_C2( ic_type, fstrSOLID%elements(icel)%gausses, estrain, estress )
-        !          call ElementStress_C2( ic_type, fstrSOLID%elements(icel)%gausses, estrain, estress, tstrain )
 
         fstrSOLID%ESTRAIN(3*icel-2) = estrain(1)
         fstrSOLID%ESTRAIN(3*icel-1) = estrain(2)
@@ -1001,11 +1000,6 @@ contains
         fstrSOLID%ESTRESS(3*icel-1) = estress(2)
         fstrSOLID%ESTRESS(3*icel-0) = estress(3)
 
-        !if( associated(testrain) ) then
-        !  testrain(3*icel-2) = tstrain(1)
-        !  testrain(3*icel-1) = tstrain(2)
-        !  testrain(3*icel  ) = tstrain(3)
-        !endif
         s11 = estress(1)
         s22 = estress(2)
         s12 = estress(3)
@@ -1151,13 +1145,12 @@ contains
     type (hecmwST_local_mesh) :: hecMESH
     type (fstr_solid)         :: fstrSOLID
     !C** local variables
-    integer(kind=kint) :: itype, icel, is, iE, jS, i, j, k, it, ic, ic_type, nn, isect, ihead, ID_area, nbase
-    integer(kind=kint) :: nodLOCAL(20), n_layer, ntot_lyr, nlyr, n_totlyr, com_total_layer, shellmatl
+    integer(kind=kint) :: itype, icel, is, iE, jS, i, j, k, ic, ic_type, nn, isect, ihead, ID_area, nbase
+    integer(kind=kint) :: nodLOCAL(20), ntot_lyr, nlyr, n_totlyr
     real(kind=kreal)   :: ecoord(3,9), edisp(6,9), estrain(6), estress(6), ndstrain(9,6), ndstress(9,6)
     real(kind=kreal)   :: enqm(12)
     real(kind=kreal)   :: triad_cur(9,9), triad_ref(9,9)
-    real(kind=kreal)   :: thick, thick_layer
-    real(kind=kreal)   :: s11, s22, s33, s12, s23, s13, t11, t22, t33, t12, t23, t13, ps, smises, tmises
+    real(kind=kreal)   :: thick
     integer(kind=kint), allocatable :: nnumber(:)
     type(fstr_solid_physic_val), pointer :: layer => null()
 
