@@ -1,0 +1,3 @@
+# both option lines must reach DIRECTmf although PRECOND is given (issue #930)
+\[DIRECTmf\]: options: pivot u =  2\.50E-01
+\[DIRECTmf\]: BLR: tiles compressed = [1-9]
