@@ -246,7 +246,7 @@ void exodus_output(struct hecmwST_local_mesh *mesh,
                    int per_step)
 {
     int i, j, k;
-    long long jS, jE;
+    long long jS;
     int myrank, petot;
     int n_node, n_elem;
     int data_tot_n, data_tot_e;
@@ -714,7 +714,6 @@ void exodus_output(struct hecmwST_local_mesh *mesh,
             for (i = 0; i < ne; i++) {
                 int ei = blocks[j].elem_indices[i]; /* original element index */
                 jS = mesh->elem_node_index[ei];
-                jE = mesh->elem_node_index[ei + 1];
 
                 if (etype == 342) {
                     /* TET10: reorder nodes (same table as VTK output) */

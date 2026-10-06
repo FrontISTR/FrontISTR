@@ -1391,7 +1391,7 @@ void HECMW_bin_avs_output(struct hecmwST_local_mesh *mesh,
   int i, j, k, ii, m;
   int mynode, pesize;
   HECMW_Status stat;
-  int ielm, nn[20], tmp_int, tn_component, tmp_int2, te_component, tmp_nn[20];
+  int nn[20], tmp_int, tn_component, tmp_int2, tmp_nn[20];
   double *tmp_recv_d, *tmp_send_d;
   int *tmp_recv_i, *tmp_elem_ID, *tmp_elem_type, *tmp_elem_global_ID,
       *tmp_elem_node_item, *tmp_section_ID,
@@ -1451,8 +1451,6 @@ void HECMW_bin_avs_output(struct hecmwST_local_mesh *mesh,
   }
   tn_component = 0;
   for (i = 0; i < data->nn_component; i++) tn_component += data->nn_dof[i];
-  te_component = 0;
-  for (i = 0; i < data->ne_component; i++) te_component += data->ne_dof[i];
   if (mynode == 0) {
     fp2 = fopen(outfile, "w");
     fprintf(fp2, "#UCD Binary format\n");
@@ -1646,7 +1644,6 @@ void HECMW_bin_avs_output(struct hecmwST_local_mesh *mesh,
 
     for (i = 0; i < mesh->n_elem; i++) {
       if (mesh->elem_ID[i * 2 + 1] == mynode) {
-        ielm = mesh->global_elem_ID[i];
         for (j = 0; j < node_num; j++)
           tmp_nn[j] =
               mesh->global_node_ID
@@ -1704,7 +1701,6 @@ else {
 
         for (i = 0; i < tmp_int; i++) {
           if (tmp_elem_ID[i * 2 + 1] == j) {
-            ielm = tmp_elem_global_ID[i];
             for (m      = 0; m < node_num; m++)
               tmp_nn[m] = tmp_node_global_ID
                   [tmp_elem_node_item[tmp_elem_node_index[i] + m] - 1];

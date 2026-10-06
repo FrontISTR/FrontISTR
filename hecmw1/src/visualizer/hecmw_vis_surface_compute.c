@@ -45,7 +45,6 @@ int HECMW_vis_surface_compute(Surface *sff, struct hecmwST_local_mesh *mesh,
   Polygon *CS_polys, *CS_polys_tmp;
   Point *CS_verts, *CS_verts_tmp;
   int sum_polys, poly_num;
-  int aplist_size, bplist_size, cplist_size;
   int num_nh_verts,
       num_nh_patch; /* vertex on patches generated in non-hexahedra */
   int flag_hexa, flag_tetra;
@@ -207,19 +206,15 @@ for(i = 0; i < mesh->ne_internal; i++) {
 
       sum_polys = 0;
 
-      aplist_size = bplist_size = cplist_size = 1;
       while (CS_polys->plist != NULL) {
         switch (CS_polys->type) {
           case 0:
-            aplist_size += CS_polys->plist[0] + 1;
             sum_polys++;
             break;
           case 1:
-            bplist_size += CS_polys->plist[0] + 1;
             sum_polys++;
             break;
           case 2:
-            cplist_size += (CS_polys->plist[0] - 2) * 4;
             sum_polys += CS_polys->plist[0] - 2;
             break;
         }

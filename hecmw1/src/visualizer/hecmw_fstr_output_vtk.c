@@ -254,7 +254,6 @@ void bin_vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data
 	uint64_t uint64;
 	float val, val1, val2, val3;
 	char file_pvtu[HECMW_FILENAME_LEN], file_vtu[HECMW_FILENAME_LEN], buf[HECMW_FILENAME_LEN];
-	static int is_first=0;
 	int table342[10] = {0, 1, 2, 3, 6, 4, 5, 7, 8, 9};
 	FILE *outfp;
 
@@ -338,7 +337,6 @@ void bin_vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data
 		fprintf (outfp, "</PUnstructuredGrid>\n");
 		fprintf (outfp, "</VTKFile>\n");
 		fclose (outfp);
-		is_first = 1;
 	}
 
 	/* outpu vtu file */

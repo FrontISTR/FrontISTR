@@ -424,7 +424,6 @@ void compute_color_vr(int current_ijk[3], int color_mapping_style,
   int m;
   double value2[8], vv[8 * 3], v;
   double dis[8], d;
-  int return_flag;
   double t;
   double r, g, b;
 
@@ -437,7 +436,6 @@ void compute_color_vr(int current_ijk[3], int color_mapping_style,
 
   /*---------------------start computing value of in_point
    * --------------------*/
-  return_flag = 0;
   vv[0 * 3] = vv[4 * 3] = vv[7 * 3] = vv[3 * 3] =
       orig_xyz[0] + current_ijk[0] * r_dxyz[0];
   vv[1 * 3] = vv[5 * 3] = vv[6 * 3] = vv[2 * 3] =
@@ -465,15 +463,12 @@ void compute_color_vr(int current_ijk[3], int color_mapping_style,
         sqrt(SQR(in_point[0] - vv[i * 3]) + SQR(in_point[1] - vv[i * 3 + 1]) +
              SQR(in_point[2] - vv[i * 3 + 2]));
   }
-  /* if(return_flag==0) {
-   */
   d = 0.0;
   for (i = 0; i < 8; i++) d += 1.0 / (dis[i] + EPSILON);
   v      = 0.0;
   for (i = 0; i < 8; i++) {
     v += value2[i] / ((dis[i] + EPSILON) * d);
   }
-  /* }*/
   /*---------------------end computing value of in_point --------------------*/
 
   value = v;

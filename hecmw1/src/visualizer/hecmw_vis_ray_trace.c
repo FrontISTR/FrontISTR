@@ -28,7 +28,7 @@ static int find_first_inter_point(double point_o[3], double view_p[3],
                                   double ray_direction[3], double orig_xyz[3],
                                   double dxyz[3], int r_level[3],
                                   double first_p[3]) {
-  int i, j, mincomp, intersection;
+  int i, j, mincomp;
   double minmax[6], t[6], mint;
 
   for (i = 0; i < 3; i++) {
@@ -69,10 +69,7 @@ static int find_first_inter_point(double point_o[3], double view_p[3],
     }
   }
   if ((mincomp >= 0) && (mincomp <= 5)) {
-    intersection = 1;
     for (i = 0; i < 3; i++) first_p[i] = view_p[i] + mint * ray_direction[i];
-  } else {
-    intersection = 0;
   }
   /*	for(i=0;i<3;i++) {
                   if(fabs(out_point[i]-minmax[i*2])<EPSILON)
@@ -645,10 +642,9 @@ static void find_next_cell(int ijkn[3], int current_ijk[3], int face_sect[3],
                            double vv[3], int next_ijk[3])
 /*get the code of next cell*/
 {
-  int j, m, flag;
+  int j, m;
   int face1_sect[3];
 
-  flag = 1;
   for (j = 0; j < 3; j++) face1_sect[j] = face_sect[j];
   for (j = 0; j < 3; j++) next_ijk[j] = current_ijk[j];
   for (m = 0; m < 3; m++) {
