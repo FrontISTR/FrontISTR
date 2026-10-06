@@ -1156,6 +1156,8 @@ contains
     endif
 
     call fstr_element_init( hecMESH, fstrSOLID, p%PARAM%solution_type )
+    call fstr_check_shell_j2_inputs(hecMESH, fstrSOLID, fstrPARAM)
+    call fstr_check_shell_gauss_output(hecMESH, fstrSOLID)
     if( p%PARAM%solution_type==kstSTATIC .or. p%PARAM%solution_type==kstDYNAMIC .or.   &
       p%PARAM%solution_type==kstEIGEN  .or. p%PARAM%solution_type==kstSTATICEIGEN )  &
       call fstr_solid_alloc( hecMESH, fstrSOLID )
@@ -1180,6 +1182,84 @@ contains
     rcode = fstr_ctrl_close( ctrl )
 
   end subroutine fstr_setup
+
+  subroutine fstr_check_shell_gauss_output(hecMESH, fstrSOLID)
+    use mMechGauss, only: fstr_shell_output_point_count
+    type(hecmwST_local_mesh), intent(in) :: hecMESH
+    type(fstr_solid), intent(in) :: fstrSOLID
+    integer(kind=kint) :: i
+
+    if( hecMESH%n_dof /= 6 ) return
+    if( .not.any(fstrSOLID%output_ctrl(3)%outinfo%on(9:10)) ) return
+    do i=1,hecMESH%n_elem
+      if( fstr_shell_output_point_count(fstrSOLID%elements(i))>0 ) cycle
+      write(*,*) '###ERROR### : ISTRAIN/ISTRESS require shell thickness-point output support; element type = ', &
+        hecMESH%elem_type(i)
+      call hecmw_abort(hecmw_comm_get_comm())
+    enddo
+  end subroutine fstr_check_shell_gauss_output
+
+  subroutine fstr_check_shell_j2_inputs(hecMESH, fstrSOLID, fstrPARAM)
+    use m_ElastoPlastic, only: checkPlaneStressJ2Material, PlaneStressJ2ErrorMessage
+    use elementInfo, only: NumOfShellThicknessQuadPoints
+    use, intrinsic :: ieee_arithmetic, only: ieee_is_finite
+    type(hecmwST_local_mesh), intent(in) :: hecMESH
+    type(fstr_solid), intent(in) :: fstrSOLID
+    type(fstr_param), intent(in) :: fstrPARAM
+    type(tMaterial), pointer :: material
+    integer(kind=kint) :: i, nn, ierr, isect, index, ilayer
+    real(kind=kreal) :: elastic(2)
+    logical :: missing
+    character(len=160) :: message
+
+    do i = 1, hecMESH%n_elem
+      if( hecMESH%elem_type(i) /= 741 ) cycle
+      if( .not.associated(fstrSOLID%elements(i)%gausses) ) cycle
+      material => fstrSOLID%elements(i)%gausses(1)%pMaterial
+      if( .not.isElastoplastic(material%mtype) ) cycle
+      nn = hecMESH%elem_node_index(i)-hecMESH%elem_node_index(i-1)
+      message = ''
+      call checkPlaneStressJ2Material(material, ierr)
+      if( ierr /= 0 ) then
+        message = PlaneStressJ2ErrorMessage(ierr)
+      else if( .not.fstr_uses_plane_stress_j2_shell(741, nn, material) ) then
+        message = 'Elastoplastic MITC4 shells require INFINITESIMAL material kinematics'
+      else if( fstrPARAM%solution_type /= kstSTATIC .or. .not.fstrPARAM%nlgeom ) then
+        message = 'Elastoplastic MITC4 shells require !SOLUTION, TYPE=STATIC, NONLINEAR'
+      else if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres > 0 ) then
+        message = 'Temperature loading is not supported in models with elastoplastic MITC4 shells'
+      endif
+      if( len_trim(message) == 0 .and. associated(material%shell_var) ) then
+        ! The J2 return mapping uses the common elastic table, not layer-specific constants.
+        call fetch_TableData(MC_ISOELASTIC, material%dict, elastic, missing)
+        do ilayer = 1, material%totallyr
+          if( .not.ieee_is_finite(material%shell_var(ilayer)%ee) .or. &
+              .not.ieee_is_finite(material%shell_var(ilayer)%pp) ) then
+            message = 'Invalid elastic properties in J2 shell layer'
+            exit
+          endif
+          if( abs(material%shell_var(ilayer)%ee-elastic(1)) > 1.0d-12*elastic(1) .or. &
+              abs(material%shell_var(ilayer)%pp-elastic(2)) > 1.0d-12 ) then
+            message = 'J2 shell layers must share the !ELASTIC Young modulus and Poisson ratio'
+            exit
+          endif
+        enddo
+      endif
+      if( len_trim(message) == 0 ) then
+        isect = hecMESH%section_ID(i)
+        index = hecMESH%section%sect_I_index(isect-1)
+        if( hecMESH%section%sect_I_index(isect)-index /= 1 ) then
+          message = 'Elastoplastic MITC4 shells require a SHELL section with 2 thickness integration points'
+        else if( hecMESH%section%sect_I_item(index+1) /= NumOfShellThicknessQuadPoints(741) ) then
+          message = 'Elastoplastic MITC4 shells require 2 thickness integration points in !SECTION'
+        endif
+      endif
+      if( len_trim(message) == 0 ) cycle
+      write(*,*) '###ERROR### : ', trim(message)
+      write(ILOG,*) '###ERROR### : ', trim(message)
+      call hecmw_abort(hecmw_comm_get_comm())
+    enddo
+  end subroutine fstr_check_shell_j2_inputs
 
 
   !> Initializer of structure fstr_solid
@@ -1523,8 +1603,11 @@ contains
       enddo
       nthick = 0
       if( fstr_uses_finite_rotation_kinematics( fstrSOLID%elements(i)%etype, nn, &
-        fstrSOLID%materials(id) ) ) &
+          fstrSOLID%materials(id) ) .or. &
+          fstr_uses_plane_stress_j2_shell(fstrSOLID%elements(i)%etype, nn, &
+          fstrSOLID%materials(id)) ) then
         nthick = fstr_shell_num_thickness_points( fstrSOLID%elements(i)%etype )
+      endif
       if( nthick > 0 ) call fstr_init_shell_layer_gausses( fstrSOLID%elements(i), ng, &
         fstrSOLID%materials(id)%totallyr, nthick )
 
