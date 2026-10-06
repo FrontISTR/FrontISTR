@@ -41,13 +41,13 @@ contains
     real(kind=kreal) :: d(6, 6), b(6, ndof*nn), db(6, ndof*nn)
     real(kind=kreal) :: gderiv(nn, 3), stress(6), mat(6, 6)
     real(kind=kreal) :: det, wg, temp, spfunc(nn)
-    integer(kind=kint) :: i, j, lx, serr
+    integer(kind=kint) :: j, lx, serr
     real(kind=kreal) :: naturalcoord(3), coordsys(3, 3)
     real(kind=kreal) :: gdispderiv(3, 3)
     real(kind=kreal) :: b1(6, ndof*nn)
     real(kind=kreal) :: smat(9, 9), elem(3, nn)
     real(kind=kreal) :: bn(9, ndof*nn), sbn(9, ndof*nn)
-    integer(kind=kint) :: na, nb
+    integer(kind=kint) :: nb
     integer(kind=kint) :: na_p, nb_p
     integer(kind=kint) :: isize, jsize
     integer(kind=kint) :: jsize1, jsize2, jsize3
@@ -317,14 +317,14 @@ contains
     integer(kind=kint), parameter :: ndof = 3
     real(kind=kreal) :: d(6, 6), b(6, ndof*nn), b1(6, ndof*nn)
     real(kind=kreal) :: gderiv(nn, 3), gdispderiv(3, 3), det, wg
-    integer(kind=kint) :: i, j, lx, mtype, serr
+    integer(kind=kint) :: i, lx, mtype, serr
     real(kind=kreal) :: naturalcoord(3), rot(3, 3), spfunc(nn), coordsys(3, 3)
     real(kind=kreal) :: totaldisp(3, nn), elem(3, nn), elem1(3, nn)
     real(kind=kreal) :: dstrain(6), dstress(6), dumstress(3, 3), dum(3, 3)
     real(kind=kreal) :: trd, p_bak
     real(kind=kreal) :: ttc, tt0, outa(1), ina(1), epsth(6)
     logical :: ierr
-    integer(kind=kint) :: na, nb
+    integer(kind=kint) :: nb
     integer(kind=kint) :: na_p, nb_p
     integer(kind=kint) :: isize, jsize
     integer(kind=kint) :: jsize1, jsize2, jsize3
@@ -332,7 +332,6 @@ contains
     real(kind=kreal) :: stiff_up(3*nn, nn_p)
     real(kind=kreal) :: stiff_pp(nn_p, nn_p), stiff_pp_inv(nn_p, nn_p)
     real(kind=kreal) :: stiff_up_stiff_pp_inv(3*nn, nn_p)
-    real(kind=kreal) :: stiff_up_stiff_pp_inv_stiff_up(3*nn, 3*nn)
     real(kind=kreal) :: stiff_up_stiff_pp_inv_qf_p(3*nn)
     real(kind=kreal) :: alpha_inv
     real(kind=kreal) :: g

@@ -75,7 +75,7 @@ contains
     integer(kind=kint) :: IVOL, ISUF, I, LX
     real(kind=kreal)   :: RI, GX, GY, XSUM
     real(kind=kreal)   :: V1X, V1Y, V1Z, V2X, V2Y, V2Z, V3X, V3Y, V3Z, AA, VV
-    real(kind=kreal)   :: XG(2), WGT(2), H(4), HR(4), HS(4)
+    real(kind=kreal)   :: XG(2), WGT(2), H(4), HR(4)
     integer(kind=kint) :: NOD(2)
     !*************************
     !  GAUSS INTEGRATION POINT
@@ -553,8 +553,7 @@ contains
     ! LOCAL VARIABLES
     real(kind=kreal)   :: H(4), HR(4), HS(4), HT(4)
     real(kind=kreal)   :: XG(2), WGT(2)
-    real(kind=kreal)   :: RI, SI, TI, RP, SP, TP, RM, SM, TM
-    real(kind=kreal)   :: XJ11, XJ21, XJ31, XJ12, XJ22, XJ32, XJ13, XJ23, XJ33, DET, WG
+    real(kind=kreal)   :: XJ11, XJ21, XJ31, XJ12, XJ22, XJ32, XJ13, XJ23, XJ33, DET
     integer(kind=kint) :: IVOL, ISUF
     integer(kind=kint) :: NOD(4)
     integer(kind=kint) :: L1, L2, L3, I
@@ -698,12 +697,11 @@ contains
     real(kind=kreal)   :: H(10)
     real(kind=kreal)   :: HL1(10), HL2(10), HL3(10), HL4(10)
     real(kind=kreal)   :: XG(3), WGT(3)
-    real(kind=kreal)   :: RI, SI, TI, RP, SP, TP, RM, SM, TM
     real(kind=kreal)   :: XJ11, XJ21, XJ31, XJ12, XJ22, XJ32, XJ13, XJ23, XJ33
     real(kind=kreal)   :: DET, WG
     integer(kind=kint) :: IVOL, ISUF
     integer(kind=kint) :: NOD(10)
-    integer(kind=kint) :: LX, LY, LZ, I, IG1, IG2, L1, L2, L3
+    integer(kind=kint) :: I, L1, L2, L3
     real(kind=kreal)   :: val, XSUM
     real(kind=kreal)   :: G1X, G1Y, G1Z
     real(kind=kreal)   :: G2X, G2Y, G2Z
@@ -982,7 +980,7 @@ contains
     real(kind=kreal)   :: ZI, X1, X2
     real(kind=kreal)   :: XJ11, XJ21, XJ31, XJ12, XJ22, XJ32, XJ13, XJ23, XJ33
     real(kind=kreal)   :: DET, WG
-    real(kind=kreal)   :: H(6), HR(6), HS(6), HT(6), PL(6)
+    real(kind=kreal)   :: H(6), HR(6), HS(6), HT(6)
     real(kind=kreal)   :: XG(2), WGT(2), XG1(3), XG2(3), WGT1(3)
     integer(kind=kint) :: NOD(4)
     !*************************
@@ -1193,7 +1191,7 @@ contains
     real(kind=kreal)   :: G1X, G1Y, G1Z, G2X, G2Y, G2Z, G3X, G3Y, G3Z
     real(kind=kreal)   :: XJ11, XJ21, XJ31, XJ12, XJ22, XJ32, XJ13, XJ23, XJ33
     real(kind=kreal)   :: DET, WG
-    real(kind=kreal)   :: H(15), HR(15), HS(15), HT(15), PL(15)
+    real(kind=kreal)   :: H(15), HR(15), HS(15), HT(15)
     real(kind=kreal)   :: XG(3), WGT(3)
     integer(kind=kint) :: NOD(8)
     !*************************
@@ -1524,7 +1522,6 @@ contains
     integer(kind=kint) :: IVOL, ISUF
     integer(kind=kint) :: NOD(4)
     integer(kind=kint) :: IG1, IG2, LX, LY, LZ, I
-    real(kind=kreal)   :: VX, VY, VZ
     real(kind=kreal)   :: G1X, G1Y, G1Z
     real(kind=kreal)   :: G2X, G2Y, G2Z
     real(kind=kreal)   :: G3X, G3Y, G3Z
@@ -1748,7 +1745,6 @@ contains
     integer(kind=kint) :: IVOL, ISUF
     integer(kind=kint) :: NOD(8)
     integer(kind=kint) :: IG1, IG2, LX, LY, LZ, I
-    real(kind=kreal)   :: VX, VY, VZ
     real(kind=kreal)   :: G1X, G1Y, G1Z
     real(kind=kreal)   :: G2X, G2Y, G2Z
     real(kind=kreal)   :: G3X, G3Y, G3Z
@@ -2097,7 +2093,7 @@ contains
     integer(kind=kint) :: I, IG1, IG2
     real(kind=kreal)   :: RI, SI, XSUM
     real(kind=kreal)   :: G1X, G1Y, G1Z, G2X, G2Y, G2Z, G3X, G3Y, G3Z
-    real(kind=kreal)   :: H(4), HR(4), HS(4), HT(4), PL(4)
+    real(kind=kreal)   :: H(4), HR(4), HS(4)
     real(kind=kreal)   :: XG(2), WGT(2)
     !*************************
     !  GAUSS INTEGRATION POINT
