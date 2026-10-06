@@ -872,8 +872,6 @@ static int read_mesh(void) {
   int token                     = -1;
   int flag_name                 = 0; /* flag for NAME */
   int flag_type                 = 0; /* flag for TYPE */
-  int flag_io                   = 0; /* flag for IO */
-  int flag_refine               = 0; /* flag for REFINE */
   int type                      = -1;
   int io                        = HECMW_CTRL_FILE_IO_IN;
   int refine                    = 0;
@@ -912,13 +910,9 @@ static int read_mesh(void) {
         /* optional */
         if (read_mesh_head_param_io(&io)) return -1;
 
-        flag_io = 1;
-
       } else if (token == HECMW_CTRLLEX_K_REFINE) {
         /* optional */
         if (read_mesh_head_param_refine(&refine)) return -1;
-
-        flag_refine = 1;
 
       } else {
         set_err_token(token, HECMW_UTIL_E0010, "Unknown parameter");
