@@ -2491,7 +2491,6 @@ static int read_nset_param_nset(char *nset, size_t nset_len, int *isAll) {
 
 static int read_nset_param_instance() {
   int token;
-  char *p;
 
   token = HECMW_inplex_next_token();
   if (token != '=') {
@@ -3854,7 +3853,7 @@ static int read_boundary_keyword(void) {
 
 static int read_boundary_data(int *nnode, int **node_array) {
   int i, n, *node, token;
-  int isFirst, isSuggest, isNode;
+  int isSuggest, isNode;
   struct hecmw_io_id *head, *prev, *p, *q;
 
   n         = 0;

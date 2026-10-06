@@ -1426,7 +1426,6 @@ static int read_equation_data_line2(int neq, double cnst) {
   int is_node     = 0;
   int is_ngrp     = 0;
   int is_link     = 0;
-  int is_beam     = 0;
   const int NITEM = 100;
   char *p;
   struct hecmw_io_mpcitem *mpcitem;

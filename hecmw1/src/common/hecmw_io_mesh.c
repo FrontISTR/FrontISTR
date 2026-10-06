@@ -395,7 +395,6 @@ static void print_zero(FILE *fp) {
 }
 
 static void print_contact(FILE *fp) {
-  int i;
   struct hecmw_io_contact *p;
 
   HECMW_assert(fp);
@@ -3914,17 +3913,10 @@ error:
 static int post_section_check_mat_exists(void) {
   int found;
   struct hecmw_io_section *p;
-  struct hecmw_io_material *mat;
   extern hecmw_hash_p *hash_mat;
 
   for (p = _sect; p; p = p->next) {
     found = 0;
-    /* for(mat=_mat; mat; mat=mat->next) {
-            if(strcmp(p->material, mat->name) == 0) {
-                    found = 1;
-                    break;
-            }
-    }*/
     if ((struct hecmw_io_material *)hecmw_hash_p_get(hash_mat, p->material) !=
         NULL) {
       found = 1;
@@ -3946,7 +3938,6 @@ static int post_section(void) {
 }
 
 static int post_contact_check_grp(void) {
-  int i;
   struct hecmw_io_contact *p;
 
   for (p = _contact; p; p = p->next) {
