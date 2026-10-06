@@ -111,19 +111,16 @@ static int count_line_and_header_number(const char *fname, int *line_n,
                                         int *header_n) {
   FILE *fp;
   char buff[buffsize];
-  int line_no, L, N;
+  int L, N;
   fp = fopen(fname, "r");
 
   if (!fp) {
     return -1;
   }
 
-  line_no = 0;
   L = N = 0;
 
   while (!feof(fp)) {
-    line_no++;
-
     if (fgets(buff, buffsize - 1, fp) == NULL) {
       break;
     }

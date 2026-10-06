@@ -7025,7 +7025,7 @@ static int const_elem_node_item(const struct hecmwST_local_mesh *global_mesh,
   size_t size;
   long long counter;
   int i, j;
-  long long gstart, gend, lstart, lend;
+  long long gstart, lstart, lend;
 
   HECMW_assert(local_mesh->n_elem > 0);
   HECMW_assert(local_mesh->elem_node_index);
@@ -7041,7 +7041,6 @@ static int const_elem_node_item(const struct hecmwST_local_mesh *global_mesh,
 
   for (counter = 0, i = 0; i < local_mesh->n_elem; i++) {
     gstart = global_mesh->elem_node_index[elem_local2global[i] - 1];
-    gend   = global_mesh->elem_node_index[elem_local2global[i]];
     lstart = local_mesh->elem_node_index[i];
     lend   = local_mesh->elem_node_index[i + 1];
 
