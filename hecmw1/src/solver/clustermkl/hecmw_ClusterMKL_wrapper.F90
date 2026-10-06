@@ -51,10 +51,10 @@ contains
     integer(kind=kint), intent(out)          :: istat
     real(kind=kreal), pointer, intent(inout) :: solution(:)
 
+#ifdef WITH_CLUSTERMKL
+
     integer(kind=kint) :: myrank, phase
     real(kind=kreal)   :: t1,t2,t3,t4,t5
-
-#ifdef WITH_CLUSTERMKL
 
     myrank=hecmw_comm_get_rank()
 

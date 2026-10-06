@@ -1439,7 +1439,7 @@ contains
     integer(kind=kint) :: master, me, i, j, k, c, t, m, nkc
     integer(kind=kint) :: npiv, nfs, p0, pa, pb, w, np, pk, pk0, mfs, info, nsw, n22, cndel
     integer(kind=kint) :: nown, nrow_nodes, hi, npair, req, cnb, kbegc, cnrow, wme, ferr
-    integer(kind=kint) :: pr2, pc2, nfst, npl, nchk, rd, myfsr, kend
+    integer(kind=kint) :: pr2, pc2, nfst, npl, nchk, rd, myfsr
     integer(kind=8) :: bandw, fw, btop, btopu, fsw
     real(kind=kreal) :: uinv
     logical :: ismaster, hasband, hasfs, fsok, acc, isroot, ruse_f
@@ -2736,7 +2736,7 @@ contains
     subroutine panel_piv_dist(kk)
       integer(kind=kint), intent(in) :: kk
       real(kind=kreal), allocatable :: rw(:)
-      integer(kind=kint) :: jj2, ic2, x2, q2, mm, ib, mrows, fs1, i2, r0, nfs2
+      integer(kind=kint) :: ic2, x2, q2, mm, ib, mrows, fs1, i2, r0, nfs2
       integer(kind=8) :: ww
 
       mrows = nrow - pa + 1
@@ -4298,7 +4298,7 @@ contains
     !> every rank uniformly
     subroutine root_final()
       real(kind=kreal), allocatable :: rw(:)
-      integer(kind=kint) :: jj2, ic2, t2, q2, mm, ib, r0, cnt, m0
+      integer(kind=kint) :: ic2, q2, mm, ib, r0, cnt, m0
 
       pa = npiv + 1
       pb = ncol
@@ -6611,7 +6611,7 @@ contains
     !> the sequential order; the final segments return to the master
     subroutine fwd_dist(s0)
       integer(kind=kint), intent(in) :: s0
-      integer(kind=kint) :: d2, d0, d1, kk, tw2, hk2, t2, h2, r2, i2, iw2, idx2, jc, ib, ndv, ofs
+      integer(kind=kint) :: d2, d0, d1, kk, tw2, hk2, t2, h2, r2, i2, idx2, jc, ib, ndv, ofs
       integer(kind=kint) :: rdk, nxt, dst
       integer(kind=8) :: okk2, oik2
       logical :: partic

@@ -185,7 +185,7 @@ contains
     integer(kind=kint), intent(in) :: nminmax
     integer(kind=kint), intent(out) :: nmin
     integer(kind=kint), intent(out) :: mins(nminmax)
-    integer(kind=kint) :: degmin, i, j
+    integer(kind=kint) :: degmin, i
     degmin = N
     nmin = 0
     do i=1,N

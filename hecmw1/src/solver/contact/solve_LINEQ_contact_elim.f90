@@ -130,7 +130,6 @@ contains
     !
     type (hecmwST_local_mesh), pointer :: hecMESHmpc
     type (hecmwST_matrix), pointer :: hecMATmpc
-    integer(kind=kint) :: method
     logical            :: fg_cg, fg_amg
 
     fg_cg = (hecmw_mat_get_method(hecMAT) == 1)
@@ -200,8 +199,6 @@ contains
     type(hecmwST_ebc),             intent(inout) :: hecEBC    !< prescribed displacements imposed after the MPC processing
     !
     type(hecmwST_local_mesh)        :: hecMESHtmp     !< temoprary copy of mesh for migrating nodes
-    type (hecmwST_local_mesh), pointer :: hecMESHmpc
-    type (hecmwST_matrix), pointer :: hecMATmpc
     integer(kind=kint), allocatable :: slaves4lag(:)  !< list of slave dofs chosed for EACH Lag. in THIS SUBDOMAIN
     real(kind=kreal),   allocatable :: BLs_inv(:)     !< inverse of diagonal BLs matrix
     real(kind=kreal),   allocatable :: BUs_inv(:)     !< inverse of diagonal BUs matrix

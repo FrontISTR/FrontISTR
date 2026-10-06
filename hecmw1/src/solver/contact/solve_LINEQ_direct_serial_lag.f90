@@ -33,7 +33,6 @@ contains
     type (hecmwST_ebc)                       :: hecEBC         !< prescribed displacements imposed after the MPC processing
     integer (kind=4)                         :: ntdf, ilag_sta
     integer (kind=4)                         :: numNon0
-    integer (kind=4)                         :: ierr, nprocs, myrank
 
     real(kind=8), allocatable               :: b(:)           !< right-hand side vector
     integer(kind=kint) :: mpc_method
