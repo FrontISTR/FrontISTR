@@ -204,7 +204,6 @@ contains
     real(kind=kreal) :: P1(3,3), P2(3,3), P3(3,3), P4(3,3)
     real(kind=kreal) :: I3(3,3)
     real(kind=kreal) :: normals_tri6n(3,3)
-    integer(kind=kint) :: i, j
 
     P_matrix = 0.0d0
 

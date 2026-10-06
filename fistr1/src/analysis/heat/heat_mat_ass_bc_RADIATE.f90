@@ -19,7 +19,7 @@ contains
 
     implicit none
     integer(kind=kint) :: k, icel, isuf, iam1, iam2, ic_type, isect, nn, is, j, mm, m, ic, ip
-    integer(kind=kint) :: inod, jp, jnod, isU, ieU, ik, isL, ieL
+    integer(kind=kint) :: jp
     real(kind=kreal)   :: CTIME, DTIME, TZERO, QQ, RR, SINK, thick, beta
     type(fstr_heat)          :: fstrHEAT
     type(hecmwST_matrix)     :: hecMAT

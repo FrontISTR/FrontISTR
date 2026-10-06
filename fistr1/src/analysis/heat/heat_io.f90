@@ -140,9 +140,7 @@ contains
     type(hecmwST_local_mesh)  :: hecMESH
     type(fstr_heat)           :: fstrHEAT
     type(fstr_solid)          :: fstrSOLID
-    integer(kind=kint) :: restart_step(1)
-    real(kind=kreal)   :: restart_time(1)
-    integer(kind=kint) :: i, tstep
+    integer(kind=kint) :: tstep
     real(kind=kreal)   :: ctime, work_time(1)
     logical, intent(in)       :: outflag     !< if true, result will be output regardless of istep
     character(len=HECMW_HEADER_LEN) :: header
@@ -185,10 +183,9 @@ contains
     type(fstr_heat)           :: fstrHEAT
     type(hecmwST_result_data) :: fstrRESULT
     type(fstr_solid)          :: fstrSOLID
-    integer(kind=kint) :: i, tstep
+    integer(kind=kint) :: tstep
     real(kind=kreal)   :: ctime
     logical, intent(in)       :: outflag     !< if true, result will be output regardless of istep
-    real(kind=kreal), pointer  :: work(:)
 
     if(IVISUAL == 1 .and. (mod(tstep, IWRES) == 0 .or. outflag))then
       call hecmw_nullify_result_data(fstrRESULT)

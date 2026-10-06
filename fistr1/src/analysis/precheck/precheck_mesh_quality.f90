@@ -40,7 +40,7 @@ contains
     real(kind=kreal), parameter :: aspect_warn_threshold = 50.0d0
 
     !** Local variables
-    integer(kind=kint) :: nelem, mid, j, isect, icel, iiS
+    integer(kind=kint) :: nelem, mid, j, isect
     integer(kind=kint) :: ndof2, nelem_wo_mpc
     integer(kind=kint) :: ie, ia, jelem, ic_type, nn, jS, jE, itype
     integer(kind=kint) :: nodLOCAL(20), NTOTsum(1)
@@ -51,7 +51,7 @@ contains
     integer(kind=kint), parameter :: ETYPE_CODE_MAX = 999
     integer(kind=kint) :: etype_count(ETYPE_CODE_MAX), i_etype
     real(kind=kreal)   :: ntdof2
-    real(kind=kreal)   :: al, almin, almax, AA, thick, vol, avvol
+    real(kind=kreal)   :: al, almin, almax, AA, vol, avvol
     real(kind=kreal)   :: tvol, tvmax, tvmin, tlmax, tlmin, asp, aspmax
     real(kind=kreal)   :: xx(20), yy(20), zz(20)
     real(kind=kreal)   :: TOTsum(1), TOTmax(3), TOTmin(2)
