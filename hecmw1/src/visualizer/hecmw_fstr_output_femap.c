@@ -201,7 +201,7 @@ static void femap_write_elem(FILE *outfp, int mynode, int n_elem, int n_node,
 void HECMW_fstr_output_femap(struct hecmwST_local_mesh *mesh,
                              struct hecmwST_result_data *data, char *outfile,
                              size_t outfile_size, HECMW_Comm VIS_COMM) {
-  int i, j, k, m;
+  int i, j, k;
   int mynode, pesize;
   HECMW_Status stat;
   double tmp;
@@ -913,7 +913,7 @@ static void avs_write_node_data(FILE *outfp, int n_node, int *global_node_ID,
 }
 
 int modify_element_information(const struct hecmwST_local_mesh *mesh) {
-  int i, j, n, refine, max_elem;
+  int i, n, refine, max_elem;
   int *size;
 
   max_elem = 0;

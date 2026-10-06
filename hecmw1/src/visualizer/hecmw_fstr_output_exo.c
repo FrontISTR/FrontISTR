@@ -248,7 +248,7 @@ void exodus_output(struct hecmwST_local_mesh *mesh,
     int i, j, k;
     long long jS, jE;
     int myrank, petot;
-    int n_node, n_elem, shift;
+    int n_node, n_elem;
     int data_tot_n, data_tot_e;
     int table342[10] = {0, 1, 2, 3, 6, 4, 5, 7, 8, 9};
     char *p;
@@ -707,7 +707,6 @@ void exodus_output(struct hecmwST_local_mesh *mesh,
             int ne = blocks[j].num_elem;
             int nn = blocks[j].nod_per_elem;
             int etype = blocks[j].hecmw_type;
-            int node_shift = get_node_shift(etype);
             int *conn = (int *)HECMW_malloc(sizeof(int) * ne * nn);
             if (conn == NULL)
                 HECMW_vis_print_exit("HECMW_malloc failed for connectivity");

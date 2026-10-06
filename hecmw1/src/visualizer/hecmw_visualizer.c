@@ -23,7 +23,7 @@ int HECMW_visualize_init(void) {
 int HECMW_visualize_init_by_comm(HECMW_Comm VIS_COMM) {
   FILE *contfp;
   int pesize, mynode;
-  char *contfile, buf[HECMW_FILENAME_LEN];
+  char *contfile;
 
   HECMW_Comm_size(VIS_COMM, &pesize);
   HECMW_Comm_rank(VIS_COMM, &mynode);
