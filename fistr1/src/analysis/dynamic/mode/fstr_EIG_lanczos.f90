@@ -26,10 +26,10 @@ contains
     type(fstr_tri_diag)      :: Tri
     type(fstr_eigen_vec), pointer :: Q(:)
     integer(kind=kint) :: N, NP, NDOF, NNDOF, NPNDOF
-    integer(kind=kint) :: iter, maxiter, nget, ierr
-    integer(kind=kint) :: i, j, k, in, jn, kn, ik
+    integer(kind=kint) :: iter, maxiter
+    integer(kind=kint) :: i, j, in, jn, ik
     integer(kind=kint) :: ig, ig0, is0, ie0
-    real(kind=kreal)   :: t1, t2, tolerance
+    real(kind=kreal)   :: t1, t2
     real(kind=kreal)   :: alpha, beta, beta0, resid
     real(kind=kreal), allocatable :: s(:), t(:), p(:)
     integer(kind=kint), allocatable :: mark(:)

@@ -37,9 +37,9 @@ contains
     real(kind=kreal)   :: RHS, f_t, f_t1
 
     !for rotation
-    integer(kind=kint) :: n_rot, rid, n_nodes
+    integer(kind=kint) :: n_rot, rid
     type(tRotInfo)     :: rinfo
-    real(kind=kreal)   :: theta, normal(3), direc(3), ccoord(3), cdiff(3), cdiff0(3)
+    real(kind=kreal)   :: ccoord(3), cdiff(3), cdiff0(3)
     real(kind=kreal)   :: cdisp(3), cddisp(3)
     real(kind=kreal)   :: rotation_factor
     !
@@ -224,7 +224,7 @@ contains
 
     integer(kind=kint) :: NDOF, ig0, ig, ityp, iS0, iE0, ik, in, idofS, idofE, idof
     integer(kind=kint) :: flag_u, grpid
-    real(kind=kreal)   :: RHS, f_t
+    real(kind=kreal)   :: RHS
 
     flag_u = 1
     NDOF = hecMAT%NDOF
@@ -274,13 +274,13 @@ contains
     integer(kind=kint) :: ig0, ig, ityp, NDOF, iS0, iE0, ik, in, idofS, idofE, idof
 
     integer(kind=kint) :: flag_u
-    real(kind=kreal)   :: RHS, f_t, f_t1
+    real(kind=kreal)   :: RHS
 
     !for rotation
-    integer(kind=kint) :: n_rot, rid, n_nodes
+    integer(kind=kint) :: n_rot, rid
     type(tRotInfo)     :: rinfo
-    real(kind=kreal)   :: theta, normal(3), direc(3), ccoord(3), cdiff(3), cdiff0(3)
-    real(kind=kreal)   :: cdisp(3), cddisp(3)
+    real(kind=kreal)   :: ccoord(3), cdiff(3), cdiff0(3)
+    real(kind=kreal)   :: cdisp(3)
     !
     ndof = hecMAT%NDOF
     n_rot = fstrSOLID%BOUNDARY_ngrp_rot

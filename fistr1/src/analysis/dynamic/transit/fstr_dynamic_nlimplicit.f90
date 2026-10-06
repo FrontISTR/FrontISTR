@@ -58,13 +58,11 @@ contains
     !C-- local variable
     integer(kind=kint) :: nnod, ndof, nn
     integer(kind=kint) :: tot_step_print, CBbound
-    real(kind=kreal) :: time_1, time_2, factor
+    real(kind=kreal) :: time_1, time_2
     integer(kind=kint) :: sub_step
 
     integer(kind=kint) :: restart_step_num, restart_substep_num, restart_step_count, tot_step, step_count
     integer(kind=kint) :: ctAlgo
-    integer(kind=kint) :: max_iter_contact
-    real(kind=kreal) :: converg_dlag
     type(fstr_info_contactChange)        :: infoCTChange_bak
 
     logical :: is_OutPoint
@@ -319,7 +317,7 @@ contains
 
     !C-- local variables
     type(hecmwST_ebc) :: hecEBC
-    integer(kind=kint) :: j, kk, idm, imm
+    integer(kind=kint) :: j
     integer(kind=kint) :: iter
     real(kind=kreal) :: a1, a2, a3, b1, b2, b3, c1, c2
     real(kind=kreal) :: coef(6)

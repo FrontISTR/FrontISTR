@@ -19,7 +19,6 @@ contains
     real(kind=kreal)   :: eigvec(:, :), p(:), beta, chk, sigma
     real(kind=kreal), allocatable :: temp(:)
     real(kind=kreal), pointer     :: q(:), mass(:), filter(:)
-    logical :: is_free
 
     N      = hecMAT%N
     NP     = hecMAT%NP
