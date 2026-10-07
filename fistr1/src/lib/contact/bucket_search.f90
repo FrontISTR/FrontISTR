@@ -20,7 +20,7 @@ module bucket_search
   public :: bucketDB_getNumCand
   public :: bucketDB_getCand
 
-  integer(kind=kint), parameter :: DEBUG = 0
+  integer(kind=kint), parameter :: BUCKET_DEBUG = 0
 
   !> Structure for a single bucket (private to this module)
   type bucket
@@ -48,7 +48,7 @@ contains
     implicit none
     logical, intent(in) :: cond  !< condition statement that should be true
     character(len=*) :: mesg     !< error message when the condition is false
-    if (DEBUG > 0) then
+    if (BUCKET_DEBUG > 0) then
       if (.not. cond) then
         write(0,*) 'ASSERTION FAILED: ',mesg
         call hecmw_abort( hecmw_comm_get_comm() )
@@ -181,7 +181,7 @@ contains
     real(kind=kreal) :: xrange(3)
     integer(kind=kint) :: i, j, k
     real(kind=kreal), parameter :: EPS = 1.d-6
-    if (DEBUG >= 1) write(0,*) 'DEBUG: bucketDB_setup', x_min, x_max, dmin, n_tot
+    if (BUCKET_DEBUG >= 1) write(0,*) 'DEBUG: bucketDB_setup', x_min, x_max, dmin, n_tot
     if (associated(bktdb%buckets)) deallocate(bktdb%buckets)
     bktdb%x_min(:) = x_min(:)
     bktdb%x_max(:) = x_max(:)
@@ -191,7 +191,7 @@ contains
       bktdb%ndiv(i) = max(floor(xrange(i) / dmin), 1)
       bktdb%d(i) = xrange(i) / bktdb%ndiv(i) * (1.d0 + EPS)
     enddo
-    if (DEBUG >= 1) write(0,*) 'DEBUG: bucketDB_setup: ndiv, d: ', bktdb%ndiv, bktdb%d
+    if (BUCKET_DEBUG >= 1) write(0,*) 'DEBUG: bucketDB_setup: ndiv, d: ', bktdb%ndiv, bktdb%d
     call assert(all(bktdb%d > 0.d0), 'bucketDB_setup: invalid bktdb%d')
     allocate(bktdb%buckets(bktdb%ndiv(1), bktdb%ndiv(2), bktdb%ndiv(3)), stat=i)
     if( i /= 0 ) then
@@ -259,7 +259,7 @@ contains
       call assert(bktdb%d(i) > 0.d0, 'bucketDB_getBucketID: bktdb%d(i) is zero')
       baddr(i) = floor((x(i) - bktdb%x_min(i)) / bktdb%d(i)) + 1
     enddo
-    if (DEBUG >= 2) write(0,*) '  DEBUG: bucketDB_getBucketID: ',x,baddr
+    if (BUCKET_DEBUG >= 2) write(0,*) '  DEBUG: bucketDB_getBucketID: ',x,baddr
     bucketDB_getBucketID = encode_bid(bktdb, baddr)
   end function bucketDB_getBucketID
 
@@ -273,7 +273,7 @@ contains
     baddr = decode_bid(bktdb, bid)
     call assert(all(baddr > 0) .and. all(baddr <= bktdb%ndiv), 'bucketDB_register_pre: block ID out of range')
     call bucket_incr_count(bktdb%buckets(baddr(1),baddr(2),baddr(3)))
-    if (DEBUG >= 2) write(0,*) '  DEBUG: bucketDB_registerPre: ', baddr
+    if (BUCKET_DEBUG >= 2) write(0,*) '  DEBUG: bucketDB_registerPre: ', baddr
   end subroutine bucketDB_registerPre
 
   !> Allocate memory before actually registering members
@@ -308,7 +308,7 @@ contains
     baddr = decode_bid(bktdb, bid)
     call assert(all(baddr > 0) .and. all(baddr <= bktdb%ndiv), 'bucketDB_register: block ID our of range')
     call bucket_register(bktdb%buckets(baddr(1),baddr(2),baddr(3)), sid)
-    if (DEBUG >= 2) write(0,*) '  DEBUG: bucketDB_register: ', baddr, sid
+    if (BUCKET_DEBUG >= 2) write(0,*) '  DEBUG: bucketDB_register: ', baddr, sid
   end subroutine bucketDB_register
 
   !> Get number of candidates within neighboring buckets of a given bucket
@@ -339,7 +339,7 @@ contains
       enddo
     enddo
     bucketDB_getNumCand = ncand
-    if (DEBUG >= 2) write(0,*) '  DEBUG: bucketDB_getNumCand: ',ncand
+    if (BUCKET_DEBUG >= 2) write(0,*) '  DEBUG: bucketDB_getNumCand: ',ncand
   end function bucketDB_getNumCand
 
   !> Get candidates within neighboring buckets of a given bucket
@@ -373,7 +373,7 @@ contains
       enddo
     enddo
     call assert(cnt == ncand, 'bucketDB_get_cand: count mismatch')
-    if (DEBUG >= 3) write(0,*) '    DEBUG: bucketDB_getCand: ',cand
+    if (BUCKET_DEBUG >= 3) write(0,*) '    DEBUG: bucketDB_getCand: ',cand
   end subroutine bucketDB_getCand
 
 end module bucket_search

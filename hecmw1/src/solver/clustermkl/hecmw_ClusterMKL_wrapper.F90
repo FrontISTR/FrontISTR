@@ -40,7 +40,7 @@ module m_hecmw_ClusterMKL_wrapper
   integer(kind=kint), pointer, save :: irow(:), jcol(:)
   real(kind=kreal), pointer, save   :: aval(:), rhs(:), solx(:)
 
-  integer(kind=kint), parameter :: debug=0
+  integer(kind=kint), parameter :: CLUSTERMKL_DEBUG=0
 
 contains
 
@@ -189,7 +189,7 @@ contains
     if (myrank==0 .and. spMAT%timelog > 0) then
       write(*,'(A,f10.3)') ' [Cluster Pardiso]: Solution completed.         time(sec)=',t5-t4
     end if
-    if( debug>0 .and. myrank==0 ) call print_iparm_parameters()
+    if( CLUSTERMKL_DEBUG>0 .and. myrank==0 ) call print_iparm_parameters()
 
 #else
     stop "MKL Pardiso not available"
@@ -269,7 +269,7 @@ contains
     end if
 
     t2=hecmw_wtime()
-    if (myrank==0 .and. spMAT%timelog > 0 .and. debug > 0 ) &
+    if (myrank==0 .and. spMAT%timelog > 0 .and. CLUSTERMKL_DEBUG > 0 ) &
        write(*,'(A,f10.3)') ' [Cluster Pardiso]:   - Allocate Matrix         time(sec)=',t2-t1
 
     !gather matrix components to rank 0
@@ -288,17 +288,17 @@ contains
     call sparse_matrix_gather_rhs(spMAT, b)
 
     t3=hecmw_wtime()
-    if (myrank==0 .and. spMAT%timelog > 0 .and. debug > 0 ) &
+    if (myrank==0 .and. spMAT%timelog > 0 .and. CLUSTERMKL_DEBUG > 0 ) &
        write(*,'(A,f10.3)') ' [Cluster Pardiso]:   - Gather Matrix           time(sec)=',t3-t2
 
     !convert COO to CRS
     if( myrank==0 ) then
       call coo2csr(n, nnz, ia, ja, a)
-      if( debug>0 ) call check_csr(n, nnz, ia, ja, a)
+      if( CLUSTERMKL_DEBUG>0 ) call check_csr(n, nnz, ia, ja, a)
     endif
 
     t4=hecmw_wtime()
-    if (myrank==0 .and. spMAT%timelog > 0 .and. debug > 0 ) &
+    if (myrank==0 .and. spMAT%timelog > 0 .and. CLUSTERMKL_DEBUG > 0 ) &
        write(*,'(A,f10.3)') ' [Cluster Pardiso]:   - Convert Matrix Format   time(sec)=',t4-t3
 
     deallocate(DISPMAT,NCOUNTS)

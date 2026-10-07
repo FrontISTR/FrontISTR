@@ -11,7 +11,7 @@ module m_hecmw_matrix_ordering_CM
   public :: hecmw_matrix_ordering_CM
   public :: hecmw_matrix_ordering_RCM
 
-  integer(kind=kint), parameter :: DEBUG = 0
+  integer(kind=kint), parameter :: CM_DEBUG = 0
 
 contains
 
@@ -40,7 +40,7 @@ contains
     do i=1,nmin
       call ordering_CM_inner(N, indexL, itemL, indexU, itemU, degs, mins(i), &
         nlevel(i), lv_index(:,i), lv_item(:,i))
-      if (DEBUG > 0) write(*,*) 'DEBUG:: hecmw_matrix_ordering_CM: i, nstart, nlevel = ', i, mins(i), nlevel(i)
+      if (CM_DEBUG > 0) write(*,*) 'DEBUG:: hecmw_matrix_ordering_CM: i, nstart, nlevel = ', i, mins(i), nlevel(i)
     end do
     !$omp end do
     !$omp end parallel
@@ -54,7 +54,7 @@ contains
         max_id = i
       end if
     end do
-    if (DEBUG > 0) write(*,*) 'DEBUG:: hecmw_matrix_ordering_CM: chose ordering',max_id
+    if (CM_DEBUG > 0) write(*,*) 'DEBUG:: hecmw_matrix_ordering_CM: chose ordering',max_id
     do i=1,N
       perm(i) = lv_item(i,max_id)
       iperm(perm(i)) = i
@@ -71,7 +71,7 @@ contains
     integer(kind=kint), intent(out) :: perm(:), iperm(:)
     call hecmw_matrix_ordering_CM(N, indexL, itemL, indexU, itemU, perm, iperm)
     call reverse_ordering(N, perm, iperm)
-    if (DEBUG > 0) then
+    if (CM_DEBUG > 0) then
       call write_nonzero_profile(N, indexL, itemL, indexU, itemU, perm, iperm)
       call write_perm(N, perm, iperm)
     endif
@@ -128,7 +128,7 @@ contains
         end do
       end do PRLV
       if (cnt == 0) then
-        if (DEBUG > 0) write(*,*) 'DEBUG: choose any uncolored node..'
+        if (CM_DEBUG > 0) write(*,*) 'DEBUG: choose any uncolored node..'
         do knode = 1, N
           if (iwk(knode) == 0) then
             iwk(knode) = level
@@ -146,7 +146,7 @@ contains
         exit
       end if
     end do
-    if (DEBUG > 0) then
+    if (CM_DEBUG > 0) then
       level = 0
       do j = 1, N
         jnode = lv_item(j)
@@ -200,7 +200,7 @@ contains
         if (nmin <= nminmax) mins(nmin) = i
       end if
     end do
-    if (DEBUG > 0) write(*,*) 'DEBUG:: find_minimum_degrees: nmin, deg = ', nmin, degmin
+    if (CM_DEBUG > 0) write(*,*) 'DEBUG:: find_minimum_degrees: nmin, deg = ', nmin, degmin
     if (nmin > nminmax) nmin = nminmax
   end subroutine find_minimum_degrees
 

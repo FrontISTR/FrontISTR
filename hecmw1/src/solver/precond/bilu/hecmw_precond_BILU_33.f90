@@ -55,7 +55,7 @@ module hecmw_precond_BILU_33
   integer(kind=kint), save, allocatable :: icToBlockIndex(:)
   integer(kind=kint), save, allocatable :: blockIndexToColorIndex(:)
   integer(kind=kint), save :: sectorCacheSize0, sectorCacheSize1
-  integer(kind=kint), parameter :: DEBUG = 0
+  integer(kind=kint), parameter :: BILU_DEBUG = 0
 
 contains
 
@@ -79,7 +79,7 @@ contains
     integer(kind=kint ), allocatable :: perm_tmp(:)
     real   (kind=kreal) :: t0
 
-    if (DEBUG >= 1) then
+    if (BILU_DEBUG >= 1) then
       t0 = hecmw_Wtime()
       write(*,*) 'DEBUG: BILU start setup', hecmw_Wtime()-t0
     endif
@@ -125,7 +125,7 @@ contains
       allocate(COLORindex(0:N), perm_tmp(N), perm(N), iperm(N))
       call hecmw_matrix_ordering_RCM(N, hecMAT%indexL, hecMAT%itemL, &
         hecMAT%indexU, hecMAT%itemU, perm_tmp, iperm)
-      if (DEBUG >= 1) write(*,*) 'DEBUG: RCM ordering done', hecmw_Wtime()-t0
+      if (BILU_DEBUG >= 1) write(*,*) 'DEBUG: RCM ordering done', hecmw_Wtime()-t0
       if (PRECOND.eq.10) then
         call hecmw_matrix_ordering_MC(N, hecMAT%indexL, hecMAT%itemL, &
           hecMAT%indexU, hecMAT%itemU, perm_tmp, &
@@ -154,14 +154,14 @@ contains
     call hecmw_matrix_reorder_profile(N, perm, iperm, &
       hecMAT%indexL, hecMAT%indexU, hecMAT%itemL, hecMAT%itemU, &
       indexL, indexU, itemL, itemU)
-    if (DEBUG >= 1) write(*,*) 'DEBUG: reordering profile done', hecmw_Wtime()-t0
+    if (BILU_DEBUG >= 1) write(*,*) 'DEBUG: reordering profile done', hecmw_Wtime()-t0
 
     allocate(D(9*N), AL(9*NPL), AU(9*NPU))
     call hecmw_matrix_reorder_values(N, 3, perm, iperm, &
       hecMAT%indexL, hecMAT%indexU, hecMAT%itemL, hecMAT%itemU, &
       hecMAT%AL, hecMAT%AU, hecMAT%D, &
       indexL, indexU, itemL, itemU, AL, AU, D)
-    if (DEBUG >= 1) write(*,*) 'DEBUG: reordering values done', hecmw_Wtime()-t0
+    if (BILU_DEBUG >= 1) write(*,*) 'DEBUG: reordering values done', hecmw_Wtime()-t0
 
     call hecmw_matrix_reorder_renum_item(N, perm, indexL, itemL)
     call hecmw_matrix_reorder_renum_item(N, perm, indexU, itemU)
@@ -183,7 +183,7 @@ contains
     hecMAT%Iarray(98) = 0 ! symbolic setup done
     hecMAT%Iarray(97) = 0 ! numerical setup done
 
-    if (DEBUG >= 1) write(*,*) 'DEBUG: BILU setup done', hecmw_Wtime()-t0
+    if (BILU_DEBUG >= 1) write(*,*) 'DEBUG: BILU setup done', hecmw_Wtime()-t0
 
   end subroutine hecmw_precond_BILU_33_setup
 
@@ -195,7 +195,7 @@ contains
     integer(kind=kint) :: my_rank
     integer(kind=kint) :: ic, i
 
-    if (DEBUG >= 1) write(*,*) 'DEBUG: setting up tuning parameters for SSOR'
+    if (BILU_DEBUG >= 1) write(*,*) 'DEBUG: setting up tuning parameters for SSOR'
     !$ numOfThread = omp_get_max_threads()
     numOfBlock = numOfThread * numOfBlockPerThread
     if (allocated(icToBlockIndex)) deallocate(icToBlockIndex)

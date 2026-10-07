@@ -18,7 +18,7 @@ module m_static_LIB_C3D4SESNS
   private
   public :: STF_C3D4_SESNS, UPDATE_C3_SESNS, Return_nn_comp_C3D4_SESNS
 
-  logical, parameter :: DEBUG=.false.
+  logical, parameter :: ESNS_DEBUG=.false.
 
 contains
 
@@ -50,14 +50,14 @@ contains
       local_nid(i) = nn_comp
     end do
 
-    if(DEBUG) then
+    if(ESNS_DEBUG) then
       write(*,*) "nn:",nn
       write(*,*) "nodlocal:",nodlocal(1:nn)
     end if
 
     nodlocal(1:nn_comp) = cmp_nodlocal(1:nn_comp)
 
-    if(DEBUG) then
+    if(ESNS_DEBUG) then
       write(*,*) "nn_comp:",nn_comp
       write(*,*) "nodlocal(comp):",nodlocal(1:nn_comp)
       write(*,*) "local_nid:",local_nid(1:nn)
