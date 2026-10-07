@@ -726,25 +726,29 @@ contains
     implicit none
     type(tElement), intent(in) :: element
     real(kind=kreal), intent(inout) :: estrain(6), estress(6)
-    integer(kind=kint) :: ig, ilayer, ithick, ishell, ierr
-    real(kind=kreal) :: zeta_layer, weight, total_weight
+    integer(kind=kint) :: ig, ilayer, ithick, ishell
+    real(kind=kreal) :: weight, total_weight
     real(kind=kreal) :: avg_strain(6), avg_stress(6)
 
     if( .not. associated(element%shell_layer_gausses) ) return
     if( .not. associated(element%gausses) ) return
     if( element%shell_nlayer <= 0 .or. element%shell_nthick <= 0 ) return
+    if( size(element%gausses) <= 0 ) return
+    if( .not. associated(element%gausses(1)%pMaterial) ) return
+    if( .not. associated(element%gausses(1)%pMaterial%shell_var) ) return
+    if( element%shell_nlayer > size(element%gausses(1)%pMaterial%shell_var) ) return
 
     avg_strain(1:6) = 0.0d0
     avg_stress(1:6) = 0.0d0
     total_weight = 0.0d0
 
+    ! Average history points equally within each layer and weight layers by thickness.
     do ig = 1, size(element%gausses)
       do ilayer = 1, element%shell_nlayer
+        weight = element%gausses(1)%pMaterial%shell_var(ilayer)%weight
         do ithick = 1, element%shell_nthick
           ishell = fstr_shell_layer_gauss_index(element, ig, ilayer, ithick)
           if( ishell <= 0 ) cycle
-          call fstr_shell_layer_quadrature(element, ilayer, ithick, zeta_layer, weight, ierr)
-          if( ierr /= 0 ) cycle
           avg_strain(1:6) = avg_strain(1:6) &
             + element%shell_layer_gausses(ishell)%strain_out(1:6) * weight
           avg_stress(1:6) = avg_stress(1:6) &
