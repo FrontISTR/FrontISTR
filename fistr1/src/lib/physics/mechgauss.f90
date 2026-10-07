@@ -187,18 +187,31 @@ contains
   end function fstr_shell_layer_gauss_index
 
   !> Average equivalent plastic strain over the active quadrature history.
-  !> Shell elements retain history at through-thickness points when required.
+  !> Use the same thickness quadrature weights as shell stress and strain output.
   real(kind=kreal) function fstr_element_average_plstrain( element )
     type( tElement ), intent(in) :: element
-    integer(kind=kint) :: i
+    integer(kind=kint) :: i, ig, ilayer, ithick, ishell, ierr
+    real(kind=kreal) :: zeta_layer, weight, total_weight
 
     fstr_element_average_plstrain = 0.0d0
     if( associated(element%shell_layer_gausses) ) then
-      if( size(element%shell_layer_gausses) <= 0 ) return
-      do i = 1, size(element%shell_layer_gausses)
-        fstr_element_average_plstrain = fstr_element_average_plstrain+element%shell_layer_gausses(i)%plstrain
+      if( .not. associated(element%gausses) ) return
+      if( element%shell_nlayer <= 0 .or. element%shell_nthick <= 0 ) return
+      total_weight = 0.0d0
+      do ig = 1, size(element%gausses)
+        do ilayer = 1, element%shell_nlayer
+          do ithick = 1, element%shell_nthick
+            ishell = fstr_shell_layer_gauss_index(element, ig, ilayer, ithick)
+            if( ishell <= 0 ) cycle
+            call fstr_shell_layer_quadrature(element, ilayer, ithick, zeta_layer, weight, ierr)
+            if( ierr /= 0 ) cycle
+            fstr_element_average_plstrain = fstr_element_average_plstrain &
+              + element%shell_layer_gausses(ishell)%plstrain * weight
+            total_weight = total_weight + weight
+          enddo
+        enddo
       enddo
-      fstr_element_average_plstrain = fstr_element_average_plstrain/size(element%shell_layer_gausses)
+      if( total_weight > 0.0d0 ) fstr_element_average_plstrain = fstr_element_average_plstrain/total_weight
     else if( associated(element%gausses) ) then
       if( size(element%gausses) <= 0 ) return
       do i = 1, size(element%gausses)
