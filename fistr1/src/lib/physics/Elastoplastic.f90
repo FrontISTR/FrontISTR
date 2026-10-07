@@ -45,8 +45,8 @@ module m_ElastoPlastic
   integer, parameter :: DP_PLASTIC_SURF = 1
   integer, parameter :: DP_PLASTIC_APEX = 2
 
-  real(kind=kreal), parameter :: PLANE_STRESS_SHEAR_SCALE = dsqrt(5.0d0/6.0d0)
-  integer, parameter :: PLANE_STRESS_COMPONENTS(5) = (/ 1, 2, 4, 5, 6 /)
+  real(kind=kreal), parameter :: SHELL_SHEAR_CORRECTION = 5.0d0/6.0d0
+  integer, parameter :: PLANE_STRESS_COMPONENTS(3) = (/ 1, 2, 4 /)
 
 contains
 
@@ -115,13 +115,13 @@ contains
     end select
   end function PlaneStressJ2ErrorMessage
 
-  subroutine condensePlaneStressJ2Tangent( tangent3d, tangent, ierr )
+  subroutine condensePlaneStressJ2Tangent( tangent3d, shear_stiffness, tangent, ierr )
     real(kind=kreal), intent(in) :: tangent3d(6,6)
+    real(kind=kreal), intent(in) :: shear_stiffness
     real(kind=kreal), intent(out) :: tangent(5,5)
     integer(kind=kint), intent(out) :: ierr
 
     integer :: i, j, ii, jj
-    real(kind=kreal) :: scale(6)
 
     ierr = 0
     tangent = 0.0d0
@@ -134,21 +134,21 @@ contains
       return
     endif
 
-    scale = (/ 1.0d0, 1.0d0, 1.0d0, 1.0d0, &
-      PLANE_STRESS_SHEAR_SCALE, PLANE_STRESS_SHEAR_SCALE /)
-    do i = 1, 5
+    do i = 1, 3
       ii = PLANE_STRESS_COMPONENTS(i)
-      do j = 1, 5
+      do j = 1, 3
         jj = PLANE_STRESS_COMPONENTS(j)
-        tangent(i,j) = scale(ii)*tangent3d(ii,jj)*scale(jj) &
-          -scale(ii)*tangent3d(ii,3)*tangent3d(3,jj)*scale(jj)/tangent3d(3,3)
+        tangent(i,j) = tangent3d(ii,jj)-tangent3d(ii,3)*tangent3d(3,jj)/tangent3d(3,3)
       enddo
     enddo
+    tangent(4,4) = shear_stiffness
+    tangent(5,5) = shear_stiffness
   end subroutine condensePlaneStressJ2Tangent
 
   !> Return the plane-stress response of the existing three-dimensional J2
   !> perfect-plastic material update. The strain increment and stress use the
   !> shell-local engineering ordering (11, 22, 33, 12, 23, 31).
+  !> Transverse shear remains elastic and is excluded from the yield function.
   subroutine Update_PlaneStressJ2( matl, strain_increment, stress_bak, plstrain, &
       fstatus, stress, strain_increment_out, tangent, istat, fstatus_out, plpotential, energy_increment, ierr )
     type(tMaterial), intent(in) :: matl
@@ -164,7 +164,7 @@ contains
     real(kind=kreal) :: elastic(6,6), tangent3d(6,6)
     real(kind=kreal) :: strain_increment_work(6)
     real(kind=kreal) :: stress_work(6), stress_bak_work(6)
-    real(kind=kreal) :: scale(6), residual, tolerance
+    real(kind=kreal) :: shear_stiffness, residual, tolerance
 
     ierr = 0
     stress = 0.0d0
@@ -188,14 +188,14 @@ contains
     endif
     fstatus_out = fstatus
 
-    ! Work-conjugate scaling: J2 acts on stress/scale, not the returned shear stress.
-    ! The elastic transverse-shear tangent is (5/6)*G, as in LinearElastic_Shell.
-    scale = (/ 1.0d0, 1.0d0, 1.0d0, 1.0d0, &
-      PLANE_STRESS_SHEAR_SCALE, PLANE_STRESS_SHEAR_SCALE /)
-    strain_increment_work = scale*strain_increment
-    stress_bak_work = stress_bak/scale
+    ! Only the in-plane response enters the three-dimensional J2 update.
+    strain_increment_work = strain_increment
+    strain_increment_work(5:6) = 0.0d0
+    stress_bak_work = stress_bak
+    stress_bak_work(5:6) = 0.0d0
     strain_increment_work(3) = 0.0d0
     call calElasticMatrix( matl, D3, elastic, 0.0d0 )
+    shear_stiffness = SHELL_SHEAR_CORRECTION*elastic(5,5)
 
     do iter = 1, maxiter
       ! Each plane-stress iteration starts from the committed J2 state.
@@ -225,19 +225,22 @@ contains
       return
     endif
 
-    call condensePlaneStressJ2Tangent(tangent3d, tangent, ierr)
+    call condensePlaneStressJ2Tangent(tangent3d, shear_stiffness, tangent, ierr)
     if( ierr /= 0 ) return
 
-    stress = scale*stress_work
+    stress = stress_work
     stress(3) = 0.0d0
-    strain_increment_out = strain_increment_work/scale
+    stress(5:6) = stress_bak(5:6)+shear_stiffness*strain_increment(5:6)
+    strain_increment_out = strain_increment_work
+    strain_increment_out(5:6) = strain_increment(5:6)
     ! Use the elastic predictor work before applying the plastic correction.
     energy_increment = dot_product(stress_bak_work, strain_increment_work) &
-      +0.5d0*dot_product(matmul(elastic, strain_increment_work), strain_increment_work)+plpotential
+      +0.5d0*dot_product(matmul(elastic, strain_increment_work), strain_increment_work)+plpotential &
+      +dot_product(stress_bak(5:6)+0.5d0*shear_stiffness*strain_increment(5:6), strain_increment(5:6))
     if( .not. ieee_is_finite(energy_increment) ) ierr = J2_NONFINITE
   end subroutine Update_PlaneStressJ2
 
-  !> Condense the current three-dimensional J2 perfect-plastic tangent to plane stress.
+  !> Condense the in-plane J2 tangent and retain the elastic transverse-shear stiffness.
   subroutine PlaneStressJ2Tangent( matl, stress, istat, fstatus, plstrain, tangent, ierr )
     type(tMaterial), intent(in) :: matl
     real(kind=kreal), intent(in) :: stress(6), fstatus(:), plstrain
@@ -245,7 +248,7 @@ contains
     real(kind=kreal), intent(out) :: tangent(5,5)
     integer(kind=kint), intent(out) :: ierr
 
-    real(kind=kreal) :: tangent3d(6,6), stress_work(6), scale(6)
+    real(kind=kreal) :: tangent3d(6,6), stress_work(6), elastic(6,6)
 
     ierr = 0
     tangent = 0.0d0
@@ -260,11 +263,11 @@ contains
       ierr = J2_NONFINITE
       return
     endif
-    scale = (/ 1.0d0, 1.0d0, 1.0d0, 1.0d0, &
-      PLANE_STRESS_SHEAR_SCALE, PLANE_STRESS_SHEAR_SCALE /)
-    stress_work = stress/scale
+    stress_work = stress
+    stress_work(5:6) = 0.0d0
+    call calElasticMatrix( matl, D3, elastic, 0.0d0 )
     call calElastoPlasticMatrix( matl, D3, stress_work, istat, fstatus, plstrain, tangent3d, 0.0d0 )
-    call condensePlaneStressJ2Tangent(tangent3d, tangent, ierr)
+    call condensePlaneStressJ2Tangent(tangent3d, SHELL_SHEAR_CORRECTION*elastic(5,5), tangent, ierr)
   end subroutine PlaneStressJ2Tangent
 
   !> This subroutine calculates elastoplastic constitutive relation
