@@ -269,6 +269,10 @@ if(WITH_ML)
         list(APPEND FrontISTR_INCLUDE_DIRS ${Trilinos_INCLUDE_DIRS} ${Trilinos_TPL_INCLUDE_DIRS})
         list(APPEND FrontISTR_DEFINITIONS "HECMW_WITH_ML")
         list(APPEND FrontISTR_LIBRARIES ${Trilinos_LIBRARIES} ${Trilinos_TPL_LIBRARIES})
+        set(Trilinos_GENERIC_BLAS_LIBRARIES ${Trilinos_TPL_LIBRARIES})
+        list(FILTER Trilinos_GENERIC_BLAS_LIBRARIES INCLUDE REGEX
+          "^(.*/)?(-l)?(lib)?(blas|lapack)(\\..*)?$")
+        list(REMOVE_DUPLICATES Trilinos_GENERIC_BLAS_LIBRARIES)
       endif()
     else()
       if((NOT ML_ENABLE_MPI AND WITH_MPI) OR (ML_ENABLE_MPI AND NOT WITH_MPI))
@@ -353,6 +357,12 @@ if(WITH_LAPACK)
   if(LAPACK_FOUND AND BLAS_FOUND)
     list(APPEND FrontISTR_DEFINITIONS "HECMW_WITH_LAPACK")
     list(APPEND FrontISTR_LIBRARIES ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
+    # Trilinos brings the generic libblas/liblapack in front of the BLAS/LAPACK
+    # selected here, which binds every library to the generic ones at run time.
+    # CMake keeps the last of repeated libraries, so listing them again moves them behind.
+    if(Trilinos_GENERIC_BLAS_LIBRARIES)
+      list(APPEND FrontISTR_LIBRARIES ${Trilinos_GENERIC_BLAS_LIBRARIES})
+    endif()
   else()
     set(WITH_LAPACK OFF)
   endif()
@@ -409,6 +419,19 @@ endif()
 # stays defined in one place.
 list(APPEND FrontISTR_DEFINITIONS "HECMW_ARCH_DEFAULT_MATVEC_IMPL=HECMW_MATVEC_IMPL_${ARCH_DEFAULT_FORMAT}")
 list(APPEND FrontISTR_DEFINITIONS "HECMW_ARCH_DEFAULT_PRECOND_IMPL=HECMW_PRECOND_IMPL_${ARCH_DEFAULT_FORMAT}")
+# The tuned implementations of a machine are compiled in under #ifdef HECMW_ARCH_<ARCH>.
+# GENERIC names no machine, so it defines nothing and builds the sources unchanged.
+if(NOT ARCH STREQUAL "GENERIC")
+  list(APPEND FrontISTR_DEFINITIONS "HECMW_ARCH_${ARCH}")
+endif()
+# What the #ifdef above brings in, one line each for the summary
+set(ARCH_TUNED_ITEMS "")
+if(ARCH STREQUAL "FX64")
+  list(APPEND ARCH_TUNED_ITEMS "CSR matvec (NDOF=3)")
+  list(APPEND ARCH_TUNED_ITEMS "CSR SSOR preconditioner (NDOF=3)")
+  list(APPEND ARCH_TUNED_ITEMS "explicit-shape vectors in hecmw_precond_apply")
+  list(APPEND ARCH_TUNED_ITEMS "node-weighted METIS partitioning in hecmw_part1")
+endif()
 
 ###################
 # -DWITH_MPI
@@ -487,6 +510,12 @@ if(NOT ARCH STREQUAL "GENERIC")
   message(STATUS " Architecture-tuned build is ENABLED")
   message(STATUS "   ARCH = ${ARCH}")
   message(STATUS "   default MATRIXFORMAT = ${ARCH_DEFAULT_FORMAT}")
+  if(ARCH_TUNED_ITEMS)
+    message(STATUS " Compiled in for ${ARCH}:")
+    foreach(item IN LISTS ARCH_TUNED_ITEMS)
+      message(STATUS "   ${item}")
+    endforeach()
+  endif()
   message(STATUS " Implementations tuned for other")
   message(STATUS " architectures are not built in.")
   message(STATUS " !SOLVER, MATRIXFORMAT= picks among")

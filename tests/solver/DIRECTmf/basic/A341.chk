@@ -1,0 +1,3 @@
+# the LOGLEVEL=2 diagnostics must run and pass (the built-in comparison is serial only)
+\[DIRECTmf\]: self check violations = 0
+np1:\[DIRECTmf\]: mismatches against built-in DIRECT = 0

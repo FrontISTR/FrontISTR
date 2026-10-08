@@ -1,0 +1,36 @@
+###############################################
+## Dynamic implicit analysis: truss 301 with lumped mass (idx_mas=1)
+## Bar of four 301 elements fixed at one end under an axial tip step load.
+## The element mass enters the equation of motion, so the bar vibrates
+## about the static solution instead of being solved quasi-statically.
+## The load is kept small since the 301 internal force uses the logarithmic
+## strain of the current length.
+###############################################
+!SOLUTION, TYPE=DYNAMIC
+!DYNAMIC
+ 1, 1
+ 0.0, 10.0, 10, 1.0
+ 0.5, 0.25
+ 1, 1, 0.0, 0.0
+ 100, TIP, 1
+ 1, 1, 1, 1, 1, 1
+!BOUNDARY
+ FIX, 1, 1, 0.0
+ LINE, 2, 3, 0.0
+!CLOAD
+ TIP, 1, 1.0E-05
+!MATERIAL, NAME=M1
+!ELASTIC
+ 1.00000000E+00, 0.00000000E+00
+!DENSITY
+ 1.00000000E+00
+!SOLVER,METHOD=CG,PRECOND=1,ITERLOG=NO,TIMELOG=NO
+ 500000, 2
+ 1.00e-10, 1.00, 0.0
+!STEP
+!WRITE,RESULT,FREQUENCY=5
+!OUTPUT_RES
+ DISP,ON
+ VEL,ON
+ ACC,ON
+!END

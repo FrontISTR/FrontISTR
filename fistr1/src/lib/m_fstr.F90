@@ -69,6 +69,10 @@ module m_fstr
   integer(kind=kint), parameter :: kbcInitial   =  1
   integer(kind=kint), parameter :: kbcTransit   =  2
 
+  !> mass matrix type
+  integer(kind=kint), parameter :: kMassLumped     = 1
+  integer(kind=kint), parameter :: kMassConsistent = 2
+
   !> restart type
   integer(kind=kint), parameter :: restart_outLast = 1
   integer(kind=kint), parameter :: restart_outAll  = 2
@@ -415,7 +419,7 @@ module m_fstr
     logical :: has_finite_rotation_kinematics
     logical :: finite_rotation_state_ready
     integer(kind=kint), pointer :: shell_node_mode(:) => null() !< 0:inactive, 1:finite-rotation shell node
-    integer(kind=kint), pointer :: shell_rot_state(:) => null() !< 0:inactive, 1:MITC4
+    integer(kind=kint), pointer :: shell_rot_state(:) => null() !< 0:inactive, 1:initialized finite-rotation shell node
     real(kind=kreal), pointer :: shell_ref_triad(:) => null()   !< reference shell nodal triads, fixed after initialization
     real(kind=kreal), pointer :: shell_triad(:)     => null()   !< converged shell nodal triads, 9 values/node
     real(kind=kreal), pointer :: shell_triad_bak(:) => null()   !< shell nodal triads at the beginning of curr step
@@ -562,7 +566,7 @@ module m_fstr
     real(kind=kreal)   :: beta          ! Newmark-beta parameter beta
 
     !> mass matrix control
-    integer(kind=kint) :: idx_mas       ! mass matrix type
+    integer(kind=kint) :: idx_mas       ! kMassLumped or kMassConsistent
 
     !> damping control
     integer(kind=kint) :: idx_dmp      ! damping type

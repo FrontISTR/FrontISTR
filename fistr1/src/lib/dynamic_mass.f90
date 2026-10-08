@@ -8,7 +8,7 @@ module m_dynamic_mass
 
 contains
 
-  subroutine mass_C2(etype, nn, ecoord, gausses, sec_opt, thick, mass, lumped, temperature)
+  subroutine mass_C2(etype, nn, ecoord, gausses, sec_opt, thick, mass, lumped, temperature, is_lumped)
     use mMechGauss
     use m_MatMatrix
     use elementInfo
@@ -20,6 +20,7 @@ contains
     real(kind=kreal), intent(out) :: mass(:,:)              !< mass matrix
     real(kind=kreal), intent(out) :: lumped(:)              !< mass matrix
     real(kind=kreal), intent(in), optional :: temperature(nn) !< temperature
+    logical, intent(in), optional :: is_lumped
     type(tMaterial), pointer :: matl !< material information
     integer(kind=kint), parameter :: ndof = 2
     integer(kind=kint) :: i, j, LX, sec_opt
@@ -28,7 +29,7 @@ contains
     real(kind=kreal) :: det, wg, rho
     real(kind=kreal) :: D(2,2), N(2, nn*ndof), DN(2, nn*ndof)
     real(kind=kreal) :: gderiv(nn,2)
-    logical :: is_lumped
+    logical :: do_lumping
 
     mass(:,:) = 0.0d0
     lumped = 0.0d0
@@ -78,11 +79,12 @@ contains
       enddo
     enddo
 
-    is_lumped = .true.
-    if(is_lumped) call get_lumped_mass(nn, ndof, mass, lumped)
+    do_lumping = .true.
+    if(present(is_lumped)) do_lumping = is_lumped
+    if(do_lumping) call get_lumped_mass(nn, ndof, mass, lumped)
   end subroutine mass_C2
 
-  subroutine mass_C3(etype, nn, ecoord, gausses, mass, lumped, temperature)
+  subroutine mass_C3(etype, nn, ecoord, gausses, mass, lumped, temperature, is_lumped)
     use mMechGauss
     use m_MatMatrix
     use elementInfo
@@ -94,6 +96,7 @@ contains
     real(kind=kreal), intent(out) :: mass(:,:)              !< mass matrix
     real(kind=kreal), intent(out) :: lumped(:)              !< mass matrix
     real(kind=kreal), intent(in), optional :: temperature(nn) !< temperature
+    logical, intent(in), optional :: is_lumped
     type(tMaterial), pointer :: matl !< material information
     integer(kind=kint), parameter :: ndof = 3
     integer(kind=kint) :: i, j, LX
@@ -102,7 +105,7 @@ contains
     real(kind=kreal) :: det, wg, rho
     real(kind=kreal) :: D(3, 3), N(3, nn*ndof), DN(3, nn*ndof)
     real(kind=kreal) :: gderiv(nn, 3)
-    logical :: is_lumped
+    logical :: do_lumping
 
     mass(:,:) = 0.0d0
     lumped = 0.0d0
@@ -152,8 +155,9 @@ contains
       enddo
     enddo
 
-    is_lumped = .true.
-    if(is_lumped) call get_lumped_mass(nn, ndof, mass, lumped)
+    do_lumping = .true.
+    if(present(is_lumped)) do_lumping = is_lumped
+    if(do_lumping) call get_lumped_mass(nn, ndof, mass, lumped)
   end subroutine mass_C3
 
   subroutine mass_S3(surf, thick, rho, mass)

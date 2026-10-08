@@ -26,6 +26,12 @@ module hecmw_solver_las_33
   ! a format may be selected on a build that carries no matvec for it; saying so once
   ! per run keeps the fallback from looking like the requested format took effect
   logical, save :: matvec_impl_missing_reported = .false.
+#ifdef HECMW_ARCH_FX64
+
+  integer(kind=kint), save :: N, NP, NZIN
+  integer(kind=kint), allocatable, save :: index_i(:), item_i(:)
+  real(kind=kreal), allocatable, save   :: A_i(:)
+#endif
 
   ! added for tuning >>>
   integer, parameter :: numOfBlockPerThread = 100
@@ -53,7 +59,94 @@ contains
     if (hecmw_JAD_IS_INITIALIZED().ne.0) return
 
     matvec_impl = hecmw_mat_get_matvec_impl(hecMAT)
+    if (matvec_impl == HECMW_MATVEC_IMPL_CSR) call hecmw_matvec_setup_33(hecMESH, hecMAT)
   end subroutine hecmw_matvec_33_setup
+
+  subroutine hecmw_matvec_setup_33 (hecMESH, hecMAT)
+    use hecmw_jad_type
+    use hecmw_matrix_misc
+    implicit none
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    type (hecmwST_matrix), intent(in), target :: hecMAT
+#ifdef HECMW_ARCH_FX64
+
+    integer(kind=kint) :: i, j, k
+
+    if (hecmw_JAD_IS_INITIALIZED().ne.0) return
+
+    N = hecMAT%N
+    NP = hecMAT%NP
+    if( allocated(index_i) ) deallocate(index_i)
+    if( allocated(item_i) ) deallocate(item_i)
+    if( allocated(A_i) ) deallocate(A_i)
+    !if( allocated(index_o) ) deallocate(index_o)
+    !if( allocated(item_o) ) deallocate(item_o)
+    !if( allocated(A_o) ) deallocate(A_o)
+
+    !count nonzero elements
+    NZIN = hecMAT%indexL(N) + N + hecMAT%indexU(N)
+    !NZOUT = 0
+    !! upper
+    !do i=1,N
+    !  do k=hecMAT%indexU(i-1)+1,hecMAT%indexU(i)
+    !    j = hecMAT%itemU(k)
+    !    if( j > N ) NZOUT = NZOUT + 1
+    !  end do
+    !end do
+    !NZIN = NZIN - NZOUT
+
+    allocate(index_i(0:N),item_i(3*NZIN),A_i(9*NZIN))
+    !allocate(index_o(0:N),item_o(3*NZOUT),A_o(9*NZOUT))
+
+    ! set value
+    NZIN = 0
+    !NZOUT = 0
+    index_i(0) = 0
+    !index_o(0) = 0
+    do i=1,N
+      ! lower
+      do k=hecMAT%indexL(i-1)+1,hecMAT%indexL(i)
+        j = hecMAT%itemL(k)
+        item_i(NZIN+1) = 3*j-2
+        item_i(NZIN+2) = 3*j-1
+        item_i(NZIN+3) = 3*j
+        NZIN = NZIN + 3
+        A_i(3*NZIN-8:3*NZIN) = hecMAT%AL(9*k-8:9*k)
+        call hecmw_mat_block_transpose_33(A_i(3*NZIN-8:3*NZIN))
+      end do
+      ! diag
+      item_i(NZIN+1) = 3*i-2
+      item_i(NZIN+2) = 3*i-1
+      item_i(NZIN+3) = 3*i
+      NZIN = NZIN + 3
+      A_i(3*NZIN-8:3*NZIN) = hecMAT%D(9*i-8:9*i)
+      call hecmw_mat_block_transpose_33(A_i(3*NZIN-8:3*NZIN))
+      ! upper
+      do k=hecMAT%indexU(i-1)+1,hecMAT%indexU(i)
+        j = hecMAT%itemU(k)
+        !if( j > N ) then
+        !  item_o(NZOUT+1) = 3*j-2
+        !  item_o(NZOUT+2) = 3*j-1
+        !  item_o(NZOUT+3) = 3*j
+        !  NZOUT = NZOUT + 3
+        !  A_o(3*NZOUT-8:3*NZOUT) = hecMAT%AU(9*k-8:9*k)
+        !  call hecmw_mat_block_transpose_33(A_o(3*NZOUT-8:3*NZOUT))
+        !else
+          item_i(NZIN+1) = 3*j-2
+          item_i(NZIN+2) = 3*j-1
+          item_i(NZIN+3) = 3*j
+          NZIN = NZIN + 3
+          A_i(3*NZIN-8:3*NZIN) = hecMAT%AU(9*k-8:9*k)
+          call hecmw_mat_block_transpose_33(A_i(3*NZIN-8:3*NZIN))
+        !end if
+      end do
+
+      index_i(i) = NZIN
+      !index_o(i) = NZOUT
+    end do
+
+#endif
+  end subroutine hecmw_matvec_setup_33
 
   !C
   !C***
@@ -63,6 +156,11 @@ contains
   subroutine hecmw_matvec_33_teardown
     implicit none
 
+#ifdef HECMW_ARCH_FX64
+    if( allocated(index_i) ) deallocate(index_i)
+    if( allocated(item_i) ) deallocate(item_i)
+    if( allocated(A_i) ) deallocate(A_i)
+#endif
     matvec_impl = HECMW_MATVEC_IMPL_BSR
   end subroutine hecmw_matvec_33_teardown
 
@@ -97,6 +195,10 @@ contains
       select case (matvec_impl)
         case (HECMW_MATVEC_IMPL_BSR)
           call hecmw_matvec_33_generic(hecMESH, hecMAT, X, Y, time_Ax, COMMtime)
+#ifdef HECMW_ARCH_FX64
+        case (HECMW_MATVEC_IMPL_CSR)
+          call hecmw_matvec_33_csr(hecMESH, hecMAT, X, Y, time_Ax, COMMtime)
+#endif
         case default
           if (.not. matvec_impl_missing_reported) then
             matvec_impl_missing_reported = .true.
@@ -264,6 +366,148 @@ contains
     time_Ax = time_Ax + END_TIME - START_TIME
 
   end subroutine hecmw_matvec_33_generic
+
+  !C
+  !C***
+  !C*** hecmw_matvec_33_csr ( private subroutine )
+  !C***
+  !C
+  subroutine hecmw_matvec_33_csr (hecMESH, hecMAT, X, Y, time_Ax, COMMtime)
+    use hecmw_util
+    use m_hecmw_comm_f
+
+    implicit none
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    type (hecmwST_matrix), intent(in), target :: hecMAT
+    real(kind=kreal), intent(inout) :: X(:)
+    real(kind=kreal), intent(out) :: Y(:)
+    real(kind=kreal), intent(inout) :: time_Ax
+    real(kind=kreal), intent(inout), optional :: COMMtime
+#ifdef HECMW_ARCH_FX64
+
+    real(kind=kreal) :: START_TIME, END_TIME
+    integer(kind=kint) :: N, NP
+    integer(kind=kint) :: numOfBlock
+
+    N = hecMAT%N
+    NP = hecMAT%NP
+
+    ! added for tuning >>>
+    if (.not. isFirst) then
+      numOfBlock = numOfThread * numOfBlockPerThread
+      if (endPos(numOfBlock-1) .ne. N-1) then
+        deallocate(startPos, endPos)
+        isFirst = .true.
+      endif
+    endif
+    if (isFirst) then
+      call setup_tuning_parameters(N, NP, hecMAT%indexL, hecMAT%indexU)
+      isFirst = .false.
+    endif
+    numOfBlock = numOfThread * numOfBlockPerThread
+    ! <<< added for tuning
+
+    START_TIME= HECMW_WTIME()
+    call hecmw_update_R (hecMESH, X, NP, 3)
+    END_TIME= HECMW_WTIME()
+    if (present(COMMtime)) COMMtime = COMMtime + END_TIME - START_TIME
+
+    START_TIME = hecmw_Wtime()
+
+    !OCL CACHE_SECTOR_SIZE(sectorCacheSize0,sectorCacheSize1)
+    call hecmw_matvec_33_core(N,NP,NZIN,X,Y,A_i,item_i,index_i, &
+      numOfBlock,numOfThread,startPos,endPos)
+
+    !OCL END_CACHE_SECTOR_SIZE
+
+    END_TIME = hecmw_Wtime()
+    time_Ax = time_Ax + END_TIME - START_TIME
+
+#endif
+  end subroutine hecmw_matvec_33_csr
+
+  subroutine hecmw_matvec_33_core(N,NP,NNZ,X,Y,aval,item,idx,numOfBlock,numOfThread,startPos,endPos)
+    !$ use omp_lib
+    integer(kind=kint), intent(in)  :: N
+    integer(kind=kint), intent(in)  :: NP
+    integer(kind=kint), intent(in)  :: NNZ
+    real(kind=kreal), intent(in)    :: X(3*NP)
+    real(kind=kreal), intent(inout) :: Y(3*N)
+    real(kind=kreal), intent(in)    :: aval(3*NNZ)
+    integer(kind=kint), intent(in)  :: item(NNZ)
+    integer(kind=kint), intent(in)  :: idx(0:N)
+    integer(kind=kint), intent(in)  :: numOfBlock
+    integer(kind=kint), intent(in)  :: numOfThread
+    integer(kind=kint), intent(in)  :: startPos(0:numOfBlock)
+    integer(kind=kint), intent(in)  :: endPos(0:numOfBlock)
+#ifdef HECMW_ARCH_FX64
+
+    integer(kind=kint) :: i, j, jS, jE, in
+    real(kind=kreal) :: YV1, YV2, YV3, X1
+    integer(kind=kint) :: threadNum, blockNum, blockIndex
+
+    !call fapp_start("loopInMatvec33", 1, 0)
+    !call start_collection("loopInMatvec33")
+
+    !OCL CACHE_SUBSECTOR_ASSIGN(X)
+
+    if( numOfThread > 1 ) then
+
+    !$OMP PARALLEL DEFAULT(NONE) &
+      !$OMP&PRIVATE(i,X1,YV1,YV2,YV3,j,threadNum,blockNum,blockIndex) &
+      !$OMP&SHARED(aval,item,idx,X,Y,startPos,endPos,numOfThread)
+    threadNum = 0
+    !$ threadNum = omp_get_thread_num()
+    do blockNum = 0 , numOfBlockPerThread - 1
+      blockIndex = blockNum * numOfThread  + threadNum
+      do i = startPos(blockIndex), endPos(blockIndex)
+        YV1= 0.d0
+        YV2= 0.d0
+        YV3= 0.d0
+
+        do j= idx(i-1)+1, idx(i)
+          X1= X(item(j))
+          YV1= YV1 + aval(3*j-2)*X1
+          YV2= YV2 + aval(3*j-1)*X1
+          YV3= YV3 + aval(3*j  )*X1
+        enddo
+
+        Y(3*i-2) = YV1
+        Y(3*i-1) = YV2
+        Y(3*i  ) = YV3
+      enddo
+    enddo
+    !$OMP END PARALLEL
+
+    else
+
+      do i = 1, N
+        YV1= 0.d0
+        YV2= 0.d0
+        YV3= 0.d0
+
+        do j= idx(i-1)+1, idx(i)
+          X1= X(item(j))
+          YV1= YV1 + aval(3*j-2)*X1
+          YV2= YV2 + aval(3*j-1)*X1
+          YV3= YV3 + aval(3*j  )*X1
+        enddo
+
+        Y(3*i-2)= YV1
+        Y(3*i-1)= YV2
+        Y(3*i  )= YV3
+      enddo
+
+    end if
+
+
+    !OCL END_CACHE_SUBSECTOR
+
+    !call stop_collection("loopInMatvec33")
+    !call fapp_stop("loopInMatvec33", 1, 0)
+
+#endif
+  end subroutine
 
   subroutine setup_tuning_parameters(N, NP, indexL, indexU)
     use hecmw_tuning_fx

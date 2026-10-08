@@ -16,6 +16,7 @@ contains
     use hecmw_solver_direct_MUMPS
     use hecmw_solver_direct_MKL
     use hecmw_solver_direct_clusterMKL
+    use hecmw_solver_direct_mf
     use hecmw_matrix_misc
     use m_hecmw_comm_f
     implicit none
@@ -60,6 +61,8 @@ contains
           endif
         elseif (hecMAT%Iarray(2) .eq. 104) then
           call hecmw_solve_direct_MUMPS(hecMESH, hecMAT)
+        elseif (hecMAT%Iarray(2) .eq. 106) then
+          call hecmw_solve_direct_mf(hecMESH,hecMAT,imsg)
         else
           if(hecMESH%PETOT.GT.1) then
             call hecmw_solve_direct_parallel(hecMESH,hecMAT,imsg)

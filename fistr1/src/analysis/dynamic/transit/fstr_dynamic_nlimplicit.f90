@@ -111,27 +111,29 @@ contains
       call hecmw_abort( hecmw_comm_get_comm())
     endif
 
-    !C-- matrix [M] lumped mass matrix
-    if(fstrDYNAMIC%idx_mas == 1) then
-      call setMASS(fstrSOLID,hecMESH,hecMAT,fstrEIG)
-
-    !C-- consistent mass matrix
-    else if(fstrDYNAMIC%idx_mas == 2) then
-      if( hecMESH%my_rank .eq. 0 ) then
-        write(imsg,*) 'stop: consistent mass matrix is not yet available !'
-      endif
-      call hecmw_abort( hecmw_comm_get_comm())
-    endif
+    call setMASS(fstrSOLID,hecMESH,hecMAT,fstrEIG)
+    call fstr_report_lumped_mass_fallback( hecMESH, fstrDYNAMIC )
 
     hecMAT%Iarray(98) = 1   !Assembly complete
     hecMAT%Iarray(97) = 1   !Need numerical factorization
 
     !C-- initialize variables
-    if( restart_step_num == 1 .and. fstrDYNAMIC%VarInitialize .and. abs(fstrDYNAMIC%ray_m) > 1.0d-15 ) &
+    if( restart_step_num == 1 .and. fstrDYNAMIC%VarInitialize .and. abs(fstrDYNAMIC%ray_m) > 1.0d-15 ) then
+      ! dynamic_init_varibles solves for the initial values with the lumped mass only
+      if( fstrDYNAMIC%idx_mas == kMassConsistent ) then
+        if( hecMESH%my_rank == 0 ) then
+          write(imsg,*) 'stop: initial velocity or acceleration with mass-proportional damping'// &
+            ' is not available for consistent mass matrix !'
+        endif
+        call hecmw_abort( hecmw_comm_get_comm())
+      endif
       call dynamic_init_varibles( hecMESH, hecMAT, fstrSOLID, fstrEIG, fstrDYNAMIC, fstrPARAM )
+    endif
 
     !C-- output of initial state
     if( restart_step_num == 1 ) then
+      fstrDYNAMIC%kineticEnergy = fstr_calc_kinetic_energy( &
+        hecMESH, fstrSOLID, fstrDYNAMIC, fstrDYNAMIC%VEL(:,1))
       call fstr_dynamic_Output(1, 0, 0.d0, hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM, .true.)
       call dynamic_output_monit(1, 0, 0.d0, hecMESH, fstrPARAM, fstrDYNAMIC, fstrEIG, fstrSOLID)
     endif
@@ -179,7 +181,7 @@ contains
         fstrDYNAMIC%t_curr = fstr_get_time()
         fstrDYNAMIC%t_delta = fstr_get_timeinc()
 
-        call fstr_Newton_dynamic_contactSLag(tot_step, hecMESH, hecMAT, fstrSOLID, fstrEIG, &
+        call fstr_Newton_dynamic_contactSLag(tot_step, hecMESH, hecMAT, fstrSOLID, &
             fstrDYNAMIC, fstrPARAM, fstrCPL, hecLagMAT, infoCTChange, conMAT, &
             restart_step_num, hecMAT0, sub_step, fstrDYNAMIC%t_curr, fstrDYNAMIC%t_delta)
 
@@ -204,7 +206,7 @@ contains
               call fstr_abort( HECMW_EXIT_NOCONV )
             endif
             call fstr_cutback_load( fstrSOLID, infoCTChange, infoCTChange_bak )  ! load analysis state
-            call fstr_set_contact_active( infoCTChange%contactNode_current > 0 )
+            call fstr_set_contact_active( infoCTChange%active )
 
             ! restore matrix structure for slagrange contact analysis
             if( is_interaction_active ) then
@@ -297,7 +299,7 @@ contains
 
   end subroutine FSTR_SOLVE_NLGEOM_DYNAMIC_IMPLICIT_CONTACTSLAG
 
-  subroutine fstr_Newton_dynamic_contactSLag(cstep, hecMESH, hecMAT, fstrSOLID, fstrEIG, &
+  subroutine fstr_Newton_dynamic_contactSLag(cstep, hecMESH, hecMAT, fstrSOLID, &
       fstrDYNAMIC, fstrPARAM, fstrCPL, hecLagMAT, infoCTChange, conMAT, &
       restart_step_num, hecMAT0, istep, t_curr, t_delta)
     implicit none
@@ -308,7 +310,6 @@ contains
     type(hecmwST_matrix)                 :: hecMAT
     type(hecmwST_matrix), pointer        :: hecMAT0
     type(fstr_solid)                     :: fstrSOLID
-    type(fstr_eigen)                     :: fstrEIG
     type(fstr_dynamic)                   :: fstrDYNAMIC
     type(fstr_param)                     :: fstrPARAM
     type(fstr_couple)                    :: fstrCPL
@@ -546,10 +547,9 @@ contains
 
       fstrSOLID%unode(j)  = fstrSOLID%unode(j)+fstrSOLID%dunode(j)
       fstrDYNAMIC%DISP(j,2) = fstrSOLID%unode(j)
-
-      fstrDYNAMIC%kineticEnergy = fstrDYNAMIC%kineticEnergy + &
-        0.5d0*fstrEIG%mass(j)*fstrDYNAMIC%VEL(j,2)*fstrDYNAMIC%VEL(j,2)
     enddo
+    fstrDYNAMIC%kineticEnergy = fstr_calc_kinetic_energy( &
+      hecMESH, fstrSOLID, fstrDYNAMIC, fstrDYNAMIC%VEL(:,2))
 
     call fstr_UpdateState( hecMESH, fstrSOLID, t_delta )
     call fstr_update_contact_TangentForce( cstep, fstrSOLID )

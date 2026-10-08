@@ -44,7 +44,6 @@ contains
     real(kind=kreal)   :: ctime, dtime, endtime, factor
     real(kind=kreal)   :: time_1, time_2
     logical            :: ctchanged, is_OutPoint, is_interaction_active
-    logical            :: contact_active_bak   ! last scan-set contact_active, retained across cutback restore
 
     if(hecMESH%my_rank==0) call fstr_TimeInc_PrintSTATUS_init
 
@@ -108,8 +107,8 @@ contains
     fstrSOLID%FACTOR = 0.0d0
     call fstr_begin_nodal_kinematics_step( hecMESH, fstrSOLID, hecMAT%NDOF )
     call fstr_cutback_init( hecMESH, fstrSOLID, fstrPARAM )
+    infoCTChange%active = .true.
     call fstr_cutback_save( fstrSOLID, infoCTChange, infoCTChange_bak )
-    contact_active_bak = .true.
 
     do tot_step=1, fstrSOLID%nstep_tot
       tot_step_print = tot_step+restart_step_num-1
@@ -183,7 +182,6 @@ contains
 
           if( fstrSOLID%CutBack_stat == 0 ) then ! converged
             call fstr_cutback_save( fstrSOLID, infoCTChange, infoCTChange_bak )  ! save analysis state
-            contact_active_bak = fstr_is_contact_active()   ! retain scan-set active for cutback restore
             call fstr_proceed_time()             ! current time += time increment
 
           else                                   ! not converged
@@ -196,10 +194,10 @@ contains
               call fstr_abort( HECMW_EXIT_NOCONV )
             endif
             call fstr_cutback_load( fstrSOLID, infoCTChange, infoCTChange_bak )  ! load analysis state
-            call fstr_set_contact_active( contact_active_bak )   ! restore last scan-set active
 
             ! restore matrix structure for slagrange contact analysis
             if( is_interaction_active ) then
+              call fstr_set_contact_active( infoCTChange%active )   ! restore last scan-set active
               call fstr_mat_con_contact( tot_step, fstrPARAM%contact_algo, hecMAT, fstrSOLID, hecLagMAT, &
                 &  infoCTChange, conMAT, fstr_is_contact_active())
               conMAT%B(:) = 0.0d0

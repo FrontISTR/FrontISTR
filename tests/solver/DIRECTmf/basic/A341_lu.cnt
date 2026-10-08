@@ -1,0 +1,16 @@
+!! Multifrontal direct solver (METHOD=DIRECTmf), forced LU: solves the same symmetric system
+!! as A341 with the LU mode forced by the option line (MF_Mode=2) and must match the same
+!! reference, so the option-line override of the automatic mode selection is tested.
+!BOUNDARY
+  FIX, 1, 3,   0.0
+!CLOAD
+  CL1,    3,  -1.0
+!!
+!! SOLVER CONTROL
+!!
+!SOLVER,METHOD=DIRECTmf,ITERLOG=YES,TIMELOG=YES,LOGLEVEL=1
+ 10000, 1
+ 1.0e-8, 1.0, 0.0
+ 0, 2
+!WRITE,RESULT
+!END

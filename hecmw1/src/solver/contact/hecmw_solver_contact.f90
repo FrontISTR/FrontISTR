@@ -12,6 +12,7 @@ module m_solve_LINEQ_contact
   use m_solve_LINEQ_MKL_contact
   use m_solve_LINEQ_direct_serial_lag
   use m_solve_LINEQ_MUMPS_contact
+  use m_solve_LINEQ_mf_contact
   use m_solve_LINEQ_contact_elim
   use hecmw_matrix_misc
   use m_hecmw_comm_f
@@ -50,6 +51,15 @@ contains
       call hecmw_mat_set_contact_elim(hecMAT,contact_elim)
     endif
 
+    ! without a Lagrange multiplier anywhere (ALAGRANGE, or SLAGRANGE before any activation)
+    ! there is no saddle point part to keep, so the single-process limitation of the
+    ! no-elimination DIRECTmf path does not apply: the elimination path solves the plain
+    ! distributed matrix as is. The stored CONTACT_ELIM is not changed, so the limitation
+    ! still guards the solves after multipliers appear.
+    if( contact_elim/=1 .and. solver_type==7 .and. hecmw_comm_get_size() > 1 )then
+      if( .not. any_lagrange(hecMESH, hecLagMAT) ) contact_elim = 1
+    endif
+
     if( contact_elim==1 )then
       if( writelog ) write(*,*) 'solve contact with elimination'
       call solve_LINEQ_contact_elim_init(hecMESH,hecMAT,hecLagMAT,is_sym)
@@ -64,6 +74,17 @@ contains
         call solve_LINEQ_MKL_contact_init(hecMESH,is_sym)
       elseif( solver_type==5 ) then
         call solve_LINEQ_mumps_contact_init(hecMESH,hecMAT,hecLagMAT,is_sym)
+      elseif( solver_type==7 ) then
+        if( hecmw_comm_get_size() > 1) then
+          write(*,*) 'ERROR: !SOLVER,METHOD=DIRECTmf not available in parallel contact analysis',&
+              ' without elimination; specify CONTACT_ELIM=1 or use MUMPS or DIRECTmkl instead'
+          call hecmw_abort(hecmw_comm_get_comm())
+        endif
+        call solve_LINEQ_mf_contact_init(hecMESH,hecMAT,hecLagMAT,is_sym)
+      else
+        write(*,*) 'ERROR: specified solver not available in contact analysis without elimination;',&
+            ' please use MUMPS or DIRECTmkl instead'
+        call hecmw_abort(hecmw_comm_get_comm())
       endif
     endif
   end subroutine solve_LINEQ_contact_init
@@ -88,6 +109,11 @@ contains
 
     contact_elim = hecmw_mat_get_contact_elim(hecMAT)
     solver_type = hecmw_mat_get_solver_type(hecMAT)
+
+    ! the same bypass as the init: no multiplier anywhere means no saddle point part
+    if( contact_elim/=1 .and. solver_type==7 .and. hecmw_comm_get_size() > 1 )then
+      if( .not. any_lagrange(hecMESH, hecLagMAT) ) contact_elim = 1
+    endif
 
     factor = 1.0d0
     if( present(rf) )factor = rf
@@ -124,6 +150,19 @@ contains
         endif
       elseif( solver_type==5 ) then
         call solve_LINEQ_mumps_contact(hecMESH,hecMAT,hecLagMAT,hecEBC,istat,conMAT)
+      elseif( solver_type==7 ) then
+        if( hecmw_comm_get_size() > 1) then
+          write(*,*) 'ERROR: !SOLVER,METHOD=DIRECTmf not available in parallel contact analysis',&
+              ' without elimination; specify CONTACT_ELIM=1 or use MUMPS or DIRECTmkl instead'
+          call hecmw_abort(hecmw_comm_get_comm())
+        else
+          call add_conMAT_to_hecMAT(hecMAT,conMAT,hecLagMat)
+          call solve_LINEQ_mf_contact(hecMESH,hecMAT,hecLagMAT,hecEBC,istat)
+        endif
+      else
+        write(*,*) 'ERROR: specified solver not available in contact analysis without elimination;',&
+            ' please use MUMPS or DIRECTmkl instead'
+        call hecmw_abort(hecmw_comm_get_comm())
       endif
     endif
 
@@ -138,6 +177,18 @@ contains
     hecMAT%X=factor*hecMAT%X
 
   end subroutine solve_LINEQ_contact
+
+
+  !> a Lagrange multiplier exists on some rank (the saddle point part is present)
+  logical function any_lagrange(hecMESH, hecLagMAT)
+    type (hecmwST_local_mesh)      :: hecMESH
+    type (hecmwST_matrix_lagrange) :: hecLagMAT
+    integer(kind=kint) :: n
+
+    n = hecLagMAT%num_lagrange
+    call hecmw_allreduce_I1(hecMESH, n, hecmw_max)
+    any_lagrange = n > 0
+  end function any_lagrange
 
 
   subroutine add_conMAT_to_hecMAT(hecMAT,conMAT,hecLagMat)

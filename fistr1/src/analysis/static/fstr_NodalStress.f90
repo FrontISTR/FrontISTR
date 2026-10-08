@@ -189,6 +189,8 @@ contains
           call fstr_getavg_shell(4,fstrSOLID,icel,nodLOCAL,ndstrain(1:4,1:6),ndstress(1:4,1:6),estrain,estress)
 
         elseif( ic_type == 761) then !<3*3 shell section
+          triad_cur = 0.0D0
+          triad_ref = 0.0D0
           do j = 1, 3
             nodLOCAL(j  ) = hecMESH%elem_node_item(jS+j  )
             nodLOCAL(j+3) = hecMESH%elem_node_item(jS+j+3)
@@ -197,15 +199,30 @@ contains
             ecoord(1:3,j+3) = hecMESH%node(3*nodLOCAL(j+3)-2:3*nodLOCAL(j+3))
             edisp(6*j-5:6*j-3) = fstrSOLID%unode(3*nodLOCAL(j  )-2:3*nodLOCAL(j  ))
             edisp(6*j-2:6*j  ) = fstrSOLID%unode(3*nodLOCAL(j+3)-2:3*nodLOCAL(j+3))
+            nbase = 9*(nodLOCAL(j+3)-1)
+            if( associated(fstrSOLID%shell_triad) )     triad_cur(1:9,j) = fstrSOLID%shell_triad(nbase+1:nbase+9)
+            if( associated(fstrSOLID%shell_ref_triad) ) triad_ref(1:9,j) = fstrSOLID%shell_ref_triad(nbase+1:nbase+9)
           enddo
           ntot_lyr = fstrSOLID%elements(icel)%gausses(1)%pMaterial%totallyr
           do nlyr=1,ntot_lyr
-            call ElementStress_Shell_MITC( 731, 3, 6, ecoord, fstrSOLID%elements(icel)%gausses, edisp, &
-              & ndstrain(1:3,1:6), ndstress(1:3,1:6), thick, 1.0d0, nlyr)
+            if( associated(fstrSOLID%shell_triad) ) then
+              call ElementStress_Shell_MITC( 731, 3, 6, ecoord, fstrSOLID%elements(icel)%gausses, edisp, &
+                ndstrain(1:3,1:6), ndstress(1:3,1:6), thick, 1.0d0, nlyr, &
+                ndtriad=triad_cur(1:9,1:3), ndreftriad=triad_ref(1:9,1:3))
+            else
+              call ElementStress_Shell_MITC( 731, 3, 6, ecoord, fstrSOLID%elements(icel)%gausses, edisp, &
+                ndstrain(1:3,1:6), ndstress(1:3,1:6), thick, 1.0d0, nlyr)
+            endif
             call fstr_Stress_add_shelllyr(3,fstrSOLID,icel,nodLOCAL,nlyr,ndstrain(1:3,1:6),ndstress(1:3,1:6),1)
             !minus section
-            call ElementStress_Shell_MITC( 731, 3, 6, ecoord, fstrSOLID%elements(icel)%gausses, edisp, &
-              & ndstrain(1:3,1:6), ndstress(1:3,1:6), thick,-1.0d0, nlyr)
+            if( associated(fstrSOLID%shell_triad) ) then
+              call ElementStress_Shell_MITC( 731, 3, 6, ecoord, fstrSOLID%elements(icel)%gausses, edisp, &
+                ndstrain(1:3,1:6), ndstress(1:3,1:6), thick,-1.0d0, nlyr, &
+                ndtriad=triad_cur(1:9,1:3), ndreftriad=triad_ref(1:9,1:3))
+            else
+              call ElementStress_Shell_MITC( 731, 3, 6, ecoord, fstrSOLID%elements(icel)%gausses, edisp, &
+                ndstrain(1:3,1:6), ndstress(1:3,1:6), thick,-1.0d0, nlyr)
+            endif
             call fstr_Stress_add_shelllyr(3,fstrSOLID,icel,nodLOCAL,nlyr,ndstrain(1:3,1:6),ndstress(1:3,1:6),-1)
           enddo
           call fstr_getavg_shell(3,fstrSOLID,icel,nodLOCAL,ndstrain(1:3,1:6),ndstress(1:3,1:6),estrain,estress)
@@ -1200,7 +1217,7 @@ contains
           fstrSOLID%ENQM(icel*12-11:icel*12) = enqm(1:12)
         else if( ic_type == 731 .or. ic_type == 741 .or. ic_type == 743 ) then
           ntot_lyr = fstrSOLID%elements(icel)%gausses(1)%pMaterial%totallyr
-          if( ic_type == 741 ) then
+          if( ic_type == 731 .or. ic_type == 741 ) then
             do j = 1, nn
               nbase = 9*(nodLOCAL(j)-1)
               triad_cur(1:9,j) = 0.0D0
@@ -1210,7 +1227,7 @@ contains
             enddo
           endif
           do nlyr=1,ntot_lyr
-            if( ic_type == 741 ) then
+            if( ic_type == 731 .or. ic_type == 741 ) then
               call ElementStress_Shell_MITC( ic_type, nn, 6, ecoord, fstrSOLID%elements(icel)%gausses, edisp, &
                 & ndstrain(1:nn,1:6), ndstress(1:nn,1:6), thick, 1.0d0, nlyr, &
                 & ndtriad=triad_cur(1:9,1:nn), ndreftriad=triad_ref(1:9,1:nn))
@@ -1229,7 +1246,7 @@ contains
               enddo
             enddo
             !minus section
-            if( ic_type == 741 ) then
+            if( ic_type == 731 .or. ic_type == 741 ) then
               call ElementStress_Shell_MITC( ic_type, nn, 6, ecoord, fstrSOLID%elements(icel)%gausses, edisp, &
                 & ndstrain(1:nn,1:6), ndstress(1:nn,1:6), thick,-1.0d0, nlyr, &
                 & ndtriad=triad_cur(1:9,1:nn), ndreftriad=triad_ref(1:9,1:nn))

@@ -25,6 +25,9 @@ module hecmw_precond_SSOR_33
   public:: hecmw_precond_SSOR_33_clear
 
   integer(kind=kint) :: N
+#ifdef HECMW_ARCH_FX64
+  integer(kind=kint) :: NP
+#endif
   real(kind=kreal), pointer :: D(:) => null()
   real(kind=kreal), pointer :: AL(:) => null()
   real(kind=kreal), pointer :: AU(:) => null()
@@ -227,7 +230,91 @@ contains
 
     if (DEBUG >= 1) write(*,*) 'DEBUG: SSOR setup done', hecmw_Wtime()-t0
 
+    if (precond_impl == HECMW_PRECOND_IMPL_CSR) call hecmw_precond_SSOR_33_setup_csr(hecMAT)
+
   end subroutine hecmw_precond_SSOR_33_setup
+
+  subroutine hecmw_precond_SSOR_33_setup_csr(hecMAT)
+    implicit none
+    type(hecmwST_matrix), intent(in) :: hecMAT
+#ifdef HECMW_ARCH_FX64
+    integer(kind=kint ) :: NPL, NPU
+    real   (kind=kreal) :: Atmp(9)
+    integer(kind=kint ) :: ii
+    integer(kind=kint ), pointer :: item_tmp(:)
+
+    NP = hecMAT%NP
+
+    !$omp parallel default(none),private(ii,Atmp),shared(N,ALU)
+    !$omp do
+    do ii= 1, N
+      Atmp(1)= ALU(9*ii-8)
+      Atmp(2)= ALU(9*ii-7)
+      Atmp(3)= ALU(9*ii-6)
+      Atmp(4)= ALU(9*ii-5)
+      Atmp(5)= ALU(9*ii-4)
+      Atmp(6)= ALU(9*ii-3)
+      Atmp(7)= ALU(9*ii-2)
+      Atmp(8)= ALU(9*ii-1)
+      Atmp(9)= ALU(9*ii  )
+
+      ALU(9*ii  )= Atmp(9)
+      ALU(9*ii-1)= -Atmp(8)*Atmp(9)
+      ALU(9*ii-2)= (Atmp(4)*Atmp(8)-Atmp(7))*Atmp(9)
+      ALU(9*ii-3)= -Atmp(5)*Atmp(6)*ALU(9*ii)
+      ALU(9*ii-4)= Atmp(5)*(1.d0-Atmp(6)*ALU(9*ii-1))
+      ALU(9*ii-5)= -Atmp(5)*(Atmp(4)+Atmp(6)*ALU(9*ii-2))
+      ALU(9*ii-6)= -Atmp(1)*(Atmp(3)*ALU(9*ii)+Atmp(2)*ALU(9*ii-3))
+      ALU(9*ii-7)= -Atmp(1)*(Atmp(3)*ALU(9*ii-1)+Atmp(2)*ALU(9*ii-4))
+      ALU(9*ii-8)= Atmp(1)*(1.d0-Atmp(3)*ALU(9*ii-2)-Atmp(2)*ALU(9*ii-5))
+    enddo
+    !$omp end do
+    !$omp end parallel
+
+    ! setup sized itemL and itemU for BSR; the expansion below takes three entries per block
+    NPL = indexL(N)
+    NPU = indexU(N)
+    allocate(item_tmp(3*NPL))
+    item_tmp(1:NPL) = itemL(1:NPL)
+    deallocate(itemL)
+    itemL => item_tmp
+    allocate(item_tmp(3*NPU))
+    item_tmp(1:NPU) = itemU(1:NPU)
+    deallocate(itemU)
+    itemU => item_tmp
+
+    do ii=1,N
+      indexL(ii) = 3*indexL(ii)
+      indexU(ii) = 3*indexU(ii)
+    end do
+    do ii=NPL,1,-1
+      itemL(3*ii  ) = 3*itemL(ii)
+      itemL(3*ii-1) = 3*itemL(ii)-1
+      itemL(3*ii-2) = 3*itemL(ii)-2
+    end do
+    do ii=NPU,1,-1
+      itemU(3*ii  ) = 3*itemU(ii)
+      itemU(3*ii-1) = 3*itemU(ii)-1
+      itemU(3*ii-2) = 3*itemU(ii)-2
+    end do
+
+    !$omp parallel default(none),private(ii),shared(NPL,AL)
+    !$omp do
+    do ii=1,NPL
+      call hecmw_mat_block_transpose_33(AL(9*ii-8:9*ii))
+    end do
+    !$omp end do
+    !$omp end parallel
+    !$omp parallel default(none),private(ii),shared(NPU,AU)
+    !$omp do
+    do ii=1,NPU
+      call hecmw_mat_block_transpose_33(AU(9*ii-8:9*ii))
+    end do
+    !$omp end do
+    !$omp end parallel
+
+#endif
+  end subroutine hecmw_precond_SSOR_33_setup_csr
 
   subroutine setup_tuning_parameters
     use hecmw_tuning_fx
@@ -290,6 +377,10 @@ contains
     select case (precond_impl)
       case (HECMW_PRECOND_IMPL_BSR)
         call hecmw_precond_SSOR_33_apply_generic(ZP)
+#ifdef HECMW_ARCH_FX64
+      case (HECMW_PRECOND_IMPL_CSR)
+        call hecmw_precond_SSOR_33_apply_csr(ZP)
+#endif
       case default
         if (.not. precond_impl_missing_reported) then
           precond_impl_missing_reported = .true.
@@ -448,6 +539,188 @@ contains
 #endif
 
   end subroutine hecmw_precond_SSOR_33_apply_generic
+
+  subroutine hecmw_precond_SSOR_33_apply_csr(ZP)
+    use hecmw_tuning_fx
+    implicit none
+    real(kind=kreal), intent(inout) :: ZP(:)
+#ifdef HECMW_ARCH_FX64
+    integer(kind=kint) :: ic, i
+
+    real(kind=kreal) :: OMEGA_FAC
+
+    ! added for turning >>>
+    integer(kind=kint) :: blockIndex
+
+    if (isFirst) then
+      call setup_tuning_parameters
+      isFirst = .false.
+    endif
+    ! <<< added for turning
+
+    OMEGA_FAC = 2.d0 - OMEGA
+
+    call hecmw_precond_SSOR_33_apply_inner( &
+    N,NP,ZP,AL,AU,D,ALU,itemL,itemU,indexL,indexU,perm,icToBlockIndex,blockIndexToColorIndex, &
+    indexL(N),indexU(N),NColor,numOfBlock,OMEGA_FAC)
+
+#endif
+  end subroutine hecmw_precond_SSOR_33_apply_csr
+
+  subroutine hecmw_precond_SSOR_33_apply_inner( &
+    N,NP,ZP,AL,AU,D,ALU,itemL,itemU,indexL,indexU,perm,icToBlockIndex,blockIndexToColorIndex, &
+    NPL,NPU,NColor,numOfBlock,OMEGA_FAC)
+    integer(kind=kint), intent(in)  :: N
+    integer(kind=kint), intent(in)  :: NP
+    real(kind=kreal), intent(inout) :: ZP(3*NP)
+    real(kind=kreal), intent(in)    :: AL(3*NPL)
+    real(kind=kreal), intent(in)    :: AU(3*NPU)
+    real(kind=kreal), intent(in)    :: D(9*N)
+    real(kind=kreal), intent(in)    :: ALU(9*N)
+    integer(kind=kint), intent(in)  :: itemL(NPL)
+    integer(kind=kint), intent(in)  :: itemU(NPU)
+    integer(kind=kint), intent(in)  :: indexL(0:N)
+    integer(kind=kint), intent(in)  :: indexU(0:N)
+    integer(kind=kint), intent(in)  :: perm(N)
+    integer(kind=kint), intent(in)  :: icToBlockIndex(0:NColor)
+    integer(kind=kint), intent(in)  :: blockIndexToColorIndex(0:numOfBlock+NColor)
+    integer(kind=kint), intent(in)  :: NPL
+    integer(kind=kint), intent(in)  :: NPU
+    integer(kind=kint), intent(in)  :: NColor
+    integer(kind=kint), intent(in)  :: numOfBlock
+    real(kind=kreal), intent(in)    :: OMEGA_FAC
+#ifdef HECMW_ARCH_FX64
+
+    integer(kind=kint) :: ic, i, iold, j, isL, ieL, isU, ieU, k
+    integer(kind=kint) :: blockIndex
+    real(kind=kreal) :: SW1, SW2, SW3, X1, X2, X3
+
+    !call start_collection("loopInPrecond33")
+
+    !OCL CACHE_SECTOR_SIZE(sectorCacheSize0,sectorCacheSize1)
+    !OCL CACHE_SUBSECTOR_ASSIGN(ZP)
+
+    if( NColor > 1 ) then
+
+    !$omp parallel default(none) &
+      !$omp&shared(NColor,indexL,itemL,indexU,itemU,AL,AU,D,ALU,perm,&
+      !$omp&       ZP,icToBlockIndex,blockIndexToColorIndex,OMEGA_FAC) &
+      !$omp&private(SW1,SW2,SW3,X1,X2,X3,ic,i,iold,isL,ieL,isU,ieU,j,k,blockIndex)
+
+    !C-- FORWARD
+    do ic=1,NColor
+      !$omp do schedule (static, 1)
+      do blockIndex = icToBlockIndex(ic-1)+1, icToBlockIndex(ic)
+        do i = blockIndexToColorIndex(blockIndex-1)+1, &
+            blockIndexToColorIndex(blockIndex)
+          ! do i = startPos(threadNum, ic), endPos(threadNum, ic)
+          iold = perm(i)
+          SW1= OMEGA_FAC * ZP(3*iold-2)
+          SW2= OMEGA_FAC * ZP(3*iold-1)
+          SW3= OMEGA_FAC * ZP(3*iold  )
+          isL= indexL(i-1)+1
+          ieL= indexL(i)
+          do j= isL, ieL
+            !k= perm(itemL(j))
+            X1= ZP(itemL(j))
+            SW1= SW1 - AL(3*j-2)*X1
+            SW2= SW2 - AL(3*j-1)*X1
+            SW3= SW3 - AL(3*j  )*X1
+          enddo ! j
+
+          ZP(3*iold-2)= ALU(9*i-8)*SW1+ALU(9*i-7)*SW2+ALU(9*i-6)*SW3
+          ZP(3*iold-1)= ALU(9*i-5)*SW1+ALU(9*i-4)*SW2+ALU(9*i-3)*SW3
+          ZP(3*iold  )= ALU(9*i-2)*SW1+ALU(9*i-1)*SW2+ALU(9*i  )*SW3
+        enddo ! i
+      enddo ! blockIndex
+      !$omp end do
+    enddo ! ic
+
+    !C-- BACKWARD
+    do ic=NColor, 1, -1
+      !$omp do schedule (static, 1)
+      do blockIndex = icToBlockIndex(ic), icToBlockIndex(ic-1)+1, -1
+        do i = blockIndexToColorIndex(blockIndex), &
+            blockIndexToColorIndex(blockIndex-1)+1, -1
+          ! do blockIndex = icToBlockIndex(ic-1)+1, icToBlockIndex(ic)
+          !   do i = blockIndexToColorIndex(blockIndex-1)+1, &
+            !        blockIndexToColorIndex(blockIndex)
+          !   do i = endPos(threadNum, ic), startPos(threadNum, ic), -1
+          SW1= 0.d0
+          SW2= 0.d0
+          SW3= 0.d0
+          isU= indexU(i-1) + 1
+          ieU= indexU(i)
+          do j= ieU, isU, -1
+            !k= perm(itemU(j))
+            X1= ZP(itemU(j))
+            SW1= SW1 + AU(3*j-2)*X1
+            SW2= SW2 + AU(3*j-1)*X1
+            SW3= SW3 + AU(3*j  )*X1
+          enddo ! j
+
+          iold = perm(i)
+          ZP(3*iold-2)= ZP(3*iold-2) - ALU(9*i-8)*SW1 - ALU(9*i-7)*SW2 - ALU(9*i-6)*SW3
+          ZP(3*iold-1)= ZP(3*iold-1) - ALU(9*i-5)*SW1 - ALU(9*i-4)*SW2 - ALU(9*i-3)*SW3
+          ZP(3*iold  )= ZP(3*iold  ) - ALU(9*i-2)*SW1 - ALU(9*i-1)*SW2 - ALU(9*i  )*SW3
+        enddo ! i
+      enddo ! blockIndex
+      !$omp end do
+    enddo ! ic
+    !$omp end parallel
+
+    else
+
+      !C-- FORWARD
+      do i = 1, N
+        iold = perm(i)
+        SW1= OMEGA_FAC * ZP(3*iold-2)
+        SW2= OMEGA_FAC * ZP(3*iold-1)
+        SW3= OMEGA_FAC * ZP(3*iold  )
+        isL= indexL(i-1)+1
+        ieL= indexL(i)
+        do j= isL, ieL
+          !k= perm(itemL(j))
+          X1= ZP(itemL(j))
+          SW1= SW1 - AL(3*j-2)*X1
+          SW2= SW2 - AL(3*j-1)*X1
+          SW3= SW3 - AL(3*j  )*X1
+        enddo ! j
+
+        ZP(3*iold-2)= ALU(9*i-8)*SW1+ALU(9*i-7)*SW2+ALU(9*i-6)*SW3
+        ZP(3*iold-1)= ALU(9*i-5)*SW1+ALU(9*i-4)*SW2+ALU(9*i-3)*SW3
+        ZP(3*iold  )= ALU(9*i-2)*SW1+ALU(9*i-1)*SW2+ALU(9*i  )*SW3
+      enddo ! i
+
+      !C-- BACKWARD
+      do i = N, 1, -1
+        SW1= 0.d0
+        SW2= 0.d0
+        SW3= 0.d0
+        isU= indexU(i-1) + 1
+        ieU= indexU(i)
+        do j= ieU, isU, -1
+          X1= ZP(itemU(j))
+          SW1= SW1 + AU(3*j-2)*X1
+          SW2= SW2 + AU(3*j-1)*X1
+          SW3= SW3 + AU(3*j  )*X1
+        enddo ! j
+
+        iold = perm(i)
+        ZP(3*iold-2)= ZP(3*iold-2) - ALU(9*i-8)*SW1 - ALU(9*i-7)*SW2 - ALU(9*i-6)*SW3
+        ZP(3*iold-1)= ZP(3*iold-1) - ALU(9*i-5)*SW1 - ALU(9*i-4)*SW2 - ALU(9*i-3)*SW3
+        ZP(3*iold  )= ZP(3*iold  ) - ALU(9*i-2)*SW1 - ALU(9*i-1)*SW2 - ALU(9*i  )*SW3
+      enddo ! i
+
+    end if
+
+    !OCL END_CACHE_SUBSECTOR
+    !OCL END_CACHE_SECTOR_SIZE
+
+    !call stop_collection("loopInPrecond33")
+
+#endif
+  end subroutine
 
   subroutine hecmw_precond_SSOR_33_clear(hecMAT)
     implicit none

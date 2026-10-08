@@ -1,0 +1,18 @@
+!! Multifrontal direct solver with BLR compression (METHOD=DIRECTmf, option line BLR=1,
+!! tile size 12 and no distance skip so the compression engages on this small model):
+!! checks that the option lines are read, the compressed factorization plus iterative
+!! refinement reproduces the reference computed by DIRECT, and the log check asserts
+!! that tiles were actually compressed.
+!BOUNDARY
+  FIX, 1, 3,   0.0
+!CLOAD
+  CL1,    3,  -1.0
+!!
+!! SOLVER CONTROL
+!!
+!SOLVER,METHOD=DIRECTmf,ITERLOG=YES,TIMELOG=YES,LOGLEVEL=1
+ 10000, 1
+ 1.0e-8, 1.0, 0.0
+ 0, 0, 1, 0, 12, 0, -1
+!WRITE,RESULT
+!END

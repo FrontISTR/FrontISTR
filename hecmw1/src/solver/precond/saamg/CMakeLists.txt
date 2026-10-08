@@ -13,6 +13,7 @@ target_sources(hecmw PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_precond_SAAMG_prolongation.F90
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_precond_SAAMG_coarse.F90
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_precond_SAAMG_coarse_mumps.F90
+  ${CMAKE_CURRENT_LIST_DIR}/hecmw_precond_SAAMG_coarse_mf.F90
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_precond_SAAMG_core.f90
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_precond_SAAMG_adapt.f90
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_precond_SAAMG_verify.f90
