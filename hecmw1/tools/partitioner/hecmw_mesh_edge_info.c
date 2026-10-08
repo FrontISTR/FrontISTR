@@ -1116,6 +1116,24 @@ error:
   return -1;
 }
 
+static int edge_info_shq3(struct hecmwST_local_mesh *local_mesh, const int is,
+                          const int ie) {
+  int i, j, node_index, center;
+
+  if (edge_info_shq2(local_mesh, is, ie)) return -1;
+
+  /* Add center-to-midside connections to the perimeter edges. */
+  for (i = is; i < ie; i++) {
+    node_index = local_mesh->elem_node_index[i];
+    center = local_mesh->elem_node_item[node_index + 8];
+    for (j = 4; j < 8; j++) {
+      if (HECMW_mesh_hsort_edge(center, local_mesh->elem_node_item[node_index + j]) < 0)
+        return -1;
+    }
+  }
+  return 0;
+}
+
 static int edge_info_sht6(struct hecmwST_local_mesh *local_mesh, const int is,
                           const int ie) {
   int node[6], node_index;
@@ -1364,6 +1382,9 @@ extern int HECMW_mesh_edge_info(struct hecmwST_local_mesh *local_mesh,
         break;
       case HECMW_ETYPE_SHQ2: /* quadrilateral shell ( 2nd order ) */
         if (edge_info_shq2(local_mesh, is, ie)) goto error;
+        break;
+      case HECMW_ETYPE_SHQ3: /* quadrilateral shell ( 9 nodes ) */
+        if (edge_info_shq3(local_mesh, is, ie)) goto error;
         break;
       case HECMW_ETYPE_SHT6: /* triangluar shell ( Mixed solid ) */
         if (edge_info_sht6(local_mesh, is, ie)) goto error;
