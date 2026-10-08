@@ -43,12 +43,26 @@ typedef enum{
 void* fstr_api_param_new();
 void fstr_api_param_delete(void* param);
 void fstr_api_param_init(void* param,void* mesh);
+
 fstr_solution_type fstr_api_param_solution_type(const void* param);
+void fstr_api_param_set_solution_type(void* param,fstr_solution_type stype);
+
 fstr_solver_method fstr_api_param_solver_method(const void* param);
+void fstr_api_param_set_solver_method(void* param,fstr_solver_method smethod);
+
 bool fstr_api_param_nlgeom(const void* param);
+void fstr_api_param_set_nlgeom(void* param,bool nlgeom);
+
 fstr_nlsolver_method fstr_api_param_nlsolver_method(const void* param);
+void fstr_api_param_set_nlsolver_method(void* param,fstr_nlsolver_method nlmethod);
+
 int fstr_api_param_fg_result(const void* param);
+void fstr_api_param_set_fg_result(void* param,int fg_result);
+
 int fstr_api_param_fg_visual(const void* param);
+void fstr_api_param_set_fg_visual(void* param,int fg_visual);
+
 fstr_contact_algorithm fstr_api_param_contact_algo(const void* param);
+void fstr_api_param_set_contact_algo(void* param,fstr_contact_algorithm calgo);
 
 #endif
