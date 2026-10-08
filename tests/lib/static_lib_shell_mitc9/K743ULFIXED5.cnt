@@ -4,9 +4,9 @@
 !BOUNDARY, GRPID = 1
   FIX, 1, 6, 0.0
 !CLOAD, GRPID = 1
-  CL1, 3, -0.375
-  CL2, 3, -0.750
-  CL3, 3, -0.375
+  CL1, 3, -0.25
+  CL2, 3, -1.00
+  CL3, 3, -0.25
 !STEP, SUBSTEPS = 5, MAXITER = 20, CONVERG = 1.0E-8
   BOUNDARY, 1
   LOAD, 1
