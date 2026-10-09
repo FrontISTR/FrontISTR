@@ -147,10 +147,10 @@ module m_fstr
   real(kind=kreal), pointer :: REF_TEMP
 
   !> ANALYSIS CONTROL for NLGEOM and HEAT
-  real(kind=kreal)   :: DT    ! /=fstr_param%dtime
-  real(kind=kreal)   :: ETIME ! /=fstr_param%etime
-  integer(kind=kint) :: ITMAX
-  real(kind=kreal)   :: EPS   ! /=fstr_param%eps
+!  real(kind=kreal)   :: DT    ! /=fstr_param%dtime
+!  real(kind=kreal)   :: ETIME ! /=fstr_param%etime
+!  integer(kind=kint) :: ITMAX
+!  real(kind=kreal)   :: EPS   ! /=fstr_param%eps
 
   type tInitialCondition
      character(len=HECMW_FILENAME_LEN)          :: cond_name

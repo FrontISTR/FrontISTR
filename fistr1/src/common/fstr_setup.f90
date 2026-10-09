@@ -2720,6 +2720,8 @@ end function fstr_setup_INITIAL
     integer :: nout, nout_monit,node_monit_1 ,elem_monit_1 ,intg_monit_1
     integer :: ipt, idx_elpl, iout_list(6)
     real(kind=kreal) :: sig_y0, h_dash
+    real(kind=kreal) :: DT, ETIME, EPS ! dummy
+    integer :: ITMAX
 
     if( counter > 1 ) then
       write(*,*)
