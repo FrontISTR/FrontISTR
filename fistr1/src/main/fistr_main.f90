@@ -128,10 +128,10 @@ contains
     call fstr_init_file
 
     ! ----  default setting of global params ---
-    DT    = 1
-    ETIME = 1
-    ITMAX = 20
-    EPS   = 1.0d-6
+!    DT    = 1
+!    ETIME = 1
+!    ITMAX = 20
+!    EPS   = 1.0d-6
 
     ! -------  pointer setting ----------
     REF_TEMP => fstrPARAM%ref_temp

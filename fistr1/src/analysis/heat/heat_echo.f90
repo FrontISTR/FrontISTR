@@ -43,11 +43,11 @@ contains
     write(ILOG,*)
     write(ILOG,*) 'REF_TEMP ', REF_TEMP
     write(ILOG,*)
-    write(ILOG,*) 'ANALYSIS CONTROL for HEAT'
-    write(ILOG,*) 'DT     ',DT
-    write(ILOG,*) 'ETIME  ',ETIME
-    write(ILOG,*) 'ITMAX  ',ITMAX
-    write(ILOG,*) 'EPS    ',EPS
+!    write(ILOG,*) 'ANALYSIS CONTROL for HEAT'
+!    write(ILOG,*) 'DT     ',DT
+!    write(ILOG,*) 'ETIME  ',ETIME
+!    write(ILOG,*) 'ITMAX  ',ITMAX
+!    write(ILOG,*) 'EPS    ',EPS
 
     !C +-------------------------------+
     !C | fstrPARAM                     |
