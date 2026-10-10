@@ -172,7 +172,32 @@ contains
     if( fstr_ctrl_get_data_ex( ctrl, 1,   'iiiiii ', nier, iterpremax, nrest, ncolor_in, recyclepre, nBFGS )/= 0) return
     if( fstr_ctrl_get_data_ex( ctrl, 2,   'rrr ', resid, sigma_diag, omega )/= 0) return
 
-    if( precond == 20 .or. precond == 21) then
+    ! the direct methods own their data lines and come first: a direct solve never uses
+    ! PRECOND, so a leftover PRECOND of an iterative control file must not route the
+    ! option lines into a preconditioner branch (issue #930)
+    if( method == 101 ) then
+      if( fstr_ctrl_get_data_ex( ctrl, 3, 'i ', solver_opt(1) )/= 0) return
+    else if( method == 106 ) then
+      ! DIRECTmf options.  Two optional data lines; trailing entries may be omitted.
+      ! 0 = use the built-in default for each.  Integer slot 1 is the ordering, the
+      ! same as the single integer of the DIRECT (method=101) data line.
+      !  line 3 (integers):
+      !    1 ordering (as DIRECT), 2 mode (0=auto/1=force LDLt/2=force LU),
+      !    3 BLR (0=off/1=on), 4 max refinement steps, 5 tile size (DOFs),
+      !    6 amalgamation width (columns), 7 BLR skip distance eta (-1=off),
+      !    8 BLR rank reuse (0=off/1=on), 9-10 RESERVED
+      !  line 4 (reals):
+      !    1 BLR epsilon, 2 refinement stopping residual, 3 pivot threshold u,
+      !    4 zero pivot factor, 5 BLR gain cap beta, 6-8 RESERVED
+      solver_opt(1:10) = 0
+      solver_ropt(1:10) = 0.0d0
+      if( fstr_ctrl_get_data_ex( ctrl, 3, 'iiiiiiiiii ', &
+           solver_opt(1), solver_opt(2), solver_opt(3), solver_opt(4), solver_opt(5), &
+           solver_opt(6), solver_opt(7), solver_opt(8), solver_opt(9), solver_opt(10) )/= 0) solver_opt(1:10) = 0
+      if( fstr_ctrl_get_data_ex( ctrl, 4, 'rrrrrrrr ', &
+           solver_ropt(1), solver_ropt(2), solver_ropt(3), solver_ropt(4), solver_ropt(5), &
+           solver_ropt(6), solver_ropt(7), solver_ropt(8) )/= 0) solver_ropt(1:10) = 0.0d0
+    else if( precond == 20 .or. precond == 21) then
       if( fstr_ctrl_get_data_ex( ctrl, 3, 'rr ', thresh, filter)/= 0) return
     else if( precond == 5 ) then
       if( fstr_ctrl_get_data_ex( ctrl, 3, 'iiiiiiiiii ', &
@@ -196,28 +221,6 @@ contains
       !    agg_order (aggregation seed ordering: 0=default(BFS), <0=natural/legacy,
       !               1..4=explicit mode),
       !    min_size, verify (0=off/>0=on), dump_vtk (0=off/>0=on)
-      solver_opt(1:10) = 0
-      solver_ropt(1:10) = 0.0d0
-      if( fstr_ctrl_get_data_ex( ctrl, 3, 'iiiiiiiiii ', &
-           solver_opt(1), solver_opt(2), solver_opt(3), solver_opt(4), solver_opt(5), &
-           solver_opt(6), solver_opt(7), solver_opt(8), solver_opt(9), solver_opt(10) )/= 0) solver_opt(1:10) = 0
-      if( fstr_ctrl_get_data_ex( ctrl, 4, 'rrrrrrrr ', &
-           solver_ropt(1), solver_ropt(2), solver_ropt(3), solver_ropt(4), solver_ropt(5), &
-           solver_ropt(6), solver_ropt(7), solver_ropt(8) )/= 0) solver_ropt(1:10) = 0.0d0
-    else if( method == 101 ) then
-      if( fstr_ctrl_get_data_ex( ctrl, 3, 'i ', solver_opt(1) )/= 0) return
-    else if( method == 106 ) then
-      ! DIRECTmf options.  Two optional data lines; trailing entries may be omitted.
-      ! 0 = use the built-in default for each.  Integer slot 1 is the ordering, the
-      ! same as the single integer of the DIRECT (method=101) data line.
-      !  line 3 (integers):
-      !    1 ordering (as DIRECT), 2 mode (0=auto/1=force LDLt/2=force LU),
-      !    3 BLR (0=off/1=on), 4 max refinement steps, 5 tile size (DOFs),
-      !    6 amalgamation width (columns), 7 BLR skip distance eta (-1=off),
-      !    8 BLR rank reuse (0=off/1=on), 9-10 RESERVED
-      !  line 4 (reals):
-      !    1 BLR epsilon, 2 refinement stopping residual, 3 pivot threshold u,
-      !    4 zero pivot factor, 5 BLR gain cap beta, 6-8 RESERVED
       solver_opt(1:10) = 0
       solver_ropt(1:10) = 0.0d0
       if( fstr_ctrl_get_data_ex( ctrl, 3, 'iiiiiiiiii ', &
