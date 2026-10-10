@@ -23,30 +23,13 @@ contains
   !> @brief Destroying the parameter handler
   !! @param[in] param : Parameter handler
   subroutine fstr_api_param_delete(param) bind(C,name='fstr_api_param_delete')
-    use m_timepoint, only : time_points
+    use m_fstr, only : fstr_param_finalize
     implicit none
     type(c_ptr), value :: param
     type(fstr_param), pointer :: fstrPARAM
     integer :: i
     call c_f_pointer(cptr=param, fptr=fstrPARAM)
-
-    if( associated(fstrPARAM%dtime) ) deallocate(fstrPARAM%dtime)
-    if( associated(fstrPARAM%etime) ) deallocate(fstrPARAM%etime)
-    if( associated(fstrPARAM%dtmin) ) deallocate(fstrPARAM%dtmin)
-    if( associated(fstrPARAM%delmax) ) deallocate(fstrPARAM%delmax)
-    if( associated(fstrPARAM%itmax) ) deallocate(fstrPARAM%itmax)
-    if( associated(fstrPARAM%eps) ) deallocate(fstrPARAM%eps)
-    if( associated(fstrPARAM%global_local_ID) ) deallocate(fstrPARAM%global_local_ID)
-    if( associated(fstrPARAM%contactparam) ) deallocate(fstrPARAM%contactparam)
-    if( associated(fstrPARAM%contact_if) ) deallocate(fstrPARAM%contact_if)
-    if( associated(fstrPARAM%ainc) ) deallocate(fstrPARAM%ainc)
-    if( associated(fstrPARAM%timepoints) ) then
-      do i=1, size(fstrPARAM%timepoints)
-        if( associated(fstrPARAM%timepoints(i)%points) ) deallocate(fstrPARAM%timepoints(i)%points)
-      end do
-      deallocate(fstrPARAM%timepoints)
-    end if
-    if( associated(fstrPARAM%cnvparam) ) deallocate(fstrPARAM%cnvparam)
+    call fstr_param_finalize(fstrPARAM)
     deallocate(fstrPARAM)
   end subroutine
 
