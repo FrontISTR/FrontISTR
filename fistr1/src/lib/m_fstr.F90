@@ -129,10 +129,10 @@ module m_fstr
   real(kind=kreal)   :: svRarray(100)
 
   !> FLAG for ECHO/RESULT/POST
-  integer(kind=kint), pointer :: IECHO
-  integer(kind=kint), pointer :: IRESULT
-  integer(kind=kint), pointer :: IVISUAL
-  integer(kind=kint), pointer :: INEUTRAL  ! flag for femap neutral file
+!  integer(kind=kint), pointer :: IECHO
+!  integer(kind=kint), pointer :: IRESULT
+!  integer(kind=kint), pointer :: IVISUAL
+!  integer(kind=kint), pointer :: INEUTRAL  ! flag for femap neutral file
   integer(kind=kint), pointer :: IRRES     ! flag for restart, read
   integer(kind=kint), pointer :: IWRES     ! flag for restart, write
   integer(kind=kint), pointer :: NRRES     ! position of restart read
@@ -170,22 +170,22 @@ module m_fstr
 
     !> STATIC !HEAT
     integer(kind=kint) :: analysis_n      !< Number of analysis
-    real(kind=kreal), pointer  :: dtime(:) !< (=DT)    STEP_DLTIME
-    real(kind=kreal), pointer  :: etime(:) !< (/=ETIME) STEP_EETIME
-    real(kind=kreal), pointer  :: dtmin(:) !< (=DTMIN) STEP_DELMIN
-    real(kind=kreal), pointer  :: delmax(:)!< (=DTMAX) STEP_DELMAX
-    integer(kind=kint), pointer:: itmax(:) !< (/=ITMAX)
-    real(kind=kreal), pointer  :: eps(:)   !< (/=ESP)
+    real(kind=kreal), pointer  :: dtime(:) !< STEP_DLTIME
+    real(kind=kreal), pointer  :: etime(:) !< STEP_EETIME
+    real(kind=kreal), pointer  :: dtmin(:) !< STEP_DELMIN
+    real(kind=kreal), pointer  :: delmax(:)!< STEP_DELMAX
+    integer(kind=kint), pointer:: itmax(:) !< 
+    real(kind=kreal), pointer  :: eps(:)   !< 
     real(kind=kreal)           :: ref_temp !< (=REF_TEMP)
     integer(kind=kint)         :: timepoint_id !< time point ID for heat analysis
 
     !> output control
-    integer(kind=kint) :: fg_echo       !< output echo   (kYES/kNO) (=IECHO)
-    integer(kind=kint) :: fg_result     !< output result (kYES/kNO) (=IRESULT)
-    integer(kind=kint) :: fg_visual     !< visualization (kYES/kNO) (=IVISUAL)
+    integer(kind=kint) :: fg_echo       !< output echo   (kYES/kNO)
+    integer(kind=kint) :: fg_result     !< output result (kYES/kNO)
+    integer(kind=kint) :: fg_visual     !< visualization (kYES/kNO)
 
     !> for heat ...
-    integer(kind=kint) :: fg_neutral    !< write by neutral (=INEUTRAL)
+    integer(kind=kint) :: fg_neutral    !< write by neutral
     integer(kind=kint) :: fg_irres      !< restart read     (=IRRES)
     integer(kind=kint) :: fg_iwres      !< restart write    (=IWRES)
     integer(kind=kint) :: nrres         !< NRRES

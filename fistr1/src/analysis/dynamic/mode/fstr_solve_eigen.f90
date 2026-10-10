@@ -68,10 +68,10 @@ contains
 
     call fstr_eigen_output(hecMESH, hecMAT, fstrEIG)
 
-    if( IRESULT.eq.1 ) then
+    if( fstrPARAM%fg_result.eq.1 ) then
       call fstr_eigen_output_result(hecMESH, fstrEIG)
     end if
-    if( IVISUAL.eq.1 ) then
+    if( fstrPARAM%fg_visual.eq.1 ) then
       call fstr_eigen_output_visual(hecMESH, fstrEIG, fstrRESULT)
     end if
 

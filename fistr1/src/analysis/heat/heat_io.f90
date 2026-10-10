@@ -151,7 +151,7 @@ contains
     character(len=HECMW_NAME_LEN)   :: nameID
     real(kind=kreal), pointer  :: work(:)
 
-    if(IRESULT == 1 .and. (mod(tstep, IRRES) == 0 .or. outflag))then
+    if(mod(tstep, IRRES) == 0 .or. outflag) then
       header = '*fstrresult'
       comment = 'nonsteady_heat_result'
       call hecmw_result_init(hecMESH, tstep, header, comment)
@@ -190,7 +190,7 @@ contains
     logical, intent(in)       :: outflag     !< if true, result will be output regardless of istep
     real(kind=kreal), pointer  :: work(:)
 
-    if(IVISUAL == 1 .and. (mod(tstep, IWRES) == 0 .or. outflag))then
+    if(mod(tstep, IWRES) == 0 .or. outflag) then
       call hecmw_nullify_result_data(fstrRESULT)
       call fstr_heat_make_result_step(hecMESH, fstrHEAT, fstrSOLID, fstrRESULT, tstep, ctime)
       call fstr2hecmw_mesh_conv(hecMESH)
