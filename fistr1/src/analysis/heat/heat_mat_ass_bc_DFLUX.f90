@@ -25,7 +25,7 @@ contains
     type(hecmwST_matrix)     :: hecMAT
     type(hecmwST_local_mesh) :: hecMESH
     real(kind=kreal)   :: xx(20), yy(20), zz(20)
-    real(kind=kreal)   :: vect(20), ss(2000)
+    real(kind=kreal)   :: vect(20)
     integer(kind=kint) :: ig0, ig, iS0, iE0, nodLocal(20)
     real(kind=kreal), allocatable :: Bbak(:)
 

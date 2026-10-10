@@ -16,10 +16,10 @@ contains
     type(fstr_solid)         :: fstrSOLID
     type(hecmwST_local_mesh) :: hecMESH
     integer(kind=kint) :: itype, is, iE, ic_type, icel, isect, IMAT, ntab, itab, NDOF
-    integer(kind=kint) :: in0, nn, i, in, j, nodLOCAL(20), jsect, ic, ip, inod, jp, jnod, isU, ieU, ik, isL, ieL
-    real(kind=kreal)   :: beta, TZERO, ALPHA, temp(1000), funcA(1000), funcB(1000), TT(20), T0(20), SS(400)
+    integer(kind=kint) :: in0, nn, i, in, j, nodLOCAL(20), jsect
+    real(kind=kreal)   :: beta, TZERO, ALPHA, temp(1000), funcA(1000), funcB(1000), TT(20), SS(400)
     real(kind=kreal)   :: asect, thick, GTH, GHH, GR1, GR2
-    real(kind=kreal) :: lumped(20), stiff(20, 20), ecoord(3,20)
+    real(kind=kreal) :: stiff(20, 20), ecoord(3,20)
     real(kind=kreal), allocatable :: S(:)
 
     NDOF = hecMESH%n_dof
@@ -66,7 +66,6 @@ contains
         do i = 1, nn
           nodLOCAL(i) = hecMESH%elem_node_item(in0+i)
           TT(i) = fstrHEAT%TEMP (   nodLOCAL(i)   )
-          !T0(i) = fstrHEAT%TEMP0(   nodLOCAL(i)   )
           do j = 1, 3
             ecoord(j,i) = hecMESH%node(3*(nodLOCAL(i)-1)+j)
           enddo

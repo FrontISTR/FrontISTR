@@ -391,7 +391,7 @@ contains
     real(kind=kreal), intent(in)  :: cdsys(3,3) !> material coordinate system
     integer(kind=kint), intent(in), optional :: hdflag  !> return only hyd and dev term if specified
 
-    integer :: i, j, k, l, m, n, jj
+    integer :: k, l, m, n
     real(kind=kreal) :: ctn(3,3), itn(3,3)
     real(kind=kreal) :: inv1b, inv2b, inv3b, inv4b
     real(kind=kreal) :: dibdc(3,3,3)

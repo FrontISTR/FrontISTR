@@ -43,9 +43,8 @@ contains
     integer(kind=kint) :: itype, iE, cdsys_ID
     real(kind=kreal)   :: val, rho, thick, pa1
     logical :: fg_surf
-    logical, save :: isFirst = .true.
 
-    integer(kind=kint) :: flag_u, ierror
+    integer(kind=kint) :: flag_u
     integer(kind=kint), optional :: iter
     real(kind=kreal) :: f_t, t_t
 
@@ -58,7 +57,7 @@ contains
     !for torque load
     integer(kind=kint) :: n_rot, rid, n_nodes, idof
     type(tRotInfo)   :: rinfo
-    real(kind=kreal) :: tval, normal(3), direc(3), ccoord(3), cdisp(3), cdiff(3)
+    real(kind=kreal) :: tval, normal(3), ccoord(3), cdisp(3), cdiff(3)
 
     ndof = hecMAT%NDOF
     call hecmw_mat_clear_b( hecMAT )

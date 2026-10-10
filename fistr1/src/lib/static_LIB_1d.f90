@@ -368,9 +368,6 @@ contains
     real(kind=kreal),   intent(in)  :: u(:,:)              !< nodal displacemwent
     real(kind=kreal),   intent(in)  :: temperature(nn)     !< temperature
 
-    integer(kind=kint) :: mtype, ctype
-    integer(kind=kint) :: i, j, n_ndof, dof1, dof2, id1, id2
-
     stiff(:,:) = 0.d0
 
     ! if spring_d is assigned, add the stiffness to stiff
@@ -394,9 +391,6 @@ contains
     real(kind=kreal),   intent(out) :: damping(:,:)        !< damping matrix
     real(kind=kreal),   intent(in)  :: u(:,:)              !< nodal displacemwent
     real(kind=kreal),   intent(in)  :: temperature(nn)     !< temperature
-
-    integer(kind=kint) :: mtype, ctype
-    integer(kind=kint) :: i, j, n_ndof, dof1, dof2, id1, id2
 
     damping(:,:) = 0.d0
 
@@ -427,13 +421,6 @@ contains
     type(tGaussStatus), intent(inout)  :: gausses(:)      !< \param [out] status of qudrature points
     real(kind=kreal),   intent(in), optional :: TT(nn)    !< current temperature
 
-    ! LOCAL VARIABLES
-    integer(kind=kint) :: mtype, ctype
-    real(kind=kreal) llen, llen0, elem(3,nn)
-    real(kind=kreal) direc(3), direc0(3), ratio
-    real(kind=kreal) :: params(4)
-    integer(kind=kint) :: i, j, n_ndof, dof1, dof2, id1, id2
-
     qf = 0.d0
     !clear stress and strain
     gausses(1)%strain(:) = 0.d0
@@ -461,7 +448,7 @@ contains
 
     real(kind=kreal) :: params(1)
     integer(kind=kint) :: iparams(2)                   !< Array to store parameters from GetConnectorProperty
-    integer(kind=kint) :: i, j, n_ndof, id1, id2
+    integer(kind=kint) :: i, n_ndof, id1, id2
 
     n_ndof = getNumOfSpring_dParam( gausses(1)%pMaterial )
 
@@ -487,7 +474,7 @@ contains
     real(kind=kreal) :: params(1)
     integer(kind=kint) :: iparams(2)                   !< Array to store parameters from GetConnectorProperty
     real(kind=kreal) :: totaldisp(3,2), stretch, sforce
-    integer(kind=kint) :: i, j, n_ndof, dof1, dof2, id1, id2
+    integer(kind=kint) :: i, n_ndof, dof1, dof2, id1, id2
 
     n_ndof = getNumOfSpring_dParam( gausses(1)%pMaterial )
     totaldisp(1:3,1:2) = u(1:3,1:2) + du(1:3,1:2)
@@ -517,7 +504,7 @@ contains
 
     real(kind=kreal) :: params(1)                             !< Array to store parameters from GetConnectorProperty
     integer(kind=kint) :: iparams(2)                   !< Array to store parameters from GetConnectorProperty
-    integer(kind=kint) :: i, j, n_ndof, dof1, dof2, id1, id2  !< Integer variables for indexing and degrees of freedom
+    integer(kind=kint) :: i, j  !< Integer variables for indexing and degrees of freedom
     real(kind=kreal) :: llen, llen0, elem(3,2)               !< Lengths of deformed and undeformed elements
     real(kind=kreal) :: direc(3), direc0(3), ratio            !< Direction vectors and length ratio
 
@@ -608,7 +595,7 @@ contains
 
     real(kind=kreal)   :: params(1)
     integer(kind=kint) :: iparams(2)                   !< Array to store parameters from GetConnectorProperty
-    integer(kind=kint) :: i, j, n_ndof, id1, id2
+    integer(kind=kint) :: i, n_ndof, id1, id2
 
     n_ndof = getNumOfDashpot_dParam( gausses(1)%pMaterial )
 
@@ -631,7 +618,7 @@ contains
 
     real(kind=kreal) :: params(1)                             !< Array to store parameters from GetConnectorProperty
     integer(kind=kint) :: iparams(2)                   !< Array to store parameters from GetConnectorProperty
-    integer(kind=kint) :: i, j, n_ndof, dof1, dof2, id1, id2  !< Integer variables for indexing and degrees of freedom
+    integer(kind=kint) :: i, j  !< Integer variables for indexing and degrees of freedom
     real(kind=kreal) :: llen, elem(3,2)               !< Lengths of deformed and undeformed elements
     real(kind=kreal) :: direc(3), ratio            !< Direction vectors and length ratio
 

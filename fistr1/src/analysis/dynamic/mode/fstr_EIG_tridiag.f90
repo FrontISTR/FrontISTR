@@ -35,8 +35,8 @@ contains
 
     integer(kind=kint), intent(in) :: iter
     integer(kind=kint) :: N, NP, NDOF, NNDOF, NPNDOF
-    integer(kind=kint) :: i, j, k, in, jn, kn, nget
-    integer(kind=kint) :: iter2, ierr, maxiter
+    integer(kind=kint) :: i, j, k, in, nget
+    integer(kind=kint) :: ierr, maxiter
     real(kind=kreal)   :: resid, chk, vmax, sigma, tolerance
     real(kind=kreal), allocatable :: alpha(:), beta(:), temp(:)
     real(kind=kreal), allocatable :: L(:,:)

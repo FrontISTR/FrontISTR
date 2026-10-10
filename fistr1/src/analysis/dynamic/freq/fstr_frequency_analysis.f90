@@ -43,7 +43,7 @@ contains
     !C
     !C-- local variable
     !C
-    integer(kind=kint)            :: numnode, numelm, startmode, endmode, nummode, ndof, im, in, ntotal, vistype
+    integer(kind=kint)            :: numnode, numelm, startmode, endmode, nummode, ndof, im, vistype
     integer(kind=kint)            :: numfreq, idnode, numdisp, imonit, nmonit, monitnode(1)
     integer(kind=kint)            :: freqiout(3)
     integer(kind=kint)            :: ierr
@@ -560,9 +560,9 @@ contains
     real(kind=kreal), intent(inout)      :: loadvecIm(:) !intend(numnode*ndof)
     !---- vals
     integer(kind=kint), parameter   :: MAXNODE = 100
-    integer(kind=kint)              :: sgrpID, is, ie, ic, nsurf, ic_type, outtype, node_index(MAXNODE)
-    integer(kind=kint)              :: nn, iss, nodeid, dof_index, ndof
-    integer(kind=kint)              :: i, j, k, l, m, isn, nsize
+    integer(kind=kint)              :: sgrpID, is, ie, ic, nsurf, ic_type
+    integer(kind=kint)              :: nn, dof_index, ndof
+    integer(kind=kint)              :: i, j, k, l, isn, nsize
     integer(kind=kint)              :: iwk(60), nodLOCAL(20)
     real(kind=kreal)                :: vect(60), xx(20), yy(20), zz(20), forcere(3), forceim(3)
     !---- body
@@ -664,7 +664,7 @@ contains
     real(kind=kreal), intent(inout)      :: loadvecRe(:)
     real(kind=kreal), intent(inout)      :: loadvecIm(:)
     !---- vals
-    integer(kind=kint) :: i, vecsize, ig, is, ie, in, nodeid, dof_index
+    integer(kind=kint) :: i, ig, is, ie, in, nodeid, dof_index
 
     !---- body
 
@@ -693,7 +693,6 @@ contains
     type(fstr_eigen), intent(inout)      :: fstrEIG
     type(hecmwST_matrix_lagrange), intent(inout) :: hecLagMAT
     !---- vals
-    integer(kind=kint) :: ntotal
     type(hecmwST_ebc) :: hecEBC
     !---- body
 

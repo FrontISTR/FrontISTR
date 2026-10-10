@@ -41,9 +41,9 @@ contains
     integer(kind=kint) :: j, i, tot_step, step_count, tot_step_print, CBbound
     integer(kind=kint) :: sub_step
     integer(kind=kint) :: restart_step_num, restart_substep_num
-    real(kind=kreal)   :: ctime, dtime, endtime, factor
+    real(kind=kreal)   :: ctime, dtime, factor
     real(kind=kreal)   :: time_1, time_2
-    logical            :: ctchanged, is_OutPoint, is_interaction_active
+    logical            :: is_OutPoint, is_interaction_active
 
     if(hecMESH%my_rank==0) call fstr_TimeInc_PrintSTATUS_init
 

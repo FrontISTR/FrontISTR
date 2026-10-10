@@ -47,7 +47,7 @@ contains
     type(hecmwST_saamg_hier) :: dh2
     real(kind=kreal), allocatable :: r(:), z1(:), z2(:)
     real(kind=kreal) :: d2, n2, rel_same, rel_pert
-    integer(kind=kint) :: i, node, dof, gid, ir, k, rn, cn, nb1, e
+    integer(kind=kint) :: i, node, dof, gid, ir, k, cn, nb1, e
     real(kind=kreal) :: fr, fc
 
     ! The finest-level matvec hook (if any) points at the REAL hecMAT operator,

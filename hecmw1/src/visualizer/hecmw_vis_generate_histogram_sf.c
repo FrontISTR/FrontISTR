@@ -20,8 +20,7 @@ void generate_histogram_graph_sf(struct surface_module *sf, int *color_list,
                                  HECMW_Comm VIS_COMM, int color_system_type) {
   int i, j, k, m, ii;
   double delta, value, color[3];
-  int count[500], t_count[500], max_number, max_length, start_x, end_x, start_y,
-      end_y;
+  int count[500], t_count[500], max_number, max_length, start_x, end_x, start_y;
   FILE *fp;
   double *graph;
   BITMAPFILEHEADER header; /* File header */
@@ -97,7 +96,6 @@ void generate_histogram_graph_sf(struct surface_module *sf, int *color_list,
     }
     /*start mark scales */
     start_y = 15;
-    end_y   = 515;
     for (k = 0; k < 11; k++) {
       value = mivalue[color_id] +
               (mavalue[color_id] - mivalue[color_id]) / 10.0 * k;

@@ -77,14 +77,13 @@ void HECMW_vis_combine(struct surface_module *sf,
   FILE *outfp;
   double rgbrange[3], value;
   double range[6], minx, miny, minz, maxx, maxy, maxz, tminx, tminy, tminz,
-      tmaxx, tmaxy, tmaxz, trange[6];
+      tmaxx, tmaxy, tmaxz;
   double *cdisp, *vdisp, *tdisp, *tcolor, disp_min[5], disp_max[5], tmp;
   int icol, isid, isop, istyp, itopo;
 
   HECMW_Comm_size(VIS_COMM, &pesize);
   HECMW_Comm_rank(VIS_COMM, &mynode);
   find_patch_minmax_sf(result, sf, range);
-  for (i = 0; i < 6; i++) trange[i] = 0.0;
   minx                              = range[0];
   maxx                              = range[1];
   miny                              = range[2];

@@ -419,7 +419,7 @@ static int spdup_make_list(const struct hecmwST_local_mesh *global_mesh) {
   int i;
   long long j, k;
   long long js, je;
-  int node, elem, n_domain, domain[20], flag;
+  int node, n_domain, domain[20], flag;
   int current_domain;
   int rtc;
 
@@ -3269,7 +3269,6 @@ static int set_node_belong_domain_nb(
   struct hecmw_part_edge_data *edge_data = NULL;
   int n_edgecut;
   int rtc;
-  long long int i;
 
   edge_data = (struct hecmw_part_edge_data *)HECMW_malloc(
       sizeof(struct hecmw_part_edge_data));
@@ -3501,7 +3500,6 @@ static int set_elem_belong_domain_eb(
   idx_t *elem_graph_item                 = NULL;
   struct hecmw_part_edge_data *elem_data = NULL;
   int rtc;
-  long long int i;
 
   elem_graph_index =
       (idx_t *)HECMW_calloc(global_mesh->n_elem + 1, sizeof(idx_t));
@@ -5995,7 +5993,6 @@ error:
 static int clear_node_global2local(const struct hecmwST_local_mesh *global_mesh,
                                    struct hecmwST_local_mesh *local_mesh,
                                    int *node_global2local, int domain) {
-  int rtc;
   int i, node;
 
   HECMW_assert(global_mesh);
@@ -6318,7 +6315,6 @@ error:
 static int clear_elem_global2local(const struct hecmwST_local_mesh *global_mesh,
                                    struct hecmwST_local_mesh *local_mesh,
                                    int *elem_global2local, int domain) {
-  int rtc;
   int i, elem;
 
   HECMW_assert(global_mesh);
@@ -7029,7 +7025,7 @@ static int const_elem_node_item(const struct hecmwST_local_mesh *global_mesh,
   size_t size;
   long long counter;
   int i, j;
-  long long gstart, gend, lstart, lend;
+  long long gstart, lstart, lend;
 
   HECMW_assert(local_mesh->n_elem > 0);
   HECMW_assert(local_mesh->elem_node_index);
@@ -7045,7 +7041,6 @@ static int const_elem_node_item(const struct hecmwST_local_mesh *global_mesh,
 
   for (counter = 0, i = 0; i < local_mesh->n_elem; i++) {
     gstart = global_mesh->elem_node_index[elem_local2global[i] - 1];
-    gend   = global_mesh->elem_node_index[elem_local2global[i]];
     lstart = local_mesh->elem_node_index[i];
     lend   = local_mesh->elem_node_index[i + 1];
 
@@ -8290,7 +8285,6 @@ static int const_node_grp_index_mod(
     const int *n_eqn_item, int eqn_block_idx, int domain) {
   struct hecmwST_node_grp *node_group_global = global_mesh->node_group;
   struct hecmwST_node_grp *node_group_local  = local_mesh->node_group;
-  int node;
   int counter, diff;
   int i, j;
 
@@ -8310,13 +8304,6 @@ static int const_node_grp_index_mod(
         counter += n_bnd_nlist[2 * domain + 1] - n_bnd_nlist[2 * domain];
       } else {
         counter += ngrp_idx[domain][i + 1] - ngrp_idx[domain][i];
-        /*
-        for( j=node_group_global->grp_index[i];
-        j<node_group_global->grp_index[i+1]; j++ ) {
-            node = node_group_global->grp_item[j];
-            if( node_global2local[node-1] )  counter++;
-        }
-        */
       }
 
     } else {
@@ -8590,9 +8577,8 @@ static int const_elem_grp_index_mod(
     int domain) {
   struct hecmwST_elem_grp *elem_group_global = global_mesh->elem_group;
   struct hecmwST_elem_grp *elem_group_local  = local_mesh->elem_group;
-  int elem;
   int counter;
-  int i, j, idx1, idx2, elem1, elem2;
+  int i;
 
   elem_group_local->grp_index =
       (int *)HECMW_calloc(elem_group_local->n_grp + 1, sizeof(int));
@@ -9030,7 +9016,7 @@ static int const_local_data(const struct hecmwST_local_mesh *global_mesh,
                             int current_domain) {
   int *node_local2global = NULL;
   int *elem_local2global = NULL;
-  int rtc, i;
+  int rtc;
 
   HECMW_log(HECMW_LOG_DEBUG, "Starting creation of local mesh data...\n");
 

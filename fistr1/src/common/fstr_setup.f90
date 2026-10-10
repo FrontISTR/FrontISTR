@@ -63,8 +63,8 @@ contains
     double precision, parameter :: dpi = 3.14159265358979323846D0
 
     integer(kind=kint) :: version, result, visual, femap, n_totlyr
-    integer(kind=kint) :: rcode, n, i, j, cid, nout, nin, ierror, cparam_id
-    character(len=HECMW_NAME_LEN) :: header_name, fname(MAXOUTFILE)
+    integer(kind=kint) :: rcode, n, i, cid, nout, ierror, cparam_id
+    character(len=HECMW_NAME_LEN) :: header_name
     real(kind=kreal) :: ee, pp, rho, alpha, thick, alpha_over_mu
     real(kind=kreal) :: beam_radius,                          &
       beam_angle1, beam_angle2, beam_angle3,&
@@ -75,7 +75,7 @@ contains
     character(len=HECMW_FILENAME_LEN) :: logfileNAME, mName, mName2, mName3
 
     ! counters
-    integer(kind=kint) :: c_solution, c_solver, c_nlsolver, c_step, c_write, c_echo, c_amplitude
+    integer(kind=kint) :: c_solution, c_solver, c_nlsolver, c_step, c_echo, c_amplitude
     integer(kind=kint) :: c_static, c_boundary, c_cload, c_dload, c_temperature, c_reftemp, c_spring, c_elemact
     integer(kind=kint) :: c_heat, c_fixtemp, c_cflux, c_dflux, c_sflux, c_film, c_sfilm, c_radiate, c_sradiate
     integer(kind=kint) :: c_eigen, c_contact, c_contactparam, c_embed, c_contact_if
@@ -1188,8 +1188,6 @@ contains
     type(hecmwST_local_mesh),target :: hecMESH
     type(fstr_solid)                :: fstrSOLID
 
-    integer :: ndof, ntotal, ierror, ic_type
-
     fstrSOLID%file_type  = kbcfFSTR
 
     fstrSOLID%BOUNDARY_ngrp_tot = 0
@@ -1225,7 +1223,7 @@ contains
     type(hecmwST_local_mesh),target :: hecMESH
     type(fstr_solid)                :: fstrSOLID
 
-    integer :: ndof, ntotal, ierror, ic_type
+    integer :: ndof, ntotal, ierror
 
     ndof=hecMESH%n_dof
     ntotal=ndof*hecMESH%n_node
@@ -1474,7 +1472,6 @@ contains
     integer(kind=kint), intent(in)  :: solution_type
 
     integer :: i, j, ng, isect, ndof, id, nn, n_elem, nthick
-    integer :: ncon_stf
 
     if( hecMESH%n_elem <=0 ) then
       stop "no element defined!"
@@ -2301,7 +2298,6 @@ contains
     integer                    :: cnt
     type( tLocalCoordSys )     :: coordsys
 
-    integer                   :: j, is, iE, grp_id(1)
     character(len=HECMW_NAME_LEN) :: grp_id_name(1)
 
     integer :: nid, dtype
@@ -2587,7 +2583,7 @@ end function fstr_setup_INITIAL
     type(fstr_param_pack) :: P
     integer(kind=kint) :: rcode
     character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
-    integer(kind=kint) :: i, n, old_size, new_size
+    integer(kind=kint) :: n, old_size, new_size
 
     if( P%SOLID%file_type /= kbcfFSTR ) return
 
@@ -2763,7 +2759,6 @@ end function fstr_setup_INITIAL
     type(fstr_param_pack) :: P
 
     integer(kind=kint) :: rcode
-    integer(kind=kint) :: type = 0
     character(HECMW_NAME_LEN) :: amp, rotc_name(1)
     integer(kind=kint) :: amp_id, rotc_id(1), n_rotc
     character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
@@ -2776,11 +2771,6 @@ end function fstr_setup_INITIAL
 
     gid = 1
     rcode = fstr_ctrl_get_param_ex( ctrl, 'GRPID ',  '# ',            0, 'I', gid  )
-    !  rcode = fstr_ctrl_get_param_ex( ctrl, 'TYPE ', 'FSTR,NASTRAN ', 0, 'P', type )
-    !  if( rcode < 0 ) call fstr_ctrl_err_stop
-    !  if( rcode == 1 ) type = 0 ! PARAM_NOTHING
-
-    !  if( type == 0 ) then
 
     istot = 0
     rcode = fstr_ctrl_get_param_ex( ctrl, 'TOTAL ', '# ', 0, 'E', istot )
@@ -2858,12 +2848,6 @@ end function fstr_setup_INITIAL
     nullify( dof_ids )
     nullify( dof_ide )
     nullify( val_ptr )
-    !  else
-    !   ! NASTRAN ---------------------------------------------
-    !
-    !     P%SOLID%file_type = kbcfNASTRAN
-    !     call fstr_setup_solid_nastran( ctrl, P%MESH, P%SOLID )
-    !  end if
 
   end subroutine fstr_setup_BOUNDARY
 
@@ -2984,8 +2968,6 @@ end function fstr_setup_INITIAL
     type(fstr_param_pack) :: P
   !---- vals
     integer(kind=kint)                  :: rcode
-    character(HECMW_NAME_LEN)           :: amp
-    integer(kind=kint)                  :: amp_id
     character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
     real(kind=kreal), pointer           :: val_ptr(:)
     integer(kind=kint), pointer        :: id_ptr(:)
@@ -4542,7 +4524,7 @@ end function fstr_setup_INITIAL
   subroutine fstr_convert_contact_type( hecMESH )
     implicit none
     type(hecmwST_local_mesh), pointer :: hecMESH  !< mesh definition
-    integer(kind=kint) :: n, i, sgrp_id, ngrp_id, ngrp_id2
+    integer(kind=kint) :: n, i, sgrp_id, ngrp_id
     ! convert SURF_SURF to NODE_SURF
     n = hecMESH%contact_pair%n_pair
     do i = 1,n
@@ -4552,15 +4534,6 @@ end function fstr_setup_INITIAL
       ! change type of contact and slave group ID
       hecMESH%contact_pair%type(i) = HECMW_CONTACT_TYPE_NODE_SURF
       hecMESH%contact_pair%slave_grp_id(i) = ngrp_id
-      ! ! for DEBUG
-      ! sgrp_id = hecMESH%contact_pair%master_grp_id(i)
-      ! call append_node_grp_from_surf_grp( hecMESH, sgrp_id, ngrp_id2 )
-      ! ! intersection node group of slave and master
-      ! call append_intersection_node_grp( hecMESH, ngrp_id, ngrp_id2 )
-      ! ! intersection node_group of original slave and patch-slave
-      ! ngrp_id=get_grp_id( hecMESH, 'node_grp', 'SLAVE' )
-      ! ngrp_id2=get_grp_id( hecMESH, 'node_grp', '_PT_SLAVE_S' )
-      ! call append_intersection_node_grp( hecMESH, ngrp_id, ngrp_id2 )
     enddo
   end subroutine fstr_convert_contact_type
 

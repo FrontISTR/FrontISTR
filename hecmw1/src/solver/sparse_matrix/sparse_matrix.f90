@@ -140,7 +140,7 @@ contains
   subroutine sparse_matrix_gather_rhs(spMAT, rhs_all)
     type (sparse_matrix), intent(in) :: spMAT
     real(kind=kreal), intent(out) :: rhs_all(:)
-    integer(kind=kint) :: ierr,i
+    integer(kind=kint) :: i
     if (hecmw_comm_get_size() == 1) then
       do i=1,spMAT%N_loc
         rhs_all(i) = spMAT%rhs(i)
@@ -155,7 +155,7 @@ contains
   subroutine sparse_matrix_scatter_rhs(spMAT, rhs_all)
     type (sparse_matrix), intent(inout) :: spMAT
     real(kind=kreal), intent(in) :: rhs_all(:)
-    integer(kind=kint) :: ierr,i
+    integer(kind=kint) :: i
     if (hecmw_comm_get_size() == 1) then
       do i=1,spMAT%N_loc
         spMAT%rhs(i) = rhs_all(i)
@@ -179,7 +179,6 @@ contains
   subroutine sparse_matrix_set_dimension(spMAT, N_loc)
     type (sparse_matrix), intent(inout) :: spMAT
     integer(kind=kint), intent(in) :: N_loc
-    integer(kind=kint) :: ierr
     spMAT%N_loc = N_loc
     if (hecmw_comm_get_size() == 1) then
       spMAT%N = spMAT%N_loc

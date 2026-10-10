@@ -44,7 +44,6 @@ contains
 
     ! local variables
     real   (kind=kreal):: TOL
-    integer(kind=kint )::i
     real   (kind=kreal)::S_TIME, S1_TIME, E_TIME, E1_TIME, START_TIME, END_TIME
     real   (kind=kreal)::BNRM2, rTAr, rTAr_old, ApTAp
     real   (kind=kreal)::ALPHA, BETA, DNRM2, DNRM2_TRUE

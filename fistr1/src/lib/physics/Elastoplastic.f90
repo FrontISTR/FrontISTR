@@ -141,9 +141,9 @@ contains
 
     real(kind=kreal) :: G, K, harden, r2G, r2Gd3, r4Gd3, r2K, youngs, poisson
     real(kind=kreal) :: phi, psi, cosphi, sinphi, cotphi, sinpsi, sphsps, r2cosphi, r4cos2phi
-    real(kind=kreal) :: prnstre(3), prnprj(3,3), tstre(3,3), prnstra(3)
+    real(kind=kreal) :: prnstre(3), prnprj(3,3), prnstra(3)
     integer(kind=kint) :: m1, m2, m3
-    real(kind=kreal) :: C1,C2,C3, CA1, CA2, CA3, CAm, CAp, CD1, CD2, CD3, Cdiag, Coffd
+    real(kind=kreal) :: C1,C2, CA1, CA2, CA3, CAm, CAp, CD1, CD2, CD3, Cdiag, Coffd
     real(kind=kreal) :: CK1, CK2, CK3
     real(kind=kreal) :: dum, da, db, dc, dd, detinv
     real(kind=kreal) :: dpsdpe(3,3)

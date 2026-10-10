@@ -860,7 +860,7 @@ contains
     real(kind=kreal), intent(inout)                  :: coord(:)         !< position of int point
 
     integer(kind=kint) :: sid0, sid
-    integer(kind=kint) :: i, j
+    integer(kind=kint) :: i
     logical            :: isin, found_in_neighbor
     real(kind=kreal)    :: opos(2)
     integer(kind=kint) :: bktID, nCand, idm, id_best

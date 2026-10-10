@@ -49,7 +49,6 @@ contains
     integer(kind=kint) :: method
     integer(kind=kint) :: fstr_ctrl_get_NONLINEAR_SOLVER
 
-    integer(kind=kint) :: ipt
     character(len=80) :: s
 
     fstr_ctrl_get_NONLINEAR_SOLVER = -1
@@ -420,7 +419,7 @@ contains
     type (hecmwST_local_mesh), intent(inout) :: hecMESH   !< mesh information
     type (tSection), pointer, intent(inout)  :: sections(:)
 
-    integer(kind=kint)            :: j, k, sect_id, ori_id, elemopt
+    integer(kind=kint)            :: j, k, sect_id, elemopt
     integer(kind=kint),save       :: cache = 1
     character(len=HECMW_NAME_LEN) :: sect_orien
     character(19) :: form341list = 'FI,SELECTIVE_ESNS '
@@ -660,7 +659,7 @@ contains
     character(len=*), intent(out)      :: cpname         !< name of contact parameter
     integer(kind=kint), intent(out)    :: smoothing     !< kcsNONE or kcsNAGATA
 
-    integer           :: rcode, ipt, mortar, expansion
+    integer           :: rcode, mortar, expansion
     character(len=30) :: s1 = 'TIED,GLUED,SSLID,FSLID '
     character(len=HECMW_NAME_LEN) :: data_fmt,ss
     character(len=HECMW_NAME_LEN) :: cp_name(n)
@@ -767,11 +766,10 @@ contains
     character(len=*), intent(out)     :: cpname         !< name of contact parameter
     integer(kind=kint), intent(out)   :: smoothing     !< kcsNONE or kcsNAGATA
 
-    integer           :: rcode, ipt
-    character(len=30) :: s1 = 'TIED,GLUED,SSLID,FSLID '
+    integer           :: rcode
     character(len=HECMW_NAME_LEN) :: data_fmt,ss
     character(len=HECMW_NAME_LEN) :: cp_name(n)
-    real(kind=kreal)  :: fcoeff(n),tPenalty(n)
+    real(kind=kreal)  :: tPenalty(n)
 
     tPenalty = 1.0d6
 
@@ -908,7 +906,7 @@ contains
     !
     type(tContactInterference), intent(inout) :: contact_if(n)    !< contact definition
     
-    integer           :: rcode, i
+    integer           :: i
     character(len=30) :: s1 = 'SLAVE,MASTER '
     character(len=HECMW_NAME_LEN) :: data_fmt,ss
     character(len=HECMW_NAME_LEN) :: cp_name(n)
@@ -1137,7 +1135,7 @@ contains
     type(time_points)  :: tp
     integer(kind=kint) :: fstr_ctrl_get_TIMEPOINTS
 
-    integer(kind=kint) :: i, n, rcode
+    integer(kind=kint) :: i, n
     logical            :: generate
     real(kind=kreal)   :: stime, etime, interval
 

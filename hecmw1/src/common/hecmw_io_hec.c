@@ -310,10 +310,6 @@ static int read_amplitude(void) {
   int time                      = HECMW_AMP_TYPETIME_STEP;
   int value                     = HECMW_AMP_TYPEVAL_RELATIVE;
   int flag_name                 = 0; /* flag for NAME */
-  int flag_type                 = 0; /* flag for TYPE */
-  int flag_definition           = 0; /* flag for DEFINITION */
-  int flag_time                 = 0; /* flag for TIME */
-  int flag_value                = 0; /* flag for VALUE */
   int flag_input                = 0; /* flag for INPUT */
   char name[HECMW_NAME_LEN + 1] = "";
   enum {
@@ -339,19 +335,15 @@ static int read_amplitude(void) {
       } else if (token == HECMW_HECLEX_K_TYPE) {
         /* optional */
         if (read_amp_param_type(&type)) return -1;
-        flag_type = 1;
       } else if (token == HECMW_HECLEX_K_DEFINITION) {
         /* optional */
         if (read_amp_param_definition(&definition)) return -1;
-        flag_definition = 1;
       } else if (token == HECMW_HECLEX_K_TIME) {
         /* optional */
         if (read_amp_param_time(&time)) return -1;
-        flag_time = 1;
       } else if (token == HECMW_HECLEX_K_VALUE) {
         /* optional */
         if (read_amp_param_value(&value)) return -1;
-        flag_value = 1;
       } else if (token == HECMW_HECLEX_K_INPUT) {
         /* optional */
         if (read_input(HECMW_IO_HEC_E0100)) return -1;
@@ -1426,7 +1418,6 @@ static int read_equation_data_line2(int neq, double cnst) {
   int is_node     = 0;
   int is_ngrp     = 0;
   int is_link     = 0;
-  int is_beam     = 0;
   const int NITEM = 100;
   char *p;
   struct hecmw_io_mpcitem *mpcitem;
@@ -2132,7 +2123,6 @@ static int read_matitem(struct hecmw_io_matitem *matitem) {
   int item         = -1;
   int subitem      = 1;
   int flag_item    = 0; /* flag for !ITEM */
-  int flag_subitem = 0; /* flag for SUBITEM */
   int depend_temp  = 0;
   enum {
     ST_FINISHED,
@@ -2158,7 +2148,6 @@ static int read_matitem(struct hecmw_io_matitem *matitem) {
       token = HECMW_heclex_next_token();
       if (token == HECMW_HECLEX_K_SUBITEM) {
         if (read_matitem_param_subitem(&subitem)) return -1;
-        flag_subitem = 1;
       } else {
         set_err_token(token, HECMW_IO_HEC_E1100, "Unknown parameter");
         return -1;
@@ -2342,7 +2331,6 @@ static int read_material(void) {
   int token, state;
   int item                      = 1;
   int flag_name                 = 0; /* flag for NAME */
-  int flag_item                 = 0; /* flag for ITEM */
   int flag_input                = 0; /* flag for INPUT */
   char name[HECMW_NAME_LEN + 1] = "";
   enum {
@@ -2367,7 +2355,6 @@ static int read_material(void) {
       } else if (token == HECMW_HECLEX_K_ITEM) {
         /* optioanal */
         if (read_material_param_item(&item)) return -1;
-        flag_item = 1;
       } else if (token == HECMW_HECLEX_K_INPUT) {
         /* oprtional */
         if (read_input(HECMW_IO_HEC_E1100)) return -1;
@@ -2958,7 +2945,6 @@ static int read_node_convert_coord(int system, double *x, double *y,
 static int read_node(void) {
   int token, state;
   int system = 'R'; /* C:cylindrical coordinates, R:cartesian coordinates */
-  int flag_system               = 0; /* flag for SYSTEM */
   int flag_ngrp                 = 0; /* flag for NGRP */
   int flag_input                = 0; /* flag for INPUT */
   char ngrp[HECMW_NAME_LEN + 1] = "";
@@ -2986,7 +2972,6 @@ static int read_node(void) {
       if (token == HECMW_HECLEX_K_SYSTEM) {
         /* optional */
         if (read_node_param_system(&system)) return -1;
-        flag_system = 1;
       } else if (token == HECMW_HECLEX_K_NGRP) {
         /* optional */
         if (read_node_param_ngrp(ngrp, sizeof(ngrp))) return -1;
@@ -3543,7 +3528,6 @@ static int read_section(void) {
   int flag_egrp                     = 0; /* flag for EGRP */
   int flag_material                 = 0; /* flag for MATERIAL */
   int flag_composite                = 0; /* flag for COMPOSITE */
-  int flag_secopt                   = 0; /* flag for SECOPT */
   int flag_input                    = 0; /* flag for INPUT */
   char egrp[HECMW_NAME_LEN + 1]     = "";
   char material[HECMW_NAME_LEN + 1] = "ALL";
@@ -3595,7 +3579,6 @@ static int read_section(void) {
       } else if (token == HECMW_HECLEX_K_SECOPT) {
         /* optional */
         if (read_section_param_secopt(&secopt)) return -1;
-        flag_secopt = 1;
       } else if (token == HECMW_HECLEX_K_INPUT) {
         /* optional */
         if (read_input(HECMW_IO_HEC_E1700)) return -1;

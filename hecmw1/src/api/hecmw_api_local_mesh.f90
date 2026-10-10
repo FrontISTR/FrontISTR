@@ -138,7 +138,7 @@ contains
     integer(c_int), intent(in)        :: sectionID(nelem)
 
     type(hecmwST_local_mesh), pointer :: hecMESH
-    integer :: i, j, ncon, n, ii, jj, off
+    integer :: i, j, ncon, n, ii, off
     integer, parameter :: etypes(35) = [ &
       111, 112, &
       231, 232, 2322, 241, 242, &

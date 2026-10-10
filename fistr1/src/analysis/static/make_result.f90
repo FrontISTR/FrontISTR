@@ -89,8 +89,8 @@ contains
     integer(kind=kint)        :: istep
     character(len=*)          :: label_suffix
     type (fstr_dynamic), intent(in), optional  :: fstrDYNAMIC
-    integer(kind=kint) :: n_lyr, ntot_lyr, tmp, is_33shell, is_33beam, cid
-    integer(kind=kint) :: i, j, k, ndof, mdof, id, nitem, nn, mm, ngauss, it
+    integer(kind=kint) :: ntot_lyr, is_33shell, is_33beam
+    integer(kind=kint) :: i, j, k, ndof, mdof, id, nitem, nn, mm, ngauss
     real(kind=kreal), pointer :: tnstrain(:), testrain(:), yield_ratio(:)
     integer(kind=kint) :: idx
     real(kind=kreal), allocatable   :: work(:), unode(:), rnode(:)
@@ -491,15 +491,12 @@ contains
     type (hecmwST_local_mesh) :: hecMESH
     type (fstr_solid)         :: fstrSOLID
     type (fstr_solid_physic_val) :: RES
-    integer(kind=kint)        :: istep, flag
-    integer(kind=kint)        :: n_lyr, cid
 
-    character(len=HECMW_HEADER_LEN) :: header
-    character(len=HECMW_NAME_LEN)   :: s, label, nameID, addfname
+    character(len=HECMW_NAME_LEN)   :: label
     character(len=16)                :: clyr
     character(len=*)                 :: label_suffix
     character(len=12)                :: cnum
-    integer(kind=kint) :: i, j, k, ndof, mdof, id, nitem, nn, mm, ngauss, it
+    integer(kind=kint) :: k, ndof, id, nitem
     real(kind=kreal), allocatable   :: work(:)
 
     ndof = hecMESH%n_dof
@@ -662,10 +659,10 @@ contains
     type (fstr_solid)         :: fstrSOLID
     type(hecmwST_result_data) :: fstrRESULT
     integer(kind=kint)        :: istep
-    real(kind=kreal) :: time, coords(3,3)
+    real(kind=kreal) :: time
     type(fstr_dynamic), intent(in), optional  :: fstrDYNAMIC
-    integer(kind=kint) :: n_lyr, ntot_lyr, it, coef33, is_33shell, is_33beam
-    integer(kind=kint) :: i, j, k, ndof, mdof, gcomp, gitem, ncomp, nitem, iitem, ecomp, eitem, jitem, nn, mm
+    integer(kind=kint) :: ntot_lyr, coef33, is_33shell, is_33beam
+    integer(kind=kint) :: i, j, ndof, mdof, gcomp, gitem, ncomp, nitem, iitem, ecomp, eitem, jitem, nn, mm
     integer(kind=kint) :: idx
     real(kind=kreal), pointer :: tnstrain(:), testrain(:)
     real(kind=kreal), allocatable   ::unode(:)
@@ -1407,14 +1404,10 @@ contains
     type (fstr_solid)         :: fstrSOLID
     type (hecmwST_result_data):: fstrRESULT
     type (fstr_solid_physic_val) :: RES
-    integer(kind=kint)        :: istep, flag
-    integer(kind=kint)        :: n_lyr, cid
 
-    character(len=HECMW_HEADER_LEN) :: header
-    character(len=HECMW_NAME_LEN)   :: s, label, nameID, addfname
     character(len=16)                :: clyr
     character(len=12)                :: cnum
-    integer(kind=kint) :: i, j, k, ndof, mdof, id, nitem, eitem, nn, mm, ngauss, it
+    integer(kind=kint) :: i, j, k, ndof, nitem, eitem, nn
     integer(kind=kint) :: iitem, ncomp, jitem, ecomp, nlyr
     integer(kind=kint) :: isect, cdsys_ID, serr
     real(kind=kreal) :: coords(3,3), coordsys(3, 3)
@@ -1684,8 +1677,8 @@ contains
     implicit none
     type (fstr_solid)         :: fstrSOLID
     type (hecmwST_local_mesh) :: hecMESH
-    integer(kind=kint) :: i, j, k, itype, is, iE, ic_type, jS, icel
-    integer(kind=kint) :: mm, n1, n2
+    integer(kind=kint) :: j, itype, is, iE, ic_type, jS, icel
+    integer(kind=kint) :: n1, n2
     real(kind=kreal), allocatable   :: unode(:)
 
     do itype = 1, hecMESH%n_elem_type
@@ -1727,8 +1720,8 @@ contains
     implicit none
     type (fstr_solid)         :: fstrSOLID
     type (hecmwST_local_mesh) :: hecMESH
-    integer(kind=kint) :: i, j, k, itype, is, iE, ic_type, jS, icel
-    integer(kind=kint) :: mm, n1, n2
+    integer(kind=kint) :: j, itype, is, iE, ic_type, jS, icel
+    integer(kind=kint) :: n1, n2
     real(kind=kreal), allocatable   :: unode(:)
 
     do itype = 1, hecMESH%n_elem_type
@@ -1777,8 +1770,8 @@ contains
     implicit none
     type (fstr_solid)         :: fstrSOLID
     type (hecmwST_local_mesh) :: hecMESH
-    integer(kind=kint) :: i, j, k, itype, is, iE, ic_type, jS, icel
-    integer(kind=kint) :: mm, a, b
+    integer(kind=kint) :: j, itype, is, iE, ic_type, jS, icel
+    integer(kind=kint) :: a, b
     real(kind=kreal), allocatable   :: unode(:)
 
     do itype = 1, hecMESH%n_elem_type

@@ -74,7 +74,7 @@ contains
 
     !for coloring
     integer(kind=kint ) :: NCOLOR_IN
-    integer(kind=kint ) :: ii, i, j, k
+    integer(kind=kint ) :: i, j
     integer(kind=kint ) :: nthreads = 1
     integer(kind=kint ), allocatable :: perm_tmp(:)
     real   (kind=kreal) :: t0
@@ -985,8 +985,7 @@ contains
     integer(kind=kint) :: i,jj,ij0,kk,ik,kk1,kk2,L,iSk,iEk,iSj,iEj
     integer(kind=kint) :: icou,icouU,icouU1,icouU2,icouU3,icouL,icouL1,icouL2,icouL3
     integer(kind=kint) :: j,k,iSL,iSU
-    integer(kind=kint) :: j_old, jj_old, k_old, kk_old, l_old, ll_old
-    integer(kind=kint) :: jj1
+    integer(kind=kint) :: j_old, jj_old, k_old, kk_old
 
     !C
     !C +------------------+
