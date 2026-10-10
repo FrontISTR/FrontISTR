@@ -696,7 +696,58 @@ module m_fstr
     integer              :: elemopt611
   end type tSection
 
+  interface deallocation_with_check
+    module procedure deallocation_with_check_integer
+    module procedure deallocation_with_check_integer2
+    module procedure deallocation_with_check_real
+  end interface deallocation_with_check
+
 contains
+
+  subroutine deallocation_with_check_integer(p,message)
+    implicit none
+    integer( kind=kint ), pointer, intent(inout) :: p(:)
+    character(len=*), intent(in) :: message
+    integer :: ierror
+    if( associated(p) ) then
+      deallocate(p,stat=ierror)
+      if( ierror /= 0 ) then
+        write(idbg,*) 'stop due to deallocation error ' // message
+        call flush(idbg)
+        call hecmw_abort( hecmw_comm_get_comm())
+      end if
+    endif
+  end subroutine
+
+  subroutine deallocation_with_check_integer2(p,message)
+    implicit none
+    integer( kind=kint ), pointer, intent(inout) :: p(:,:)
+    character(len=*), intent(in) :: message
+    integer :: ierror
+    if( associated(p) ) then
+      deallocate(p,stat=ierror)
+      if( ierror /= 0 ) then
+        write(idbg,*) 'stop due to deallocation error ' // message
+        call flush(idbg)
+        call hecmw_abort( hecmw_comm_get_comm())
+      end if
+    endif
+  end subroutine
+
+  subroutine deallocation_with_check_real(p,message)
+    implicit none
+    real( kind=kreal ), pointer, intent(inout) :: p(:)
+    character(len=*), intent(in) :: message
+    integer :: ierror
+    if( associated(p) ) then
+      deallocate(p,stat=ierror)
+      if( ierror /= 0 ) then
+        write(idbg,*) 'stop due to deallocation error ' // message
+        call flush(idbg)
+        call hecmw_abort( hecmw_comm_get_comm())
+      end if
+    endif
+  end subroutine
 
   !> Terminate the analysis with a classified exit status.
   !> MPI_ABORT does not perform the Fortran I/O finalization, so the log
@@ -1092,6 +1143,29 @@ contains
     end do
     call fstr_sort_index( fstrPARAM%global_local_ID, hecMESH%nn_internal )
   end subroutine fstr_param_init
+
+  subroutine fstr_param_finalize( fstrPARAM )
+    implicit none
+    type(fstr_param) :: fstrPARAM
+    integer :: i
+    call deallocation_with_check(fstrPARAM%dtime,'<FSTR_PARAM, dtime>')
+    call deallocation_with_check(fstrPARAM%etime,'<FSTR_PARAM, etime>')
+    call deallocation_with_check(fstrPARAM%dtmin,'<FSTR_PARAM, dtmin>')
+    call deallocation_with_check(fstrPARAM%delmax,'<FSTR_PARAM, delmax>')
+    call deallocation_with_check(fstrPARAM%itmax,'<FSTR_PARAM, itmax>')
+    call deallocation_with_check(fstrPARAM%eps,'<FSTR_PARAM, eps>')
+    call deallocation_with_check(fstrPARAM%global_local_ID,'<FSTR_PARAM, global_local_ID>')
+    if( associated(fstrPARAM%contactparam) ) deallocate(fstrPARAM%contactparam)
+    if( associated(fstrPARAM%contact_if) )   deallocate(fstrPARAM%contact_if)
+    if( associated(fstrPARAM%ainc) )         deallocate(fstrPARAM%ainc)
+    if( associated(fstrPARAM%timepoints) ) then
+      do i=1, size(fstrPARAM%timepoints)
+       if( associated(fstrPARAM%timepoints(i)%points) ) deallocate(fstrPARAM%timepoints(i)%points)
+      end do
+      deallocate(fstrPARAM%timepoints)
+    end if
+    if( associated(fstrPARAM%cnvparam) )     deallocate(fstrPARAM%cnvparam)
+  end subroutine fstr_param_finalize
 
   logical function fstr_isBoundaryActive( fstrSOLID, nbc, cstep )
     type(fstr_solid)    :: fstrSOLID
