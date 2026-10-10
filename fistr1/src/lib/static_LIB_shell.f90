@@ -7,9 +7,10 @@ module m_static_LIB_shell
   use hecmw, only : kint, kreal, hecmw_abort, hecmw_comm_get_comm
   use elementInfo
   use MITC_Tying, only: NumOfTyingSets, NumOfTyingPoints, getTyingPoint, mitc9_xi_sign, mitc9_eta_sign
-  use m_utilities, only: cross_product
+  use m_utilities, only: cross_product, calInverse
   use m_fstr_FiniteRotationKinematics, only: fstr_is_finite_rotation_shell_element, &
     ShellRotationVectorToMatrix, ShellComposeRotationVector, ShellSkewMatrix
+  use mMechGauss, only: fstr_uses_plane_stress_j2_shell
 
   implicit none
 
@@ -116,7 +117,7 @@ contains
       has_element_state, require_layer_state, kinematics, ndof_shell, finite_rotation, &
       use_director_tangent, use_green_lagrange, add_geometric_stiffness, update_state)
     use mMechGauss, only: tGaussStatus
-    use mMaterial, only: INFINITESIMAL, TOTALLAG, UPDATELAG, isElastic
+    use mMaterial, only: INFINITESIMAL, TOTALLAG, UPDATELAG, isElastic, isElastoplastic
     implicit none
 
     integer(kind=kint), intent(in) :: etype, nn, ndof
@@ -125,22 +126,27 @@ contains
     integer(kind=kint), intent(out) :: kinematics, ndof_shell
     logical, intent(out) :: finite_rotation, use_director_tangent, use_green_lagrange
     logical, intent(out) :: add_geometric_stiffness, update_state
+    logical :: plane_stress_j2
 
     kinematics = gauss%pMaterial%nlgeom_flag
     if( .not. has_nodal_state ) kinematics = INFINITESIMAL
     ndof_shell = min(ndof, 6_kint)
     finite_rotation = (kinematics == TOTALLAG .or. kinematics == UPDATELAG) &
       .and. ndof_shell >= 6 .and. fstr_is_finite_rotation_shell_element(etype, nn) .and. isElastic(gauss%pMaterial%mtype)
+    plane_stress_j2 = fstr_uses_plane_stress_j2_shell(etype, nn, gauss%pMaterial)
     use_director_tangent = finite_rotation
     use_green_lagrange = kinematics == TOTALLAG .and. finite_rotation
     add_geometric_stiffness = kinematics /= INFINITESIMAL
-    update_state = finite_rotation .and. has_element_state
+    update_state = (finite_rotation .or. plane_stress_j2) .and. has_element_state
 
     if( kinematics /= INFINITESIMAL ) then
       if( .not. finite_rotation ) call ShellMITC_AbortNonlinearUnsupported(etype)
       if( require_layer_state .and. .not. update_state ) then
         call ShellMITC_AbortNonlinearUnsupported(etype)
       endif
+    endif
+    if( isElastoplastic(gauss%pMaterial%mtype) .and. .not.plane_stress_j2 ) then
+      call ShellMITC_AbortElastoplasticUnsupported(etype)
     endif
   end subroutine ShellMITC_ResolveFormulation
 
@@ -1408,16 +1414,175 @@ contains
   end subroutine ShellMITC_EvaluateAssumedStrain
 
   !--------------------------------------------------------------------
-  !> Calculate shell stress and optionally update the integration-point state.
-  !> The constitutive matrix is local to this routine, as in Update_Stress3D.
-  subroutine ShellMITC_UpdateStress(flag, update_state, gauss, n_layer, dstrain, &
-      material_local_basis, material_reciprocal_basis, stress, alpha)
-    use mMechGauss
-    use m_MatMatrix
-    use mMaterial, only: UPDATELAG
+  !> Build the local-to-shell component transform used by shell material laws.
+  subroutine ShellMITC_MaterialTransform(local_basis, reciprocal_basis, transform, transform_inverse)
+    real(kind=kreal), intent(in) :: local_basis(3,3), reciprocal_basis(3,3)
+    real(kind=kreal), intent(out) :: transform(3,3), transform_inverse(3,3)
+
+    ! This is e_hat_i . g^a, consistent with the transform in LinearElastic_Shell.
+    transform = matmul(transpose(local_basis), reciprocal_basis)
+    ! The first two reciprocal directions are tangent to the shell surface.
+    transform(3,1:2) = 0.0d0
+    transform_inverse = transform
+    call calInverse(3, transform_inverse)
+  end subroutine ShellMITC_MaterialTransform
+
+  pure subroutine ShellMITC_StrainVectorToTensor(strain, tensor)
+    real(kind=kreal), intent(in) :: strain(6)
+    real(kind=kreal), intent(out) :: tensor(3,3)
+
+    tensor = 0.0d0
+    tensor(1,1) = strain(1)
+    tensor(2,2) = strain(2)
+    tensor(3,3) = strain(3)
+    tensor(1,2) = 0.5d0*strain(4)
+    tensor(2,1) = tensor(1,2)
+    tensor(2,3) = 0.5d0*strain(5)
+    tensor(3,2) = tensor(2,3)
+    tensor(3,1) = 0.5d0*strain(6)
+    tensor(1,3) = tensor(3,1)
+  end subroutine ShellMITC_StrainVectorToTensor
+
+  pure subroutine ShellMITC_TensorToStrainVector(tensor, strain)
+    real(kind=kreal), intent(in) :: tensor(3,3)
+    real(kind=kreal), intent(out) :: strain(6)
+
+    strain(1:3) = (/ tensor(1,1), tensor(2,2), tensor(3,3) /)
+    strain(4:6) = 2.0d0*(/ tensor(1,2), tensor(2,3), tensor(3,1) /)
+  end subroutine ShellMITC_TensorToStrainVector
+
+  subroutine ShellMITC_ShellStrainToLocal(strain, transform, local_strain)
+    real(kind=kreal), intent(in) :: strain(6), transform(3,3)
+    real(kind=kreal), intent(out) :: local_strain(6)
+    real(kind=kreal) :: tensor(3,3), local_tensor(3,3)
+
+    call ShellMITC_StrainVectorToTensor(strain, tensor)
+    local_tensor = matmul(transform, matmul(tensor, transpose(transform)))
+    call ShellMITC_TensorToStrainVector(local_tensor, local_strain)
+  end subroutine ShellMITC_ShellStrainToLocal
+
+  subroutine ShellMITC_LocalStrainToShell(local_strain, transform_inverse, strain)
+    real(kind=kreal), intent(in) :: local_strain(6), transform_inverse(3,3)
+    real(kind=kreal), intent(out) :: strain(6)
+    real(kind=kreal) :: tensor(3,3), local_tensor(3,3)
+
+    call ShellMITC_StrainVectorToTensor(local_strain, local_tensor)
+    tensor = matmul(transform_inverse, matmul(local_tensor, transpose(transform_inverse)))
+    call ShellMITC_TensorToStrainVector(tensor, strain)
+  end subroutine ShellMITC_LocalStrainToShell
+
+  subroutine ShellMITC_ShellStressToLocal(stress, transform_inverse, local_stress)
+    real(kind=kreal), intent(in) :: stress(6), transform_inverse(3,3)
+    real(kind=kreal), intent(out) :: local_stress(6)
+    real(kind=kreal) :: tensor(3,3), local_tensor(3,3)
+
+    call ShellStressVectorToTensor(stress, tensor)
+    local_tensor = matmul(transpose(transform_inverse), matmul(tensor, transform_inverse))
+    call ShellTensorToStressVector(local_tensor, local_stress)
+  end subroutine ShellMITC_ShellStressToLocal
+
+  subroutine ShellMITC_LocalStressToShell(local_stress, transform, stress)
+    real(kind=kreal), intent(in) :: local_stress(6), transform(3,3)
+    real(kind=kreal), intent(out) :: stress(6)
+    real(kind=kreal) :: tensor(3,3), local_tensor(3,3)
+
+    call ShellStressVectorToTensor(local_stress, local_tensor)
+    tensor = matmul(transpose(transform), matmul(local_tensor, transform))
+    call ShellTensorToStressVector(tensor, stress)
+  end subroutine ShellMITC_LocalStressToShell
+
+  subroutine ShellMITC_LocalTangentToShell(local_tangent, transform, tangent)
+    real(kind=kreal), intent(in) :: local_tangent(5,5), transform(3,3)
+    real(kind=kreal), intent(out) :: tangent(5,5)
+    integer :: j
+    integer, parameter :: shell_component(5) = (/ 1, 2, 4, 5, 6 /)
+    real(kind=kreal) :: shell_strain(6), local_strain(6)
+    real(kind=kreal) :: local_stress(6), shell_stress(6)
+
+    tangent = 0.0d0
+    do j = 1, 5
+      shell_strain = 0.0d0
+      shell_strain(shell_component(j)) = 1.0d0
+      call ShellMITC_ShellStrainToLocal(shell_strain, transform, local_strain)
+      local_stress = 0.0d0
+      local_stress(shell_component) = matmul(local_tangent, local_strain(shell_component))
+      call ShellMITC_LocalStressToShell(local_stress, transform, shell_stress)
+      tangent(:,j) = shell_stress(shell_component)
+    enddo
+  end subroutine ShellMITC_LocalTangentToShell
+
+  subroutine ShellMITC_GetDrillingAlpha(gauss, n_layer, material_local_basis, &
+      material_reciprocal_basis, alpha)
+    use mMechGauss, only: tGaussStatus
+    use m_ElasticLinear, only: LinearElastic_Shell
+    use mMaterial, only: Shell
     implicit none
 
-    integer(kind=kint), intent(in) :: flag
+    type(tGaussStatus), intent(in) :: gauss
+    integer, intent(in) :: n_layer
+    real(kind=kreal), intent(in) :: material_local_basis(3,3), material_reciprocal_basis(3,3)
+    real(kind=kreal), intent(out) :: alpha
+
+    real(kind=kreal) :: elastic_tensor(3,3,3,3)
+
+    call LinearElastic_Shell(gauss%pMaterial, Shell, elastic_tensor, material_local_basis(:, SHELL_XI), &
+      material_local_basis(:, SHELL_ETA), material_local_basis(:, SHELL_ZETA), &
+      material_reciprocal_basis(:, SHELL_XI), material_reciprocal_basis(:, SHELL_ETA), &
+      material_reciprocal_basis(:, SHELL_ZETA), alpha, n_layer)
+  end subroutine ShellMITC_GetDrillingAlpha
+
+  subroutine ShellMITC_GetMaterialTangent(etype, nn, gauss, n_layer, material_local_basis, &
+      material_reciprocal_basis, tangent, alpha)
+    use mMechGauss, only: tGaussStatus
+    use m_MatMatrix, only: MatlMatrix_Shell
+    use m_ElastoPlastic, only: PlaneStressJ2Tangent, J2_BAD_STATE
+    use mMaterial, only: Shell, isElastic
+    implicit none
+
+    integer(kind=kint), intent(in) :: etype, nn
+    type(tGaussStatus), intent(in) :: gauss
+    integer, intent(in) :: n_layer
+    real(kind=kreal), intent(in) :: material_local_basis(3,3), material_reciprocal_basis(3,3)
+    real(kind=kreal), intent(out) :: tangent(5,5), alpha
+
+    integer(kind=kint) :: ierr
+    real(kind=kreal) :: local_stress(6), local_tangent(5,5)
+    real(kind=kreal) :: transform(3,3), transform_inverse(3,3)
+
+    if( isElastic(gauss%pMaterial%mtype) ) then
+      call MatlMatrix_Shell(gauss, Shell, tangent, material_local_basis(:, SHELL_XI), &
+        material_local_basis(:, SHELL_ETA), material_local_basis(:, SHELL_ZETA), &
+        material_reciprocal_basis(:, SHELL_XI), material_reciprocal_basis(:, SHELL_ETA), &
+        material_reciprocal_basis(:, SHELL_ZETA), alpha, n_layer)
+      return
+    endif
+
+    if( .not.fstr_uses_plane_stress_j2_shell(etype, nn, gauss%pMaterial) ) then
+      call ShellMITC_AbortElastoplasticUnsupported(etype)
+    endif
+    if( .not.associated(gauss%fstatus) .or. .not.associated(gauss%istatus) ) &
+      call ShellMITC_AbortMaterialError(etype, J2_BAD_STATE)
+    call ShellMITC_GetDrillingAlpha(gauss, n_layer, material_local_basis, material_reciprocal_basis, alpha)
+    call ShellMITC_MaterialTransform(material_local_basis, material_reciprocal_basis, &
+      transform, transform_inverse)
+    call ShellMITC_ShellStressToLocal(gauss%stress, transform_inverse, local_stress)
+    call PlaneStressJ2Tangent(gauss%pMaterial, local_stress, gauss%istatus(1), gauss%fstatus, &
+      gauss%plstrain, local_tangent, ierr)
+    if( ierr /= 0 ) call ShellMITC_AbortMaterialError(etype, ierr)
+    call ShellMITC_LocalTangentToShell(local_tangent, transform, tangent)
+  end subroutine ShellMITC_GetMaterialTangent
+
+  !--------------------------------------------------------------------
+  !> Calculate shell stress and optionally update the integration-point state.
+  !> The constitutive matrix is local to this routine, as in Update_Stress3D.
+  subroutine ShellMITC_UpdateStress(etype, nn, flag, update_state, gauss, n_layer, dstrain, &
+      material_local_basis, material_reciprocal_basis, stress, alpha)
+    use mMechGauss
+    use m_ElastoPlastic, only: Update_PlaneStressJ2, J2_BAD_STATE
+    use mMaterial, only: UPDATELAG, isElastoplastic
+    implicit none
+
+    integer(kind=kint), intent(in) :: etype, nn, flag
     integer, intent(in) :: n_layer
     logical, intent(in) :: update_state
     type(tGaussStatus), intent(inout) :: gauss
@@ -1428,12 +1593,51 @@ contains
 
     real(kind=kreal) :: D(5, 5), strain(5), stress_shell(5)
     real(kind=kreal) :: dstress(6), dstress_trace(6), trace_coeff
+    if( isElastoplastic(gauss%pMaterial%mtype) ) then
+      if( .not.associated(gauss%fstatus) .or. .not.associated(gauss%istatus) ) then
+        call ShellMITC_AbortMaterialError(etype, J2_BAD_STATE)
+      endif
+      block
+        ! Perfect plasticity uses the two-entry state allocated by fstr_init_gauss.
+        real(kind=kreal) :: fstatus_out(2)
+        real(kind=kreal) :: shell_strain_increment(6), local_strain_increment(6), local_stress_bak(6)
+        real(kind=kreal) :: local_stress(6), local_strain_increment_out(6), local_tangent(5,5)
+        real(kind=kreal) :: shell_strain_increment_out(6), plpotential, energy_increment
+        real(kind=kreal) :: transform(3,3), transform_inverse(3,3)
+        integer(kind=kint) :: ierr
+        integer :: istat
+
+        shell_strain_increment = dstrain-gauss%strain_bak(1:6)
+        call ShellMITC_MaterialTransform(material_local_basis, material_reciprocal_basis, &
+          transform, transform_inverse)
+        call ShellMITC_ShellStrainToLocal(shell_strain_increment, transform, local_strain_increment)
+        call ShellMITC_ShellStressToLocal(gauss%stress_bak, transform_inverse, local_stress_bak)
+        call Update_PlaneStressJ2(gauss%pMaterial, local_strain_increment, local_stress_bak, &
+          gauss%plstrain, gauss%fstatus, local_stress, local_strain_increment_out, local_tangent, istat, &
+          fstatus_out, plpotential, energy_increment, ierr)
+        if( ierr /= 0 ) call ShellMITC_AbortMaterialError(etype, ierr)
+        call ShellMITC_LocalStressToShell(local_stress, transform, dstress)
+        call ShellMITC_GetDrillingAlpha(gauss, n_layer, material_local_basis, &
+          material_reciprocal_basis, alpha)
+        stress = dstress
+        if( .not. update_state ) return
+
+        call ShellMITC_LocalStrainToShell(local_strain_increment_out, transform_inverse, &
+          shell_strain_increment_out)
+        gauss%strain(1:6) = gauss%strain_bak(1:6)+shell_strain_increment_out
+        gauss%stress(1:6) = dstress
+        gauss%istatus(1) = istat
+        gauss%fstatus = fstatus_out
+        gauss%plpotential = plpotential
+        gauss%strain_energy = gauss%strain_energy_bak+energy_increment
+        stress = gauss%stress(1:6)
+      end block
+      return
+    endif
 
     strain = (/ dstrain(1), dstrain(2), dstrain(4), dstrain(5), dstrain(6) /)
-    call MatlMatrix_Shell(gauss, Shell, D, material_local_basis(:, SHELL_XI), &
-      material_local_basis(:, SHELL_ETA), material_local_basis(:, SHELL_ZETA), material_reciprocal_basis(:, SHELL_XI), &
-      material_reciprocal_basis(:, SHELL_ETA), material_reciprocal_basis(:, SHELL_ZETA), alpha, n_layer)
-
+    call ShellMITC_GetMaterialTangent(etype, nn, gauss, n_layer, material_local_basis, &
+      material_reciprocal_basis, D, alpha)
     stress_shell = matmul(D, strain)
     dstress = (/ stress_shell(1), stress_shell(2), 0.0D0, stress_shell(3), stress_shell(4), stress_shell(5) /)
     stress = dstress
@@ -1628,6 +1832,28 @@ contains
     call hecmw_abort(hecmw_comm_get_comm())
   end subroutine ShellMITC_AbortNonlinearUnsupported
 
+  subroutine ShellMITC_AbortElastoplasticUnsupported(etype)
+    integer(kind=kint), intent(in) :: etype
+
+    !$omp critical
+    write(*,*) '###ERROR### : Elastoplastic shell support is limited to MITC4 J2 small deformation'
+    write(*,*) '                 with perfect plasticity'
+    write(*,*) ' ic_type = ', etype
+    !$omp end critical
+    call hecmw_abort(hecmw_comm_get_comm())
+  end subroutine ShellMITC_AbortElastoplasticUnsupported
+
+  subroutine ShellMITC_AbortMaterialError(etype, ierr)
+    use m_ElastoPlastic, only: PlaneStressJ2ErrorMessage
+    integer(kind=kint), intent(in) :: etype, ierr
+
+    !$omp critical
+    write(*,*) '###ERROR### : ', trim(PlaneStressJ2ErrorMessage(ierr))
+    write(*,*) ' ic_type = ', etype, ', material error = ', ierr
+    !$omp end critical
+    call hecmw_abort(hecmw_comm_get_comm())
+  end subroutine ShellMITC_AbortMaterialError
+
   !--------------------------------------------------------------------
   !> Integrate one physical shell layer for the material and geometric stiffness.
   !> Tying data are local to this call, so workspace size is independent of nlayer.
@@ -1717,22 +1943,19 @@ contains
           covariant_basis, tangent_basis, reciprocal_basis, local_basis, &
           material_reciprocal_basis, material_local_basis, integration_jacobian, director_contribution)
 
-        if( add_geometric_stiffness .and. present(element) ) then
+        if( present(element) .and. (add_geometric_stiffness .or. &
+            fstr_uses_plane_stress_j2_shell(etype, nn, gausses(lx)%pMaterial)) ) then
           ishell = fstr_shell_layer_gauss_index(element, lx, ilayer, ly)
         else
           ishell = 0
         endif
 
         if( ishell > 0 ) then
-          call MatlMatrix_Shell(element%shell_layer_gausses(ishell), Shell, D, &
-            material_local_basis(:, SHELL_XI), material_local_basis(:, SHELL_ETA), material_local_basis(:, SHELL_ZETA), &
-            material_reciprocal_basis(:, SHELL_XI), material_reciprocal_basis(:, SHELL_ETA), &
-            material_reciprocal_basis(:, SHELL_ZETA), alpha, ilayer)
+          call ShellMITC_GetMaterialTangent(etype, nn, element%shell_layer_gausses(ishell), ilayer, &
+            material_local_basis, material_reciprocal_basis, D, alpha)
         else
-          call MatlMatrix_Shell(gausses(lx), Shell, D, &
-            material_local_basis(:, SHELL_XI), material_local_basis(:, SHELL_ETA), material_local_basis(:, SHELL_ZETA), &
-            material_reciprocal_basis(:, SHELL_XI), material_reciprocal_basis(:, SHELL_ETA), &
-            material_reciprocal_basis(:, SHELL_ZETA), alpha, ilayer)
+          call ShellMITC_GetMaterialTangent(etype, nn, gausses(lx), ilayer, material_local_basis, &
+            material_reciprocal_basis, D, alpha)
         endif
 
         call ShellMITC_BuildFirstStrainVariation(nn, ndof, zeta_ly, shapefunc, shapederiv, &
@@ -1926,7 +2149,7 @@ contains
           stress_material_reciprocal_basis = material_reciprocal_basis
         endif
 
-        call ShellMITC_UpdateStress(kinematics, store_state, gauss, ilayer, dstrain, &
+        call ShellMITC_UpdateStress(etype, nn, kinematics, store_state, gauss, ilayer, dstrain, &
           stress_material_local_basis, stress_material_reciprocal_basis, stress, alpha)
 
         if( store_state ) then
@@ -1935,6 +2158,9 @@ contains
             gauss%stress_out(1:6) = gauss%stress(1:6)
           else
             call ShellStressVectorToTensor(stress, stress_tensor)
+            if( fstr_uses_plane_stress_j2_shell(etype, nn, gauss%pMaterial) ) then
+              call ShellMITC_StrainVectorToTensor(gauss%strain(1:6), strain_tensor)
+            endif
             call ShellMITC_TransformOutput(use_green_lagrange, stress_tensor, strain_tensor, &
               stress_covariant_basis, stress_reciprocal_basis, reference_basis, &
               current_basis, reference_jacobian, current_jacobian, strain_out, stress_out)
@@ -1950,6 +2176,14 @@ contains
         call ShellMITC_BuildDrillingVector(nn, ndof, finite_rotation, shapefunc, &
           point_triad, material_reciprocal_basis, basis_variation, nodal_kinematic_dofs, director, nddrill, Cv, Cv_disp)
         qf_work = qf_work+integration_weight*layer_weight*alpha*Cv*Cv_disp
+        if( store_state ) then
+          if( fstr_uses_plane_stress_j2_shell(etype, nn, gauss%pMaterial) ) then
+            ! Quasi-Newton sums the integrated potential at the surface Gauss points.
+            if( ilayer == 1 .and. ly == 1 ) element%gausses(lx)%strain_energy = 0.0D0
+            element%gausses(lx)%strain_energy = element%gausses(lx)%strain_energy &
+              +integration_weight*layer_weight*(gauss%strain_energy+0.5D0*alpha*Cv_disp**2)
+          endif
+        endif
       end do
     end do
   end subroutine ShellMITC_IntegrateInternalForceLayer
@@ -2071,7 +2305,7 @@ contains
   !> Evaluate MITC shell stress and strain for result output.
   subroutine ElementStress_Shell_MITC(etype, nn, ndof, ecoord, gausses, edisp, &
       strain, stress, thick, zeta, n_layer, surface_gauss_points, &
-      local_strain, local_stress, local_stress_override, ndtriad, ndreftriad, ndbase_disp)
+      local_strain, local_stress, local_stress_override, ndtriad, ndreftriad, ndbase_disp, surface_gauss_index)
     use mMechGauss
     use mMaterial, only: UPDATELAG
     implicit none
@@ -2082,6 +2316,8 @@ contains
     type(tGaussStatus), intent(in) :: gausses(:)
     real(kind=kreal), intent(out) :: strain(:, :), stress(:, :)
     logical, intent(in), optional :: surface_gauss_points
+    !> Evaluate only this surface Gauss point, returning its tensors in row 1.
+    integer(kind=kint), intent(in), optional :: surface_gauss_index
     real(kind=kreal), intent(out), optional :: local_strain(:, :), local_stress(:, :)
     real(kind=kreal), intent(in), optional :: local_stress_override(:, :)
     !> Nodal frames (triads), packed as e1(1:3), e2(4:6), e3=director axis(7:9).
@@ -2089,7 +2325,7 @@ contains
     real(kind=kreal), intent(in), optional :: ndtriad(9, nn), ndreftriad(9, nn)
     real(kind=kreal), intent(in), optional :: ndbase_disp(6, nn)
 
-    integer :: lx, npoints
+    integer :: lx, ip, npoints
     integer(kind=kint) :: ierr_quad, kinematics, ndof_shell
     logical :: finite_rotation, use_director_tangent, use_green_lagrange
     logical :: add_geometric_stiffness, update_state, use_surface_gauss, use_override
@@ -2109,6 +2345,11 @@ contains
 
     use_surface_gauss = .false.
     if( present(surface_gauss_points) ) use_surface_gauss = surface_gauss_points
+    if( present(surface_gauss_index) ) then
+      if( surface_gauss_index<1 .or. surface_gauss_index>NumOfQuadPoints(etype) ) &
+        stop "Invalid shell surface Gauss point"
+      use_surface_gauss = .true.
+    endif
 
     ! Reproduce the same stress-evaluation configuration used by UPDATE.
     call ShellMITC_ResolveFormulation(etype, nn, ndof, gausses(1), .true., .false., &
@@ -2133,9 +2374,12 @@ contains
 
     npoints = nn
     if( use_surface_gauss ) npoints = NumOfQuadPoints(etype)
+    if( present(surface_gauss_index) ) npoints = 1
     do lx = 1, npoints
+      ip = lx
+      if( present(surface_gauss_index) ) ip = surface_gauss_index
       if( use_surface_gauss ) then
-        call getQuadPoint(etype, lx, naturalcoord)
+        call getQuadPoint(etype, ip, naturalcoord)
       else
         naturalcoord = nncoord(lx, :)
       endif
@@ -2147,14 +2391,14 @@ contains
 
       use_override = .false.
       if( present(local_stress_override) ) then
-        use_override = lx <= size(local_stress_override, 1) .and. size(local_stress_override, 2) >= 6
+        use_override = ip <= size(local_stress_override, 1) .and. size(local_stress_override, 2) >= 6
       endif
       if( use_override ) then
-        point_stress = (/ local_stress_override(lx, 1), local_stress_override(lx, 2), 0.0D0, local_stress_override(lx, 4), &
-          local_stress_override(lx, 5), local_stress_override(lx, 6) /)
+        point_stress = (/ local_stress_override(ip, 1), local_stress_override(ip, 2), 0.0D0, local_stress_override(ip, 4), &
+          local_stress_override(ip, 5), local_stress_override(ip, 6) /)
       else
-        gauss_work = gausses(lx)
-        call ShellMITC_UpdateStress(kinematics, update_state, gauss_work, n_layer, &
+        gauss_work = gausses(ip)
+        call ShellMITC_UpdateStress(etype, nn, kinematics, update_state, gauss_work, n_layer, &
           point_strain, material_local_basis, material_reciprocal_basis, point_stress, alpha)
       endif
 

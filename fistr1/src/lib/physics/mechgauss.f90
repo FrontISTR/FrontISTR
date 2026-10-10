@@ -6,8 +6,8 @@
 module mMechGauss
   use hecmw_util
   use mMaterial
-  use elementInfo, only: NumOfShellThicknessQuadPoints, getShellThicknessQuadPoint, &
-    getShellThicknessWeight
+  use elementInfo, only: fe_mitc3_shell, fe_mitc4_shell, fe_mitc9_shell, NumOfShellThicknessQuadPoints, &
+    getShellThicknessQuadPoint, getShellThicknessWeight
   implicit none
 
   ! ----------------------------------------------------------------------------
@@ -46,6 +46,43 @@ module mMechGauss
   end type
 
 contains
+
+  !> Number of shell thickness-point tensors available for result output.
+  integer(kind=kint) function fstr_shell_output_point_count(element) result(npoint)
+    type(tElement), intent(in) :: element
+
+    npoint = 0
+    if( associated(element%shell_layer_gausses) ) then
+      npoint = size(element%shell_layer_gausses)
+      return
+    endif
+    select case(element%etype)
+    case(fe_mitc3_shell, fe_mitc4_shell, fe_mitc9_shell)
+      if( .not.associated(element%gausses) ) return
+      if( element%gausses(1)%pMaterial%nlgeom_flag /= INFINITESIMAL ) return
+      if( .not.isElastic(element%gausses(1)%pMaterial%mtype) ) return
+      npoint = size(element%gausses)*element%gausses(1)%pMaterial%totallyr &
+        *NumOfShellThicknessQuadPoints(element%etype)
+    end select
+  end function fstr_shell_output_point_count
+
+  !> Return whether the element and material are supported by the
+  !> plane-stress J2 shell path.
+  logical function fstr_uses_plane_stress_j2_shell( etype, nn, material )
+    integer(kind=kint), intent(in) :: etype
+    integer(kind=kint), intent(in) :: nn
+    type(tMaterial), intent(in)    :: material
+
+    fstr_uses_plane_stress_j2_shell = .false.
+    if( etype /= fe_mitc4_shell .or. nn /= 4 ) return
+    if( material%nlgeom_flag /= INFINITESIMAL ) return
+    if( .not. isElastoplastic(material%mtype) ) return
+    if( getElasticType(material%mtype) /= 0 ) return
+    if( getYieldFunction(material%mtype) /= 0 ) return
+    if( getHardenType(material%mtype) /= 0 ) return
+    if( abs(material%variables(M_PLCONST2)) > tiny(1.0d0) ) return
+    fstr_uses_plane_stress_j2_shell = .true.
+  end function fstr_uses_plane_stress_j2_shell
 
   !> Initializer
   subroutine fstr_init_gauss( gauss )
@@ -148,6 +185,44 @@ contains
     fstr_shell_layer_gauss_index = ((ig-1)*element%shell_nlayer + ilayer-1) &
       *element%shell_nthick + ithick
   end function fstr_shell_layer_gauss_index
+
+  !> Average equivalent plastic strain over the active quadrature history.
+  !> Average shell history points equally within each layer and weight layers by thickness.
+  real(kind=kreal) function fstr_element_average_plstrain( element )
+    type( tElement ), intent(in) :: element
+    integer(kind=kint) :: i, ig, ilayer, ithick, ishell
+    real(kind=kreal) :: weight, total_weight
+
+    fstr_element_average_plstrain = 0.0d0
+    if( associated(element%shell_layer_gausses) ) then
+      if( .not. associated(element%gausses) ) return
+      if( element%shell_nlayer <= 0 .or. element%shell_nthick <= 0 ) return
+      if( size(element%gausses) <= 0 ) return
+      if( .not. associated(element%gausses(1)%pMaterial) ) return
+      if( .not. associated(element%gausses(1)%pMaterial%shell_var) ) return
+      if( element%shell_nlayer > size(element%gausses(1)%pMaterial%shell_var) ) return
+      total_weight = 0.0d0
+      do ig = 1, size(element%gausses)
+        do ilayer = 1, element%shell_nlayer
+          weight = element%gausses(1)%pMaterial%shell_var(ilayer)%weight
+          do ithick = 1, element%shell_nthick
+            ishell = fstr_shell_layer_gauss_index(element, ig, ilayer, ithick)
+            if( ishell <= 0 ) cycle
+            fstr_element_average_plstrain = fstr_element_average_plstrain &
+              + element%shell_layer_gausses(ishell)%plstrain * weight
+            total_weight = total_weight + weight
+          enddo
+        enddo
+      enddo
+      if( total_weight > 0.0d0 ) fstr_element_average_plstrain = fstr_element_average_plstrain/total_weight
+    else if( associated(element%gausses) ) then
+      if( size(element%gausses) <= 0 ) return
+      do i = 1, size(element%gausses)
+        fstr_element_average_plstrain = fstr_element_average_plstrain+element%gausses(i)%plstrain
+      enddo
+      fstr_element_average_plstrain = fstr_element_average_plstrain/size(element%gausses)
+    endif
+  end function fstr_element_average_plstrain
 
   !> Through-thickness quadrature point and weight used by shell elements.
   subroutine fstr_shell_thickness_quadrature( etype, ithick, zeta, weight, ierr )

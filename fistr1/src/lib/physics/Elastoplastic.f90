@@ -8,6 +8,7 @@ module m_ElastoPlastic
   use mMaterial
   use m_ElasticLinear
   use mUYield
+  use, intrinsic :: ieee_arithmetic, only: ieee_is_finite
 
   implicit none
 
@@ -15,6 +16,11 @@ module m_ElastoPlastic
   public :: calElastoPlasticMatrix
   public :: BackwardEuler
   public :: updateEPState
+  public :: Update_PlaneStressJ2
+  public :: PlaneStressJ2Tangent
+  public :: checkPlaneStressJ2Material, PlaneStressJ2ErrorMessage
+  integer, parameter, public :: J2_UNSUPPORTED=1, J2_BAD_STATE=2, J2_BAD_PROPERTY=3
+  integer, parameter, public :: J2_SINGULAR=4, J2_NO_CONVERGENCE=5, J2_NONFINITE=6, J2_TEMPERATURE=7
 
   real(kind=kreal), parameter :: Id(6,6) = reshape( &
     & (/  2.d0/3.d0, -1.d0/3.d0, -1.d0/3.d0,  0.d0,  0.d0,  0.d0,   &
@@ -39,7 +45,230 @@ module m_ElastoPlastic
   integer, parameter :: DP_PLASTIC_SURF = 1
   integer, parameter :: DP_PLASTIC_APEX = 2
 
+  real(kind=kreal), parameter :: SHELL_SHEAR_CORRECTION = 5.0d0/6.0d0
+  integer, parameter :: PLANE_STRESS_COMPONENTS(3) = (/ 1, 2, 4 /)
+
 contains
+
+  logical function isPlaneStressJ2PerfectPlasticity( matl )
+    type(tMaterial), intent(in) :: matl
+
+    isPlaneStressJ2PerfectPlasticity = .false.
+    if( .not. isElastoplastic(matl%mtype) ) return
+    if( getElasticType(matl%mtype) /= 0 ) return
+    if( getYieldFunction(matl%mtype) /= 0 ) return
+    if( getHardenType(matl%mtype) /= 0 ) return
+    if( abs(matl%variables(M_PLCONST2)) > tiny(1.0d0) ) return
+    isPlaneStressJ2PerfectPlasticity = .true.
+  end function isPlaneStressJ2PerfectPlasticity
+
+  subroutine checkPlaneStressJ2Material(matl, ierr)
+    type(tMaterial), intent(in) :: matl
+    integer(kind=kint), intent(out) :: ierr
+    type(tTable), pointer :: table
+    real(kind=kreal) :: constants(4), elastic(2)
+    logical :: missing
+
+    ierr = J2_UNSUPPORTED
+    if( .not. isPlaneStressJ2PerfectPlasticity(matl) ) return
+    if( associated(matl%shell_var) ) then
+      if( any(matl%shell_var%ortho /= 0) ) return
+    endif
+    call fetch_Table(MC_ISOELASTIC, matl%dict, table, missing)
+    if( .not. missing ) then
+      if( table%ndepends /= 0 ) then
+        ierr = J2_TEMPERATURE
+        return
+      endif
+    endif
+    call fetch_TableData(MC_ISOELASTIC, matl%dict, elastic, missing)
+    ierr = J2_BAD_PROPERTY
+    if( missing ) return
+    constants = (/ elastic, matl%variables(M_PLCONST1), matl%variables(M_PLCONST2) /)
+    if( .not. all(ieee_is_finite(constants)) ) return
+    if( constants(1) <= 0.0d0 .or. constants(2) <= -1.0d0 .or. constants(2) >= 0.5d0 ) return
+    if( constants(3) <= 0.0d0 ) return
+    ierr = 0
+  end subroutine checkPlaneStressJ2Material
+
+  function PlaneStressJ2ErrorMessage(ierr) result(message)
+    integer(kind=kint), intent(in) :: ierr
+    character(len=128) :: message
+
+    select case(ierr)
+    case(J2_UNSUPPORTED)
+      message = 'Plane-stress J2 requires isotropic elasticity and perfect plasticity'
+    case(J2_BAD_STATE)
+      message = 'Invalid plane-stress J2 history state'
+    case(J2_BAD_PROPERTY)
+      message = 'Invalid or missing plane-stress J2 properties: require E > 0, -1 < nu < 0.5, yield stress > 0'
+    case(J2_SINGULAR)
+      message = 'Singular thickness tangent in plane-stress J2 condensation'
+    case(J2_NO_CONVERGENCE)
+      message = 'Plane-stress J2 local iteration did not converge'
+    case(J2_NONFINITE)
+      message = 'Non-finite value in plane-stress J2 material update'
+    case(J2_TEMPERATURE)
+      message = 'Temperature-dependent elasticity is not supported by plane-stress J2 shells'
+    case default
+      message = 'Unknown plane-stress J2 error'
+    end select
+  end function PlaneStressJ2ErrorMessage
+
+  subroutine condensePlaneStressJ2Tangent( tangent3d, shear_stiffness, tangent, ierr )
+    real(kind=kreal), intent(in) :: tangent3d(6,6)
+    real(kind=kreal), intent(in) :: shear_stiffness
+    real(kind=kreal), intent(out) :: tangent(5,5)
+    integer(kind=kint), intent(out) :: ierr
+
+    integer :: i, j, ii, jj
+
+    ierr = 0
+    tangent = 0.0d0
+    if( .not. all(ieee_is_finite(tangent3d)) ) then
+      ierr = J2_NONFINITE
+      return
+    endif
+    if( abs(tangent3d(3,3)) <= 100.0d0*epsilon(1.0d0)*maxval(abs(tangent3d)) ) then
+      ierr = J2_SINGULAR
+      return
+    endif
+
+    do i = 1, 3
+      ii = PLANE_STRESS_COMPONENTS(i)
+      do j = 1, 3
+        jj = PLANE_STRESS_COMPONENTS(j)
+        tangent(i,j) = tangent3d(ii,jj)-tangent3d(ii,3)*tangent3d(3,jj)/tangent3d(3,3)
+      enddo
+    enddo
+    tangent(4,4) = shear_stiffness
+    tangent(5,5) = shear_stiffness
+  end subroutine condensePlaneStressJ2Tangent
+
+  !> Return the plane-stress response of the existing three-dimensional J2
+  !> perfect-plastic material update. The strain increment and stress use the
+  !> shell-local engineering ordering (11, 22, 33, 12, 23, 31).
+  !> Transverse shear remains elastic and is excluded from the yield function.
+  subroutine Update_PlaneStressJ2( matl, strain_increment, stress_bak, plstrain, &
+      fstatus, stress, strain_increment_out, tangent, istat, fstatus_out, plpotential, energy_increment, ierr )
+    type(tMaterial), intent(in) :: matl
+    real(kind=kreal), intent(in) :: strain_increment(6), stress_bak(6)
+    real(kind=kreal), intent(in) :: plstrain, fstatus(:)
+    real(kind=kreal), intent(out) :: stress(6), strain_increment_out(6), tangent(5,5)
+    integer, intent(out) :: istat
+    real(kind=kreal), intent(out) :: fstatus_out(:), plpotential, energy_increment
+    integer(kind=kint), intent(out) :: ierr
+
+    integer, parameter :: maxiter = 25
+    integer :: iter
+    real(kind=kreal) :: elastic(6,6), tangent3d(6,6)
+    real(kind=kreal) :: strain_increment_work(6)
+    real(kind=kreal) :: stress_work(6), stress_bak_work(6)
+    real(kind=kreal) :: shear_stiffness, residual, tolerance
+
+    ierr = 0
+    stress = 0.0d0
+    strain_increment_out = strain_increment
+    tangent = 0.0d0
+    istat = 0
+    fstatus_out = 0.0d0
+    plpotential = 0.0d0
+    energy_increment = 0.0d0
+
+    call checkPlaneStressJ2Material(matl, ierr)
+    if( ierr /= 0 ) return
+    if( size(fstatus) /= size(fstatus_out) .or. size(fstatus) < 1 ) then
+      ierr = J2_BAD_STATE
+      return
+    endif
+    if( .not. all(ieee_is_finite(strain_increment)) .or. .not. all(ieee_is_finite(stress_bak)) .or. &
+        .not. all(ieee_is_finite(fstatus)) .or. .not. ieee_is_finite(plstrain) ) then
+      ierr = J2_NONFINITE
+      return
+    endif
+    fstatus_out = fstatus
+
+    ! Only the in-plane response enters the three-dimensional J2 update.
+    strain_increment_work = strain_increment
+    strain_increment_work(5:6) = 0.0d0
+    stress_bak_work = stress_bak
+    stress_bak_work(5:6) = 0.0d0
+    strain_increment_work(3) = 0.0d0
+    call calElasticMatrix( matl, D3, elastic, 0.0d0 )
+    shear_stiffness = SHELL_SHEAR_CORRECTION*elastic(5,5)
+
+    do iter = 1, maxiter
+      ! Each plane-stress iteration starts from the committed J2 state.
+      fstatus_out = fstatus
+      fstatus_out(1) = plstrain
+      stress_work = stress_bak_work+matmul(elastic, strain_increment_work)
+      call BackwardEuler( matl, stress_work, plstrain, istat, fstatus_out, plpotential, 0.0d0 )
+      call calElastoPlasticMatrix( matl, D3, stress_work, istat, fstatus_out, plstrain, tangent3d, 0.0d0 )
+
+      if( .not. all(ieee_is_finite(stress_work)) .or. .not. all(ieee_is_finite(tangent3d)) .or. &
+          .not. all(ieee_is_finite(fstatus_out)) ) then
+        ierr = J2_NONFINITE
+        return
+      endif
+
+      residual = stress_work(3)
+      tolerance = 1.0d-10*max(matl%variables(M_PLCONST1), maxval(abs(stress_work)))
+      if( abs(residual) <= tolerance ) exit
+      if( abs(tangent3d(3,3)) <= 100.0d0*epsilon(1.0d0)*maxval(abs(tangent3d)) ) then
+        ierr = J2_SINGULAR
+        return
+      endif
+      strain_increment_work(3) = strain_increment_work(3)-residual/tangent3d(3,3)
+    enddo
+    if( iter > maxiter ) then
+      ierr = J2_NO_CONVERGENCE
+      return
+    endif
+
+    call condensePlaneStressJ2Tangent(tangent3d, shear_stiffness, tangent, ierr)
+    if( ierr /= 0 ) return
+
+    stress = stress_work
+    stress(3) = 0.0d0
+    stress(5:6) = stress_bak(5:6)+shear_stiffness*strain_increment(5:6)
+    strain_increment_out = strain_increment_work
+    strain_increment_out(5:6) = strain_increment(5:6)
+    ! Use the elastic predictor work before applying the plastic correction.
+    energy_increment = dot_product(stress_bak_work, strain_increment_work) &
+      +0.5d0*dot_product(matmul(elastic, strain_increment_work), strain_increment_work)+plpotential &
+      +dot_product(stress_bak(5:6)+0.5d0*shear_stiffness*strain_increment(5:6), strain_increment(5:6))
+    if( .not. ieee_is_finite(energy_increment) ) ierr = J2_NONFINITE
+  end subroutine Update_PlaneStressJ2
+
+  !> Condense the in-plane J2 tangent and retain the elastic transverse-shear stiffness.
+  subroutine PlaneStressJ2Tangent( matl, stress, istat, fstatus, plstrain, tangent, ierr )
+    type(tMaterial), intent(in) :: matl
+    real(kind=kreal), intent(in) :: stress(6), fstatus(:), plstrain
+    integer, intent(in) :: istat
+    real(kind=kreal), intent(out) :: tangent(5,5)
+    integer(kind=kint), intent(out) :: ierr
+
+    real(kind=kreal) :: tangent3d(6,6), stress_work(6), elastic(6,6)
+
+    ierr = 0
+    tangent = 0.0d0
+    call checkPlaneStressJ2Material(matl, ierr)
+    if( ierr /= 0 ) return
+    if( size(fstatus) < 1 ) then
+      ierr = J2_BAD_STATE
+      return
+    endif
+    if( .not. all(ieee_is_finite(stress)) .or. .not. all(ieee_is_finite(fstatus)) .or. &
+        .not. ieee_is_finite(plstrain) ) then
+      ierr = J2_NONFINITE
+      return
+    endif
+    stress_work = stress
+    stress_work(5:6) = 0.0d0
+    call calElasticMatrix( matl, D3, elastic, 0.0d0 )
+    call calElastoPlasticMatrix( matl, D3, stress_work, istat, fstatus, plstrain, tangent3d, 0.0d0 )
+    call condensePlaneStressJ2Tangent(tangent3d, SHELL_SHEAR_CORRECTION*elastic(5,5), tangent, ierr)
+  end subroutine PlaneStressJ2Tangent
 
   !> This subroutine calculates elastoplastic constitutive relation
   subroutine calElastoPlasticMatrix( matl, sectType, stress, istat, extval, plstrain, D, temperature, hdflag )
