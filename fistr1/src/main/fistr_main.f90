@@ -135,12 +135,12 @@ contains
 
     ! -------  pointer setting ----------
     REF_TEMP => fstrPARAM%ref_temp
-    IECHO    => fstrPARAM%fg_echo
-    IRESULT  => fstrPARAM%fg_result
-    IVISUAL  => fstrPARAM%fg_visual
+!    IECHO    => fstrPARAM%fg_echo
+!    IRESULT  => fstrPARAM%fg_result
+!    IVISUAL  => fstrPARAM%fg_visual
 
     ! for heat ...
-    INEUTRAL => fstrPARAM%fg_neutral
+!    INEUTRAL => fstrPARAM%fg_neutral
     IRRES    => fstrPARAM%fg_irres
     IWRES    => fstrPARAM%fg_iwres
     NRRES    => fstrPARAM%nrres
@@ -287,7 +287,7 @@ contains
   subroutine fstr_static_analysis
     implicit none
 
-    if( IECHO.eq.1 ) call fstr_echo(hecMESH)
+    if( fstrPARAM%fg_echo.eq.1 ) call fstr_echo(hecMESH)
 
     if(myrank .EQ. 0) then
       write(IMSG,*)
@@ -316,7 +316,7 @@ contains
     use m_fstr
     implicit none
 
-    if( IECHO.eq.1 ) call fstr_echo(hecMESH)
+    if( fstrPARAM%fg_echo.eq.1 ) call fstr_echo(hecMESH)
     if(myrank .EQ. 0) then
       write(IMSG,*)
       write(IMSG,*)
@@ -335,7 +335,7 @@ contains
   subroutine fstr_heat_analysis
     implicit none
 
-    if( IECHO.eq.1 ) call heat_echo(fstrPARAM,hecMESH,fstrHEAT)
+    if( fstrPARAM%fg_echo.eq.1 ) call heat_echo(fstrPARAM,hecMESH,fstrHEAT)
     if(myrank .EQ. 0) then
       write(IMSG,*)
       write(IMSG,*)
@@ -354,7 +354,7 @@ contains
   subroutine fstr_dynamic_analysis
     implicit none
 
-    if( IECHO.eq.1 ) call fstr_echo(hecMESH)
+    if( fstrPARAM%fg_echo.eq.1 ) call fstr_echo(hecMESH)
 
     if(myrank == 0) then
       write(IMSG,*)
@@ -380,7 +380,7 @@ contains
   subroutine fstr_static_eigen_analysis
     implicit none
 
-    if( IECHO==1 ) call fstr_echo(hecMESH)
+    if( fstrPARAM%fg_echo==1 ) call fstr_echo(hecMESH)
 
     if(myrank == 0) then
       write(IMSG,*)

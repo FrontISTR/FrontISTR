@@ -29,13 +29,13 @@ contains
     !C +-------------------------------+
 
     write(ILOG,*) 'global parameters  ***********'
-    write(ILOG,*)
-    write(ILOG,*) 'IECHO   ',IECHO
-    write(ILOG,*) 'IRESULT ',IRESULT
-    write(ILOG,*) 'IVISUAL ',IVISUAL
+!    write(ILOG,*)
+!    write(ILOG,*) 'IECHO   ',IECHO
+!    write(ILOG,*) 'IRESULT ',IRESULT
+!    write(ILOG,*) 'IVISUAL ',IVISUAL
     write(ILOG,*)
     write(ILOG,*) 'for heat ...'
-    write(ILOG,*) 'INEUTRAL ', INEUTRAL
+!    write(ILOG,*) 'INEUTRAL ', INEUTRAL
     write(ILOG,*) 'IRRES    ', IRRES
     write(ILOG,*) 'IWRES    ', IWRES
     write(ILOG,*) 'NRRES    ', NRRES

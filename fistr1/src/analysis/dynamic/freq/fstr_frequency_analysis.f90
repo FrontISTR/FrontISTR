@@ -167,17 +167,18 @@ contains
       end if
 
       if( myrank == 0 ) then
-        if(IRESULT==1) then
+        if(fstrPARAM%fg_result==1) then
           write(*,   *) freq, "[Hz] : ", im, ".res"
           write(ilog,*) freq, "[Hz] : ", im, ".res"
         end if
-        if(IVISUAL==1 .and. vistype==1) then
+        if(fstrPARAM%fg_visual==1 .and. vistype==1) then
           write(*,   *) freq, "[Hz] : ", im, ".vis"
           write(ilog,*) freq, "[Hz] : ", im, ".vis"
         end if
       end if
       call output_result(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, &
-        'fstrRES', 'frequency', freq, im, IRESULT==1, IVISUAL==1 .and. vistype==1, &
+        'fstrRES', 'frequency', freq, im, &
+        fstrPARAM%fg_result==1, fstrPARAM%fg_visual==1 .and. vistype==1, &
         dispRe, dispIm, velRe, velIm, accRe, accIm)
     end do
 
@@ -213,17 +214,18 @@ contains
       end if
 
       if( myrank == 0 ) then
-        if(IRESULT==1) then
+        if(fstrPARAM%fg_result==1) then
           write(*,   *) "time=", time, " : ", im, ".res"
           write(ilog,*) "time=", time, " : ", im, ".res"
         end if
-        if(IVISUAL==1 .and. vistype==2) then
+        if(fstrPARAM%fg_visual==1 .and. vistype==2) then
           write(*,   *) "time=", time, " : ", im, ".vis"
           write(ilog,*) "time=", time, " : ", im, ".vis"
         end if
       end if
       call output_result(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, &
-        'fstrDYNA', 'TOTALTIME', time, im, IRESULT==1, IVISUAL==1 .and. vistype==2, &
+        'fstrDYNA', 'TOTALTIME', time, im, &
+        fstrPARAM%fg_result==1, fstrPARAM%fg_visual==1 .and. vistype==2, &
         dispRe, dispIm, velRe, velIm, accRe, accIm)
     end do
 
