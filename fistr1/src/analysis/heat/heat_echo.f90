@@ -36,10 +36,10 @@ contains
     write(ILOG,*)
     write(ILOG,*) 'for heat ...'
 !    write(ILOG,*) 'INEUTRAL ', INEUTRAL
-    write(ILOG,*) 'IRRES    ', IRRES
-    write(ILOG,*) 'IWRES    ', IWRES
-    write(ILOG,*) 'NRRES    ', NRRES
-    write(ILOG,*) 'NPRINT   ', NPRINT
+!    write(ILOG,*) 'IRRES    ', IRRES
+!    write(ILOG,*) 'IWRES    ', IWRES
+!    write(ILOG,*) 'NRRES    ', NRRES
+!    write(ILOG,*) 'NPRINT   ', NPRINT
     write(ILOG,*)
     write(ILOG,*) 'REF_TEMP ', REF_TEMP
     write(ILOG,*)

@@ -133,10 +133,10 @@ module m_fstr
 !  integer(kind=kint), pointer :: IRESULT
 !  integer(kind=kint), pointer :: IVISUAL
 !  integer(kind=kint), pointer :: INEUTRAL  ! flag for femap neutral file
-  integer(kind=kint), pointer :: IRRES     ! flag for restart, read
+!  integer(kind=kint), pointer :: IRRES     ! flag for restart, read
   integer(kind=kint), pointer :: IWRES     ! flag for restart, write
-  integer(kind=kint), pointer :: NRRES     ! position of restart read
-  integer(kind=kint), pointer :: NPRINT    ! interval of write
+!  integer(kind=kint), pointer :: NRRES     ! position of restart read
+!  integer(kind=kint), pointer :: NPRINT    ! interval of write
 
   integer(kind=kint), parameter :: kOPSS_SOLUTION = 1
   integer(kind=kint), parameter :: kOPSS_MATERIAL = 2
@@ -186,7 +186,7 @@ module m_fstr
 
     !> for heat ...
     integer(kind=kint) :: fg_neutral    !< write by neutral
-    integer(kind=kint) :: fg_irres      !< restart read     (=IRRES)
+    integer(kind=kint) :: fg_irres      !< restart read
     integer(kind=kint) :: fg_iwres      !< restart write    (=IWRES)
     integer(kind=kint) :: nrres         !< NRRES
     integer(kind=kint) :: nprint        !< NPRINT

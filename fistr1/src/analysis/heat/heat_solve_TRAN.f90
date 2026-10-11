@@ -144,10 +144,10 @@ contains
       enddo
 
       call heat_output_log(hecMESH, fstrPARAM, fstrHEAT, total_step, total_time)
-      if(fstrPARAM%fg_result==1) then
+      if(fstrPARAM%fg_result==1 .and. (mod(total_step, fstrPARAM%fg_irres)==0 .or. outflag)) then
         call heat_output_result(hecMESH, fstrHEAT, fstrSOLID, total_step, total_time, outflag)
       end if
-      if(fstrPARAM%fg_visual==1) then
+      if(fstrPARAM%fg_visual==1 .and. (mod(total_step, fstrPARAM%fg_iwres)==0 .or. outflag)) then
         call heat_output_visual(hecMESH, fstrRESULT, fstrHEAT, fstrSOLID, total_step, total_time, outflag)
       end if
       call heat_output_restart(hecMESH, fstrHEAT, ISTEP, total_step, next_time, outflag)

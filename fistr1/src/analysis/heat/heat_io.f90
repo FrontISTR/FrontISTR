@@ -151,7 +151,7 @@ contains
     character(len=HECMW_NAME_LEN)   :: nameID
     real(kind=kreal), pointer  :: work(:)
 
-    if(mod(tstep, IRRES) == 0 .or. outflag) then
+!    if(mod(tstep, IRRES) == 0 .or. outflag) then
       header = '*fstrresult'
       comment = 'nonsteady_heat_result'
       call hecmw_result_init(hecMESH, tstep, header, comment)
@@ -173,7 +173,7 @@ contains
       nameID = 'fstrRES'
       call hecmw_result_write_by_name(nameID)
       call hecmw_result_finalize
-    endif
+!    endif
   end subroutine heat_output_result
 
   subroutine heat_output_visual(hecMESH, fstrRESULT, fstrHEAT, fstrSOLID, tstep, ctime, outflag)
@@ -190,7 +190,7 @@ contains
     logical, intent(in)       :: outflag     !< if true, result will be output regardless of istep
     real(kind=kreal), pointer  :: work(:)
 
-    if(mod(tstep, IWRES) == 0 .or. outflag) then
+!    if(mod(tstep, IWRES) == 0 .or. outflag) then
       call hecmw_nullify_result_data(fstrRESULT)
       call fstr_heat_make_result_step(hecMESH, fstrHEAT, fstrSOLID, fstrRESULT, tstep, ctime)
       call fstr2hecmw_mesh_conv(hecMESH)
@@ -199,7 +199,7 @@ contains
       call hecmw_visualize_finalize
       call hecmw2fstr_mesh_conv(hecMESH)
       call hecmw_result_free(fstrRESULT)
-    endif
+!    endif
   end subroutine heat_output_visual
 
   subroutine heat_output_restart(hecMESH, fstrHEAT, istep, tstep, current_time, outflag)

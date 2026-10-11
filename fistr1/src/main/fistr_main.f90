@@ -141,10 +141,10 @@ contains
 
     ! for heat ...
 !    INEUTRAL => fstrPARAM%fg_neutral
-    IRRES    => fstrPARAM%fg_irres
+!    IRRES    => fstrPARAM%fg_irres
     IWRES    => fstrPARAM%fg_iwres
-    NRRES    => fstrPARAM%nrres
-    NPRINT   => fstrPARAM%nprint
+!    NRRES    => fstrPARAM%nrres
+!    NPRINT   => fstrPARAM%nprint
 
 
     ! ------- initial value setting -------------
