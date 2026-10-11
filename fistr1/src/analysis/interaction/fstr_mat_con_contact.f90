@@ -13,6 +13,7 @@ module fstr_matrix_con_contact
   use m_fstr_contact_damping, only: is_damping_enabled
   use m_fstr_contact_elem_alag, only: get_unique_map
   use hecmw_matrix_ass, only: hecmw_mat_profile_has_node
+  use m_fstr_FiniteRotationKinematics, only: fstr_uses_finite_rotation_kinematics
 
   implicit none
   private
@@ -23,7 +24,7 @@ module fstr_matrix_con_contact
   public :: fstr_s2s_profile_needs_refresh
   public :: fstr_is_matrixStruct_symmetric
   public :: fstr_is_contactALag_symmetric
-  public :: fstr_is_material_symmetric
+  public :: fstr_is_tangent_symmetric
   public :: fstr_set_lagrange_diagonal
   public :: fstr_get_lagrange_diagonal
 
@@ -307,7 +308,7 @@ contains
       if( any(fstrSOLID%contacts(:)%fcoeff /= 0.0d0) )  is_in_contact = 1
     endif
     call hecmw_allreduce_I1(hecMESH, is_in_contact, HECMW_MAX)
-    if( is_in_contact == 0 .and. hecMESH%n_dof /= 4 .and. fstr_is_material_symmetric(fstrSOLID,hecMESH) ) then
+    if( is_in_contact == 0 .and. hecMESH%n_dof /= 4 .and. fstr_is_tangent_symmetric(fstrSOLID,hecMESH) ) then
       fstr_is_matrixStruct_symmetric = .true.
     else
       fstr_is_matrixStruct_symmetric = .false.
@@ -330,16 +331,16 @@ contains
       if( any( fstrSOLID%contacts(:)%fcoeff /= 0.0d0 .and. .not.fstrSOLID%contacts(:)%symmetric ) ) is_unsymmetric = 1
     endif
     call hecmw_allreduce_I1(hecMESH, is_unsymmetric, HECMW_MAX)
-    fstr_is_contactALag_symmetric = ( is_unsymmetric == 0 ) .and. fstr_is_material_symmetric(fstrSOLID,hecMESH)
+    fstr_is_contactALag_symmetric = ( is_unsymmetric == 0 ) .and. fstr_is_tangent_symmetric(fstrSOLID,hecMESH)
 
   end function fstr_is_contactALag_symmetric
 
-  !> \brief this function judges whether all materials yield a symmetric tangent stiffness
-  logical function fstr_is_material_symmetric(fstrSOLID,hecMESH)
+  !> \brief this function judges whether the material and element tangents are symmetric
+  logical function fstr_is_tangent_symmetric(fstrSOLID,hecMESH)
 
     type(fstr_solid )        :: fstrSOLID
     type(hecmwST_local_mesh) :: hecMESH
-    integer (kind=kint)      :: is_unsymmetric, i, ytype
+    integer (kind=kint)      :: is_unsymmetric, i, ytype, nn
 
     ! non-associated flow (dilatancy angle psi /= friction angle phi) makes the consistent
     ! tangent unsymmetric; when psi is omitted the parser stores psi=phi, so the exact
@@ -357,10 +358,23 @@ contains
         endif
       enddo
     endif
+    ! Finite-rotation UL shells have an unsymmetric tangent even for elastic materials.
+    if( associated(fstrSOLID%elements) ) then
+      do i = 1, hecMESH%n_elem
+        if( .not. associated(fstrSOLID%elements(i)%gausses) ) cycle
+        if( fstrSOLID%elements(i)%gausses(1)%pMaterial%nlgeom_flag /= UPDATELAG ) cycle
+        nn = hecMESH%elem_node_index(i) - hecMESH%elem_node_index(i-1)
+        if( fstr_uses_finite_rotation_kinematics(hecMESH%elem_type(i), nn, &
+            fstrSOLID%elements(i)%gausses(1)%pMaterial) ) then
+          is_unsymmetric = 1
+          exit
+        endif
+      enddo
+    endif
     call hecmw_allreduce_I1(hecMESH, is_unsymmetric, HECMW_MAX)
-    fstr_is_material_symmetric = (is_unsymmetric == 0)
+    fstr_is_tangent_symmetric = (is_unsymmetric == 0)
 
-  end function fstr_is_material_symmetric
+  end function fstr_is_tangent_symmetric
 
   !> \brief Set diagonal component value for specified Lagrange multiplier
   subroutine fstr_set_lagrange_diagonal(hecLagMAT, ilag, value)

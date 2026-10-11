@@ -54,7 +54,7 @@ contains
     ! direct solvers choose their factorization mode from this flag (default .true.),
     ! which nothing on the non-contact path would otherwise set; iterative solvers
     ! overwrite it from the solution method
-    hecMAT%symmetric = fstr_is_material_symmetric(fstrSOLID, hecMESH)
+    hecMAT%symmetric = fstr_is_tangent_symmetric(fstrSOLID, hecMESH)
 
     tincr = dtime
     if( fstrSOLID%step_ctrl(cstep)%solution == stepStatic ) tincr = 0.d0
