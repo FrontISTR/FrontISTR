@@ -127,25 +127,8 @@ contains
     call fstr_nullify_fstr_couple ( fstrCPL     )
     call fstr_init_file
 
-    ! ----  default setting of global params ---
-!    DT    = 1
-!    ETIME = 1
-!    ITMAX = 20
-!    EPS   = 1.0d-6
-
     ! -------  pointer setting ----------
     REF_TEMP => fstrPARAM%ref_temp
-!    IECHO    => fstrPARAM%fg_echo
-!    IRESULT  => fstrPARAM%fg_result
-!    IVISUAL  => fstrPARAM%fg_visual
-
-    ! for heat ...
-!    INEUTRAL => fstrPARAM%fg_neutral
-!    IRRES    => fstrPARAM%fg_irres
-!    IWRES    => fstrPARAM%fg_iwres
-!    NRRES    => fstrPARAM%nrres
-!    NPRINT   => fstrPARAM%nprint
-
 
     ! ------- initial value setting -------------
     call fstr_mat_init  ( hecMAT   )

@@ -133,7 +133,7 @@ contains
 
   end subroutine
 
-  subroutine heat_output_result(hecMESH, fstrHEAT, fstrSOLID, tstep, ctime, outflag)
+  subroutine heat_output_result(hecMESH, fstrHEAT, fstrSOLID, tstep, ctime)
     use m_fstr
     use m_fstr_elemact
     implicit none
@@ -142,39 +142,36 @@ contains
     type(fstr_solid)          :: fstrSOLID
     integer(kind=kint) :: tstep
     real(kind=kreal)   :: ctime, work_time(1)
-    logical, intent(in)       :: outflag     !< if true, result will be output regardless of istep
     character(len=HECMW_HEADER_LEN) :: header
     character(len=HECMW_MSG_LEN)    :: comment
     character(len=HECMW_NAME_LEN)   :: label
     character(len=HECMW_NAME_LEN)   :: nameID
     real(kind=kreal), pointer  :: work(:)
 
-!    if(mod(tstep, IRRES) == 0 .or. outflag) then
-      header = '*fstrresult'
-      comment = 'nonsteady_heat_result'
-      call hecmw_result_init(hecMESH, tstep, header, comment)
-      work_time(1) = ctime
-      label = 'TOTALTIME'
-      call hecmw_result_add(HECMW_RESULT_DTYPE_GLOBAL, 1, label, work_time)
-      label = 'TEMPERATURE'
-      call hecmw_result_add(HECMW_RESULT_DTYPE_NODE, 1, label, fstrHEAT%TEMP)
+    header = '*fstrresult'
+    comment = 'nonsteady_heat_result'
+    call hecmw_result_init(hecMESH, tstep, header, comment)
+    work_time(1) = ctime
+    label = 'TOTALTIME'
+    call hecmw_result_add(HECMW_RESULT_DTYPE_GLOBAL, 1, label, work_time)
+    label = 'TEMPERATURE'
+    call hecmw_result_add(HECMW_RESULT_DTYPE_NODE, 1, label, fstrHEAT%TEMP)
 
-      !elemact state
-      if( fstrHEAT%elemact%ELEMACT_egrp_tot > 0 ) then
-        allocate(work(hecMESH%n_elem))
-        call output_elemact_flag( hecMESH, fstrSOLID%elements, work )
-        label = 'ELEMACT'
-        call hecmw_result_add(HECMW_RESULT_DTYPE_ELEM, 1, label, work)
-        deallocate(work)
-      end if
+    !elemact state
+    if( fstrHEAT%elemact%ELEMACT_egrp_tot > 0 ) then
+      allocate(work(hecMESH%n_elem))
+      call output_elemact_flag( hecMESH, fstrSOLID%elements, work )
+      label = 'ELEMACT'
+      call hecmw_result_add(HECMW_RESULT_DTYPE_ELEM, 1, label, work)
+      deallocate(work)
+    end if
 
-      nameID = 'fstrRES'
-      call hecmw_result_write_by_name(nameID)
-      call hecmw_result_finalize
-!    endif
+    nameID = 'fstrRES'
+    call hecmw_result_write_by_name(nameID)
+    call hecmw_result_finalize
   end subroutine heat_output_result
 
-  subroutine heat_output_visual(hecMESH, fstrRESULT, fstrHEAT, fstrSOLID, tstep, ctime, outflag)
+  subroutine heat_output_visual(hecMESH, fstrRESULT, fstrHEAT, fstrSOLID, tstep, ctime)
     use m_fstr
     use m_fstr_elemact
     use m_hecmw2fstr_mesh_conv
@@ -185,21 +182,18 @@ contains
     type(fstr_solid)          :: fstrSOLID
     integer(kind=kint) :: tstep
     real(kind=kreal)   :: ctime
-    logical, intent(in)       :: outflag     !< if true, result will be output regardless of istep
 
-!    if(mod(tstep, IWRES) == 0 .or. outflag) then
-      call hecmw_nullify_result_data(fstrRESULT)
-      call fstr_heat_make_result_step(hecMESH, fstrHEAT, fstrSOLID, fstrRESULT, tstep, ctime)
-      call fstr2hecmw_mesh_conv(hecMESH)
-      call hecmw_visualize_init
-      call hecmw_visualize( hecMESH, fstrRESULT, tstep )
-      call hecmw_visualize_finalize
-      call hecmw2fstr_mesh_conv(hecMESH)
-      call hecmw_result_free(fstrRESULT)
-!    endif
+    call hecmw_nullify_result_data(fstrRESULT)
+    call fstr_heat_make_result_step(hecMESH, fstrHEAT, fstrSOLID, fstrRESULT, tstep, ctime)
+    call fstr2hecmw_mesh_conv(hecMESH)
+    call hecmw_visualize_init
+    call hecmw_visualize( hecMESH, fstrRESULT, tstep )
+    call hecmw_visualize_finalize
+    call hecmw2fstr_mesh_conv(hecMESH)
+    call hecmw_result_free(fstrRESULT)
   end subroutine heat_output_visual
 
-  subroutine heat_output_restart(hecMESH, fstrHEAT, istep, tstep, current_time, outflag)
+  subroutine heat_output_restart(hecMESH, fstrHEAT, istep, tstep, current_time)
     use m_fstr
     implicit none
     type(hecmwST_local_mesh)  :: hecMESH
@@ -209,28 +203,25 @@ contains
     real(kind=kreal)   :: restart_time(1)
     integer(kind=kint) :: restrt_data_size
     integer(kind=kint) :: istep, tstep
-    logical, intent(in)       :: outflag     !< if true, result will be output regardless of istep
     real(kind=kreal)   :: current_time
 
     if( fstrHEAT%restart_nout <= 0 ) return
 
-    if( mod(tstep, fstrHEAT%restart_nout) == 0 .or. outflag )then
-      restart_istep(1) = istep
-      restart_step(1) = tstep
-      restart_time(1) = current_time
-      restrt_data_size = size(restart_istep)
-      call hecmw_restart_add_int(restart_istep, restrt_data_size)
-      restrt_data_size = size(restart_step)
-      call hecmw_restart_add_int(restart_step, restrt_data_size)
-      restrt_data_size = size(restart_time)
-      call hecmw_restart_add_real(restart_time, restrt_data_size)
-      restrt_data_size = size(fstrHEAT%TEMP)
-      call hecmw_restart_add_real(fstrHEAT%TEMP, restrt_data_size)
-      call hecmw_restart_write()
-      if( hecMESH%my_rank.eq.0 ) then
-        write(IMSG,*) '### FSTR output Restart_File.'
-        call flush(IMSG)
-      endif
+    restart_istep(1) = istep
+    restart_step(1) = tstep
+    restart_time(1) = current_time
+    restrt_data_size = size(restart_istep)
+    call hecmw_restart_add_int(restart_istep, restrt_data_size)
+    restrt_data_size = size(restart_step)
+    call hecmw_restart_add_int(restart_step, restrt_data_size)
+    restrt_data_size = size(restart_time)
+    call hecmw_restart_add_real(restart_time, restrt_data_size)
+    restrt_data_size = size(fstrHEAT%TEMP)
+    call hecmw_restart_add_real(fstrHEAT%TEMP, restrt_data_size)
+    call hecmw_restart_write()
+    if( hecMESH%my_rank.eq.0 ) then
+      write(IMSG,*) '### FSTR output Restart_File.'
+      call flush(IMSG)
     endif
   end subroutine heat_output_restart
 end module m_heat_io

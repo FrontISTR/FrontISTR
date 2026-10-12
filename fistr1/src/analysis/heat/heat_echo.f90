@@ -29,25 +29,9 @@ contains
     !C +-------------------------------+
 
     write(ILOG,*) 'global parameters  ***********'
-!    write(ILOG,*)
-!    write(ILOG,*) 'IECHO   ',IECHO
-!    write(ILOG,*) 'IRESULT ',IRESULT
-!    write(ILOG,*) 'IVISUAL ',IVISUAL
-    write(ILOG,*)
-    write(ILOG,*) 'for heat ...'
-!    write(ILOG,*) 'INEUTRAL ', INEUTRAL
-!    write(ILOG,*) 'IRRES    ', IRRES
-!    write(ILOG,*) 'IWRES    ', IWRES
-!    write(ILOG,*) 'NRRES    ', NRRES
-!    write(ILOG,*) 'NPRINT   ', NPRINT
     write(ILOG,*)
     write(ILOG,*) 'REF_TEMP ', REF_TEMP
     write(ILOG,*)
-!    write(ILOG,*) 'ANALYSIS CONTROL for HEAT'
-!    write(ILOG,*) 'DT     ',DT
-!    write(ILOG,*) 'ETIME  ',ETIME
-!    write(ILOG,*) 'ITMAX  ',ITMAX
-!    write(ILOG,*) 'EPS    ',EPS
 
     !C +-------------------------------+
     !C | fstrPARAM                     |

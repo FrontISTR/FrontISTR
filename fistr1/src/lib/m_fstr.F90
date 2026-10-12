@@ -128,29 +128,13 @@ module m_fstr
   integer(kind=kint) :: svIarray(100)
   real(kind=kreal)   :: svRarray(100)
 
-  !> FLAG for ECHO/RESULT/POST
-!  integer(kind=kint), pointer :: IECHO
-!  integer(kind=kint), pointer :: IRESULT
-!  integer(kind=kint), pointer :: IVISUAL
-!  integer(kind=kint), pointer :: INEUTRAL  ! flag for femap neutral file
-!  integer(kind=kint), pointer :: IRRES     ! flag for restart, read
-!  integer(kind=kint), pointer :: IWRES     ! flag for restart, write
-!  integer(kind=kint), pointer :: NRRES     ! position of restart read
-!  integer(kind=kint), pointer :: NPRINT    ! interval of write
-
+  !> OUTPUT STRESS/STRAIN TYPE
   integer(kind=kint), parameter :: kOPSS_SOLUTION = 1
   integer(kind=kint), parameter :: kOPSS_MATERIAL = 2
   integer(kind=kint)            :: OPSSTYPE = kOPSS_SOLUTION ! output stress/strain type
 
-
   !> REFTEMP
   real(kind=kreal), pointer :: REF_TEMP
-
-  !> ANALYSIS CONTROL for NLGEOM and HEAT
-!  real(kind=kreal)   :: DT    ! /=fstr_param%dtime
-!  real(kind=kreal)   :: ETIME ! /=fstr_param%etime
-!  integer(kind=kint) :: ITMAX
-!  real(kind=kreal)   :: EPS   ! /=fstr_param%eps
 
   type tInitialCondition
      character(len=HECMW_FILENAME_LEN)          :: cond_name
