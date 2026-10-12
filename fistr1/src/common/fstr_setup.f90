@@ -2800,7 +2800,7 @@ end function fstr_setup_INITIAL
     integer :: ipt, idx_elpl, iout_list(6)
     real(kind=kreal) :: sig_y0, h_dash
     real(kind=kreal) :: DT, ETIME, EPS ! dummy
-    integer :: ITMAX
+    integer :: ITMAX ! dummy
 
     if( counter > 1 ) then
       write(*,*)
