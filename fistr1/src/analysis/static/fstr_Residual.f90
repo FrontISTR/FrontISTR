@@ -140,9 +140,13 @@ contains
     !    Local variables
     integer(kind=kint) :: ndof, ig0, ig, ityp, iS0, iE0, ik, in, idof1, idof2, idof
     integer(kind=kint) :: grpid
+    real(kind=kreal)   :: lambda
+    logical, allocatable :: held(:)
 
     ndof = hecMESH%n_dof
     fstrSOLID%REACTION = 0.d0
+    allocate( held(size(fstrSOLID%REACTION)) )
+    held = .false.
 
     ! displacement boundary
     do ig0= 1, fstrSOLID%BOUNDARY_ngrp_tot
@@ -161,6 +165,7 @@ contains
           idof2 = ndof
         end if
         do idof=idof1,idof2
+          held(ndof*(in-1)+idof) = .true.
           fstrSOLID%REACTION(ndof*(in-1)+idof) = fstrSOLID%QFORCE(ndof*(in-1)+idof)
           !count embed force as reaction force
           if( associated(fstrSOLID%EMBED_NFORCE) ) fstrSOLID%REACTION(ndof*(in-1)+idof) = &
@@ -183,6 +188,7 @@ contains
         do ik= iS0, iE0
           in   = hecMESH%node_group%grp_item(ik)
           do idof=idof1,idof2
+            held(ndof*(in-1)+idof) = .true.
             fstrSOLID%REACTION(ndof*(in-1)+idof) = fstrSOLID%QFORCE(ndof*(in-1)+idof)
           enddo
         enddo
@@ -203,11 +209,36 @@ contains
         do ik= iS0, iE0
           in   = hecMESH%node_group%grp_item(ik)
           do idof=idof1,idof2
+            held(ndof*(in-1)+idof) = .true.
             fstrSOLID%REACTION(ndof*(in-1)+idof) = fstrSOLID%QFORCE(ndof*(in-1)+idof)
           enddo
         enddo
       enddo
     endif
+
+    ! A constrained DOF in an equation (MPC) also takes the force the equation carries: with its
+    ! multiplier lambda = (GL - QFORCE)/a at the eliminated first term (as in
+    ! fstr_Update_NDForce_MPC), a constrained term k carries a_k*lambda. Without it, a support
+    ! reached through an equation (a remote point held in place) reports no reaction.
+    if( associated(fstrSOLID%GL) ) then
+      OUTER: do ig0= 1, hecMESH%mpc%n_mpc
+        iS0= hecMESH%mpc%mpc_index(ig0-1) + 1
+        iE0= hecMESH%mpc%mpc_index(ig0)
+        do ik= iS0, iE0
+          if( hecMESH%mpc%mpc_dof(ik) > ndof ) cycle OUTER
+        enddo
+        in   = hecMESH%mpc%mpc_item(iS0)
+        idof = hecMESH%mpc%mpc_dof(iS0)
+        lambda = ( fstrSOLID%GL(ndof*(in-1)+idof) - fstrSOLID%QFORCE(ndof*(in-1)+idof) ) / hecMESH%mpc%mpc_val(iS0)
+        do ik= iS0+1, iE0
+          in   = hecMESH%mpc%mpc_item(ik)
+          idof = hecMESH%mpc%mpc_dof(ik)
+          if( held(ndof*(in-1)+idof) ) fstrSOLID%REACTION(ndof*(in-1)+idof) = &
+            &  fstrSOLID%REACTION(ndof*(in-1)+idof) + hecMESH%mpc%mpc_val(ik)*lambda
+        enddo
+      enddo OUTER
+    endif
+    deallocate( held )
   end subroutine fstr_Update_REACTION_SPC
 
 
