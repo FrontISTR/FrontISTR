@@ -53,6 +53,7 @@ contains
     call hecmw_allreduce_I1(hecMESH, nLag, HECMW_SUM)
     if(hecmw_comm_get_rank() == 0) print *,'total number of contact nodes:',nLag
     spMAT%timelog = hecMAT%Iarray(22)
+    spMAT%loglevel = max(0, hecMAT%Iarray(24)) ! LOGLEVEL is -1 when not given
     if( hecmw_comm_get_size() > 1) then
       call sparse_matrix_para_contact_set_prof(spMAT, hecMAT, hecLagMAT)
     else
