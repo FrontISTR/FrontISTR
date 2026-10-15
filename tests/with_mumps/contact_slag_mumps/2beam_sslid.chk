@@ -1,0 +1,4 @@
+# the contact wrapper's path announcement is diagnostics -> LOGLEVEL>=1 (issue #873);
+# with TIMELOG=NO no time line may appear
+solve contact without elimination
+no:solve time :
