@@ -757,7 +757,7 @@ contains
     type(tElement), intent(in) :: element
     real(kind=kreal), intent(inout) :: estrain(6), estress(6)
     integer(kind=kint) :: ig, ilayer, ithick, ishell, ierr
-    real(kind=kreal) :: zeta_layer, weight, total_weight, layer_weight
+    real(kind=kreal) :: zeta_layer, layer_weight, weight, total_weight
     real(kind=kreal) :: avg_strain(6), avg_stress(6)
 
     if( .not. associated(element%shell_layer_gausses) ) return
@@ -772,7 +772,7 @@ contains
     avg_stress(1:6) = 0.0d0
     total_weight = 0.0d0
 
-    ! Average through thickness using quadrature weights and layer thickness fractions.
+    ! Weight history points by the thickness quadrature within each layer and layers by thickness.
     do ig = 1, size(element%gausses)
       do ilayer = 1, element%shell_nlayer
         layer_weight = element%gausses(1)%pMaterial%shell_var(ilayer)%weight
