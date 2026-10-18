@@ -1,0 +1,61 @@
+###################################################################
+#  Nonlinear implicit dynamic analysis with selective ES/NS
+#  smoothed tetrahedra (FORM341=SELECTIVE_ESNS) and frictional
+#  SLAGRANGE contact.
+#
+#  Model: the two stacked blocks of
+#  lib/static_LIB_C3D4_selectiveESNS/T05, with the same symmetry
+#  conditions. The top face is pressed by a suddenly applied surface
+#  pressure, and the interface has a friction coefficient of 0.1.
+#  Stiffness proportional Rayleigh damping is given, so the damping
+#  force ray_k*K*v of the smoothed elements enters the right-hand side.
+#  Many node-smoothed elements of this mesh have more than 20 nodes
+#  in their node list.
+###################################################################
+!VERSION
+ 3
+!SOLUTION, TYPE=DYNAMIC, NONLINEAR
+!CONTACT_ALGO, TYPE=SLAGRANGE
+!WRITE,RESULT,FREQUENCY=4
+!OUTPUT_RES
+DISP,ON
+CONTACT_NFORCE,ON
+CONTACT_FRICTION,ON
+!SOLVER,METHOD=GMRES,PRECOND=1,NSET=0,ITERLOG=NO,TIMELOG=NO
+ 5000, 1
+ 1.0e-08, 1.00, 0.0
+!DYNAMIC
+ 1, 1
+ 0.0, 0.2, 4, 0.05
+ 0.5, 0.25
+ 1, 1, 0.0, 1.0e-3
+ 100, 1, 100
+ 1, 1, 1, 1, 1, 1
+!BOUNDARY, GRPID=1
+ SET_1, 2, 2, 0.0
+!BOUNDARY, GRPID=2
+ SET_2, 1, 1, 0.0
+!BOUNDARY, GRPID=3
+ SET_3, 3, 3, 0.0
+!DLOAD, GRPID=1
+ SURF_3, S, 1.0
+!CONTACT_PARAM, NAME=CPARAM1
+1.0e-4,  5.0e-3,  1.0e-2,  1.0e-4
+1.0e-6,  1.0e-6,  1.0,    -1.0e-8,  1.05
+!CONTACT, INTERACTION=FSLID, CONTACTPARAM=CPARAM1, GRPID=1
+ CP1, 0.1, 5.0E+2
+!MATERIAL, NAME=MATERIAL_1
+!ELASTIC
+ 1.00000000E+03, 3.00000000E-01
+!DENSITY
+ 1.00000000E+00
+!SECTION, SECNUM=1, FORM341=SELECTIVE_ESNS
+!SECTION, SECNUM=2, FORM341=SELECTIVE_ESNS
+!STEP, SUBSTEPS=4, CONVERG=1.0e-7
+ 0.05, 0.2
+ BOUNDARY,1
+ BOUNDARY,2
+ BOUNDARY,3
+ LOAD,1
+ CONTACT,1
+!END
