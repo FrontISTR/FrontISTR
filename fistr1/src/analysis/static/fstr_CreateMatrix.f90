@@ -252,6 +252,7 @@ contains
 
       if( hecmw_is_etype_link(ic_type) ) cycle
       if( hecmw_is_etype_patch(ic_type) ) cycle
+      if( hecmw_is_etype_smoothing(ic_type) ) cycle
 
       !$omp parallel default(none), &
         !$omp& private(icel,iiS,nn,i,j,row,in,nsize,nodLOCAL,ecoord,mass_mat,lumped,elem_velocity), &
