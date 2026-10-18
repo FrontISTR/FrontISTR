@@ -125,13 +125,6 @@ contains
             u_prev(i,j) = fstrSOLID%unode(ndof*(in-1)+i)
             u(i,j) = u_prev(i,j)+u_inc(i,j)
           enddo
-          if( is_dynamic ) then
-            do i = 1, ndof
-              du (ndof*(j-1)+i) = fstrSOLID%dunode(ndof*(in-1)+i)
-              vec(ndof*(j-1)+i) = fstrDYNAMIC%VEL(ndof*(in-1)+i,1)
-              acc(ndof*(j-1)+i) = fstrDYNAMIC%ACC(ndof*(in-1)+i,1)
-            enddo
-          endif
           if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres > 0 ) then
             tt(j) = fstrSOLID%temperature( nodLOCAL(j) )
           endif
@@ -189,6 +182,16 @@ contains
 
         ! ----- assemble system matrix (and the dynamic damping force)
         if( is_dynamic ) then
+          ! gathered with nn and nodLOCAL returned by calc_stiff_and_mass_elem, which compresses them for smoothed elements
+          do j = 1, nn
+            in = nodLOCAL(j)
+            do i = 1, ndof
+              du (ndof*(j-1)+i) = fstrSOLID%dunode(ndof*(in-1)+i)
+              vec(ndof*(j-1)+i) = fstrDYNAMIC%VEL(ndof*(in-1)+i,1)
+              acc(ndof*(j-1)+i) = fstrDYNAMIC%ACC(ndof*(in-1)+i,1)
+            enddo
+          enddo
+
           ! Newmark intermediate vectors
           do i = 1, nn*ndof
             vecA(i) = -a3*du(i) + a2*vec(i) + a1*acc(i)
