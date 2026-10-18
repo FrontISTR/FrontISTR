@@ -53,17 +53,18 @@ contains
     integer(kind=kint) :: ndof, itype, iS, iE, ic_type, nn, icel, iiS, i, j, in, jn
     integer(kind=kint) :: nodLOCAL(fstrSOLID%max_ncon)
     real(kind=kreal)   :: stiff_mat(fstrSOLID%max_ncon_stf*6, fstrSOLID%max_ncon_stf*6)
-    real(kind=kreal)   :: mass_mat(20*6, 20*6), damp_mat(20*6, 20*6)
-    real(kind=kreal)   :: mat(20*6, 20*6), lumped(20*6)
+    real(kind=kreal)   :: mass_mat(fstrSOLID%max_ncon_stf*6, fstrSOLID%max_ncon_stf*6)
+    real(kind=kreal)   :: damp_mat(fstrSOLID%max_ncon_stf*6, fstrSOLID%max_ncon_stf*6)
+    real(kind=kreal)   :: mat(fstrSOLID%max_ncon_stf*6, fstrSOLID%max_ncon_stf*6), lumped(fstrSOLID%max_ncon_stf*6)
     real(kind=kreal)   :: tt(fstrSOLID%max_ncon), ecoord(3,fstrSOLID%max_ncon)
     real(kind=kreal)   :: u(6,fstrSOLID%max_ncon), u_inc(6,fstrSOLID%max_ncon)
-    real(kind=kreal)   :: du(6*20), u_prev(6,fstrSOLID%max_ncon)
+    real(kind=kreal)   :: du(fstrSOLID%max_ncon_stf*6), u_prev(6,fstrSOLID%max_ncon)
     real(kind=kreal)   :: triad_tri(9,fstrSOLID%max_ncon)
     real(kind=kreal)   :: triad_cur(9,fstrSOLID%max_ncon)
     real(kind=kreal)   :: triad_ref(9,fstrSOLID%max_ncon)
     real(kind=kreal)   :: shell_drill(fstrSOLID%max_ncon)
-    real(kind=kreal)   :: vecA(20*6), vecB(20*6)
-    real(kind=kreal)   :: acc(20*6), vec(20*6), df(20*6)
+    real(kind=kreal)   :: vecA(fstrSOLID%max_ncon_stf*6), vecB(fstrSOLID%max_ncon_stf*6)
+    real(kind=kreal)   :: acc(fstrSOLID%max_ncon_stf*6), vec(fstrSOLID%max_ncon_stf*6), df(fstrSOLID%max_ncon_stf*6)
     real(kind=kreal)   :: a1, a2, a3, b1, b2, b3, thick
     type(tMaterial), pointer :: material
     logical            :: is_dynamic, use_lumped_mass
@@ -584,7 +585,7 @@ contains
 
     integer(kind=kint) :: i, j
     real(kind=kreal)   :: ray_m, ray_k, c1, c2
-    real(kind=kreal)   :: vecC(20*6), Kb(20*6)
+    real(kind=kreal)   :: vecC(nn*ndof), Kb(nn*ndof)
 
     if( material%is_elem_Rayleigh_damping ) then
       ray_m = material%variables(M_DAMPING_RM)
