@@ -350,7 +350,7 @@ contains
     real(kind=kreal)   ::  potential
     !    Local variables
     integer(kind=kint) :: ndof, i, icel, icel0, ig
-    real(kind=kreal), allocatable :: totdisp(:), totload(:)
+    real(kind=kreal), allocatable :: totload(:)
     real(kind=kreal) :: factor
     real(kind=kreal) :: extenal_work, internal_work
 
@@ -459,10 +459,9 @@ contains
     real(kind=kreal), intent(in)          :: ctime     !< current time
     real(kind=kreal), intent(in)          :: dtime     !< time increment
     type (fstr_param)                     :: fstrPARAM !< type fstr_param
-    type (hecmwST_matrix_lagrange)        :: hecLagMAT !< type hecmwST_matrix_lagrange
     integer(kind=kint) :: restrt_step_num
 
-    integer(kind=kint) :: iter, i, j
+    integer(kind=kint) :: iter, i
     integer(kind=kint), parameter :: ntot = 30
     real(kind=kreal)   :: tincr, alpha, dulen
     real(kind=kreal) :: pot(3)

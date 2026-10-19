@@ -41,7 +41,7 @@ contains
     real(kind=kreal), pointer :: B(:), X(:)
 
     real(kind=kreal), dimension(:)  ,  allocatable :: vecR,workPC
-    real(kind=kreal), dimension(:,:),  allocatable :: u,c,uin,cin,sBFGS,yBFGS,xi,eta
+    real(kind=kreal), dimension(:,:),  allocatable :: u,c,uin,cin,xi,eta
 
     integer(kind=kint ) :: MAXIT, NREST
 
@@ -50,11 +50,10 @@ contains
     real   (kind=kreal)   ZERO, ONE
     parameter ( ZERO = 0.0D+0, ONE = 1.0D+0 )
 
-    integer(kind=kint ) :: NRK,i,k,kk,jj,INFO,ik,iOrth
-    integer(kind=kint ) :: IROW
+    integer(kind=kint ) :: i,iOrth
     real   (kind=kreal) :: S_TIME,E_TIME,S1_TIME,E1_TIME
-    real   (kind=kreal) :: LDH,LDW,BNRM2,DNRM2,RNORM
-    real   (kind=kreal) :: COMMtime,COMPtime, coef,val,VCS,VSN,DTEMP,AA,BB,R0,scale,RR
+    real   (kind=kreal) :: BNRM2,DNRM2
+    real   (kind=kreal) :: COMMtime,COMPtime, coef
     integer(kind=kint ) :: ESTCOND
     real   (kind=kreal) :: t_max,t_min,t_avg,t_sd
     real   (kind=kreal) :: alpha,beta

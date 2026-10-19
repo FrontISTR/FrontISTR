@@ -39,10 +39,10 @@ contains
     integer(kind=kint), intent(out)          :: istat
     real(kind=kreal), pointer, intent(inout) :: solx(:)
 
+#ifdef HECMW_WITH_MKL
+
     integer(kind=kint) :: myrank, phase
     real(kind=kreal)   :: t2,t3,t4,t5
-
-#ifdef HECMW_WITH_MKL
 
     myrank=hecmw_comm_get_rank()
 

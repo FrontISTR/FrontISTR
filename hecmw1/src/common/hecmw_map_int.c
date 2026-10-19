@@ -226,8 +226,6 @@ static int map_search(const struct hecmw_map_int *map, int key, size_t *index) {
 
 int HECMW_map_int_key2local(const struct hecmw_map_int *map, int key,
                             size_t *local) {
-  size_t index;
-
   HECMW_assert(map);
   HECMW_assert(map->checked);
 

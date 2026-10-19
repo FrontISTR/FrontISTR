@@ -101,7 +101,7 @@ module mMaterial
   integer(kind=kint), parameter :: M_PLCONST5 = 9
   integer(kind=kint), parameter :: M_KINEHARD = 10
 
-  integer(kind=kint), parameter :: M_EXAPNSION = 20
+  integer(kind=kint), parameter :: M_EXPANSION = 20
 
   integer(kind=kint), parameter :: M_ALPHA_OVER_MU = 21
 

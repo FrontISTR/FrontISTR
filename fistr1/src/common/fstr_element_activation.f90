@@ -43,7 +43,6 @@ contains
     real(kind=kreal), intent(in)           :: ctime        !< current analysis time
 
     integer(kind=kint) :: idum, amp_id, gid
-    real(kind=kreal)   :: amp_val
     integer(kind=kint) :: target_state  ! Target state from control file (STATE=ON/OFF)
 
     do idum = 1, fstrSOLID%elemact%ELEMACT_egrp_tot
@@ -80,7 +79,6 @@ contains
 
     integer(kind=kint) :: idum, amp_id, gid
     integer(kind=kint) :: n_changed_local, n_changed_total
-    real(kind=kreal)   :: amp_val
 
     n_changed_total = 0
 
@@ -221,7 +219,7 @@ contains
     type(tElement), pointer, intent(inout) :: elements(:)  !< elements info(elemact flags will be updated)
     integer(kind=kint), intent(out)        :: n_changed    !< number of elements that changed state
 
-    integer(kind=kint) :: ig, iS0, iE0, ik, icel, dtype, ig0
+    integer(kind=kint) :: ig, iS0, iE0, ik, icel, ig0
     integer(kind=kint) :: old_flag
     real(kind=kreal)   :: thlow, thup, stress(6), mises, ps
     integer(kind=kint) :: target_state  ! Target state from control file (STATE=ON/OFF)

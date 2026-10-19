@@ -33,7 +33,6 @@ contains
 
     integer(kind=kint) :: spmat_type
     integer(kind=kint) :: spmat_symtype
-    integer(kind=kint) :: i
 
     call sparse_matrix_finalize(spMAT)
 

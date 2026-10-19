@@ -18,7 +18,7 @@ contains
     type (fstr_solid),intent(inout)      :: fstrSOLID   !< fstr_solid
     type (fstr_param),intent(inout)      :: fstrPARAM   !< analysis control parameters
 
-    integer(kind=kint) :: grpid, ndof, ig0, ig, ityp, iS0, iE0, ik, in, idx, num, jj_n_amp
+    integer(kind=kint) :: grpid, ndof, ig0, ig, ityp, iS0, iE0, ik, in, idx, jj_n_amp
     real(kind=kreal) :: fval, factor, ctime
 
     ndof = hecMAT%NDOF
@@ -61,7 +61,7 @@ contains
     type (fstr_solid), intent(in)        :: fstrSOLID  !< we need boundary conditions of curr step
     real(kind=kreal), intent(inout)      :: B(:)       !< right hand side
     !    Local variables
-    integer(kind=kint) ndof,ig0,ig,ityp,iS0,iE0,ik,in,idx,num,jj_n_amp
+    integer(kind=kint) ndof,ig0,ig,ityp,iS0,iE0,ik,in,idx,jj_n_amp
     integer(kind=kint) :: grpid, incremental
     real(kind=kreal) :: fval, factor, ctime
 

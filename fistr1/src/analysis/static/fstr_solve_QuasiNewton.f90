@@ -57,7 +57,6 @@ contains
     integer :: len_vector
     integer(kind=kint) :: k
 
-    integer :: u_debug
     integer :: max_iter_bak
     logical :: flag_approx_Wolfe
 
@@ -295,9 +294,6 @@ contains
     real(kind=kreal) :: alpha_S, h_prime_S, pot_S
     real(kind=kreal) :: alpha_E, h_prime_E, pot_E
 
-    real(kind=kreal) :: alpha_S_new, h_prime_S_new, pot_S_new
-    real(kind=kreal) :: alpha_E_new, h_prime_E_new, pot_E_new
-    real(kind=kreal) :: alpha_tmp, h_prime_tmp, pot_tmp
     real(kind=kreal) :: z_max
     real(kind=kreal) :: pot_eps
     pot_eps = eps_wolfe*C_Wolfe
@@ -315,31 +311,9 @@ contains
     call fstr_apply_alpha(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k, alpha_E, h_prime_E, pot_E)
 
     do while (h_prime_E < 0.0d0)
-      ! if (pot_E <= pot_0 + pot_eps) then
-        ! alpha_S = alpha_E
-        ! h_prime_S = h_prime_E ! so h_prime_S < 0
-        ! pot_S = h_prime_S
-
-        alpha_E = alpha_E * C_line_search
-        call fstr_apply_alpha(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, &
-                                     &  fstrPARAM, z_k, alpha_E, h_prime_E, pot_E)
-      ! else
-      !   alpha_tmp = 2.0d0*alpha_E
-      !   h_prime_tmp = 0.0d0 ! elemact value
-      !   pot_tmp = 0.0d0 ! elemact value
-      !   call fstr_get_new_range_with_potential(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k, pot_0, &
-      !     alpha_S, h_prime_S, pot_S, alpha_tmp, h_prime_tmp, pot_tmp, alpha_E, h_prime_E, pot_E, &
-      !     alpha_S_new, h_prime_S_new, pot_S_new, alpha_E_new, h_prime_E_new, pot_E_new)
-
-      !   alpha_S = alpha_S_new
-      !   h_prime_S = h_prime_S_new
-      !   pot_S = pot_S_new
-
-      !   alpha_E = alpha_E_new
-      !   h_prime_E = h_prime_E_new
-      !   pot_E = pot_E_new
-      !   return
-      ! end if
+      alpha_E = alpha_E * C_line_search
+      call fstr_apply_alpha(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, &
+                                   &  fstrPARAM, z_k, alpha_E, h_prime_E, pot_E)
     enddo
   end subroutine fstr_init_line_search_range
 
@@ -533,11 +507,8 @@ contains
     real(kind=kreal) :: h_prime_0, pot_0
     logical :: flag_converged
     integer :: ndof, len_vector
-    real(kind=kreal) :: res
 
-    integer(kind=kint) :: i, ierr, iter_ls
-    real(kind=kreal) :: z_max
-    integer :: elemact
+    integer(kind=kint) :: iter_ls
 
     ndof = hecMAT%NDOF
     len_vector = hecMESH%n_node*hecMesh%n_dof

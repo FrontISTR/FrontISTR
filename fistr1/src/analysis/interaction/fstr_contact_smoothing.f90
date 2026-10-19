@@ -14,7 +14,7 @@ module m_fstr_contact_smoothing
   ! Tikhonov regularization parameter
   real(kind=kreal), parameter, private :: NAGATA_EPSILON = 1.0d-4
 
-  integer(kind=kint), parameter, private :: DEBUG = 0
+  integer(kind=kint), parameter, private :: SMOOTHING_DEBUG = 0
 
   private
   public :: compute_Cab
@@ -204,7 +204,6 @@ contains
     real(kind=kreal) :: P1(3,3), P2(3,3), P3(3,3), P4(3,3)
     real(kind=kreal) :: I3(3,3)
     real(kind=kreal) :: normals_tri6n(3,3)
-    integer(kind=kint) :: i, j
 
     P_matrix = 0.0d0
 
@@ -277,7 +276,7 @@ contains
     enddo
     !$omp end parallel do
 
-    if( DEBUG > 0 ) then
+    if( SMOOTHING_DEBUG > 0 ) then
       call print_surface_elements_to_vtk(surf, currpos, contact_name)
     end if  
 

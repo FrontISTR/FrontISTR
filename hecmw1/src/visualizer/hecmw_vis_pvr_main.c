@@ -36,7 +36,6 @@ void HECMW_vis_pvr_rendering(struct hecmwST_local_mesh *mesh,
 
   FILE *FP;
 
-  In_surface *surface;
   int time_step;
   double t1, t2, t3;
   int n_voxel;
@@ -184,15 +183,6 @@ fclose(contfp);
                     voxel_orig_xyz, level, voxel_n_neighbor_pe,
                     voxel_neighbor_pe, stat_para[22], stat_para[46], *init_flag,
                     num_of_pvr);
-  surface = NULL;
-  /*  if(pvr->surface_on==1) {
-surface=(In_surface *)HECMW_malloc(sizeof(In_surface));
-if(surface==NULL) {
-    fprintf(stderr, "There is no enough memory for surface\n");
-    exit(0);
-}
-}
-   */
   if (*init_flag == 1) {
     extent = (double *)HECMW_calloc(mesh->n_elem * 6, sizeof(double));
     if (extent == NULL) HECMW_vis_memory_exit("extent");

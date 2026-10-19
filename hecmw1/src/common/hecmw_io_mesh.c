@@ -395,7 +395,6 @@ static void print_zero(FILE *fp) {
 }
 
 static void print_contact(FILE *fp) {
-  int i;
   struct hecmw_io_contact *p;
 
   HECMW_assert(fp);
@@ -3258,7 +3257,7 @@ static int post_node(void) {
 }
 
 static int post_elem_check_node_existence(void) {
-  int i, j, ncon, id;
+  int j, ncon, id;
   struct hecmw_io_element *p;
 
   HECMW_assert(global_node_ID_max > 0);
@@ -3268,7 +3267,7 @@ static int post_elem_check_node_existence(void) {
   }
 
   HECMW_map_int_iter_init(_elem);
-  for (i = 0; HECMW_map_int_iter_next(_elem, &id, (void **)&p); i++) {
+  while (HECMW_map_int_iter_next(_elem, &id, (void **)&p)) {
     ncon = HECMW_get_max_node(p->type);
 
     HECMW_assert(ncon > 0);
@@ -3299,7 +3298,7 @@ static char *post_elem_make_matname(int id, char *buf, int bufsize) {
 }
 
 static int post_elem_make_mat(void) {
-  int i, j, id;
+  int j, id;
   char name[HECMW_NAME_LEN + 1];
   struct hecmw_io_element *p;
   struct hecmw_io_material *mat;
@@ -3307,7 +3306,7 @@ static int post_elem_make_mat(void) {
   struct hecmw_io_matsubitem *matsubitem;
 
   HECMW_map_int_iter_init(_elem);
-  for (i = 0; HECMW_map_int_iter_next(_elem, &id, (void **)&p); i++) {
+  while (HECMW_map_int_iter_next(_elem, &id, (void **)&p)) {
     if (p->nmatitem <= 0) continue;
 
     mat = HECMW_malloc(sizeof(*mat));
@@ -3380,13 +3379,13 @@ static int post_ngrp(void) {
   struct hecmw_io_ngrp *p;
 
   for (p = _ngrp; p; p = p->next) {
-    int n_dup, id, i;
+    int n_dup, id;
 
     n_dup = HECMW_set_int_check_dup(p->node);
     if (n_dup > 0) set_warn(HECMW_IO_W1006, "%d node(s) in %s", n_dup, p->name);
 
     HECMW_set_int_iter_init(p->node);
-    for (i = 0; HECMW_set_int_iter_next(p->node, &id); i++) {
+    while (HECMW_set_int_iter_next(p->node, &id)) {
       if (HECMW_io_get_node(id) == NULL) {
         set_warn(HECMW_IO_W1005, "Node %d doesn't exist", id);
         HECMW_set_int_del(p->node, id);
@@ -3400,14 +3399,14 @@ static int post_egrp(void) {
   struct hecmw_io_egrp *p;
 
   for (p = _egrp; p; p = p->next) {
-    int n_dup, id, i;
+    int n_dup, id;
 
     n_dup = HECMW_set_int_check_dup(p->elem);
     if (n_dup > 0)
       set_warn(HECMW_IO_W1003, "%d element(s) in %s", n_dup, p->name);
 
     HECMW_set_int_iter_init(p->elem);
-    for (i = 0; HECMW_set_int_iter_next(p->elem, &id); i++) {
+    while (HECMW_set_int_iter_next(p->elem, &id)) {
       if (HECMW_io_get_elem(id) == NULL) {
         set_warn(HECMW_IO_W1002, "Element %d doesn't exist", id);
         HECMW_set_int_del(p->elem, id);
@@ -3421,14 +3420,14 @@ static int post_sgrp(void) {
   struct hecmw_io_sgrp *p;
 
   for (p = _sgrp; p; p = p->next) {
-    int n_dup, id, i;
+    int n_dup, id;
 
     n_dup = HECMW_set_int_check_dup(p->item);
     if (n_dup > 0)
       set_warn(HECMW_IO_W1009, "%d surface(s) in %s", n_dup, p->name);
 
     HECMW_set_int_iter_init(p->item);
-    for (i = 0; HECMW_set_int_iter_next(p->item, &id); i++) {
+    while (HECMW_set_int_iter_next(p->item, &id)) {
       int eid, sid;
       struct hecmw_io_element *element;
 
@@ -3853,7 +3852,7 @@ static int post_section_check_exists(void) {
 }
 
 static int post_section_check_egrp(void) {
-  int i, eid;
+  int eid;
   struct hecmw_io_section *p;
 
   for (p = _sect; p; p = p->next) {
@@ -3865,7 +3864,7 @@ static int post_section_check_egrp(void) {
     }
 
     HECMW_set_int_iter_init(egrp->elem);
-    for (i = 0; HECMW_set_int_iter_next(egrp->elem, &eid); i++) {
+    while (HECMW_set_int_iter_next(egrp->elem, &eid)) {
       struct hecmw_io_element *elem = HECMW_io_get_elem(eid);
 
       HECMW_assert(elem);
@@ -3914,17 +3913,10 @@ error:
 static int post_section_check_mat_exists(void) {
   int found;
   struct hecmw_io_section *p;
-  struct hecmw_io_material *mat;
   extern hecmw_hash_p *hash_mat;
 
   for (p = _sect; p; p = p->next) {
     found = 0;
-    /* for(mat=_mat; mat; mat=mat->next) {
-            if(strcmp(p->material, mat->name) == 0) {
-                    found = 1;
-                    break;
-            }
-    }*/
     if ((struct hecmw_io_material *)hecmw_hash_p_get(hash_mat, p->material) !=
         NULL) {
       found = 1;
@@ -3946,7 +3938,6 @@ static int post_section(void) {
 }
 
 static int post_contact_check_grp(void) {
-  int i;
   struct hecmw_io_contact *p;
 
   for (p = _contact; p; p = p->next) {

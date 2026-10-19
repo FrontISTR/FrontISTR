@@ -9,7 +9,7 @@ contains
     use hecmw
     implicit none
     real(kind=kreal) :: coef(3)
-    integer(kind=kint) :: i, in, imat, itab, ntab
+    integer(kind=kint) :: in, imat, itab, ntab
     real(kind=kreal) :: Tpoi, temp(ntab), funcA(ntab+1), funcB(ntab+1)
 
     itab = 0
@@ -40,7 +40,7 @@ contains
     real(kind=kreal), intent(in) :: temperature(nn) !< temperature
     real(kind=kreal), intent(out) :: stiff(:,:) !< stiff matrix
     integer(kind=kint), parameter :: ndof = 1
-    integer(kind=kint) :: i, j, IMAT
+    integer(kind=kint) :: IMAT
     integer(kind=kint) :: ntab
     real(kind=kreal) :: ecoord(3, nn)
     real(kind=kreal) :: dx, dy, dz, surf, val, temp_i, length
@@ -78,18 +78,16 @@ contains
     real(kind=kreal), intent(in)  :: ecoord(2,nn)           !< coordinates of elemental nodes
     real(kind=kreal), intent(out) :: stiff(:,:)              !< stiff matrix
     real(kind=kreal), intent(in) :: temperature(nn) !< temperature
-    type(tMaterial), pointer :: matl !< material information
     integer(kind=kint) :: i, j, LX, IMAT, ntab
     real(kind=kreal) :: naturalCoord(2)
     real(kind=kreal) :: func(nn), thick, temp_i
-    real(kind=kreal) :: det, wg, rho, diag_stiff, total_stiff
-    real(kind=kreal) :: D(2,2), N(2,nn), DN(2,nn)
+    real(kind=kreal) :: det, wg
+    real(kind=kreal) :: D(2,2), DN(2,nn)
     real(kind=kreal) :: gderiv(nn,2)
     real(kind=kreal) :: CC(3)
     real(kind=kreal) :: temp(ntab), funcA(ntab+1), funcB(ntab+1)
 
     stiff = 0.0d0
-    !matl => gausses(1)%pMaterial
 
     do LX = 1, NumOfQuadPoints(etype)
       call getQuadPoint(etype, LX, naturalCoord)
@@ -125,18 +123,16 @@ contains
     real(kind=kreal), intent(in)  :: ecoord(3,nn)           !< coordinates of elemental nodes
     real(kind=kreal), intent(out) :: stiff(:,:)              !< stiff matrix
     real(kind=kreal), intent(in) :: temperature(nn) !< temperature
-    type(tMaterial), pointer :: matl !< material information
     integer(kind=kint) :: i, j, LX, IMAT, ntab
     real(kind=kreal) :: naturalCoord(3)
     real(kind=kreal) :: func(nn), temp_i
-    real(kind=kreal) :: det, wg, rho, diag_stiff, total_stiff
-    real(kind=kreal) :: D(3, 3), N(3, nn), DN(3, nn)
+    real(kind=kreal) :: det, wg
+    real(kind=kreal) :: D(3, 3), DN(3, nn)
     real(kind=kreal) :: gderiv(nn, 3)
     real(kind=kreal) :: SPE(3)
     real(kind=kreal) :: temp(ntab), funcA(ntab+1), funcB(ntab+1)
 
     stiff = 0.0d0
-    !matl => gausses(1)%pMaterial
 
     do LX = 1, NumOfQuadPoints(etype)
       call getQuadPoint(etype, LX, naturalCoord)
@@ -177,13 +173,12 @@ contains
     real(kind=kreal), intent(out) :: stiff(:,:)              !< stiff matrix
     real(kind=kreal), intent(inout) :: SS(:)              !< stiff matrix
     real(kind=kreal), intent(inout) :: TT(nn) !< temperature
-    type(tMaterial), pointer :: matl !< material information
-    integer(kind=kint) :: i, j, LX, IMAT, ntab
+    integer(kind=kint) :: i, IMAT, ntab
     integer(kind=kint) :: IG1, IG2, IG3, INOD
-    real(kind=kreal) :: surf, thick, temp_i
-    real(kind=kreal) :: RI, RM, RP, SI, SM, SP, TI, VALX, VALY, VALZ, VAR
+    real(kind=kreal) :: thick
+    real(kind=kreal) :: RI, RM, RP, SI, SM, SP, TI, VALX, VALY, VAR
     real(kind=kreal) :: XJ11, XJ12, XJ13, XJ21, XJ22, XJ23, XJ31, XJ32, XJ33, XSUM
-    real(kind=kreal) :: det, wg, rho, diag_stiff, total_stiff
+    real(kind=kreal) :: det
     real(kind=kreal) :: CC(3), CTEMP, DUM
     real(kind=kreal) :: temp(ntab), funcA(ntab+1), funcB(ntab+1)
     real(kind=kreal) ::  XG(2), WGT(2), H(4), HR(4), HS(4)
@@ -436,21 +431,17 @@ contains
     real(kind=kreal), intent(out) :: stiff(:,:)              !< stiff matrix
     real(kind=kreal), intent(inout) :: SS(:)              !< stiff matrix
     real(kind=kreal), intent(in) :: TT(nn) !< temperature
-    type(tMaterial), pointer :: matl !< material information
-    integer(kind=kint) :: i, j, LX, LY, IMAT, ntab
+    integer(kind=kint) :: i, IMAT, ntab
     integer(kind=kint) :: IG1, IG2, IG3, INOD
-    real(kind=kreal) :: TI, VALX, VALY, VALZ, VAR
+    real(kind=kreal) :: TI, VALX, VALY, VAR
     real(kind=kreal) :: XJ11, XJ12, XJ13, XJ21, XJ22, XJ23, XJ31, XJ32, XJ33
-    real(kind=kreal) :: naturalCoord(2), XSUM
-    real(kind=kreal) :: func(nn), thick, temp_i
-    real(kind=kreal) :: det, wg, rho, diag_stiff, total_stiff
-    real(kind=kreal) :: D(1,1), N(1, nn), DN(1, nn)
-    real(kind=kreal) :: gderiv(nn,2)
+    real(kind=kreal) :: XSUM
+    real(kind=kreal) :: thick
+    real(kind=kreal) :: det
     real(kind=kreal) :: CC(3)
     real(kind=kreal) :: temp(ntab), funcA(ntab+1), funcB(ntab+1)
     real(kind=kreal) :: XG(2), RI, SI, RP, SP, RM, SM, HR(4), HS(4)
-    real(kind=kreal) :: XR, XS, YR, YS, ZR, ZS
-    real(kind=kreal) :: H(4), X(4), Y(4), Z(4)
+    real(kind=kreal) :: H(4)
     real(kind=kreal) ::  WGT(2), CTEMP, DUM
     real(kind=kreal) ::  COD(3, 4)
     real(kind=kreal) ::  G1(3), G2(3), G3(3), E1(3), E2(3), E3(3), REF(3)
@@ -710,7 +701,6 @@ contains
     real(kind=kreal) :: HA1, HA2, HA3, HA4
     real(kind=kreal) :: HB1, HB2, HB3, HB4
     real(kind=kreal) :: HH1, HH2, HH3, HH4
-    real(kind=kreal) :: XXX(NN), YYY(NN), ZZZ(NN)
     real(kind=kreal) :: XX(4), YY(4), ZZ(4)
 
     XX(1)=ecoord(1,1)

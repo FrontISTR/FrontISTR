@@ -11,7 +11,7 @@ contains
     use hecmw
     implicit none
     real(kind=kreal) :: coef(3)
-    integer(kind=kint) :: i, in, imat, itab, ntab
+    integer(kind=kint) :: in, imat, itab, ntab
     real(kind=kreal) :: Tpoi, temp(ntab), funcA(ntab+1), funcB(ntab+1)
 
     itab = 0
@@ -43,7 +43,7 @@ contains
     real(kind=kreal), intent(out) :: mass(:,:) !< mass matrix
     real(kind=kreal), intent(inout) :: lumped(:) !< mass matrix
     integer(kind=kint), parameter :: ndof = 1
-    integer(kind=kint) :: i, j, IMAT
+    integer(kind=kint) :: IMAT
     integer(kind=kint) :: ntab1, ntab2
     real(kind=kreal) :: ecoord(3, nn)
     real(kind=kreal) :: dx, dy, dz, surf, val, temp, length
@@ -82,11 +82,10 @@ contains
     real(kind=kreal), intent(out) :: mass(:,:)              !< mass matrix
     real(kind=kreal), intent(out) :: lumped(:)              !< mass matrix
     real(kind=kreal), intent(in) :: temperature(nn) !< temperature
-    type(tMaterial), pointer :: matl !< material information
     integer(kind=kint) :: i, j, LX, IMAT, ntab1, ntab2
     real(kind=kreal) :: naturalCoord(2)
     real(kind=kreal) :: func(nn), thick, temp
-    real(kind=kreal) :: det, wg, rho, diag_mass, total_mass
+    real(kind=kreal) :: det, wg
     real(kind=kreal) :: D(1,1), N(1,nn), DN(1,nn)
     real(kind=kreal) :: gderiv(nn,2)
     real(kind=kreal) :: SPE(3), DEN(3)
@@ -96,7 +95,6 @@ contains
 
     mass = 0.0d0
     lumped = 0.0d0
-    !matl => gausses(1)%pMaterial
 
     do LX = 1, NumOfQuadPoints(etype)
       call getQuadPoint(etype, LX, naturalCoord)
@@ -140,11 +138,10 @@ contains
     real(kind=kreal), intent(out) :: mass(:,:)              !< mass matrix
     real(kind=kreal), intent(out) :: lumped(:)              !< mass matrix
     real(kind=kreal), intent(in), optional :: temperature(nn) !< temperature
-    type(tMaterial), pointer :: matl !< material information
     integer(kind=kint) :: i, j, LX, IMAT, ntab1, ntab2
     real(kind=kreal) :: naturalCoord(3)
     real(kind=kreal) :: func(nn), temp
-    real(kind=kreal) :: det, wg, rho, diag_mass, total_mass
+    real(kind=kreal) :: det, wg
     real(kind=kreal) :: D(1, 1), N(1, nn), DN(1, nn)
     real(kind=kreal) :: gderiv(nn, 3)
     real(kind=kreal) :: SPE(3), DEN(3)
@@ -154,7 +151,6 @@ contains
 
     mass = 0.0d0
     lumped = 0.0d0
-    !matl => gausses(1)%pMaterial
 
     do LX = 1, NumOfQuadPoints(etype)
       call getQuadPoint(etype, LX, naturalCoord)
@@ -200,10 +196,8 @@ contains
     real(kind=kreal), intent(out) :: mass(:,:)              !< mass matrix
     real(kind=kreal), intent(out) :: lumped(:)              !< mass matrix
     real(kind=kreal), intent(in), optional :: temperature(nn) !< temperature
-    type(tMaterial), pointer :: matl !< material information
-    integer(kind=kint) :: i, j, LX, IMAT, ntab1, ntab2
+    integer(kind=kint) :: i, IMAT, ntab1, ntab2
     real(kind=kreal) :: surf, thick, temp
-    real(kind=kreal) :: det, wg, rho, diag_mass, total_mass
     real(kind=kreal) :: SPE(3), DEN(3)
     real(kind=kreal) :: temp1(ntab1), funcA1(ntab1+1), funcB1(ntab1+1)
     real(kind=kreal) :: temp2(ntab2), funcA2(ntab2+1), funcB2(ntab2+1)
@@ -211,7 +205,6 @@ contains
 
     mass = 0.0d0
     lumped = 0.0d0
-    !matl => gausses(1)%pMaterial
 
     surf = get_face3(ecoord)
 
@@ -240,13 +233,9 @@ contains
     real(kind=kreal), intent(out) :: mass(:,:)              !< mass matrix
     real(kind=kreal), intent(out) :: lumped(:)              !< mass matrix
     real(kind=kreal), intent(in), optional :: temperature(nn) !< temperature
-    type(tMaterial), pointer :: matl !< material information
-    integer(kind=kint) :: i, j, LX, LY, IMAT, ntab1, ntab2
-    real(kind=kreal) :: naturalCoord(2)
-    real(kind=kreal) :: func(nn), thick, temp
-    real(kind=kreal) :: det, wg, rho, diag_mass, total_mass
-    real(kind=kreal) :: D(1,1), N(1, nn), DN(1, nn)
-    real(kind=kreal) :: gderiv(nn,2)
+    integer(kind=kint) :: i, LX, LY, IMAT, ntab1, ntab2
+    real(kind=kreal) :: thick, temp
+    real(kind=kreal) :: det
     real(kind=kreal) :: SPE(3), DEN(3)
     real(kind=kreal) :: temp1(ntab1), funcA1(ntab1+1), funcB1(ntab1+1)
     real(kind=kreal) :: temp2(ntab2), funcA2(ntab2+1), funcB2(ntab2+1)
@@ -257,7 +246,6 @@ contains
 
     mass = 0.0d0
     lumped = 0.0d0
-    !matl => gausses(1)%pMaterial
 
     X(1) = ecoord(1,1); Y(1) = ecoord(2,1); Z(1) = ecoord(3,1)
     X(2) = ecoord(1,2); Y(2) = ecoord(2,2); Z(2) = ecoord(3,2)

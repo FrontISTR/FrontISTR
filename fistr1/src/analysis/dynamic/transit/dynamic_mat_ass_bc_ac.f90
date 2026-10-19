@@ -34,7 +34,7 @@ contains
     integer(kind=kint) :: ig0, ig, ityp, NDOF, iS0, iE0, ik, in, idofS, idofE, idof
     integer(kind=kint) :: flag_u, grpid
     real(kind=kreal)   :: b2, b3, b4, c1
-    real(kind=kreal)   :: RHS, RHS0, f_t
+    real(kind=kreal)   :: RHS, RHS0
 
     if( fstrSOLID%ACCELERATION_type == kbcInitial )return
 
@@ -162,7 +162,7 @@ contains
     integer(kind=kint) :: NDOF, ig0, ig, ityp, iS0, iE0, ik, in, idofS, idofE, idof
     !!!
     integer(kind=kint) :: flag_u, grpid
-    real(kind=kreal)   :: RHS, f_t
+    real(kind=kreal)   :: RHS
 
     if( fstrSOLID%ACCELERATION_type == kbcTransit )return
 
@@ -214,7 +214,7 @@ contains
     integer(kind=kint) :: ig0, ig, ityp, NDOF, iS0, iE0, ik, in, idofS, idofE, idof
     integer(kind=kint) :: flag_u
     real(kind=kreal)   :: b2, b3, b4, c1
-    real(kind=kreal)   :: RHS, RHS0, f_t
+    real(kind=kreal)   :: RHS, RHS0
 
     if( fstrSOLID%ACCELERATION_type == kbcInitial )return
 

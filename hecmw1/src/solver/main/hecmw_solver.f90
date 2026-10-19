@@ -25,7 +25,7 @@ contains
     type (hecmwST_local_mesh) :: hecMESH
 
     real(kind=kreal) :: resid
-    integer(kind=kint) :: i, myrank, NDOF
+    integer(kind=kint) :: myrank, NDOF
     integer(kind=kint) :: imsg = 51
     NDOF=hecMAT%NDOF
 

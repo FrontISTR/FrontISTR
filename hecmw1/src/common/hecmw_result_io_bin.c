@@ -92,7 +92,7 @@ static int bin_output_result_header(FILE *fp) {
 
 
 static int bin_output_result_global(FILE *fp) {
-  int i,j,k,n,rc,ng_comp;
+  int i,j,k,rc,ng_comp;
   struct result_list *p,**data;
 
   /* comment */
@@ -122,14 +122,12 @@ static int bin_output_result_global(FILE *fp) {
   }
 
   /* ng_dof */
-  n = 0;
   for(p=ResIO.global_list; p; p=p->next) {
     rc = hecmw_write_bin(fp, "I", p->n_dof );
     if(rc < 0) {
       HECMW_set_error(HECMW_UTIL_E0205, "ng_dof");
       return -1;
     }
-    n++;
   }
 
   /* global_label */
@@ -191,18 +189,16 @@ static int bin_output_result_dataheader(FILE *fp) {
 
 
 static int bin_output_result_node(FILE *fp) {
-  int i,j,k,n,rc,nn_comp;
+  int i,j,k,rc,nn_comp;
   struct result_list *p,**data;
 
   /* nn_dof */
-  n = 0;
   for(p=ResIO.node_list; p; p=p->next) {
     rc = hecmw_write_bin(fp, "I", p->n_dof );
     if(rc < 0) {
       HECMW_set_error(HECMW_UTIL_E0205, "nn_dof");
       return -1;
     }
-    n++;
   }
 
   /* node_label */
@@ -250,18 +246,16 @@ static int bin_output_result_node(FILE *fp) {
 
 
 static int bin_output_result_elem(FILE *fp) {
-  int i,j,k,n,rc,ne_comp;
+  int i,j,k,rc,ne_comp;
   struct result_list *p,**data;
 
   /* ne_dof */
-  n = 0;
   for(p=ResIO.elem_list; p; p=p->next) {
     rc = hecmw_write_bin(fp, "I", p->n_dof );
     if(rc < 0) {
       HECMW_set_error(HECMW_UTIL_E0205, "ne_dof");
       return -1;
     }
-    n++;
   }
 
   /* elem_label */
@@ -419,7 +413,7 @@ static int bin_output_result_header_ST(struct hecmwST_result_data *result,
 static int bin_output_result_global_ST(struct hecmwST_result_data *result,
                                        char *comment, FILE *fp) {
   size_t len;
-  int i,j,k,n,m,rc;
+  int i,j,k,m,rc;
   char *p,*q;
   char comment_line[HECMW_MSG_LEN+1];
 
@@ -463,14 +457,12 @@ static int bin_output_result_global_ST(struct hecmwST_result_data *result,
   }
 
   /* ng_dof */
-  n = 0;
   for(i=0; i < result->ng_component; i++) {
     rc = hecmw_write_bin(fp, "I", result->ng_dof[i] );
     if(rc < 0) {
       HECMW_set_error(HECMW_UTIL_E0205, "ng_dof");
       return -1;
     }
-    n++;
   }
 
   /* global_label */
@@ -531,17 +523,15 @@ static int bin_output_result_dataheader_ST(struct hecmwST_result_data *result,
 
 static int bin_output_result_node_ST(struct hecmwST_result_data *result,
                                      int n_node, FILE *fp) {
-  int i,j,k,n,m,rc;
+  int i,j,k,m,rc;
 
   /* nn_dof */
-  n = 0;
   for(i=0; i < result->nn_component; i++) {
     rc = hecmw_write_bin(fp, "I", result->nn_dof[i] );
     if(rc < 0) {
       HECMW_set_error(HECMW_UTIL_E0205, "nn_dof");
       return -1;
     }
-    n++;
   }
 
   /* node_label */
@@ -580,17 +570,15 @@ static int bin_output_result_node_ST(struct hecmwST_result_data *result,
 
 static int bin_output_result_elem_ST(struct hecmwST_result_data *result,
                                      int n_elem, FILE *fp) {
-  int i,j,k,n,m,rc;
+  int i,j,k,m,rc;
 
   /* ne_dof */
-  n = 0;
   for(i=0; i < result->ne_component; i++) {
     rc = hecmw_write_bin(fp, "I", result->ne_dof[i] );
     if(rc < 0) {
       HECMW_set_error(HECMW_UTIL_E0205, "ne_dof");
       return -1;
     }
-    n++;
   }
 
   /* elem_label */

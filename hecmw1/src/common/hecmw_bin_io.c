@@ -238,7 +238,6 @@ static int get_fmt_type_size(char **fmt_p, char *type, int *size) {
 }
 
 int hecmw_write_bin(FILE *fp, const char *fmt, ...) {
-  int i, n;
   char type;
   int size;
   char *fmt_p;
@@ -249,8 +248,6 @@ int hecmw_write_bin(FILE *fp, const char *fmt, ...) {
   char *s_ptr;
   va_list va;
   va_start(va, fmt);
-  n     = strlen((char *)fmt);
-  i     = 0;
   fmt_p = (char *)fmt;
 
   while (get_fmt_type_size(&fmt_p, &type, &size)) {
@@ -320,7 +317,6 @@ ERROR_EXIT:
 }
 
 int hecmw_read_bin(FILE *fp, const char *fmt, ...) {
-  int i, n;
   char type;
   int size;
   char *fmt_p;
@@ -330,8 +326,6 @@ int hecmw_read_bin(FILE *fp, const char *fmt, ...) {
   char c;
   va_list va;
   va_start(va, fmt);
-  n     = strlen((char *)fmt);
-  i     = 0;
   fmt_p = (char *)fmt;
 
   while (get_fmt_type_size(&fmt_p, &type, &size)) {

@@ -1,0 +1,19 @@
+!! Multifrontal direct solver with a leftover PRECOND (METHOD=DIRECTmf, PRECOND=5):
+!! a control file converted from an iterative solver keeps its PRECOND, which a direct
+!! method never uses; both option lines must still reach DIRECTmf (issue #930). The log
+!! check asserts the real line (pivot threshold 0.25) and the integer line (compressed
+!! tiles) took effect.
+!BOUNDARY
+  FIX, 1, 3,   0.0
+!CLOAD
+  CL1,    3,  -1.0
+!!
+!! SOLVER CONTROL
+!!
+!SOLVER,METHOD=DIRECTmf,PRECOND=5,ITERLOG=YES,TIMELOG=YES,LOGLEVEL=1
+ 10000, 1
+ 1.0e-8, 1.0, 0.0
+ 0, 0, 1, 0, 12, 0, -1
+ 0.0, 0.0, 0.25
+!WRITE,RESULT
+!END

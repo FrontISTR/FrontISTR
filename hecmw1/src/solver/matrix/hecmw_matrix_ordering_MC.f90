@@ -165,7 +165,7 @@ integer(kind=kint), intent(out) :: COLORindex(0:)
 integer(kind=kint), intent(out) :: perm(:), iperm(:)
 integer(kind=kint), allocatable :: iwk(:)
 integer(kind=kint) :: nn_color, cntall, cnt, color
-integer(kind=kint) :: i, inode, j, jnode, k, knode, l, lnode, m, mnode
+integer(kind=kint) :: i, inode, j, jnode, k, knode, l, lnode
 allocate(iwk(N))
 
 iwk = 0

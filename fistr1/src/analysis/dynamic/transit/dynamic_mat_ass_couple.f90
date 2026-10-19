@@ -41,10 +41,6 @@ contains
     real(kind=kreal)   :: area, wg
     integer(kind=kint) :: ierr
 
-    ! ============= added by K. Tagami =========for debug ====== 2010/03/02 ====
-    integer( kind=kint ) :: node_global
-    ! ==========================================================
-
     icall = icall + 1
     ierr = 0
 
@@ -68,25 +64,15 @@ contains
         do i=1, node_n
           j=3*fstrCPL%index( node(i) )
 
-          ! ============= added by K. Tagami =========for debug ====== 2010/03/02 ====
-          !             node_global = hecMESH%global_node_ID( node(i) )
-          ! ======================================================================
-          !
           if( icall == 1 ) then
             if( j<=0 ) then
               write(IDBG,'(a,i0,a)') "dynamic_mat_ass_couple: traction for node ", &
                 &   hecMESH%global_node_ID(node(i)), " on coupling surface not found"
-              ! ============ added by K. Tagami ============== for debug ==== 2010/03/02
-              !                           write(IDBG,*) "local : ", node(i), " Global :", node_global, " not found"
-              ! ==============================================================
               ierr = 1
               cycle
             else
               write(IDBG,'(a,i0,a)') "dynamic_mat_ass_couple: traction for node ", &
                 & hecMESH%global_node_ID(node(i)), " on coupling surface OK"
-              ! ============ added by K. Tagami ============== for debug ==== 2010/03/02
-              !                           write(IDBG,*) "local : ", node(i), " Global :", node_global, " OK"
-              ! ==============================================================
             endif
           endif
           px = px + fstrCPL%trac(j-2)
@@ -211,17 +197,14 @@ contains
     integer(kind=kint), parameter :: NN = 8
     integer(kind=kint), parameter :: NG = 2
     !parameter(NN=8, NG=2)
-    real(kind=kreal)   :: H(NN), HR(NN), HS(NN), HT(NN)
-    real(kind=kreal)   :: RI, SI, TI, RP, SP, TP, RM, SM, TM
+    real(kind=kreal)   :: H(NN), HR(NN), HS(NN)
+    real(kind=kreal)   :: RI, SI
     real(kind=kreal)   :: XJ11, XJ21, XJ31, XJ12, XJ22, XJ32, XJ13, XJ23, XJ33, DET, WG
-    integer(kind=kint) :: IG1, IG2, LX, LY, LZ, I
-    real(kind=kreal)   :: VX, VY, VZ, XCOD, YCOD, ZCOD
-    real(kind=kreal)   :: AX, AY, AZ, RX, RY, RZ, HX, HY, HZ, val
-    real(kind=kreal)   :: PHX, PHY, PHZ
+    integer(kind=kint) :: IG1, IG2, I
     real(kind=kreal)   :: G1X, G1Y, G1Z
     real(kind=kreal)   :: G2X, G2Y, G2Z
     real(kind=kreal)   :: G3X, G3Y, G3Z
-    real(kind=kreal)   :: XSUM, COEFX, COEFY, COEFZ
+    real(kind=kreal)   :: XSUM
     real(kind=kreal)   :: area, XG(2), WGT(2)
     data WGT/1.0, 1.0/
     data XG/-0.5773502691896, 0.5773502691896/

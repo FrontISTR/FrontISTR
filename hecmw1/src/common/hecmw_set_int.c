@@ -76,7 +76,7 @@ int HECMW_set_int_add(struct hecmw_set_int *set, int value) {
 }
 
 size_t HECMW_set_int_check_dup(struct hecmw_set_int *set) {
-  size_t i, n_dup = 0;
+  size_t n_dup = 0;
 
   HECMW_assert(set);
 

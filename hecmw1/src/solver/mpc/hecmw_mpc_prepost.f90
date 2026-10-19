@@ -24,7 +24,6 @@ module hecmw_mpc_prepost
   public :: hecmw_mpc_tback_eigvec
   public :: hecmw_mpc_mark_slave
 
-  integer, parameter :: DEBUG = 0
   logical, parameter :: DEBUG_VECTOR = .false.
 
 contains

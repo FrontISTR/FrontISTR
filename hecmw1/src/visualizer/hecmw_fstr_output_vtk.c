@@ -20,15 +20,13 @@ void vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *da
 {
 	int i, j, k;
 	long long jS, jE;
-	int myrank, petot, steptot;
-	int n_node, n_elem, shift, etype;
+	int myrank, petot;
+	int n_node, n_elem, shift;
 	int data_tot_n, data_tot_e;
 	int table342[10] = {0, 1, 2, 3, 6, 4, 5, 7, 8, 9};
-	char file_pvd[HECMW_FILENAME_LEN], file_pvtu[HECMW_FILENAME_LEN], file_vtu[HECMW_FILENAME_LEN], buf[HECMW_FILENAME_LEN];
-	char *data_label, *p;
-	static int is_first=0;
+	char file_pvtu[HECMW_FILENAME_LEN], file_vtu[HECMW_FILENAME_LEN], buf[HECMW_FILENAME_LEN];
+	char *p;
 	FILE *outfp;
-	HECMW_Status stat;
 
 	HECMW_Comm_rank (VIS_COMM, &myrank);
 	HECMW_Comm_size (VIS_COMM, &petot);
@@ -247,22 +245,17 @@ void bin_vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data
 {
 	int i, j, k;
 	long long jS, jE;
-	int myrank, petot, steptot;
-	int n_node, n_elem, shift, etype;
+	int myrank, petot;
+	int n_node, n_elem, shift;
 	int data_tot_n, data_tot_e, in, ioffset;
 	int *offset;
 	int is_disp2d=0;
-	uint8_t uint8;
-	uint16_t uint16;
 	uint32_t uint32;
 	uint64_t uint64;
 	float val, val1, val2, val3;
-	char file_pvd[HECMW_FILENAME_LEN], file_pvtu[HECMW_FILENAME_LEN], file_vtu[HECMW_FILENAME_LEN], buf[HECMW_FILENAME_LEN];
-	char *data_label;
-	static int is_first=0;
+	char file_pvtu[HECMW_FILENAME_LEN], file_vtu[HECMW_FILENAME_LEN], buf[HECMW_FILENAME_LEN];
 	int table342[10] = {0, 1, 2, 3, 6, 4, 5, 7, 8, 9};
 	FILE *outfp;
-	HECMW_Status stat;
 
 	HECMW_Comm_rank (VIS_COMM, &myrank);
 	HECMW_Comm_size (VIS_COMM, &petot);
@@ -344,7 +337,6 @@ void bin_vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data
 		fprintf (outfp, "</PUnstructuredGrid>\n");
 		fprintf (outfp, "</VTKFile>\n");
 		fclose (outfp);
-		is_first = 1;
 	}
 
 	/* outpu vtu file */
@@ -487,10 +479,8 @@ void bin_vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data
 	uint32 = (uint32_t)(n_elem*sizeof(int));
 	fwrite (&uint32, sizeof(uint32), 1, outfp);
 	for(i=0; i<n_elem; i++){
-		//uint8 = (uint8_t)HECMW_get_etype_vtk_shape(mesh->elem_type[i]);
-	  //fwrite (&uint8, sizeof(u_int8_t), 1, outfp);
 		in = (int)HECMW_get_etype_vtk_shape(mesh->elem_type[i]);
-	  fwrite (&in, sizeof(int), 1, outfp);
+		fwrite (&in, sizeof(int), 1, outfp);
 	}
 
 	for(i=0; i<data->nn_component; i++){
@@ -538,10 +528,8 @@ void bin_vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data
 	uint32 = (uint32_t)(n_elem*sizeof(int));
 	fwrite (&uint32, sizeof(uint32), 1, outfp);
 	for(i=0; i<n_elem; i++){
-		//uint16 = (uint16_t)mesh->elem_type[i];
-	  //fwrite (&uint16, sizeof(u_int16_t), 1, outfp);
 		in = (int)mesh->elem_type[i];
-	  fwrite (&in, sizeof(int), 1, outfp);
+		fwrite (&in, sizeof(int), 1, outfp);
 	}
 
 	fprintf (outfp, "</AppendedData>\n");

@@ -63,8 +63,8 @@ contains
     double precision, parameter :: dpi = 3.14159265358979323846D0
 
     integer(kind=kint) :: version, result, visual, femap, n_totlyr
-    integer(kind=kint) :: rcode, n, i, j, cid, nout, nin, ierror, cparam_id
-    character(len=HECMW_NAME_LEN) :: header_name, fname(MAXOUTFILE)
+    integer(kind=kint) :: rcode, n, i, cid, nout, ierror, cparam_id
+    character(len=HECMW_NAME_LEN) :: header_name
     real(kind=kreal) :: ee, pp, rho, alpha, thick, alpha_over_mu
     real(kind=kreal) :: beam_radius,                          &
       beam_angle1, beam_angle2, beam_angle3,&
@@ -75,7 +75,7 @@ contains
     character(len=HECMW_FILENAME_LEN) :: logfileNAME, mName, mName2, mName3
 
     ! counters
-    integer(kind=kint) :: c_solution, c_solver, c_nlsolver, c_step, c_write, c_echo, c_amplitude
+    integer(kind=kint) :: c_solution, c_solver, c_nlsolver, c_step, c_echo, c_amplitude
     integer(kind=kint) :: c_static, c_boundary, c_cload, c_dload, c_temperature, c_reftemp, c_spring, c_elemact
     integer(kind=kint) :: c_heat, c_fixtemp, c_cflux, c_dflux, c_sflux, c_film, c_sfilm, c_radiate, c_sradiate
     integer(kind=kint) :: c_eigen, c_contact, c_contactparam, c_embed, c_contact_if
@@ -429,7 +429,7 @@ contains
         fstrSOLID%materials(cid)%variables(M_YOUNGS)=ee
         fstrSOLID%materials(cid)%variables(M_POISSON)=pp
         fstrSOLID%materials(cid)%variables(M_DENSITY)=rho
-        fstrSOLID%materials(cid)%variables(M_EXAPNSION)=alpha
+        fstrSOLID%materials(cid)%variables(M_EXPANSION)=alpha
         fstrSOLID%materials(cid)%variables(M_ALPHA_OVER_MU)= alpha_over_mu
         fstrSOLID%materials(cid)%variables(M_BEAM_RADIUS)=beam_radius
         fstrSOLID%materials(cid)%variables(M_BEAM_ANGLE1)=beam_angle1
@@ -1156,6 +1156,8 @@ contains
     endif
 
     call fstr_element_init( hecMESH, fstrSOLID, p%PARAM%solution_type )
+    call fstr_check_shell_j2_inputs(hecMESH, fstrSOLID, fstrPARAM)
+    call fstr_check_shell_gauss_output(hecMESH, fstrSOLID)
     if( p%PARAM%solution_type==kstSTATIC .or. p%PARAM%solution_type==kstDYNAMIC .or.   &
       p%PARAM%solution_type==kstEIGEN  .or. p%PARAM%solution_type==kstSTATICEIGEN )  &
       call fstr_solid_alloc( hecMESH, fstrSOLID )
@@ -1181,14 +1183,90 @@ contains
 
   end subroutine fstr_setup
 
+  subroutine fstr_check_shell_gauss_output(hecMESH, fstrSOLID)
+    use mMechGauss, only: fstr_shell_output_point_count
+    type(hecmwST_local_mesh), intent(in) :: hecMESH
+    type(fstr_solid), intent(in) :: fstrSOLID
+    integer(kind=kint) :: i
+
+    if( hecMESH%n_dof /= 6 ) return
+    if( .not.any(fstrSOLID%output_ctrl(3)%outinfo%on(9:10)) ) return
+    do i=1,hecMESH%n_elem
+      if( fstr_shell_output_point_count(fstrSOLID%elements(i))>0 ) cycle
+      write(*,*) '###ERROR### : ISTRAIN/ISTRESS require shell thickness-point output support; element type = ', &
+        hecMESH%elem_type(i)
+      call hecmw_abort(hecmw_comm_get_comm())
+    enddo
+  end subroutine fstr_check_shell_gauss_output
+
+  subroutine fstr_check_shell_j2_inputs(hecMESH, fstrSOLID, fstrPARAM)
+    use m_ElastoPlastic, only: checkPlaneStressJ2Material, PlaneStressJ2ErrorMessage
+    use elementInfo, only: NumOfShellThicknessQuadPoints
+    use, intrinsic :: ieee_arithmetic, only: ieee_is_finite
+    type(hecmwST_local_mesh), intent(in) :: hecMESH
+    type(fstr_solid), intent(in) :: fstrSOLID
+    type(fstr_param), intent(in) :: fstrPARAM
+    type(tMaterial), pointer :: material
+    integer(kind=kint) :: i, nn, ierr, isect, index, ilayer
+    real(kind=kreal) :: elastic(2)
+    logical :: missing
+    character(len=160) :: message
+
+    do i = 1, hecMESH%n_elem
+      if( hecMESH%elem_type(i) /= 741 ) cycle
+      if( .not.associated(fstrSOLID%elements(i)%gausses) ) cycle
+      material => fstrSOLID%elements(i)%gausses(1)%pMaterial
+      if( .not.isElastoplastic(material%mtype) ) cycle
+      nn = hecMESH%elem_node_index(i)-hecMESH%elem_node_index(i-1)
+      message = ''
+      call checkPlaneStressJ2Material(material, ierr)
+      if( ierr /= 0 ) then
+        message = PlaneStressJ2ErrorMessage(ierr)
+      else if( .not.fstr_uses_plane_stress_j2_shell(741, nn, material) ) then
+        message = 'Elastoplastic MITC4 shells require INFINITESIMAL material kinematics'
+      else if( fstrPARAM%solution_type /= kstSTATIC .or. .not.fstrPARAM%nlgeom ) then
+        message = 'Elastoplastic MITC4 shells require !SOLUTION, TYPE=STATIC, NONLINEAR'
+      else if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres > 0 ) then
+        message = 'Temperature loading is not supported in models with elastoplastic MITC4 shells'
+      endif
+      if( len_trim(message) == 0 .and. associated(material%shell_var) ) then
+        ! The J2 return mapping uses the common elastic table, not layer-specific constants.
+        call fetch_TableData(MC_ISOELASTIC, material%dict, elastic, missing)
+        do ilayer = 1, material%totallyr
+          if( .not.ieee_is_finite(material%shell_var(ilayer)%ee) .or. &
+              .not.ieee_is_finite(material%shell_var(ilayer)%pp) ) then
+            message = 'Invalid elastic properties in J2 shell layer'
+            exit
+          endif
+          if( abs(material%shell_var(ilayer)%ee-elastic(1)) > 1.0d-12*elastic(1) .or. &
+              abs(material%shell_var(ilayer)%pp-elastic(2)) > 1.0d-12 ) then
+            message = 'J2 shell layers must share the !ELASTIC Young modulus and Poisson ratio'
+            exit
+          endif
+        enddo
+      endif
+      if( len_trim(message) == 0 ) then
+        isect = hecMESH%section_ID(i)
+        index = hecMESH%section%sect_I_index(isect-1)
+        if( hecMESH%section%sect_I_index(isect)-index /= 1 ) then
+          message = 'Elastoplastic MITC4 shells require a SHELL section with 2 thickness integration points'
+        else if( hecMESH%section%sect_I_item(index+1) /= NumOfShellThicknessQuadPoints(741) ) then
+          message = 'Elastoplastic MITC4 shells require 2 thickness integration points in !SECTION'
+        endif
+      endif
+      if( len_trim(message) == 0 ) cycle
+      write(*,*) '###ERROR### : ', trim(message)
+      write(ILOG,*) '###ERROR### : ', trim(message)
+      call hecmw_abort(hecmw_comm_get_comm())
+    enddo
+  end subroutine fstr_check_shell_j2_inputs
+
 
   !> Initializer of structure fstr_solid
   subroutine fstr_solid_init( hecMESH, fstrSOLID )
     use m_fstr
     type(hecmwST_local_mesh),target :: hecMESH
     type(fstr_solid)                :: fstrSOLID
-
-    integer :: ndof, ntotal, ierror, ic_type
 
     fstrSOLID%file_type  = kbcfFSTR
 
@@ -1225,7 +1303,7 @@ contains
     type(hecmwST_local_mesh),target :: hecMESH
     type(fstr_solid)                :: fstrSOLID
 
-    integer :: ndof, ntotal, ierror, ic_type
+    integer :: ndof, ntotal, ierror
 
     ndof=hecMESH%n_dof
     ntotal=ndof*hecMESH%n_node
@@ -1474,7 +1552,6 @@ contains
     integer(kind=kint), intent(in)  :: solution_type
 
     integer :: i, j, ng, isect, ndof, id, nn, n_elem, nthick
-    integer :: ncon_stf
 
     if( hecMESH%n_elem <=0 ) then
       stop "no element defined!"
@@ -1526,8 +1603,11 @@ contains
       enddo
       nthick = 0
       if( fstr_uses_finite_rotation_kinematics( fstrSOLID%elements(i)%etype, nn, &
-        fstrSOLID%materials(id) ) ) &
+          fstrSOLID%materials(id) ) .or. &
+          fstr_uses_plane_stress_j2_shell(fstrSOLID%elements(i)%etype, nn, &
+          fstrSOLID%materials(id)) ) then
         nthick = fstr_shell_num_thickness_points( fstrSOLID%elements(i)%etype )
+      endif
       if( nthick > 0 ) call fstr_init_shell_layer_gausses( fstrSOLID%elements(i), ng, &
         fstrSOLID%materials(id)%totallyr, nthick )
 
@@ -2301,7 +2381,6 @@ contains
     integer                    :: cnt
     type( tLocalCoordSys )     :: coordsys
 
-    integer                   :: j, is, iE, grp_id(1)
     character(len=HECMW_NAME_LEN) :: grp_id_name(1)
 
     integer :: nid, dtype
@@ -2587,7 +2666,7 @@ end function fstr_setup_INITIAL
     type(fstr_param_pack) :: P
     integer(kind=kint) :: rcode
     character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
-    integer(kind=kint) :: i, n, old_size, new_size
+    integer(kind=kint) :: n, old_size, new_size
 
     if( P%SOLID%file_type /= kbcfFSTR ) return
 
@@ -2763,7 +2842,6 @@ end function fstr_setup_INITIAL
     type(fstr_param_pack) :: P
 
     integer(kind=kint) :: rcode
-    integer(kind=kint) :: type = 0
     character(HECMW_NAME_LEN) :: amp, rotc_name(1)
     integer(kind=kint) :: amp_id, rotc_id(1), n_rotc
     character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
@@ -2776,11 +2854,6 @@ end function fstr_setup_INITIAL
 
     gid = 1
     rcode = fstr_ctrl_get_param_ex( ctrl, 'GRPID ',  '# ',            0, 'I', gid  )
-    !  rcode = fstr_ctrl_get_param_ex( ctrl, 'TYPE ', 'FSTR,NASTRAN ', 0, 'P', type )
-    !  if( rcode < 0 ) call fstr_ctrl_err_stop
-    !  if( rcode == 1 ) type = 0 ! PARAM_NOTHING
-
-    !  if( type == 0 ) then
 
     istot = 0
     rcode = fstr_ctrl_get_param_ex( ctrl, 'TOTAL ', '# ', 0, 'E', istot )
@@ -2858,12 +2931,6 @@ end function fstr_setup_INITIAL
     nullify( dof_ids )
     nullify( dof_ide )
     nullify( val_ptr )
-    !  else
-    !   ! NASTRAN ---------------------------------------------
-    !
-    !     P%SOLID%file_type = kbcfNASTRAN
-    !     call fstr_setup_solid_nastran( ctrl, P%MESH, P%SOLID )
-    !  end if
 
   end subroutine fstr_setup_BOUNDARY
 
@@ -2984,8 +3051,6 @@ end function fstr_setup_INITIAL
     type(fstr_param_pack) :: P
   !---- vals
     integer(kind=kint)                  :: rcode
-    character(HECMW_NAME_LEN)           :: amp
-    integer(kind=kint)                  :: amp_id
     character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
     real(kind=kreal), pointer           :: val_ptr(:)
     integer(kind=kint), pointer        :: id_ptr(:)
@@ -4542,7 +4607,7 @@ end function fstr_setup_INITIAL
   subroutine fstr_convert_contact_type( hecMESH )
     implicit none
     type(hecmwST_local_mesh), pointer :: hecMESH  !< mesh definition
-    integer(kind=kint) :: n, i, sgrp_id, ngrp_id, ngrp_id2
+    integer(kind=kint) :: n, i, sgrp_id, ngrp_id
     ! convert SURF_SURF to NODE_SURF
     n = hecMESH%contact_pair%n_pair
     do i = 1,n
@@ -4552,15 +4617,6 @@ end function fstr_setup_INITIAL
       ! change type of contact and slave group ID
       hecMESH%contact_pair%type(i) = HECMW_CONTACT_TYPE_NODE_SURF
       hecMESH%contact_pair%slave_grp_id(i) = ngrp_id
-      ! ! for DEBUG
-      ! sgrp_id = hecMESH%contact_pair%master_grp_id(i)
-      ! call append_node_grp_from_surf_grp( hecMESH, sgrp_id, ngrp_id2 )
-      ! ! intersection node group of slave and master
-      ! call append_intersection_node_grp( hecMESH, ngrp_id, ngrp_id2 )
-      ! ! intersection node_group of original slave and patch-slave
-      ! ngrp_id=get_grp_id( hecMESH, 'node_grp', 'SLAVE' )
-      ! ngrp_id2=get_grp_id( hecMESH, 'node_grp', '_PT_SLAVE_S' )
-      ! call append_intersection_node_grp( hecMESH, ngrp_id, ngrp_id2 )
     enddo
   end subroutine fstr_convert_contact_type
 

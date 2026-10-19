@@ -264,17 +264,12 @@ int HECMW_varray_int_assign(struct hecmw_varray_int *varray, size_t begin,
 
 int HECMW_varray_int_insert(struct hecmw_varray_int *varray, size_t index,
                             int val) {
-  size_t i;
-
   HECMW_assert(varray);
   HECMW_assert(0 <= index && index <= varray->n_val);
 
   if (varray->n_val == varray->max_val)
     if (varray_grow(varray) != HECMW_SUCCESS) return HECMW_ERROR;
 
-  /* for (i = varray->n_val; i > index; i--) { */
-  /*   varray->vals[i] = varray->vals[i-1]; */
-  /* } */
   memmove(varray->vals + index + 1, varray->vals + index,
           sizeof(int) * (varray->n_val - index));
 
@@ -285,14 +280,9 @@ int HECMW_varray_int_insert(struct hecmw_varray_int *varray, size_t index,
 }
 
 int HECMW_varray_int_delete(struct hecmw_varray_int *varray, size_t index) {
-  size_t i;
-
   HECMW_assert(varray);
   HECMW_assert(0 <= index && index <= varray->n_val);
 
-  /* for (i = index+1; i < varray->n_val; i++) { */
-  /*   varray->vals[i-1] = varray->vals[i]; */
-  /* } */
   memmove(varray->vals + index, varray->vals + index + 1,
           sizeof(int) * (varray->n_val - index - 1));
 

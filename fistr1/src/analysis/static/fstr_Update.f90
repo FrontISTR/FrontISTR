@@ -379,6 +379,9 @@ contains
 
         if( associated( fstrSOLID%elements(icel)%shell_layer_gausses ) ) then
           do ishell = 1, size( fstrSOLID%elements(icel)%shell_layer_gausses )
+            if( isElastoplastic( fstrSOLID%elements(icel)%shell_layer_gausses(ishell)%pMaterial%mtype ) ) then
+              call updateEPState( fstrSOLID%elements(icel)%shell_layer_gausses(ishell) )
+            endif
             fstrSOLID%elements(icel)%shell_layer_gausses(ishell)%strain_bak = &
               fstrSOLID%elements(icel)%shell_layer_gausses(ishell)%strain
             fstrSOLID%elements(icel)%shell_layer_gausses(ishell)%stress_bak = &

@@ -555,7 +555,7 @@ contains
     real(kind=kreal)   :: RI, SI, XSUM
     real(kind=kreal)   :: G1X, G1Y, G1Z, G2X, G2Y, G2Z, G3X, G3Y, G3Z
     real(kind=kreal)   :: AX, AY, AZ, BX, BY, BZ, AA
-    real(kind=kreal)   :: H(6), HR(6), HS(6), HT(6)
+    real(kind=kreal)   :: H(6), HR(6), HS(6)
     real(kind=kreal)   :: XG(2), WGT(2)
     !*************************
     !  GAUSS INTEGRATION POINT
@@ -698,7 +698,7 @@ contains
     real(kind=kreal)   :: G1X, G1Y, G1Z, G2X, G2Y, G2Z, G3X, G3Y, G3Z
     real(kind=kreal)   :: X1, X2, X3, XL1, XL2
     real(kind=kreal)   :: XJ11, XJ21, XJ31, XJ12, XJ22, XJ32, XJ13, XJ23, XJ33
-    real(kind=kreal)   :: H(8), HR(8), HS(8), HT(8), HL1(6), HL2(6), HL3(6)
+    real(kind=kreal)   :: H(8), HR(8), HS(8), HL1(6), HL2(6), HL3(6)
     real(kind=kreal)   :: XG(3), WGT(3)
     !*************************
     !  GAUSS INTEGRATION POINT
@@ -943,7 +943,7 @@ contains
     integer(kind=kint) :: I, IC, IP, JP, IG1, IG2
     real(kind=kreal)   :: RI, SI, XSUM
     real(kind=kreal)   :: G1X, G1Y, G1Z, G2X, G2Y, G2Z, G3X, G3Y, G3Z
-    real(kind=kreal)   :: H(4), HR(4), HS(4), HT(4)
+    real(kind=kreal)   :: H(4), HR(4), HS(4)
     real(kind=kreal)   :: XG(2), WGT(2)
     !*************************
     !  GAUSS INTEGRATION POINT
@@ -1061,7 +1061,7 @@ contains
     real(kind=kreal)   :: RI, SI, RP, SP, RM, SM
     real(kind=kreal)   :: G1X, G1Y, G1Z, G2X, G2Y, G2Z, G3X, G3Y, G3Z
     real(kind=kreal)   :: XSUM
-    real(kind=kreal)   :: H(8), HR(8), HS(8), HT(8)
+    real(kind=kreal)   :: H(8), HR(8), HS(8)
     real(kind=kreal)   :: XG(3), WGT(3)
     !*************************
     !  GAUSS INTEGRATION POINT
@@ -1256,7 +1256,7 @@ contains
     integer(kind=kint) :: I, IC, IP, JP, IG1, IG2
     real(kind=kreal) :: RI, SI, XSUM
     real(kind=kreal) :: G1X, G1Y, G1Z, G2X, G2Y, G2Z, G3X, G3Y, G3Z
-    real(kind=kreal) :: H(4), HR(4), HS(4), HT(4)
+    real(kind=kreal) :: H(4), HR(4), HS(4)
     real(kind=kreal) :: XG(2), WGT(2)
     !*************************
     !  GAUSS INTEGRATION POINT

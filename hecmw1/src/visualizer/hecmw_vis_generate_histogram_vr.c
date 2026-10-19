@@ -33,8 +33,7 @@ void generate_histogram_graph_vr(double tmincolor, double tmaxcolor,
                                  HECMW_Comm VIS_COMM, int color_system_type) {
   int i, j, k, m;
   double delta, value, color[3];
-  int count[500], t_count[500], max_number, max_length, start_x, end_x, start_y,
-      end_y;
+  int count[500], t_count[500], max_number, max_length, start_x, end_x, start_y;
   FILE *fp;
   double *graph;
   BITMAPFILEHEADER header; /* File header */
@@ -98,7 +97,6 @@ void generate_histogram_graph_vr(double tmincolor, double tmaxcolor,
     }
     /*start mark scales */
     start_y = 15;
-    end_y   = 515;
     for (k = 0; k < 11; k++) {
       value    = tmincolor + (tmaxcolor - tmincolor) / 10.0 * k;
       start_ys = start_y + (int)((double)500.0 / 10 * k) - (int)7 / 2;

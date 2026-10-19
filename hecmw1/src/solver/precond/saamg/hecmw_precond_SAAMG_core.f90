@@ -163,7 +163,7 @@ contains
     type(hecmwST_saamg_nodegraph) :: g
     integer(kind=kint), allocatable :: agg_global(:), counts(:), displs(:), halo_gid(:), cmark(:)
     integer(kind=kint), allocatable :: g2h(:)
-    integer(kind=kint) :: nb, nint, nnode, nprocs, my_off, i, r, gg, t, nhc
+    integer(kind=kint) :: nb, nint, nnode, nprocs, my_off, i, r, gg, nhc
     integer(kind=kint) :: neib, nnb, h, e, c, ks, ke, cnt, pos, omode
 
     nb    = A%nb
@@ -1405,7 +1405,7 @@ contains
     integer(kind=kint),       intent(out) :: nglob_dof
     integer(kind=kint), allocatable :: gti(:), gtj(:), agti(:), agtj(:)
     real(kind=kreal),   allocatable :: gtv(:), agtv(:)
-    integer(kind=kint) :: nb_l, nglob_nodes, ib, t, k, cn, rdof, cdof, nt, ntot, grn, gcn, b0
+    integer(kind=kint) :: nb_l, nglob_nodes, ib, k, cn, rdof, cdof, nt, ntot, grn, gcn, b0
     real(kind=kreal) :: v
     nb_l = lev%A%nb
     nglob_nodes = lev%A%nbrow
@@ -1521,7 +1521,7 @@ contains
     integer(kind=kint),          intent(in)    :: l
     logical, optional,           intent(in)    :: init_zero  !< .false. => warm start (W-cycle re-visit)
     real(kind=kreal), allocatable :: gv(:)
-    integer(kind=kint) :: ni, nc, m, ntot, off, i, rn, rdof, nbl, j, gamma
+    integer(kind=kint) :: ni, nc, m, ntot, i, rn, rdof, nbl, j, gamma
     logical :: use_fmv, zstart
 
     m = dh%m; ni = dh%lev(l)%A%n; nbl = dh%lev(l)%nb_l

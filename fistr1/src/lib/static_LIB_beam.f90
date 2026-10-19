@@ -66,7 +66,7 @@ contains
 
     real(kind=kreal) :: G, L2, L3, A, Iy, Iz, Jx, EA
     real(kind=kreal) :: phi_y, phi_z
-    real(kind=kreal) :: kyy, kyz, kzz, kryy, kryz
+    real(kind=kreal) :: kyy, kyz, kzz, kryz
     real(kind=kreal) :: kww, kwy, krr, krz
 
     L2 = le*le

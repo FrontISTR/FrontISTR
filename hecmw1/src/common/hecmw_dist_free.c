@@ -133,8 +133,6 @@ static void free_contact_pair(struct hecmwST_contact_pair *cpair) {
 }
 
 static void free_refine_origin(struct hecmwST_refine_origin *reforg) {
-  int i;
-
   if (reforg == NULL) return;
 
   HECMW_free(reforg->index);

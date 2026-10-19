@@ -35,7 +35,7 @@ module mSurfElement
     real(kind=kreal), pointer       :: intermediate_points(:,:)=>null()  !< (3,nnode) intermediate points for Nagata patch
   end type tSurfElement
 
-  integer(kind=kint), parameter, private :: DEBUG = 0
+  integer(kind=kint), parameter, private :: SURF_DEBUG = 0
 
 contains
 
@@ -89,7 +89,7 @@ contains
     integer(kind=kint), pointer :: dumarray(:) => null()
     integer(kind=kint) :: bktID, ncand, js
     integer(kind=kint), allocatable :: indexSurf(:)
-    if (DEBUG >= 1) write(0,*) 'DEBUG: find_surface_neighbor: start'
+    if (SURF_DEBUG >= 1) write(0,*) 'DEBUG: find_surface_neighbor: start'
 
     nsurf = size(surf)
 
@@ -143,7 +143,7 @@ contains
     enddo
     !$omp end parallel do
 
-    if (DEBUG >= 1) write(0,*) 'DEBUG: find_surface_neighbor: end'
+    if (SURF_DEBUG >= 1) write(0,*) 'DEBUG: find_surface_neighbor: end'
   end subroutine
 
   !> Compute reference length of surface elements
@@ -196,7 +196,7 @@ contains
     type(bucketDB), intent(inout) :: bktDB         !< bucket info
     real(kind=kreal) :: x_min(3), x_max(3), d_max
     integer(kind=kint) :: nsurf, i, j
-    if (DEBUG >= 1) write(0,*) 'DEBUG: update_surface_bucket_info: start'
+    if (SURF_DEBUG >= 1) write(0,*) 'DEBUG: update_surface_bucket_info: start'
     nsurf = size(surf)
     if (nsurf == 0) return
     x_min(:) = surf(1)%xavg(:)
@@ -224,7 +224,7 @@ contains
     do i = 1, nsurf
       call bucketDB_register(bktDB, surf(i)%bktID, i)
     enddo
-    if (DEBUG >= 1) write(0,*) 'DEBUG: update_surface_bucket_info: end'
+    if (SURF_DEBUG >= 1) write(0,*) 'DEBUG: update_surface_bucket_info: end'
   end subroutine update_surface_bucket_info
 
   !> Compute vertex normals for a single surface element (geometric calculation only)

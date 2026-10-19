@@ -38,20 +38,12 @@ contains
     type(hecmwST_result_data)            :: fstrRESULT
     type(fstr_param)                     :: fstrPARAM
     type(fstr_dynamic)                   :: fstrDYN
-    type(hecmwST_matrix_lagrange)        :: hecLagMAT !< type hecmwST_matrix_lagrange
     type(fstr_info_contactChange)        :: infoCTChange !< fstr_info_contactChange
     type(fstr_couple)                    :: fstrCPL !for COUPLE
     type(hecmwST_matrix), pointer :: hecMATmpc
-    integer(kind=kint), allocatable :: mark(:)
-    integer(kind=kint) :: nnod, ndof, nn, numnp
-    integer(kind=kint) :: i, j, ids, ide, kk
-    integer(kind=kint) :: kkk0, kkk1
+    integer(kind=kint) :: nnod, ndof, nn
     integer(kind=kint) :: ierror
-    integer(kind=kint) :: iiii5, iexit
-    integer(kind=kint) :: revocap_flag
     real(kind=kreal), allocatable :: prevB(:)
-    real(kind=kreal) :: bsize, res
-    real(kind=kreal) :: time_1, time_2
     integer(kind=kint) :: restrt_step_num
     integer(kind=kint) :: restrt_step_count
     real(kind=kreal), parameter :: PI = 3.14159265358979323846D0

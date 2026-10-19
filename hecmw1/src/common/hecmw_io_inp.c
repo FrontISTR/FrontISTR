@@ -196,9 +196,9 @@ static int add_mat_data(int keyword, struct hecmw_io_matitem *matitem) {
 
 static int count_mat_item(void) {
   int n;
-  struct material_data *p, *q;
+  struct material_data *p;
 
-  for (n = 0, p = matdata; p; p = (q = p)->next, n++)
+  for (n = 0, p = matdata; p; p = p->next, n++)
     ;
   return n;
 }
@@ -703,9 +703,6 @@ static int read_amplitude(void) {
   int time                      = HECMW_AMP_TYPETIME_STEP;
   int value                     = HECMW_AMP_TYPEVAL_RELATIVE;
   int flag_name                 = 0; /* flag for NAME */
-  int flag_definition           = 0; /* flag for DEFINITION */
-  int flag_time                 = 0; /* flag for TIME */
-  int flag_value                = 0; /* flag for VALUE */
   int flag_input                = 0; /* flag for INPUT */
   char name[HECMW_NAME_LEN + 1] = "";
   enum {
@@ -730,15 +727,12 @@ static int read_amplitude(void) {
       } else if (token == HECMW_INPLEX_K_DEFINITION) {
         /* optional */
         if (read_amplitude_param_definition(&definition)) return -1;
-        flag_definition = 1;
       } else if (token == HECMW_INPLEX_K_TIME) {
         /* optional */
         if (read_amplitude_param_time(&time)) return -1;
-        flag_time = 1;
       } else if (token == HECMW_INPLEX_K_VALUE) {
         /* optional */
         if (read_amplitude_param_value(&value)) return -1;
-        flag_value = 1;
       } else if (token == HECMW_INPLEX_K_INPUT) {
         /* optional */
         if (read_input(HECMW_IO_INP_E0100)) return -1;
@@ -1967,8 +1961,6 @@ static int read_conductivity_data(int type, int dependencies,
 
 static int read_conductivity(void) {
   int token, state;
-  int flag_dependencies = 0; /* flag for DEPENDENCIES */
-  int flag_type         = 0; /* flag for TYPE */
   int dependencies      = 0;
   int type              = HECMW_INPLEX_K_ISOTROPIC;
   enum { ST_FINISHED, ST_KEYWORD_LINE, ST_KEYWORD_LINE_PARAM, ST_DATA_LINE };
@@ -1988,10 +1980,8 @@ static int read_conductivity(void) {
       token = HECMW_inplex_next_token();
       if (token == HECMW_INPLEX_K_DEPENDENCIES) {
         if (read_conductivity_param_dependencies(&dependencies)) return -1;
-        flag_dependencies = 1;
       } else if (token == HECMW_INPLEX_K_TYPE) {
         if (read_conductivity_param_type(&type)) return -1;
-        flag_type = 1;
       } else {
         set_err_token(token, HECMW_IO_INP_E2500, "Unknown parameter");
         return -1;
@@ -2051,7 +2041,6 @@ static int read_density_data(int dependencies,
 
 static int read_density(void) {
   int token, state;
-  int flag_dependencies = 0; /* flag for DEPENDENCIES */
   int dependencies      = 0;
   enum { ST_FINISHED, ST_KEYWORD_LINE, ST_KEYWORD_LINE_PARAM, ST_DATA_LINE };
 
@@ -2070,7 +2059,6 @@ static int read_density(void) {
       token = HECMW_inplex_next_token();
       if (token == HECMW_INPLEX_K_DEPENDENCIES) {
         if (read_density_param_dependencies(&dependencies)) return -1;
-        flag_dependencies = 1;
       } else {
         set_err_token(token, HECMW_IO_INP_E2200, "Unknown parameter");
         return -1;
@@ -2195,9 +2183,6 @@ static int read_elastic_data(int type, int dependencies,
 
 static int read_elastic(void) {
   int token, state;
-  int flag_dependencies = 0; /* flag for DEPENDENCIES */
-  int flag_type         = 0; /* flag for TYPE */
-  int flag_moduli       = 0; /* flag for MODULI */
   int dependencies      = 0;
   int type              = HECMW_INPLEX_K_ISOTROPIC;
   int moduli            = 0;
@@ -2218,13 +2203,10 @@ static int read_elastic(void) {
       token = HECMW_inplex_next_token();
       if (token == HECMW_INPLEX_K_DEPENDENCIES) {
         if (read_elastic_param_dependencies(&dependencies)) return -1;
-        flag_dependencies = 1;
       } else if (token == HECMW_INPLEX_K_TYPE) {
         if (read_elastic_param_type(&type)) return -1;
-        flag_type = 1;
       } else if (token == HECMW_INPLEX_K_MODULI) {
         if (read_elastic_param_moduli(&moduli)) return -1;
-        flag_moduli = 1;
       } else {
         set_err_token(token, HECMW_IO_INP_E2300, "Unknown parameter");
         return -1;
@@ -2284,7 +2266,6 @@ static int read_specific_data(int dependencies,
 
 static int read_specific_heat(void) {
   int token, state;
-  int flag_dependencies = 0; /* flag for DEPENDENCIES */
   int dependencies      = 0;
   enum { ST_FINISHED, ST_KEYWORD_LINE, ST_KEYWORD_LINE_PARAM, ST_DATA_LINE };
 
@@ -2303,7 +2284,6 @@ static int read_specific_heat(void) {
       token = HECMW_inplex_next_token();
       if (token == HECMW_INPLEX_K_DEPENDENCIES) {
         if (read_specific_param_dependencies(&dependencies)) return -1;
-        flag_dependencies = 1;
       } else {
         set_err_token(token, HECMW_IO_INP_E2400, "Unknown parameter");
         return -1;
@@ -2491,7 +2471,6 @@ static int read_nset_param_nset(char *nset, size_t nset_len, int *isAll) {
 
 static int read_nset_param_instance() {
   int token;
-  char *p;
 
   token = HECMW_inplex_next_token();
   if (token != '=') {
@@ -2686,7 +2665,6 @@ static int read_nset(void) {
   int token, state;
   int flag_nset                 = 0; /* flag for NSET */
   int flag_generate             = 0; /* flag for GENERATE */
-  int flag_unsorted             = 0; /* flag for UNSORTED */
   int isAll                     = 0;
   char nset[HECMW_NAME_LEN + 1] = "";
   enum {
@@ -2714,7 +2692,6 @@ static int read_nset(void) {
       } else if (token == HECMW_INPLEX_K_UNSORTED) {
         /* oprtional */
         log_warn(HECMW_IO_INP_W0097, "UNSORTED is not suppotred. Ignored.");
-        flag_unsorted = 0; /* always ignore in this version */
       } else if (token == HECMW_INPLEX_K_INSTANCE) {
         read_nset_param_instance();
       } else {
@@ -2980,7 +2957,6 @@ static int read_node_data_system(int system, double *x, double *y, double *z) {
 static int read_node(void) {
   int token, state;
   int system = 'R'; /* C:cylindrical coordinates, R:cartesian coordinates */
-  int flag_system               = 0; /* flag for SYSTEM */
   int flag_nset                 = 0; /* flag for NSET */
   int flag_input                = 0; /* flag for INPUT */
   int isAll                     = 0;
@@ -3009,7 +2985,6 @@ static int read_node(void) {
       if (token == HECMW_INPLEX_K_SYSTEM) {
         /* optional */
         if (read_node_param_system(&system)) return -1;
-        flag_system = 1;
       } else if (token == HECMW_INPLEX_K_NSET) {
         /* optional */
         if (read_node_param_nset(nset, sizeof(nset), &isAll)) return -1;
@@ -3854,7 +3829,7 @@ static int read_boundary_keyword(void) {
 
 static int read_boundary_data(int *nnode, int **node_array) {
   int i, n, *node, token;
-  int isFirst, isSuggest, isNode;
+  int isSuggest, isNode;
   struct hecmw_io_id *head, *prev, *p, *q;
 
   n         = 0;
@@ -4014,7 +3989,6 @@ static int read_boundary(void) {
 /*----------------------------------------------------------------------------*/
 static int read_cload_keyword(void) {
   int token;
-  static int isFirst = 0;
 
   /* *BOUNDARY */
   token = HECMW_inplex_next_token();
@@ -4028,12 +4002,9 @@ static int read_cload_keyword(void) {
                   "',' is not required after *CLOAD SECTION");
     return -1;
   }
-  /*if(isFirst == 0) {*/
   fprintf(stderr,
           "Auto-generated cards should be added in !CLOAD section of *.cnt "
           "file \n");
-  isFirst = 1;
-  /*}*/
   return 0;
 }
 
@@ -4092,7 +4063,6 @@ static int read_cload(void) {
 /*----------------------------------------------------------------------------*/
 static int read_dload_keyword(void) {
   int token;
-  static int isFirst = 0;
 
   /* *DLOAD */
   token = HECMW_inplex_next_token();
@@ -4106,12 +4076,9 @@ static int read_dload_keyword(void) {
                   "',' is not required after *DLOAD SECTION");
     return -1;
   }
-  /*if(isFirst == 0) {*/
   fprintf(stderr,
           "Auto-generated cards should be added in !DLOAD section of *.cnt "
           "file \n");
-  isFirst = 1;
-  /*}*/
   return 0;
 }
 

@@ -89,8 +89,8 @@ contains
     integer(kind=kint)        :: istep
     character(len=*)          :: label_suffix
     type (fstr_dynamic), intent(in), optional  :: fstrDYNAMIC
-    integer(kind=kint) :: n_lyr, ntot_lyr, tmp, is_33shell, is_33beam, cid
-    integer(kind=kint) :: i, j, k, ndof, mdof, id, nitem, nn, mm, ngauss, it
+    integer(kind=kint) :: ntot_lyr, is_33shell, is_33beam
+    integer(kind=kint) :: i, j, k, ndof, mdof, id, nitem, nn, mm, ngauss
     real(kind=kreal), pointer :: tnstrain(:), testrain(:), yield_ratio(:)
     integer(kind=kint) :: idx
     real(kind=kreal), allocatable   :: work(:), unode(:), rnode(:)
@@ -270,18 +270,36 @@ contains
     endif
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    ngauss = fstrSOLID%maxn_gauss
+    if( fstrSOLID%output_ctrl(3)%outinfo%on(11) .or. &
+        (ndof/=6 .and. any(fstrSOLID%output_ctrl(3)%outinfo%on(9:10))) ) then
+      do i = 1, hecMESH%n_elem
+        if( associated(fstrSOLID%elements(i)%shell_layer_gausses) ) then
+          ngauss = max(ngauss, size(fstrSOLID%elements(i)%shell_layer_gausses))
+        endif
+      enddo
+      call hecmw_allreduce_I1(hecMESH, ngauss, HECMW_MAX)
+    endif
+    if( ndof==6 ) call fstr_write_shell_gauss_result(hecMESH, fstrSOLID, label_suffix)
+
     ! --- STRAIN @gauss
     if( fstrSOLID%output_ctrl(3)%outinfo%on(9) .and. ndof/=6 ) then
       id = HECMW_RESULT_DTYPE_ELEM
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(9), ndof )
-      ngauss = fstrSOLID%maxn_gauss
       work(:) = 0.d0
       do k = 1, ngauss
+        ! Preserve legacy solid slots; clear shell padding per element below.
+        if( k>fstrSOLID%maxn_gauss ) work(:) = 0.d0
         write(s,*) k
         write(label,'(a,a)') 'GaussSTRAIN',trim(adjustl(s))
         label = adjustl(label)
         do i = 1, hecMESH%n_elem
-          if( associated(fstrSOLID%elements(i)%gausses) ) then
+          if( associated(fstrSOLID%elements(i)%shell_layer_gausses) ) then
+            work(nitem*(i-1)+1:nitem*i) = 0.d0
+            if( k <= size(fstrSOLID%elements(i)%shell_layer_gausses) ) then
+              work(nitem*(i-1)+1:nitem*i) = fstrSOLID%elements(i)%shell_layer_gausses(k)%strain_out(1:nitem)
+            endif
+          else if( associated(fstrSOLID%elements(i)%gausses) ) then
             if( k <= size(fstrSOLID%elements(i)%gausses) ) then
               do j = 1, nitem
                 work(nitem*(i-1)+j) = fstrSOLID%elements(i)%gausses(k)%strain_out(j)
@@ -297,14 +315,19 @@ contains
     if( fstrSOLID%output_ctrl(3)%outinfo%on(10) .and. ndof/=6 ) then
       id = HECMW_RESULT_DTYPE_ELEM
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(10), ndof )
-      ngauss = fstrSOLID%maxn_gauss
       work(:) = 0.d0
       do k = 1, ngauss
+        if( k>fstrSOLID%maxn_gauss ) work(:) = 0.d0
         write(s,*) k
         write(label,'(a,a)') 'GaussSTRESS',trim(adjustl(s))
         label = adjustl(label)
         do i = 1, hecMESH%n_elem
-          if( associated(fstrSOLID%elements(i)%gausses) ) then
+          if( associated(fstrSOLID%elements(i)%shell_layer_gausses) ) then
+            work(nitem*(i-1)+1:nitem*i) = 0.d0
+            if( k <= size(fstrSOLID%elements(i)%shell_layer_gausses) ) then
+              work(nitem*(i-1)+1:nitem*i) = fstrSOLID%elements(i)%shell_layer_gausses(k)%stress_out(1:nitem)
+            endif
+          else if( associated(fstrSOLID%elements(i)%gausses) ) then
             if( k <= size(fstrSOLID%elements(i)%gausses) ) then
               do j = 1, nitem
                 work(nitem*(i-1)+j) = fstrSOLID%elements(i)%gausses(k)%stress_out(j)
@@ -320,17 +343,23 @@ contains
     if( fstrSOLID%output_ctrl(3)%outinfo%on(11) .and. fstrSOLID%StaticType/=3 ) then
       id = HECMW_RESULT_DTYPE_ELEM
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(11), ndof )
-      ngauss = fstrSOLID%maxn_gauss
       work(:) = 0.d0
       do k = 1, ngauss
+        if( k>fstrSOLID%maxn_gauss ) work(:) = 0.d0
         write(s,*) k
         write(label,'(a,a)') 'PLASTIC_GaussSTRAIN',trim(adjustl(s))
         label = adjustl(label)
         do i = 1, hecMESH%n_elem
-          if( associated(fstrSOLID%elements(i)%gausses) ) then
+          ! Shell histories are ordered by surface point, layer, then thickness point.
+          if( associated(fstrSOLID%elements(i)%shell_layer_gausses) ) then
+            work(i) = 0.d0
+            if( k <= size(fstrSOLID%elements(i)%shell_layer_gausses) ) then
+              work(i) = fstrSOLID%elements(i)%shell_layer_gausses(k)%plstrain
+            endif
+          else if( associated(fstrSOLID%elements(i)%gausses) ) then
             if( k <= size(fstrSOLID%elements(i)%gausses) ) then
-            work(i) = fstrSOLID%elements(i)%gausses(k)%plstrain
-          endif
+              work(i) = fstrSOLID%elements(i)%gausses(k)%plstrain
+            endif
           endif
         enddo
         call result_add( id, nitem, label, label_suffix, work )
@@ -464,6 +493,46 @@ contains
     deallocate( work )
   end subroutine fstr_write_result_add
 
+  !> Write one thickness-point field at a time, sharing evaluation of strain and stress.
+  subroutine fstr_write_shell_gauss_result(hecMESH, fstrSOLID, label_suffix)
+    use m_fstr
+    use mMechGauss, only: fstr_shell_output_point_count
+    use m_fstr_NodalStress, only: fstr_get_shell_gauss_output
+    implicit none
+    type(hecmwST_local_mesh), intent(in) :: hecMESH
+    type(fstr_solid), intent(in) :: fstrSOLID
+    character(len=*), intent(in) :: label_suffix
+    integer(kind=kint) :: i, k, ngauss, nfield
+    real(kind=kreal) :: strain(6), stress(6)
+    real(kind=kreal), allocatable :: values(:,:)
+    character(len=HECMW_NAME_LEN) :: label
+
+    nfield = count(fstrSOLID%output_ctrl(3)%outinfo%on(9:10))
+    if( nfield==0 ) return
+    ngauss = 0
+    do i=1,hecMESH%n_elem
+      ngauss = max(ngauss, fstr_shell_output_point_count(fstrSOLID%elements(i)))
+    enddo
+    call hecmw_allreduce_I1(hecMESH, ngauss, HECMW_MAX)
+    allocate(values(6*hecMESH%n_elem,nfield))
+    do k=1,ngauss
+      do i=1,hecMESH%n_elem
+        call fstr_get_shell_gauss_output(hecMESH, fstrSOLID, i, k, strain, stress)
+        if( fstrSOLID%output_ctrl(3)%outinfo%on(9) ) values(6*i-5:6*i,1) = strain
+        if( fstrSOLID%output_ctrl(3)%outinfo%on(10) ) values(6*i-5:6*i,nfield) = stress
+      enddo
+      if( fstrSOLID%output_ctrl(3)%outinfo%on(9) ) then
+        write(label,'(a,i0)') 'GaussSTRAIN',k
+        call result_add(HECMW_RESULT_DTYPE_ELEM, 6, label, label_suffix, values(:,1))
+      endif
+      if( fstrSOLID%output_ctrl(3)%outinfo%on(10) ) then
+        write(label,'(a,i0)') 'GaussSTRESS',k
+        call result_add(HECMW_RESULT_DTYPE_ELEM, 6, label, label_suffix, values(:,nfield))
+      endif
+    enddo
+    deallocate(values)
+  end subroutine fstr_write_shell_gauss_result
+
   subroutine result_add( dtype, n_dof, label, label_suffix, data )
     use m_fstr
     use hecmw_util
@@ -491,15 +560,12 @@ contains
     type (hecmwST_local_mesh) :: hecMESH
     type (fstr_solid)         :: fstrSOLID
     type (fstr_solid_physic_val) :: RES
-    integer(kind=kint)        :: istep, flag
-    integer(kind=kint)        :: n_lyr, cid
 
-    character(len=HECMW_HEADER_LEN) :: header
-    character(len=HECMW_NAME_LEN)   :: s, label, nameID, addfname
+    character(len=HECMW_NAME_LEN)   :: label
     character(len=16)                :: clyr
     character(len=*)                 :: label_suffix
     character(len=12)                :: cnum
-    integer(kind=kint) :: i, j, k, ndof, mdof, id, nitem, nn, mm, ngauss, it
+    integer(kind=kint) :: k, ndof, id, nitem
     real(kind=kreal), allocatable   :: work(:)
 
     ndof = hecMESH%n_dof
@@ -654,6 +720,7 @@ contains
   !C***
   subroutine fstr_make_result( hecMESH, fstrSOLID, fstrRESULT, istep, time, fstrDYNAMIC, label_suffix )
     use m_fstr
+    use mMechGauss, only: fstr_element_average_plstrain
     use hecmw_util
 
     implicit none
@@ -662,10 +729,10 @@ contains
     type (fstr_solid)         :: fstrSOLID
     type(hecmwST_result_data) :: fstrRESULT
     integer(kind=kint)        :: istep
-    real(kind=kreal) :: time, coords(3,3)
+    real(kind=kreal) :: time
     type(fstr_dynamic), intent(in), optional  :: fstrDYNAMIC
-    integer(kind=kint) :: n_lyr, ntot_lyr, it, coef33, is_33shell, is_33beam
-    integer(kind=kint) :: i, j, k, ndof, mdof, gcomp, gitem, ncomp, nitem, iitem, ecomp, eitem, jitem, nn, mm
+    integer(kind=kint) :: ntot_lyr, coef33, is_33shell, is_33beam
+    integer(kind=kint) :: i, j, ndof, mdof, gcomp, gitem, ncomp, nitem, iitem, ecomp, eitem, jitem, nn, mm
     integer(kind=kint) :: idx
     real(kind=kreal), pointer :: tnstrain(:), testrain(:)
     real(kind=kreal), allocatable   ::unode(:)
@@ -1407,14 +1474,10 @@ contains
     type (fstr_solid)         :: fstrSOLID
     type (hecmwST_result_data):: fstrRESULT
     type (fstr_solid_physic_val) :: RES
-    integer(kind=kint)        :: istep, flag
-    integer(kind=kint)        :: n_lyr, cid
 
-    character(len=HECMW_HEADER_LEN) :: header
-    character(len=HECMW_NAME_LEN)   :: s, label, nameID, addfname
     character(len=16)                :: clyr
     character(len=12)                :: cnum
-    integer(kind=kint) :: i, j, k, ndof, mdof, id, nitem, eitem, nn, mm, ngauss, it
+    integer(kind=kint) :: i, j, k, ndof, nitem, eitem, nn
     integer(kind=kint) :: iitem, ncomp, jitem, ecomp, nlyr
     integer(kind=kint) :: isect, cdsys_ID, serr
     real(kind=kreal) :: coords(3,3), coordsys(3, 3)
@@ -1631,11 +1694,13 @@ contains
       fstrRESULT%ne_dof(ecomp) = nn
       fstrRESULT%elem_label(ecomp) = 'ElementalPLSTRAIN'
       do i = 1, hecMESH%n_elem
-        RES%EPLSTRAIN(i) = 0.d0
-        do j = 1, size(fstrSOLID%elements(i)%gausses) 
-          RES%EPLSTRAIN(i) = RES%EPLSTRAIN(i) + fstrSOLID%elements(i)%gausses(j)%plstrain
-        enddo
-        RES%EPLSTRAIN(i) = RES%EPLSTRAIN(i) / size(fstrSOLID%elements(i)%gausses)
+        if( len_trim(clyr) == 0 ) then
+          if( associated(fstrSOLID%elements(i)%shell_layer_gausses) ) then
+            RES%EPLSTRAIN(i) = fstrSOLID%EPLSTRAIN(i)
+          else
+            RES%EPLSTRAIN(i) = fstr_element_average_plstrain(fstrSOLID%elements(i))
+          endif
+        endif
         fstrRESULT%elem_val_item(eitem*(i-1)+1+jitem) = RES%EPLSTRAIN(i)
       enddo
       jitem = jitem + nn
@@ -1684,8 +1749,8 @@ contains
     implicit none
     type (fstr_solid)         :: fstrSOLID
     type (hecmwST_local_mesh) :: hecMESH
-    integer(kind=kint) :: i, j, k, itype, is, iE, ic_type, jS, icel
-    integer(kind=kint) :: mm, n1, n2
+    integer(kind=kint) :: j, itype, is, iE, ic_type, jS, icel
+    integer(kind=kint) :: n1, n2
     real(kind=kreal), allocatable   :: unode(:)
 
     do itype = 1, hecMESH%n_elem_type
@@ -1727,8 +1792,8 @@ contains
     implicit none
     type (fstr_solid)         :: fstrSOLID
     type (hecmwST_local_mesh) :: hecMESH
-    integer(kind=kint) :: i, j, k, itype, is, iE, ic_type, jS, icel
-    integer(kind=kint) :: mm, n1, n2
+    integer(kind=kint) :: j, itype, is, iE, ic_type, jS, icel
+    integer(kind=kint) :: n1, n2
     real(kind=kreal), allocatable   :: unode(:)
 
     do itype = 1, hecMESH%n_elem_type
@@ -1777,8 +1842,8 @@ contains
     implicit none
     type (fstr_solid)         :: fstrSOLID
     type (hecmwST_local_mesh) :: hecMESH
-    integer(kind=kint) :: i, j, k, itype, is, iE, ic_type, jS, icel
-    integer(kind=kint) :: mm, a, b
+    integer(kind=kint) :: j, itype, is, iE, ic_type, jS, icel
+    integer(kind=kint) :: a, b
     real(kind=kreal), allocatable   :: unode(:)
 
     do itype = 1, hecMESH%n_elem_type

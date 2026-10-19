@@ -236,8 +236,8 @@ void compute_color_sf(double p[3], double value, double n[3],
   int i, j;
   double cosalpha, costheta;
   double color[3];
-  double lp[3], vp[3], lp_norm, vp_norm, norm, hp[3], hp_norm;
-  double inprodLN, inprodVN, inprodHN;
+  double lp[3], vp[3], lp_norm, vp_norm, norm;
+  double inprodLN, inprodVN;
   double r, g, b;
 
   /*--------------map value to rgb -------------------   */
@@ -338,19 +338,14 @@ void compute_color_sf(double p[3], double value, double n[3],
     for (i = 0; i < 3; i++) {
       lp[i] = light_point[j * 3 + i] - p[i];
       vp[i] = view_point_d[i] - p[i];
-      hp[i] = (lp[i] + vp[i]) / 2.0;
     }
     lp_norm = sqrt(SQR(lp[0]) + SQR(lp[1]) + SQR(lp[2]));
     vp_norm = sqrt(SQR(vp[0]) + SQR(vp[1]) + SQR(vp[2]));
-    hp_norm = sqrt(SQR(hp[0]) + SQR(hp[1]) + SQR(hp[2]));
     if (fabs(lp_norm) > EPSILON) {
       for (i = 0; i < 3; i++) lp[i] /= lp_norm;
     }
     if (fabs(vp_norm) > EPSILON) {
       for (i = 0; i < 3; i++) vp[i] /= vp_norm;
-    }
-    if (fabs(hp_norm) > EPSILON) {
-      for (i = 0; i < 3; i++) hp[i] /= hp_norm;
     }
     norm = sqrt(SQR(n[0]) + SQR(n[1]) + SQR(n[2]));
     if (fabs(norm) > EPSILON) {
@@ -359,7 +354,6 @@ void compute_color_sf(double p[3], double value, double n[3],
     inprodLN = n[0] * lp[0] + n[1] * lp[1] + n[2] * lp[2];
     inprodVN = n[0] * vp[0] + n[1] * vp[1] + n[2] * vp[2];
 
-    inprodHN = n[0] * hp[0] + n[1] * hp[1] + n[2] * hp[2];
     /*	a_current=opacity_decision(in_voxel, vr, vd, grad_minmax, feap_minmax,
 feai_minmax,
     dis_minmax, opa_table, mincolor, maxcolor, time_step);
