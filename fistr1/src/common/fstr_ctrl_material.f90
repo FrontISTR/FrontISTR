@@ -892,7 +892,7 @@ contains
         end block
       endif
       if( fstr_ctrl_get_EXPANSION_COEFF==0 ) then
-        matval(M_EXAPNSION) = fval(1,1)
+        matval(M_EXPANSION) = fval(1,1)
         call init_table( mttable,depends, 1+depends, n, fval )
         call dict_add_key( dict, MC_THEMOEXP, mttable )
       endif
