@@ -13,9 +13,10 @@ contains
   !> @brief Generating parameter handler
   !! @return Parameter handler of type(c_ptr)
   function fstr_api_param_new() bind(C,name='fstr_api_param_new')
+    use m_fstr, only : fstr_nullify_fstr_param
     implicit none
     type(c_ptr) :: fstr_api_param_new
-    type(fstr_param), target, save :: fstrPARAM
+    type(fstr_param), target, allocatable :: fstrPARAM
     call fstr_nullify_fstr_param(fstrPARAM)
     fstr_api_param_new = c_loc(fstrPARAM)
   end function
@@ -27,13 +28,12 @@ contains
     implicit none
     type(c_ptr), value :: param
     type(fstr_param), pointer :: fstrPARAM
-    integer :: i
     call c_f_pointer(cptr=param, fptr=fstrPARAM)
     call fstr_param_finalize(fstrPARAM)
     deallocate(fstrPARAM)
   end subroutine
 
-  !> @brief Initialize of the parameter sturcture
+  !> @brief Initialize of the parameter sturacture
   !! @param[in] param : Parameter handler
   !! @param[in] mesh : Mesh handler
   subroutine fstr_api_param_init(param,mesh) bind(C,name='fstr_api_param_init')
@@ -56,6 +56,7 @@ contains
     call reallocate_real( fstrPARAM%delmax, 1 )
     call reallocate_integer( fstrPARAM%itmax, 1 )
     call reallocate_real( fstrPARAM%eps, 1 )
+    fstrPARAM%analysis_n = 1
     fstrPARAM%dtime = 0.0d0
     fstrPARAM%etime = 0.0d0
     fstrPARAM%dtmin = 0.0d0
@@ -107,13 +108,13 @@ contains
   subroutine fstr_api_param_set_solver_method(param,smethod) bind(C,name='fstr_api_param_set_solver_method')
     implicit none
     type(c_ptr), value :: param
-    integer(c_int) :: smethod
+    integer(c_int), value :: smethod
     type(fstr_param), pointer :: fstrPARAM
     call c_f_pointer(cptr=param, fptr=fstrPARAM)
     fstrPARAM%solver_method = smethod
   end subroutine
 
-  !> @brief Retrieve the flag of nonliniear analysis
+  !> @brief Retrieve the flag of nonlinear analysis
   !! @param[in] param : Parameter handler
   !! @return flag of nonlinear analysis
   function fstr_api_param_nlgeom(param) bind(C,name='fstr_api_param_nlgeom')
@@ -174,7 +175,7 @@ contains
   end function
 
   !> @brief Set the flag of result output
-  !! @param[in] param : Paramter handler
+  !! @param[in] param : Parameter handler
   !! @param[in] fg_result : flag of result output
   subroutine fstr_api_param_set_fg_result(param,fg_result) bind(C,name='fstr_api_param_set_fg_result')
     implicit none
@@ -199,7 +200,7 @@ contains
 
   !> @brief Set the flag of visual output
   !! @param[in] param : Parameter handler
-  !! @return[in] fg_visual : flag of visual output
+  !! @param[in] fg_visual : flag of visual output
   subroutine fstr_api_param_set_fg_visual(param,fg_visual) bind(C,name='fstr_api_param_set_fg_visual')
     implicit none
     type(c_ptr), value :: param

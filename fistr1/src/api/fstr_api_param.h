@@ -3,8 +3,8 @@
  * This software is released under the MIT License, see LICENSE.txt
  *****************************************************************************/
 
-#ifndef hecmw_api_local_meshH
-#define hecmw_api_local_meshH
+#ifndef fstr_api_paramH
+#define fstr_api_paramH
 
 #include <stdbool.h>
 

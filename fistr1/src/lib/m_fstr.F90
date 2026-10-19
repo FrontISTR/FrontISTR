@@ -696,6 +696,7 @@ module m_fstr
     integer              :: elemopt611
   end type tSection
 
+  private :: deallocation_with_check
   interface deallocation_with_check
     module procedure deallocation_with_check_integer
     module procedure deallocation_with_check_integer2
@@ -776,7 +777,12 @@ contains
     nullify( P%itmax )
     nullify( P%eps )
     nullify( P%global_local_ID)
+    nullify( P%contactparam )
+    nullify( P%contact_if )
+    nullify( P%ainc )
     nullify( P%timepoints )
+    nullify( P%cnvparam )
+
   end subroutine fstr_nullify_fstr_param
 
   subroutine fstr_nullify_fstr_solid( S )
