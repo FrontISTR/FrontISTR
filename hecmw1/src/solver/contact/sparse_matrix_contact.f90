@@ -47,13 +47,15 @@ contains
     if (spMAT%type==SPARSE_MATRIX_TYPE_CSR) NZ=NZ+hecLagMAT%numL_lagrange
     call sparse_matrix_init(spMAT, N_loc, NZ)
     call sparse_matrix_hec_set_conv_ext(spMAT, hecMESH, ndof)
-    if(hecLagMAT%num_lagrange > 0) print '(I3,A,4I10,A,2I10)', &
-      hecmw_comm_get_rank(),' sparse_matrix_init ',hecMAT%N,hecMAT%NP,N_loc,NZ,' LAG',hecLagMAT%num_lagrange,spMAT%offset
-    nLag = hecLagMAT%num_lagrange
-    call hecmw_allreduce_I1(hecMESH, nLag, HECMW_SUM)
-    if(hecmw_comm_get_rank() == 0) print *,'total number of contact nodes:',nLag
     spMAT%timelog = hecMAT%Iarray(22)
     spMAT%loglevel = max(0, hecMAT%Iarray(24)) ! LOGLEVEL is -1 when not given
+    if(spMAT%loglevel > 1 .and. hecLagMAT%num_lagrange > 0) print '(I3,A,4I10,A,2I10)', &
+      hecmw_comm_get_rank(),' sparse_matrix_init ',hecMAT%N,hecMAT%NP,N_loc,NZ,' LAG',hecLagMAT%num_lagrange,spMAT%offset
+    if(spMAT%loglevel > 0) then
+      nLag = hecLagMAT%num_lagrange
+      call hecmw_allreduce_I1(hecMESH, nLag, HECMW_SUM)
+      if(hecmw_comm_get_rank() == 0) print *,'total number of contact nodes:',nLag
+    endif
     if( hecmw_comm_get_size() > 1) then
       call sparse_matrix_para_contact_set_prof(spMAT, hecMAT, hecLagMAT)
     else
