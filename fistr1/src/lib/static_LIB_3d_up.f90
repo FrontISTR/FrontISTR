@@ -405,7 +405,7 @@ contains
         if( ( iter <= 1 ) .or. ( flag == TOTALLAG ) ) then
           ina(1) = ttc
           call fetch_TableData( MC_THEMOEXP, gausses(lx)%pMaterial%dict, outa, ierr, ina )
-          if( ierr ) outa(1) = gausses(lx)%pMaterial%variables(M_EXAPNSION)
+          if( ierr ) outa(1) = gausses(lx)%pMaterial%variables(M_EXPANSION)
           epsth(1:3) = outa(1)*( ttc-tt0 )
         end if
       else
@@ -630,7 +630,7 @@ contains
         if( ( iter <= 1 ) .or. ( flag == TOTALLAG ) ) then
           ina(1) = ttc
           call fetch_TableData( MC_THEMOEXP, gausses(lx)%pMaterial%dict, outa, ierr, ina )
-          if( ierr ) outa(1) = gausses(lx)%pMaterial%variables(M_EXAPNSION)
+          if( ierr ) outa(1) = gausses(lx)%pMaterial%variables(M_EXPANSION)
           epsth(1:3) = outa(1)*( ttc-tt0 )
         end if
       else
