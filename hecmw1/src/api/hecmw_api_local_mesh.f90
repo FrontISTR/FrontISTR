@@ -141,7 +141,7 @@ contains
 
     type(hecmwST_local_mesh), pointer :: hecMESH
     integer :: i, j, ncon, n, ii, off
-    integer, parameter :: etypes(35) = [ &
+    integer, parameter :: etypes(*) = [ &
       111, 112, &
       231, 232, 2322, 241, 242, &
       301, 341, 3414, 342, 3422, 351, 352, 361, 362, 363, &
@@ -151,7 +151,8 @@ contains
       881, 891, &
       1031, 1032, 1041, 1042 &
     ]
-    integer :: etype_counter(35)
+    integer, parameter :: n_etypes = size(etypes)
+    integer :: etype_counter(n_etypes)
 
     call c_f_pointer(cptr=mesh, fptr=hecMESH)
 
@@ -168,7 +169,7 @@ contains
     ! Determine the count for each element type.
     etype_counter(:) = 0
     do i=1, nelem
-      do j=1, 35
+      do j=1, n_etypes
         if (elemtype(i) == etypes(j)) then
           etype_counter(j) = etype_counter(j) + 1
         end if
@@ -176,7 +177,7 @@ contains
     end do
     ! Determine how many types exist.
     n = 0
-    do j=1, 35
+    do j=1, n_etypes
       if (etype_counter(j) > 0) then
         n = n + 1
       end if
@@ -190,7 +191,7 @@ contains
     i = 1
     n = 0
     hecMESH%elem_type_index(0) = n
-    do j=1, 35
+    do j=1, n_etypes
       if (etype_counter(j) > 0) then
         n = n + etype_counter(j)
         hecMESH%elem_type_item(i) = etypes(j)
@@ -211,7 +212,7 @@ contains
     ncon = 0 ! Offset of elem_node_item
     hecMESH%elem_node_index(0) = ncon
     ii = 0
-    do j=1, 35
+    do j=1, n_etypes
       if (etype_counter(j) == 0) continue
       n = HECMW_get_max_node(etypes(j))
       off = 0 ! Offset of the input array
