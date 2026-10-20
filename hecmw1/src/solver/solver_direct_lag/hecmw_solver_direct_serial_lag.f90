@@ -53,7 +53,7 @@ module hecmw_solver_direct_serial_lag
 
 contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine hecmw_solve_direct_serial_lag(nrows, ilag_sta, nttbr, pointers, indices, values, b)
+  subroutine hecmw_solve_direct_serial_lag(nrows, ilag_sta, pointers, indices, values, b)
     ! wrapper for parallel direct solver hecmw_solve_direct_parallel_internal()
 
     implicit none
@@ -65,10 +65,9 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! CRS style matrix
     integer(kind=kint), intent(in) :: nrows ! number of rows of whole square matrix, including lagrange elements
     integer(kind=kint), intent(in) :: ilag_sta ! row index of start point of lagrange elements
-    integer(kind=kint), intent(in) :: nttbr    ! number of none zero elements of whole square matrix. include lagrange elements and both lower, upper matrix
     integer(kind=kint), intent(in) :: pointers(:) ! whole matrix in CRS format. size is (0:nrows)
-    integer(kind=kint), intent(in) :: indices(:)  ! whole matrix in CRS format. size is (nttbr)
-    real(kind=kreal),   intent(in) :: values(:)   ! whole matrix in CRS format. size is (nttbr)
+    integer(kind=kint), intent(in) :: indices(:)  ! whole matrix in CRS format. size is number of none zero elements
+    real(kind=kreal),   intent(in) :: values(:)   ! whole matrix in CRS format. size is number of none zero elements
 
     !input/output
     real(kind=kreal),   intent(inout) :: b(:) ! right hand side vector. result will return via this array.
@@ -723,7 +722,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     if(ierr .ne. 0) then
       call errtrp('stop due to allocation error.')
     end if
-    call genbtq(ia, ja, invp_a, iperm_a,lwk2arr,lbtreearr,dsi%zpiv,izz,neqns_a)
+    call genbtq(invp_a, lwk2arr,lbtreearr,dsi%zpiv,izz,neqns_a)
 
     !   rotate the binary tree to avoid a zero pivot
     if(izz.eq.0) goto 20
@@ -748,7 +747,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     if(ierr .ne. 0) then
       call errtrp('stop due to allocation error.')
     end if
-    call gnleaf(ia, ja, invp_a, iperm_a, lpordrarr,dsi%nch,ladparr,lxleafarr,lleafarr,neqns_a,lnleaf)
+    call gnleaf(ia, ja, invp_a, iperm_a, dsi%nch,ladparr,lxleafarr,lleafarr,neqns_a,lnleaf)
 
     !   build up xlnzr,colno  (this is the symbolic fct.)
     nstop = cm%ista_c
@@ -757,7 +756,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     if(ierr .ne. 0) then
       call errtrp('stop due to allocation error.')
     end if
-    call gnclno(dsi%parent,lpordrarr,lxleafarr,lleafarr,xlnzr_a, colno_a, neqns_a, nstop,lncol_a,ir1) ! only for A
+    call gnclno(dsi%parent,lxleafarr,lleafarr,xlnzr_a, colno_a, neqns_a, nstop,lncol_a,ir1) ! only for A
     if(ir1.ne.0) then
       ir=10
       goto 1000
@@ -833,7 +832,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       ir=0
     endif
     if(dsi%ndeg.eq.1) then
-      call nufct1_child(dsi%xlnzr,dsi%colno,dsi%zln,dsi%diag,dsi%neqns,dsi%parent,dsi%nch,dsi%nstop,ir, &
+      call nufct1_child(dsi%xlnzr,dsi%colno,dsi%zln,dsi%diag,dsi%neqns,dsi%parent,dsi%nch,dsi%nstop, &
         nspdsln, spdslnidx, spdslnval, diag_lag)
     else if(dsi%ndeg.eq.2) then
       write(idbg,*) 'ndeg=1 only'
@@ -856,11 +855,11 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine nufct1_child(xlnzr,colno,zln,diag,neqns,parent,nch,nstop,ir, nspdsln, spdslnidx, spdslnval, diag_lag)
+  subroutine nufct1_child(xlnzr,colno,zln,diag,neqns,parent,nch,nstop, nspdsln, spdslnidx, spdslnval, diag_lag)
 
     implicit none
     integer(kind=kint), intent(in)  :: xlnzr(:),colno(:),parent(:)
-    integer(kind=kint), intent(in)  :: neqns, nstop, ir
+    integer(kind=kint), intent(in)  :: neqns, nstop
     integer(kind=kint), intent(inout) :: nch(:)
     real(kind=kreal),   intent(inout) :: zln(:,:),diag(:,:) !zln(1,:), diag(1,:)
 
@@ -901,7 +900,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! LDU decompose of C (nstop..neqnsA+neqnsd)
     !
     do ic=nstop,neqns
-      call sum1(ic,xlnzr,colno,zln(1,:),diag(1,:),parent,neqns)
+      call sum1(ic,xlnzr,colno,zln(1,:),neqns)
     enddo
 
     !
@@ -1308,11 +1307,11 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine genbtq(xadj,adjncy,invp,iperm,parent,btree,zpiv,izz,neqns)
+  subroutine genbtq(invp,parent,btree,zpiv,izz,neqns)
 
     implicit none
 
-    integer(kind=kint), intent(in)  :: xadj(:),adjncy(:),parent(:),invp(:),iperm(:),zpiv(:)
+    integer(kind=kint), intent(in)  :: parent(:),invp(:),zpiv(:)
     integer(kind=kint), intent(out) :: btree(:,:) ! btree is (2,:)
     integer(kind=kint), intent(in)  :: neqns
     integer(kind=kint), intent(out) :: izz
@@ -1641,11 +1640,11 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine gnleaf(xadj,adjncy,invp,iperm,pordr,nch,adjncp,xleaf,leaf,neqns,lnleaf)
+  subroutine gnleaf(xadj,adjncy,invp,iperm,nch,adjncp,xleaf,leaf,neqns,lnleaf)
 
     implicit none
 
-    integer(kind=kint), intent(in)  :: xadj(:),adjncy(:),pordr(:),nch(:),invp(:),iperm(:)
+    integer(kind=kint), intent(in)  :: xadj(:),adjncy(:),nch(:),invp(:),iperm(:)
     integer(kind=kint), intent(out) :: xleaf(:),leaf(:),adjncp(:)
     integer(kind=kint), intent(in)  :: neqns
 
@@ -1749,11 +1748,11 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine gnclno(parent,pordr,xleaf,leaf,xlnzr,colno,neqns,nstop,lncol,ir)
+  subroutine gnclno(parent,xleaf,leaf,xlnzr,colno,neqns,nstop,lncol,ir)
 
     implicit none
 
-    integer(kind=kint), intent(in)  :: parent(:),pordr(:),xleaf(:),leaf(:)
+    integer(kind=kint), intent(in)  :: parent(:),xleaf(:),leaf(:)
     integer(kind=kint), intent(out) :: colno(:),xlnzr(:)
     integer(kind=kint), intent(in)  :: neqns, nstop
     integer(kind=kint), intent(out) :: lncol,ir
@@ -2346,13 +2345,13 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   ! LDU decompose of C (nstop..neqnsA+neqnsd) region
-  subroutine sum1(ic,xlnzr,colno,zln,diag,par,neqns)
+  subroutine sum1(ic,xlnzr,colno,zln,neqns)
 
     implicit none
 
-    integer(kind=kint), intent(in)    :: xlnzr(:),colno(:),par(:)
+    integer(kind=kint), intent(in)    :: xlnzr(:),colno(:)
     integer(kind=kint), intent(in)    :: ic, neqns
-    real(kind=kreal),   intent(inout) :: zln(:),diag(:)
+    real(kind=kreal),   intent(inout) :: zln(:)
 
     real(kind=kreal) :: s, t, zz
     integer(kind=kint) :: ks, ke, k, jc, j, jj, ierr

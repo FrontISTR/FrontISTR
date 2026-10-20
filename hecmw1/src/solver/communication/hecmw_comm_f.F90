@@ -786,10 +786,10 @@ contains
 
     allocate (WS(m*ns), WR(m*nr))
     call hecmw_solve_REV_SEND_RECV                                    &
-      &   ( n, m, hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,            &
-      &     hecMESH%import_index, hecMESH%import_item,                   &
-      &     hecMESH%export_index, hecMESH%export_item,                   &
-      &     WS, WR, val , hecMESH%MPI_COMM, hecMESH%my_rank)
+      &   ( m, hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,            &
+      &     hecMESH%import_index, hecMESH%import_item,                &
+      &     hecMESH%export_index, hecMESH%export_item,                &
+      &     WS, WR, val , hecMESH%MPI_COMM)
     deallocate (WS, WR)
 #endif
   end subroutine hecmw_assemble_R
@@ -817,10 +817,10 @@ contains
 
     allocate (WS(m*ns), WR(m*nr))
     call hecmw_solve_REV_SEND_RECV_i                                    &
-      &   ( n, m, hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,            &
-      &     hecMESH%import_index, hecMESH%import_item,                   &
-      &     hecMESH%export_index, hecMESH%export_item,                   &
-      &     WS, WR, val , hecMESH%MPI_COMM, hecMESH%my_rank)
+      &   ( m, hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,              &
+      &     hecMESH%import_index, hecMESH%import_item,                  &
+      &     hecMESH%export_index, hecMESH%export_item,                  &
+      &     WS, WR, val , hecMESH%MPI_COMM)
     deallocate (WS, WR)
 #endif
   end subroutine hecmw_assemble_I
@@ -849,10 +849,10 @@ contains
 
     allocate (WS(m*ns), WR(m*nr))
     call hecmw_solve_SEND_RECV                                     &
-      &   ( n, m, hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,            &
-      &     hecMESH%import_index, hecMESH%import_item,                   &
-      &     hecMESH%export_index, hecMESH%export_item,                   &
-      &     WS, WR, val , hecMESH%MPI_COMM, hecMESH%my_rank)
+      &   ( m, hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,         &
+      &     hecMESH%import_index, hecMESH%import_item,             &
+      &     hecMESH%export_index, hecMESH%export_item,             &
+      &     WS, WR, val , hecMESH%MPI_COMM)
     deallocate (WS, WR)
 #endif
   end subroutine hecmw_update_R
@@ -875,10 +875,10 @@ contains
     if( hecMESH%n_neighbor_pe == 0 ) return
 
     call hecmw_solve_ISEND_IRECV                                   &
-      &   ( n, m, hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,            &
-      &     hecMESH%import_index, hecMESH%import_item,                   &
-      &     hecMESH%export_index, hecMESH%export_item,                   &
-      &     val , hecMESH%MPI_COMM, hecMESH%my_rank, ireq)
+      &   ( m, hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,         &
+      &     hecMESH%import_index, hecMESH%import_item,             &
+      &     hecMESH%export_index, hecMESH%export_item,             &
+      &     val , hecMESH%MPI_COMM, ireq)
 #endif
   end subroutine hecmw_update_R_async
 
@@ -927,10 +927,10 @@ contains
 
     allocate (WS(m*ns), WR(m*nr))
     call hecmw_solve_SEND_RECV_i                                    &
-      &   ( n, m, hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,            &
-      &     hecMESH%import_index, hecMESH%import_item,                   &
-      &     hecMESH%export_index, hecMESH%export_item,                   &
-      &     WS, WR, val , hecMESH%MPI_COMM, hecMESH%my_rank)
+      &   ( m, hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,          &
+      &     hecMESH%import_index, hecMESH%import_item,              &
+      &     hecMESH%export_index, hecMESH%export_item,              &
+      &     WS, WR, val , hecMESH%MPI_COMM)
     deallocate (WS, WR)
 #endif
   end subroutine hecmw_update_I

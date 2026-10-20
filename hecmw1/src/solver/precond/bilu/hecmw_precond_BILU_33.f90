@@ -157,7 +157,7 @@ contains
     if (BILU_DEBUG >= 1) write(*,*) 'DEBUG: reordering profile done', hecmw_Wtime()-t0
 
     allocate(D(9*N), AL(9*NPL), AU(9*NPU))
-    call hecmw_matrix_reorder_values(N, 3, perm, iperm, &
+    call hecmw_matrix_reorder_values(N, 3, iperm, &
       hecMAT%indexL, hecMAT%indexU, hecMAT%itemL, hecMAT%itemU, &
       hecMAT%AL, hecMAT%AU, hecMAT%D, &
       indexL, indexU, itemL, itemU, AL, AU, D)
@@ -167,14 +167,14 @@ contains
     call hecmw_matrix_reorder_renum_item(N, perm, indexU, itemU)
 
     if (PRECOND.eq.10) call FORM_ILU0_33 &
-      &   (N, N, NPL, NPU, D, AL, indexL, itemL, AU, indexU, itemU, &
+      &   (N, NPL, NPU, D, AL, indexL, itemL, AU, indexU, itemU, &
       &    SIGMA_DIAG)
     
     if (PRECOND.eq.11) call FORM_ILU1_33 &
-      &   (N, N, NPL, NPU, D, AL, indexL, itemL, AU, indexU, itemU, &
+      &   (N, NPL, NPU, D, AL, indexL, itemL, AU, indexU, itemU, &
       &    SIGMA_DIAG)
     if (PRECOND.eq.12) call FORM_ILU2_33 &
-      &   (N, N, NPL, NPU, D, AL, indexL, itemL, AU, indexU, itemU, &
+      &   (N, NPL, NPU, D, AL, indexL, itemL, AU, indexU, itemU, &
       &    SIGMA_DIAG)
 
     isFirst = .true.
@@ -386,10 +386,10 @@ contains
   !C    form ILU(0) matrix
   !C
   subroutine FORM_ILU0_33                                   &
-      &   (N, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
+      &   (NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
       &    SIGMA_DIAG)
     implicit none
-    integer(kind=kint ), intent(in):: N, NP, NPU, NPL
+    integer(kind=kint ), intent(in):: NP, NPU, NPL
     real   (kind=kreal), intent(in):: SIGMA_DIAG
 
     real(kind=kreal), dimension(9*NPL), intent(in):: AL
@@ -574,10 +574,10 @@ contains
   !C    form ILU(1) matrix
   !C
   subroutine FORM_ILU1_33                                   &
-      &   (N, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
+      &   (NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
       &    SIGMA_DIAG)
     implicit none
-    integer(kind=kint ), intent(in):: N, NP, NPU, NPL
+    integer(kind=kint ), intent(in):: NP, NPU, NPL
     real   (kind=kreal), intent(in):: SIGMA_DIAG
 
     real(kind=kreal), dimension(9*NPL), intent(in):: AL
@@ -961,10 +961,10 @@ contains
   !C    form ILU(2) matrix
   !C
   subroutine FORM_ILU2_33 &
-      &   (N, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
+      &   (NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
       &    SIGMA_DIAG)
     implicit none
-    integer(kind=kint ), intent(in):: N, NP, NPU, NPL
+    integer(kind=kint ), intent(in):: NP, NPU, NPL
     real   (kind=kreal), intent(in):: SIGMA_DIAG
 
     real(kind=kreal), dimension(9*NPL), intent(in):: AL

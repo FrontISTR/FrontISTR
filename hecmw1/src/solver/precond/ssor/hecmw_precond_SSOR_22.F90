@@ -149,7 +149,7 @@ contains
 
 
     allocate(D(4*N), AL(4*NPL), AU(4*NPU))
-    call hecmw_matrix_reorder_values(N, 2, perm, iperm, &
+    call hecmw_matrix_reorder_values(N, 2, iperm, &
       hecMAT%indexL, hecMAT%indexU, hecMAT%itemL, hecMAT%itemU, &
       hecMAT%AL, hecMAT%AU, hecMAT%D, &
       indexL, indexU, itemL, itemU, AL, AU, D)

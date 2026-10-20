@@ -938,7 +938,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     if(ierr .ne. 0) then
       call errtrp('stop due to allocation error.')
     end if
-    call genbtq(ia, ja, invp_a, iperm_a,lwk2arr,lbtreearr,dsi%zpiv,izz,neqns_a)
+    call genbtq(invp_a, lwk2arr,lbtreearr,dsi%zpiv,izz,neqns_a)
 
     !   rotate the binary tree to avoid a zero pivot
     if(izz.eq.0) goto 20
@@ -963,7 +963,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     if(ierr .ne. 0) then
       call errtrp('stop due to allocation error.')
     end if
-    call gnleaf(ia, ja, invp_a, iperm_a, lpordrarr,dsi%nch,ladparr,lxleafarr,lleafarr,neqns_a,lnleaf)
+    call gnleaf(ia, ja, invp_a, iperm_a, dsi%nch,ladparr,lxleafarr,lleafarr,neqns_a,lnleaf)
 
     !   build up xlnzr,colno  (this is the symbolic fct.)
     nstop = cm%ista_c
@@ -972,7 +972,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     if(ierr .ne. 0) then
       call errtrp('stop due to allocation error.')
     end if
-    call gnclno(dsi%parent,lpordrarr,lxleafarr,lleafarr,xlnzr_a, colno_a, neqns_a, nstop,lncol_a,ir1) ! only for A
+    call gnclno(dsi%parent,lxleafarr,lleafarr,xlnzr_a, colno_a, neqns_a, nstop,lncol_a,ir1) ! only for A
     if(ir1.ne.0) then
       ir=10
       goto 1000
@@ -1036,7 +1036,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       ir=0
     endif
     if(dsi%ndeg.eq.1) then
-      call nufct1_child(dsi%xlnzr,dsi%colno,dsi%zln,dsi%diag,dsi%neqns,dsi%parent,dsi%nch,dsi%nstop,ir)
+      call nufct1_child(dsi%xlnzr,dsi%colno,dsi%zln,dsi%diag,dsi%neqns,dsi%parent,dsi%nch,dsi%nstop)
     else if(dsi%ndeg.eq.2) then
       call nufct2_child(dsi%xlnzr,dsi%colno,dsi%zln,dsi%diag,dsi%neqns,dsi%parent,dsi%nch,dsi%nstop,ir)
     else if(dsi%ndeg.eq.3) then
@@ -1054,12 +1054,11 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine nufct1_child(xlnzr,colno,zln,diag,neqns,parent,nch,nstop,ir)
+  subroutine nufct1_child(xlnzr,colno,zln,diag,neqns,parent,nch,nstop)
 
     implicit none
     integer(kind=kint), intent(in)  :: xlnzr(:),colno(:),parent(:)
     integer(kind=kint), intent(in)  :: neqns, nstop
-    integer(kind=kint), intent(inout) :: ir
     integer(kind=kint), intent(inout) :: nch(:)
     real(kind=kreal),   intent(inout) :: zln(:,:),diag(:,:) !zln(1,:), diag(1,:)
 
@@ -1098,7 +1097,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! LDU decompose of C (nstop..neqnsA+neqnsd)
     !
     do 200 ic=nstop,neqns
-      call sum1(ic,xlnzr,colno,zln(1,:),diag(1,:),parent,neqns)
+      call sum1(ic,xlnzr,colno,zln(1,:),neqns)
 200 continue
     !
     ! phase III
@@ -1177,7 +1176,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !
     call elapout('nufct2_child: begin phase II LDU decompose of C') !elap
     do ic=nstop,neqns
-      call s2um1(ic,xlnzr,colno,zln,diag,nch,parent,neqns)
+      call s2um1(ic,xlnzr,colno,zln,neqns)
     end do
 
     !
@@ -1264,7 +1263,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !
     call elapout('nufct3_child: begin phase II LDU decompose of C') !elap
     do 200 ic=nstop,neqns
-      call s3um1(ic,xlnzr,colno,zln,diag,nch,parent,neqns)
+      call s3um1(ic,xlnzr,colno,zln,neqns)
 200 continue
 
     !
@@ -1412,7 +1411,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! LDU decompose of C (nstop..neqnsA+neqnsd)
     !
     do ic=nstop,neqns
-      call sxum1(ic,xlnzr,colno,zln,diag,nch,parent,neqns,ndeg,ndegl)
+      call sxum1(ic,xlnzr,colno,zln,neqns,ndeg)
     end do
 
     !
@@ -2544,11 +2543,11 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine genbtq(xadj,adjncy,invp,iperm,parent,btree,zpiv,izz,neqns)
+  subroutine genbtq(invp,parent,btree,zpiv,izz,neqns)
 
     implicit none
 
-    integer(kind=kint), intent(in)  :: xadj(:),adjncy(:),parent(:),invp(:),iperm(:),zpiv(:)
+    integer(kind=kint), intent(in)  :: parent(:),invp(:),zpiv(:)
     integer(kind=kint), intent(out) :: btree(:,:) ! btree is (2,:)
     integer(kind=kint), intent(in)  :: neqns
     integer(kind=kint), intent(out) :: izz
@@ -2877,11 +2876,11 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine gnleaf(xadj,adjncy,invp,iperm,pordr,nch,adjncp,xleaf,leaf,neqns,lnleaf)
+  subroutine gnleaf(xadj,adjncy,invp,iperm,nch,adjncp,xleaf,leaf,neqns,lnleaf)
 
     implicit none
 
-    integer(kind=kint), intent(in)  :: xadj(:),adjncy(:),pordr(:),nch(:),invp(:),iperm(:)
+    integer(kind=kint), intent(in)  :: xadj(:),adjncy(:),nch(:),invp(:),iperm(:)
     integer(kind=kint), intent(out) :: xleaf(:),leaf(:),adjncp(:)
     integer(kind=kint), intent(in)  :: neqns
 
@@ -2985,11 +2984,11 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine gnclno(parent,pordr,xleaf,leaf,xlnzr,colno,neqns,nstop,lncol,ir)
+  subroutine gnclno(parent,xleaf,leaf,xlnzr,colno,neqns,nstop,lncol,ir)
 
     implicit none
 
-    integer(kind=kint), intent(in)  :: parent(:),pordr(:),xleaf(:),leaf(:)
+    integer(kind=kint), intent(in)  :: parent(:),xleaf(:),leaf(:)
     integer(kind=kint), intent(out) :: colno(:),xlnzr(:)
     integer(kind=kint), intent(in)  :: neqns, nstop
     integer(kind=kint), intent(out) :: lncol,ir
@@ -3500,9 +3499,9 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     if(ndeg.le.2) then
       call addr0(isw,i,j,aij,dsi%invp,dsi%xlnzr,dsi%colno,dsi%diag,dsi%zln,dsi%dsln,nstop,dsi%ndeg,ir)
     elseif(ndeg.eq.3) then
-      call addr3(isw,i,j,aij,dsi%invp,dsi%xlnzr,dsi%colno,dsi%diag,dsi%zln,dsi%dsln,nstop,ir)
+      call addr3(i,j,aij,dsi%invp,dsi%xlnzr,dsi%colno,dsi%diag,dsi%zln,dsi%dsln,nstop,ir)
     else
-      call addrx(isw,i,j,aij,dsi%invp,dsi%xlnzr,dsi%colno,dsi%diag,dsi%zln,dsi%dsln,nstop,ndeg,ndeg2,ndeg2l,ir)
+      call addrx(i,j,aij,dsi%invp,dsi%xlnzr,dsi%colno,dsi%diag,dsi%zln,dsi%dsln,nstop,ndeg,ndeg2l,ir)
     endif
 1000 continue
     return
@@ -3582,13 +3581,13 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   ! LDU decompose of C (nstop..neqnsA+neqnsd) region
-  subroutine sum1(ic,xlnzr,colno,zln,diag,par,neqns)
+  subroutine sum1(ic,xlnzr,colno,zln,neqns)
 
     implicit none
 
-    integer(kind=kint), intent(in)    :: xlnzr(:),colno(:),par(:)
+    integer(kind=kint), intent(in)    :: xlnzr(:),colno(:)
     integer(kind=kint), intent(in)    :: ic, neqns
-    real(kind=kreal),   intent(inout) :: zln(:),diag(:)
+    real(kind=kreal),   intent(inout) :: zln(:)
 
     real(kind=kreal) :: s, t, zz
     integer(kind=kint) :: ks, ke, k, jc, j, jj, ierr
@@ -4002,13 +4001,12 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine s3um1(ic,xlnzr,colno,zln,diag,nch,par,neqns)
+  subroutine s3um1(ic,xlnzr,colno,zln,neqns)
 
     implicit none
 
-    integer(kind=kint), intent(in)  :: xlnzr(:),colno(:),nch(:),par(:)
-    real(kind=kreal),   intent(in)  :: diag(:,:)! zln(9,*),diag(6,*)
-    real(kind=kreal),   intent(inout) :: zln(:,:)
+    integer(kind=kint), intent(in)  :: xlnzr(:),colno(:)
+    real(kind=kreal),   intent(inout) :: zln(:,:) ! zln(9,*)
     integer(kind=kint), intent(in)  :: ic,neqns
 
     integer(kind=kint) :: j,k,l,ks,ke,jc,jj,ierr
@@ -4358,14 +4356,14 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine addr3(isw,i,j,aij,invp,xlnzr,colno,diag,zln,dsln,nstop,ir)
+  subroutine addr3(i,j,aij,invp,xlnzr,colno,diag,zln,dsln,nstop,ir)
 
     implicit none
 
     integer(kind=kint), intent(in)   :: invp(:),xlnzr(:),colno(:)
     real(kind=kreal),   intent(in)   :: aij(:) !zln(9,*),diag(6,*),dsln(9,*),aij(9)
     real(kind=kreal),   intent(inout) :: zln(:,:),diag(:,:),dsln(:,:) !zln(9,*),diag(6,*),dsln(9,*),aij(9)
-    integer(kind=kint), intent(in)   :: isw,i,j,nstop
+    integer(kind=kint), intent(in)   :: i,j,nstop
     integer(kind=kint), intent(out)  :: ir
 
     integer(kind=kint), parameter :: ndeg2=9
@@ -4509,13 +4507,12 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine s2um1(ic,xlnzr,colno,zln,diag,nch,par,neqns)
+  subroutine s2um1(ic,xlnzr,colno,zln,neqns)
 
     implicit none
 
-    integer(kind=kint), intent(in)  :: xlnzr(:),colno(:),nch(:),par(:)
-    real(kind=kreal),   intent(in)  :: diag(:,:) !zln(4,*),diag(3,*)
-    real(kind=kreal),   intent(inout) :: zln(:,:)
+    integer(kind=kint), intent(in)  :: xlnzr(:),colno(:)
+    real(kind=kreal),   intent(inout) :: zln(:,:) !zln(4,*)
     integer(kind=kint), intent(in)  :: ic,neqns
 
     integer(kind=kint) :: j,k,l,ks,ke,jc,jj, ierr
@@ -4738,14 +4735,14 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine addrx(isw,i,j,aij,invp,xlnzr,colno,diag,zln,dsln,nstop,ndeg,ndeg2,ndeg2l,ir)
+  subroutine addrx(i,j,aij,invp,xlnzr,colno,diag,zln,dsln,nstop,ndeg,ndeg2l,ir)
 
     implicit none
 
     integer(kind=kint), intent(in)  :: invp(*),xlnzr(*),colno(*)
     real(kind=kreal),   intent(in)  :: aij(ndeg,ndeg)
     real(kind=kreal),   intent(inout) :: zln(ndeg,ndeg,*),diag(ndeg2l,*),dsln(ndeg,ndeg,*)
-    integer(kind=kint), intent(in)  :: isw,i,j,nstop,ndeg,ndeg2,ndeg2l
+    integer(kind=kint), intent(in)  :: i,j,nstop,ndeg,ndeg2l
     integer(kind=kint), intent(out) :: ir
 
     integer(kind=kint) :: ii,jj,k,l,m,n,ks,ke,itrans,i0,j0
@@ -5096,14 +5093,13 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine sxum1(ic,xlnzr,colno,zln,diag,nch,par,neqns,ndeg,ndegl)
+  subroutine sxum1(ic,xlnzr,colno,zln,neqns,ndeg)
 
     implicit none
 
-    integer(kind=kint), intent(in)  :: xlnzr(*),colno(*),nch(*),par(*)
-    real(kind=kreal),   intent(in)  :: diag(ndegl,*)
+    integer(kind=kint), intent(in)  :: xlnzr(*),colno(*)
     real(kind=kreal),   intent(inout) :: zln(ndeg,ndeg,*)
-    integer(kind=kint), intent(in)  :: ic,neqns,ndeg,ndegl
+    integer(kind=kint), intent(in)  :: ic,neqns,ndeg
 
     real(kind=kreal)   :: s(ndeg,ndeg)
     integer(kind=kint) :: j,k,m,n,ks,ke,jc,jj,kk, ierr
