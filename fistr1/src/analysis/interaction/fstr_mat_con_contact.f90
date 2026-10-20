@@ -58,14 +58,13 @@ contains
 
   !> \brief this subroutine reconstructs node-based (stiffness) matrix structure
   !> \corresponding to contact state
-  subroutine fstr_mat_con_contact(cstep,contact_algo,hecMAT,fstrSOLID,hecLagMAT,infoCTChange,conMAT,is_contact_active_flag)
+  subroutine fstr_mat_con_contact(cstep,contact_algo,hecMAT,fstrSOLID,hecLagMAT,conMAT,is_contact_active_flag)
 
     integer(kind=kint)                   :: cstep !< current loading step
     integer(kind=kint)                   :: contact_algo !< current loading step
     type(hecmwST_matrix)                 :: hecMAT !< type hecmwST_matrix
     type(fstr_solid)                     :: fstrSOLID !< type fstr_solid
     type(hecmwST_matrix_lagrange) :: hecLagMAT !< type hecmwST_matrix_lagrange
-    type(fstr_info_contactChange)        :: infoCTChange !< type fstr_contactChange
 
     integer(kind=kint)                   :: num_lagrange !< number of Lagrange multipliers
     integer(kind=kint)                   :: countNon0LU_node, countNon0LU_lagrange !< counter of node-based number of non-zero items

@@ -94,7 +94,7 @@ contains
 
     if( associated( fstrSOLID%contacts ) ) then
       call initialize_contact_output_vectors(fstrSOLID,hecMAT)
-      call setup_contact_elesurf_for_area( 1, hecMESH, fstrSOLID )
+      call setup_contact_elesurf_for_area( hecMESH, fstrSOLID )
     endif
 
     !!-- initial value
@@ -144,14 +144,14 @@ contains
     hecMAT%X(:) =0.d0
 
     call fstr_save_originalMatrixStructure(hecMAT)
-    call fstr_scan_contact_state(restart_step_num, restart_step_num, 0, fstrDYNAMIC%t_delta, &
+    call fstr_scan_contact_state(restart_step_num, restart_step_num, 0, &
           ctAlgo, hecMESH, fstrSOLID, infoCTChange)
 
     call hecmw_mat_copy_profile( hecMAT, conMAT )
 
     if ( fstr_is_contact_active() ) then
       call fstr_mat_con_contact( restart_step_num, ctAlgo, hecMAT, fstrSOLID, hecLagMAT, &
-          infoCTChange, conMAT, fstr_is_contact_active())
+          conMAT, fstr_is_contact_active())
     elseif( hecMAT%Iarray(99)==4 ) then
       write(*,*) ' This type of direct solver is not yet available in such case ! '
       write(*,*) ' Please change solver type to intel MKL direct solver !'
@@ -211,7 +211,7 @@ contains
             ! restore matrix structure for slagrange contact analysis
             if( is_interaction_active ) then
               call fstr_mat_con_contact( tot_step, fstrPARAM%contact_algo, hecMAT, fstrSOLID, hecLagMAT, &
-                &  infoCTChange, conMAT, fstr_is_contact_active())
+                &  conMAT, fstr_is_contact_active())
               conMAT%B(:) = 0.0d0
               call solve_LINEQ_contact_init(hecMESH, hecMAT, hecLagMAT, fstr_is_matrixStruct_symmetric(fstrSOLID, hecMESH))
             endif
@@ -498,7 +498,7 @@ contains
       if( fstr_is_contact_active() ) &
         call fstr_calc_contact_output_force(cstep,ctAlgo,hecMESH,hecLagMAT,fstrSOLID,conMAT)
 
-      call fstr_scan_contact_state(cstep, istep, count_step, t_delta, ctAlgo, &
+      call fstr_scan_contact_state(cstep, istep, count_step, ctAlgo, &
                                    hecMESH, fstrSOLID, infoCTChange)
 
       if( hecMAT%Iarray(99)==4 .and. .not. fstr_is_contact_active() ) then
@@ -509,10 +509,10 @@ contains
 
       is_mat_symmetric = fstr_is_matrixStruct_symmetric(fstrSOLID,hecMESH)
       contact_changed_global=0
-      if( fstr_is_contact_conv(ctAlgo,infoCTChange,hecMESH) ) then
+      if( fstr_is_contact_conv(infoCTChange,hecMESH) ) then
         exit loopFORcontactAnalysis
       elseif( fstr_is_matrixStructure_changed(infoCTChange) ) then
-        call fstr_mat_con_contact( cstep, ctAlgo, hecMAT, fstrSOLID, hecLagMAT, infoCTChange, conMAT, fstr_is_contact_active())
+        call fstr_mat_con_contact( cstep, ctAlgo, hecMAT, fstrSOLID, hecLagMAT, conMAT, fstr_is_contact_active())
         contact_changed_global=1
       endif
       call hecmw_allreduce_I1(hecMESH,contact_changed_global,HECMW_MAX)

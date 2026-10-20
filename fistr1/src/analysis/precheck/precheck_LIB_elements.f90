@@ -23,7 +23,7 @@ contains
     real(kind=kreal), intent(out) :: vol, almax, almin
 
     call calc_volume(ic_type, nn, xx, yy, zz, thick, vol)
-    call calc_edgelength(ic_type, nn, xx, yy, zz, almax, almin)
+    call calc_edgelength(ic_type, xx, yy, zz, almax, almin)
   end subroutine
 
   !> Calculate element volume using numerical integration via elementInfo API
@@ -107,8 +107,8 @@ contains
   !> Calculate max/min edge lengths for aspect ratio computation
   !! 1st-order elements: vertex-to-vertex distance
   !! 2nd-order elements: vertex-to-midnode + midnode-to-vertex distance
-  subroutine calc_edgelength(ic_type, nn, xx, yy, zz, almax, almin)
-    integer(kind=kint), intent(in) :: ic_type, nn
+  subroutine calc_edgelength(ic_type, xx, yy, zz, almax, almin)
+    integer(kind=kint), intent(in) :: ic_type
     real(kind=kreal), intent(in) :: xx(:), yy(:), zz(:)
     real(kind=kreal), intent(out) :: almax, almin
 

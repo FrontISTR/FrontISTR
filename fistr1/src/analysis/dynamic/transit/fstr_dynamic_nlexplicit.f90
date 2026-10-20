@@ -81,7 +81,7 @@ contains
         call hecmw_abort(hecmw_comm_get_comm())
       endif
       call initialize_contact_output_vectors(fstrSOLID,hecMAT)
-      call setup_contact_elesurf_for_area( 1, hecMESH, fstrSOLID )
+      call setup_contact_elesurf_for_area( hecMESH, fstrSOLID )
       call forward_increment_Lagrange(1,ndof,fstrDYN%VEC1,hecMESH,fstrSOLID,infoCTChange,&
         & fstrSOLID%ddunode,restrt_step_count == 0)
     endif

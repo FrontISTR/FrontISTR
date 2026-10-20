@@ -83,7 +83,7 @@ contains
 
     if( associated( fstrSOLID%contacts ) ) then
       call initialize_contact_output_vectors(fstrSOLID,hecMAT)
-      call setup_contact_elesurf_for_area( 1, hecMESH, fstrSOLID )
+      call setup_contact_elesurf_for_area( hecMESH, fstrSOLID )
     endif
     if( fstrSOLID%n_embeds > 0 ) call initialize_embed_vectors(fstrSOLID,hecMAT)
 
@@ -197,7 +197,7 @@ contains
             if( is_interaction_active ) then
               call fstr_set_contact_active( infoCTChange%active )   ! restore last scan-set active
               call fstr_mat_con_contact( tot_step, fstrPARAM%contact_algo, hecMAT, fstrSOLID, hecLagMAT, &
-                &  infoCTChange, conMAT, fstr_is_contact_active())
+                &  conMAT, fstr_is_contact_active())
               conMAT%B(:) = 0.0d0
               call solve_LINEQ_contact_init(hecMESH, hecMAT, hecLagMAT, fstr_is_matrixStruct_symmetric(fstrSOLID, hecMESH))
             endif

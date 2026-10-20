@@ -134,13 +134,12 @@ contains
   end subroutine project_Point2Element
 
   !> This subroutine find the projection of a slave point onto master surface
-  subroutine project_Point2SolidElement(xyz,etype,nn,elemt,reflen,cstate,isin,distclr,ctpos,localclr)
+  subroutine project_Point2SolidElement(xyz,etype,nn,elemt,cstate,isin,distclr,ctpos,localclr)
     use m_utilities
     real(kind=kreal),intent(in)       :: xyz(3)        !< Coordinates of a spacial point, whose projecting point is to be computed
     integer, intent(in)               :: etype         !< surface element type
     integer, intent(in)               :: nn            !< number of elemental nodes
     real(kind=kreal),intent(in)       :: elemt(:,:)   !< nodes coordinates of surface element
-    real(kind=kreal),intent(in)       :: reflen        !< reference length of surface element
     type(tContactState),intent(inout) :: cstate        !< Recorde of contact information
     logical, intent(out)              :: isin          !< in contact or not
     real(kind=kreal), intent(in)      :: distclr       !< clearance of contact distance
