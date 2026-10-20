@@ -301,7 +301,7 @@ contains
         ! ----- Create local stiffness
         if (ic_type==301)then
           ihead = hecMESH%section%sect_R_index(isect-1)
-          call DL_C1(ic_type,nn,xx(1:nn),yy(1:nn),zz(1:nn),rho,thick,ltype,params,vect(1:nn*ndof),nsize)
+          call DL_C1(nn,xx(1:nn),yy(1:nn),zz(1:nn),rho,thick,ltype,params,vect(1:nn*ndof),nsize)
 
         elseif( ic_type == 241 .or. ic_type == 242 .or. ic_type == 231 .or. ic_type == 232 .or. ic_type == 2322 ) then
           call DL_C2(ic_type,nn,xx(1:nn),yy(1:nn),rho,pa1,ltype,params,vect(1:nn*ndof),nsize,iset)
@@ -476,7 +476,7 @@ contains
             isect = hecMESH%section_ID(icel)
             ihead = hecMESH%section%sect_R_index(isect-1)
             
-            call TLOAD_Beam_641( ic_type, nn, ndof, xx(1:nn), yy(1:nn), zz(1:nn), tt(1:nn), tt0(1:nn),    &
+            call TLOAD_Beam_641( nn, ndof, xx(1:nn), yy(1:nn), zz(1:nn), tt(1:nn), tt0(1:nn),    &
               fstrSOLID%elements(icel)%gausses, hecMESH%section%sect_R_item(ihead+1:), &
               fstrPARAM%ref_temp, &
               vect(1:nn*ndof))

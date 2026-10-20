@@ -16,8 +16,7 @@ contains
   !  STF_C1
   !=====================================================================*
   !>  This subroutine calculate stiff matrix of 2-nodes truss element
-  subroutine STF_C1( etype,nn,ecoord,area,gausses,stiff, u ,temperature )
-    integer(kind=kint), intent(in)  :: etype               !< element type
+  subroutine STF_C1( nn,ecoord,area,gausses,stiff, u ,temperature )
     integer(kind=kint), intent(in)  :: nn                  !< number of elemental nodes
     real(kind=kreal),   intent(in)  :: ecoord(3,nn)        !< coordinates of elemental nodes
     real(kind=kreal),   intent(in)  :: area                !< section area
@@ -71,11 +70,10 @@ contains
   !
   !> Update strain and stress inside element
   !---------------------------------------------------------------------*
-  subroutine UPDATE_C1( etype, nn, ecoord, area, u, du, qf ,gausses, reftemp, TT, T0 )
+  subroutine UPDATE_C1( nn, ecoord, area, u, du, qf ,gausses, reftemp, TT, T0 )
     !---------------------------------------------------------------------*
     use m_fstr
     ! I/F VARIABLES
-    integer(kind=kint), intent(in)     :: etype           !< \param [in] element type
     integer(kind=kint), intent(in)     :: nn              !< \param [in] number of elemental nodes
     real(kind=kreal),   intent(in)     :: ecoord(3,nn)    !< \param [in] coordinates of elemental nodes
     real(kind=kreal),   intent(in)     :: area            !< section area
@@ -145,12 +143,12 @@ contains
   end subroutine UPDATE_C1
 
   !----------------------------------------------------------------------*
-  subroutine NodalStress_C1(ETYPE,NN,gausses,ndstrain,ndstress)
+  subroutine NodalStress_C1(NN,gausses,ndstrain,ndstress)
     !----------------------------------------------------------------------*
     !
     ! Calculate Strain and Stress increment of solid elements
     !
-    integer(kind=kint), intent(in) :: ETYPE,NN
+    integer(kind=kint), intent(in) :: NN
     type(tGaussStatus), intent(in) :: gausses(:)
     real(kind=kreal), intent(out)  :: ndstrain(NN,6)
     real(kind=kreal), intent(out)  :: ndstress(NN,6)
@@ -163,12 +161,11 @@ contains
   end subroutine
 
   !----------------------------------------------------------------------*
-  subroutine ElementStress_C1(ETYPE,gausses,strain,stress)
+  subroutine ElementStress_C1(gausses,strain,stress)
     !----------------------------------------------------------------------*
     !
     ! Calculate Strain and Stress increment of solid elements
     !
-    integer(kind=kint), intent(in) :: ETYPE
     type(tGaussStatus), intent(in) :: gausses(:)
     real(kind=kreal), intent(out)  :: strain(6)
     real(kind=kreal), intent(out)  :: stress(6)
@@ -180,13 +177,13 @@ contains
   end subroutine
 
   !----------------------------------------------------------------------*
-  subroutine DL_C1(etype, nn, xx, yy, zz, rho, thick, ltype, params, &
+  subroutine DL_C1(nn, xx, yy, zz, rho, thick, ltype, params, &
       vect, nsize)
     !----------------------------------------------------------------------*
     !**  SET DLOAD
     !   GRAV LTYPE=4  :GRAVITY FORCE
     ! I/F VARIABLES
-    integer(kind = kint), intent(in)  :: etype, nn
+    integer(kind = kint), intent(in)  :: nn
     real(kind = kreal), intent(in)    :: xx(:), yy(:), zz(:)
     real(kind = kreal), intent(in)    :: params(0:6)
     real(kind = kreal), intent(inout) :: vect(:)
@@ -360,14 +357,12 @@ contains
   end subroutine
 
   !>  This subroutine calculate stiff matrix of 2-nodes connector element
-  subroutine STF_CONNECTOR( etype, nn, ecoord, gausses, stiff, u, temperature )
-    integer(kind=kint), intent(in)  :: etype               !< element type
+  subroutine STF_CONNECTOR( nn, ecoord, gausses, stiff, u )
     integer(kind=kint), intent(in)  :: nn                  !< number of elemental nodes
     real(kind=kreal),   intent(in)  :: ecoord(3,nn)        !< coordinates of elemental nodes
     type(tGaussStatus), intent(in)  :: gausses(:)          !< status of qudrature points
     real(kind=kreal),   intent(out) :: stiff(:,:)          !< stiff matrix
     real(kind=kreal),   intent(in)  :: u(:,:)              !< nodal displacemwent
-    real(kind=kreal),   intent(in)  :: temperature(nn)     !< temperature
 
     stiff(:,:) = 0.d0
 
@@ -384,14 +379,12 @@ contains
   end subroutine
 
   !>  This subroutine calculate damping matrix of 2-nodes connector element
-  subroutine DMP_CONNECTOR( etype, nn, ecoord, gausses, damping, u, temperature )
-    integer(kind=kint), intent(in)  :: etype               !< element type
+  subroutine DMP_CONNECTOR( nn, ecoord, gausses, damping, u )
     integer(kind=kint), intent(in)  :: nn                  !< number of elemental nodes
     real(kind=kreal),   intent(in)  :: ecoord(3,nn)        !< coordinates of elemental nodes
     type(tGaussStatus), intent(in)  :: gausses(:)          !< status of qudrature points
     real(kind=kreal),   intent(out) :: damping(:,:)        !< damping matrix
     real(kind=kreal),   intent(in)  :: u(:,:)              !< nodal displacemwent
-    real(kind=kreal),   intent(in)  :: temperature(nn)     !< temperature
 
     damping(:,:) = 0.d0
 
@@ -409,11 +402,10 @@ contains
 
   !> Update strain and stress inside spring element
   !---------------------------------------------------------------------*
-  subroutine UPDATE_CONNECTOR( etype, nn, ecoord, u, du, qf ,gausses, TT )
+  subroutine UPDATE_CONNECTOR( nn, ecoord, u, du, qf ,gausses, TT )
     !---------------------------------------------------------------------*
     use m_fstr
     ! I/F VARIABLES
-    integer(kind=kint), intent(in)     :: etype           !< \param [in] element type
     integer(kind=kint), intent(in)     :: nn              !< \param [in] number of elemental nodes
     real(kind=kreal),   intent(in)     :: ecoord(3,nn)    !< \param [in] coordinates of elemental nodes
     real(kind=kreal),   intent(in)     :: u(3,nn)         !< \param [in] nodal dislplacements
@@ -429,7 +421,7 @@ contains
 
     ! if spring_d is assigned, add the equivalent force to qf
     if( getNumOfSpring_dParam( gausses(1)%pMaterial ) > 0 ) then
-      call UPDATE_SPRING_D( gausses, ecoord, u, du, qf )
+      call UPDATE_SPRING_D( gausses, u, du, qf )
     endif
 
     ! if spring_a is assigned, add the stiffness to stiff
@@ -464,9 +456,8 @@ contains
     enddo
   end subroutine
 
-  subroutine UPDATE_SPRING_D( gausses, ecoord, u, du, qf )
+  subroutine UPDATE_SPRING_D( gausses, u, du, qf )
     type(tGaussStatus), intent(inout)  :: gausses(:)      !< \param [out] status of qudrature points
-    real(kind=kreal),   intent(in)     :: ecoord(:,:)    !< \param [in] coordinates of elemental nodes
     real(kind=kreal),   intent(in)     :: u(:,:)         !< \param [in] nodal dislplacements
     real(kind=kreal),   intent(in)     :: du(:,:)        !< \param [in] nodal displacement ( solutions of solver )
     real(kind=kreal),   intent(inout)  :: qf(:)        !< \param [out] Internal Force

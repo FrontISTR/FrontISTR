@@ -60,22 +60,22 @@ contains
         is = hecMesh%section%sect_R_index(isect)
         thick = hecMESH%section%sect_R_item(is)
         mm=2
-        call heat_RADIATE_231(nn,xx,yy,zz,thick,tt,isuf,RR,SINK,TZERO,mm,term1,term2,nsuf)
+        call heat_RADIATE_231(nn,xx,yy,thick,tt,isuf,RR,SINK,TZERO,mm,term1,term2,nsuf)
       elseif( ic_type.eq.232 ) then
         is = hecMesh%section%sect_R_index(isect)
         thick = hecMESH%section%sect_R_item(is)
         mm=3
-        call heat_RADIATE_232(nn,xx,yy,zz,thick,tt,isuf,RR,SINK,TZERO,mm,term1,term2,nsuf)
+        call heat_RADIATE_232(nn,xx,yy,thick,tt,isuf,RR,SINK,TZERO,mm,term1,term2,nsuf)
       elseif( ic_type.eq.241 ) then
         is = hecMesh%section%sect_R_index(isect)
         thick = hecMESH%section%sect_R_item(is)
         mm=2
-        call heat_RADIATE_241(nn,xx,yy,zz,thick,tt,isuf,RR,SINK,TZERO,mm,term1,term2,nsuf)
+        call heat_RADIATE_241(nn,xx,yy,thick,tt,isuf,RR,SINK,TZERO,mm,term1,term2,nsuf)
       elseif( ic_type.eq.242 ) then
         is = hecMesh%section%sect_R_index(isect)
         thick = hecMESH%section%sect_R_item(is)
         mm=3
-        call heat_RADIATE_242(nn,xx,yy,zz,thick,tt,isuf,RR,SINK,TZERO,mm,term1,term2,nsuf)
+        call heat_RADIATE_242(nn,xx,yy,thick,tt,isuf,RR,SINK,TZERO,mm,term1,term2,nsuf)
       elseif( ic_type.eq.341 ) then
         mm=3
         call heat_RADIATE_341(nn,xx,yy,zz,tt,isuf,RR,SINK,TZERO,mm,term1,term2,nsuf)
@@ -97,13 +97,13 @@ contains
         mm=8
         call heat_RADIATE_362(nn,xx,yy,zz,tt,isuf,RR,SINK,TZERO,mm,term1,term2,nsuf)
       elseif( ic_type.eq.731 ) then
-        call heat_RADIATE_731(nn,xx,yy,zz,tt,isuf,RR,SINK,TZERO,term1,term2)
+        call heat_RADIATE_731(nn,xx,yy,zz,tt,RR,SINK,TZERO,term1,term2)
         mm=3
         do m = 1, mm
           nsuf(m) = m
         enddo
       elseif( ic_type.eq.741 ) then
-        call heat_RADIATE_741(nn,xx,yy,zz,tt,isuf,RR,SINK,TZERO,term1,term2)
+        call heat_RADIATE_741(nn,xx,yy,zz,tt,RR,SINK,TZERO,term1,term2)
         mm=4
         do m = 1, mm
           nsuf(m) = m

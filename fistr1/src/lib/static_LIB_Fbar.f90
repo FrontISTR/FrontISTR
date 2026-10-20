@@ -339,7 +339,7 @@ contains
   !----------------------------------------------------------------------*
   subroutine Update_C3D8Fbar                              &
       (etype, nn, ecoord, u, du, cdsys_ID, coords, &
-      qf, gausses, iter, time, tincr, TT, T0, TN, reftemp )
+      qf, gausses, time, tincr, TT, T0, TN, reftemp )
     !----------------------------------------------------------------------*
 
     use m_fstr
@@ -362,7 +362,6 @@ contains
     real(kind=kreal), intent(inout)   :: coords(3, 3)  !< variables to define material coordinate system
     real(kind=kreal), intent(out)     :: qf(nn*3)      !< \param [out] Internal Force
     type(tGaussStatus), intent(inout) :: gausses(:)    !< \param [out] status of qudrature points
-    integer, intent(in) :: iter
     real(kind=kreal), intent(in)      :: time          !< current time
     real(kind=kreal), intent(in)      :: tincr         !< time increment
     real(kind=kreal), intent(in)      :: TT(nn)        !< current temperature

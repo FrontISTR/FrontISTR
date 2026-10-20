@@ -168,7 +168,7 @@ contains
         ! ----- inactive element : assemble dummy stiffness and skip the rest
         if( fstrSOLID%elements(icel)%elemact_flag == kELACT_INACTIVE ) then
           stiff_mat = 0.0d0
-          call STF_DUMMY( ndof, nn, ecoord(:,1:nn), u(1:3,1:nn), &
+          call STF_DUMMY( ndof, nn, ecoord(:,1:nn), &
             &  stiff_mat(1:nn*ndof, 1:nn*ndof), fstrSOLID%elements(icel) )
           call hecmw_mat_ass_elem(hecMAT, nn, nodLOCAL, stiff_mat)
           cycle
@@ -454,7 +454,7 @@ contains
         stiff_mat(1:nn*ndof,1:nn*ndof), fstrSOLID%elements(icel)%iset, u(1:2,1:nn) )
 
     elseif( ic_type==301 ) then
-      call STF_C1( ic_type, nn, ecoord(:,1:nn), thick, fstrSOLID%elements(icel)%gausses(:), &
+      call STF_C1( nn, ecoord(:,1:nn), thick, fstrSOLID%elements(icel)%gausses(:), &
         stiff_mat(1:nn*ndof,1:nn*ndof), u(1:3,1:nn) )
 
     elseif( ic_type==361 ) then
@@ -474,7 +474,7 @@ contains
       else if( fstrSOLID%sections(isect)%elemopt361 == kel361UP ) then ! UP (u-p mixed) element
         call STF_C3_up( ic_type, nn, ecoord(:,1:nn), fstrSOLID%elements(icel)%gausses(:), &
           stiff_mat(1:nn*ndof,1:nn*ndof), cdsys_ID, coords, time, tincr, &
-          1, fstrSOLID%elements(icel)%p, u(1:3,1:nn), tt(1:nn) )
+          1, u(1:3,1:nn), tt(1:nn) )
       endif
 
     elseif( ic_type==341 .or. ic_type==351 .or. ic_type==342 .or. ic_type==352 .or. ic_type==362 ) then
@@ -486,15 +486,15 @@ contains
       endif
 
     else if( ic_type == 511 ) then
-      call STF_CONNECTOR( ic_type, nn, ecoord(:,1:nn), fstrSOLID%elements(icel)%gausses(:), &
-        stiff_mat(1:nn*ndof,1:nn*ndof), u(1:3,1:nn), tt(1:nn))
+      call STF_CONNECTOR( nn, ecoord(:,1:nn), fstrSOLID%elements(icel)%gausses(:), &
+        stiff_mat(1:nn*ndof,1:nn*ndof), u(1:3,1:nn))
 
-      if( is_dynamic ) call DMP_CONNECTOR( ic_type, nn, ecoord(:,1:nn), fstrSOLID%elements(icel)%gausses(:), &
-        damp_mat(1:nn*ndof,1:nn*ndof), u(1:3,1:nn), tt(1:nn))
+      if( is_dynamic ) call DMP_CONNECTOR( nn, ecoord(:,1:nn), fstrSOLID%elements(icel)%gausses(:), &
+        damp_mat(1:nn*ndof,1:nn*ndof), u(1:3,1:nn))
 
     else if( ic_type == 611 ) then
       if( material%nlgeom_flag /= INFINITESIMAL ) call CreateMat_abort( ic_type, 2 )
-      call STF_Beam(ic_type, nn, ecoord, hecMESH%section%sect_R_item(ihead+1:), &
+      call STF_Beam(nn, ecoord, hecMESH%section%sect_R_item(ihead+1:), &
         material%variables(M_YOUNGS), material%variables(M_POISSON), stiff_mat(1:nn*ndof,1:nn*ndof), &
         fstrSOLID%sections(isect)%elemopt611)
 

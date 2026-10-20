@@ -54,7 +54,7 @@ contains
     if( matl%mtype==USERELASTIC ) then
       call uElasticMatrix( matl%variables(101:), gauss%strain, matrix )
     elseif( isViscoelastic(matl%mtype) ) then
-      call calViscoelasticMatrix( matl, sectTYPE, dtime, matrix, temperature )
+      call calViscoelasticMatrix( matl, dtime, matrix, temperature )
     elseif( isElastic(matl%mtype) .or. flag==1 ) then
       if(flag==1)then
         i = getElasticType(ELASTIC)
@@ -65,7 +65,7 @@ contains
       if( i==0 ) then
         call calElasticMatrix( matl, sectTYPE, matrix, temperature, hdflag=hdflag_in )
       elseif(  i==1 ) then
-        call calElasticMatrix_ortho( gauss%pMaterial, sectTYPE, cdsys, matrix, temperature, hdflag=hdflag_in )
+        call calElasticMatrix_ortho( gauss%pMaterial, cdsys, matrix, temperature, hdflag=hdflag_in )
       else
         !$omp critical
         print *, "Elasticity type", matl%mtype, "not supported"
@@ -74,13 +74,13 @@ contains
       endif
 
     elseif( matl%mtype==NEOHOOKE .or. matl%mtype==MOONEYRIVLIN ) then
-      call calElasticMooneyRivlin( matl, sectType, cijkl, gauss%strain, hdflag=hdflag_in )
+      call calElasticMooneyRivlin( matl, cijkl, gauss%strain, hdflag=hdflag_in )
       call mat_c2d( cijkl, matrix, sectType )
     elseif( matl%mtype==ARRUDABOYCE )  then
-      call calElasticArrudaBoyce( matl, sectType, cijkl, gauss%strain )
+      call calElasticArrudaBoyce( matl, cijkl, gauss%strain )
       call mat_c2d( cijkl, matrix, sectType )
     elseif( matl%mtype==MOONEYRIVLIN_ANISO ) then
-      call calElasticMooneyRivlinAniso( matl, sectType, cijkl, gauss%strain, cdsys, hdflag=hdflag_in )
+      call calElasticMooneyRivlinAniso( matl, cijkl, gauss%strain, cdsys, hdflag=hdflag_in )
       call mat_c2d( cijkl, matrix, sectType )
     elseif( matl%mtype==USERHYPERELASTIC )  then
       call uElasticMatrix( matl%variables(101:), gauss%strain, matrix )
@@ -91,7 +91,7 @@ contains
       call uMatlMatrix( matl%name, matl%variables(101:), gauss%strain,  &
         gauss%stress, gauss%fstatus, matrix, dtime, time )
     elseif( matl%mtype==NORTON ) then
-      call iso_creep( matl, sectTYPE, gauss%stress, gauss%strain, gauss%fstatus,  &
+      call iso_creep( matl, sectTYPE, gauss%stress,  &
         gauss%plstrain, dtime, time, matrix, temperature, hdflag=hdflag_in )
     else
       stop "Material type not supported!"
@@ -114,11 +114,11 @@ contains
     integer(kind=kint), intent(in)      :: hdflag  !> return only hyd and dev term if specified
 
     if( gauss%pMaterial%mtype==NEOHOOKE .or. gauss%pMaterial%mtype==MOONEYRIVLIN ) then
-      call calUpdateElasticMooneyRivlin( gauss%pMaterial, sectType, strain, stress, gauss%strain_energy, hdflag=hdflag )
+      call calUpdateElasticMooneyRivlin( gauss%pMaterial, strain, stress, gauss%strain_energy, hdflag=hdflag )
     elseif( gauss%pMaterial%mtype==ARRUDABOYCE ) then ! Arruda-Boyce Hyperelastic material
-      call calUpdateElasticArrudaBoyce( gauss%pMaterial, sectType, strain, stress )
+      call calUpdateElasticArrudaBoyce( gauss%pMaterial, strain, stress )
     elseif( gauss%pMaterial%mtype==MOONEYRIVLIN_ANISO ) then
-      call calUpdateElasticMooneyRivlinAniso( gauss%pMaterial, sectType, strain, stress, cdsys, hdflag=hdflag )
+      call calUpdateElasticMooneyRivlinAniso( gauss%pMaterial, strain, stress, cdsys, hdflag=hdflag )
     elseif( gauss%pMaterial%mtype==USERHYPERELASTIC .or. gauss%pMaterial%mtype==USERELASTIC ) then ! user-defined
       call uElasticUpdate( gauss%pMaterial%variables(101:), strain, stress )
     elseif( isElastoplastic( gauss%pMaterial%mtype ) ) then
@@ -129,7 +129,7 @@ contains
       call UpdateViscoelastic( gauss%pMaterial, sectType, strain, stress, gauss%fstatus, dtime, temp, tempn )
     elseif ( gauss%pMaterial%mtype==NORTON ) then
       if( .not. present(dtime)  ) stop "error in viscoelastic update!"
-      call update_iso_creep( gauss%pMaterial, sectType, strain, stress, gauss%fstatus, &
+      call update_iso_creep( gauss%pMaterial, stress, gauss%fstatus, &
         &  gauss%plstrain, dtime, time, temp, hdflag=hdflag )
     elseif ( gauss%pMaterial%mtype==USERMATERIAL)  then ! user-defined
       call uUpdate(  gauss%pMaterial%name, gauss%pMaterial%variables(101:),   &
@@ -436,11 +436,10 @@ contains
   !> Constitutive matrix for the u-p mixed formulation.
   !> Returns the deviatoric tangent D (K=0), the volumetric coupling vector d2,
   !> the inverse bulk modulus alpha_inv and the volumetric strain g.
-  subroutine MatlMatrix_up( gauss, sectType, D, lambda, d2, alpha_inv, g, time, dtime, cdsys, temperature )
+  subroutine MatlMatrix_up( gauss, sectType, D, d2, alpha_inv, g, time, dtime, cdsys, temperature )
     type( tGaussStatus ), intent(in) :: gauss
     integer, intent(in)              :: sectType
     real(kind=kreal), intent(out)    :: D(:,:)
-    real(kind=kreal), intent(in)     :: lambda
     real(kind=kreal), intent(out)    :: d2(6)
     real(kind=kreal), intent(out)    :: alpha_inv
     real(kind=kreal), intent(out)    :: g

@@ -73,17 +73,17 @@ contains
       elseif( ic_type.eq.232 ) then
         is = hecMesh%section%sect_R_index(isect)
         thick = hecMESH%section%sect_R_item(is)
-        call heat_DFLUX_232(nn,xx,yy,zz,thick,isuf,val,vect)
+        call heat_DFLUX_232(nn,xx,yy,thick,isuf,val,vect)
 
       elseif( ic_type.eq.241 ) then
         is = hecMesh%section%sect_R_index(isect)
         thick = hecMESH%section%sect_R_item(is)
-        call heat_DFLUX_241(nn,xx,yy,zz,thick,isuf,val,vect)
+        call heat_DFLUX_241(nn,xx,yy,thick,isuf,val,vect)
 
       elseif( ic_type.eq.242 ) then
         is = hecMesh%section%sect_R_index(isect)
         thick = hecMESH%section%sect_R_item(is)
-        call heat_DFLUX_242(nn,xx,yy,zz,thick,isuf,val,vect)
+        call heat_DFLUX_242(nn,xx,yy,thick,isuf,val,vect)
 
       elseif( ic_type.eq.341 ) then
         call heat_DFLUX_341(nn,xx,yy,zz,isuf,val,vect)

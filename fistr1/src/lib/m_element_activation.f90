@@ -37,12 +37,11 @@ module m_elemact
 contains
 
   !< stiff matrix of a elemact element
-  subroutine STF_DUMMY( ndof, nn, ecoord, u, stiff, element )
+  subroutine STF_DUMMY( ndof, nn, ecoord, stiff, element )
     use mMechGauss
     integer(kind=kint), intent(in)  :: ndof                   !< degree of freedum
     integer(kind=kint), intent(in)  :: nn                     !< number of elemental nodes
     real(kind=kreal),   intent(in)  :: ecoord(3,nn)           !< coordinates of elemental nodes
-    real(kind=kreal), intent(in)    :: u(3,nn)                !< nodal displacemwent
     type(tElement), intent(inout)   :: element                !< status of element
     real(kind=kreal),   intent(out) :: stiff(:,:)             !< stiff matrix
 

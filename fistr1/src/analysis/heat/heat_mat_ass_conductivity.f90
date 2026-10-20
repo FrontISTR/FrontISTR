@@ -77,18 +77,18 @@ contains
         if(ic_type == 111) then
           in = hecMESH%section%sect_R_index(isect)
           ASECT = hecMESH%section%sect_R_item(in)
-          call heat_conductivity_C1(ic_type, nn, ecoord(1:2,1:nn), TT, IMAT, ASECT, stiff, &
+          call heat_conductivity_C1(ic_type, nn, ecoord(1:2,1:nn), TT, ASECT, stiff, &
             fstrHEAT%CONDtab(IMAT), fstrHEAT%CONDtemp(IMAT,:), fstrHEAT%CONDfuncA(IMAT,:) ,fstrHEAT%CONDfuncB(IMAT,:))
 
         elseif(ic_type == 231 .or. ic_type == 232 .or. ic_type == 241 .or. ic_type == 242)then
           in = hecMesh%section%sect_R_index(isect)
           thick = hecMESH%section%sect_R_item(in)
-          call heat_conductivity_C2(ic_type, nn, ecoord(1:2,1:nn), TT, IMAT, thick, stiff, &
+          call heat_conductivity_C2(ic_type, nn, ecoord(1:2,1:nn), TT, thick, stiff, &
             fstrHEAT%CONDtab(IMAT), fstrHEAT%CONDtemp(IMAT,:), fstrHEAT%CONDfuncA(IMAT,:) ,fstrHEAT%CONDfuncB(IMAT,:))
 
         elseif(ic_type == 341 .or. ic_type == 342 .or. ic_type == 351 .or. ic_type == 352 .or. &
              & ic_type == 361 .or. ic_type == 362)then
-          call heat_conductivity_C3(ic_type, nn, ecoord(1:3,1:nn), TT, IMAT, stiff, &
+          call heat_conductivity_C3(ic_type, nn, ecoord(1:3,1:nn), TT, stiff, &
             fstrHEAT%CONDtab(IMAT), fstrHEAT%CONDtemp(IMAT,:), fstrHEAT%CONDfuncA(IMAT,:) ,fstrHEAT%CONDfuncB(IMAT,:))
 
         elseif (ic_type == 541) then
@@ -97,7 +97,7 @@ contains
           GHH = hecMESH%section%sect_R_item(jsect+1)
           GR1 = hecMESH%section%sect_R_item(jsect+2)
           GR2 = hecMESH%section%sect_R_item(jsect+3)
-          call heat_conductivity_541(nn, ecoord, TT, TZERO, GTH, GHH, GR1, GR2, SS, stiff)
+          call heat_conductivity_541(nn, ecoord, TT, TZERO, GTH, GHH, GR1, GR2, SS)
 
         elseif(ic_type == 731)then
           nn = 4
@@ -105,13 +105,13 @@ contains
           in = hecMesh%section%sect_R_index(isect)
           thick = hecMESH%section%sect_R_item(in)
           SS = 0.0d0
-          call heat_conductivity_shell_731(ic_type, nn, ecoord(1:3,1:nn), TT, IMAT, thick, SS, stiff, &
+          call heat_conductivity_shell_731(nn, ecoord(1:3,1:nn), TT, thick, SS, &
             fstrHEAT%CONDtab(IMAT), fstrHEAT%CONDtemp(IMAT,:), fstrHEAT%CONDfuncA(IMAT,:) ,fstrHEAT%CONDfuncB(IMAT,:))
 
         elseif(ic_type == 741)then
           in = hecMesh%section%sect_R_index(isect)
           thick = hecMESH%section%sect_R_item(in)
-          call heat_conductivity_shell_741(ic_type, nn, ecoord(1:3,1:nn), TT, IMAT, thick, SS, stiff, &
+          call heat_conductivity_shell_741(nn, ecoord(1:3,1:nn), TT, thick, SS, &
             fstrHEAT%CONDtab(IMAT), fstrHEAT%CONDtemp(IMAT,:), fstrHEAT%CONDfuncA(IMAT,:) ,fstrHEAT%CONDfuncB(IMAT,:))
 
         else
