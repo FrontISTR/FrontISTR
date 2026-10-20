@@ -25,8 +25,7 @@ module fstr_frequency_analysis
 contains
 
   subroutine fstr_solve_frequency_analysis(hecMESH, hecMAT, fstrSOLID, fstrEIG,  &
-      fstrDYNAMIC, fstrRESULT, fstrPARAM, &
-      fstrCPL, fstrFREQ, hecLagMAT, restart_step_num)
+      fstrDYNAMIC, fstrPARAM, fstrFREQ, hecLagMAT)
     !C
     !C-- global variable
     !C
@@ -34,13 +33,10 @@ contains
     type(hecmwST_matrix)                 :: hecMAT
     type(fstr_eigen)                     :: fstrEIG
     type(fstr_solid)                     :: fstrSOLID
-    type(hecmwST_result_data)            :: fstrRESULT
     type(fstr_param)                     :: fstrPARAM
     type(fstr_dynamic)                   :: fstrDYNAMIC
-    type(fstr_couple)                    :: fstrCPL
     type(fstr_freqanalysis)              :: fstrFREQ
     type(hecmwST_matrix_lagrange)        :: hecLagMAT
-    integer(kind=kint)                   :: restart_step_num
 
     !C
     !C-- local variable
@@ -141,7 +137,7 @@ contains
 
     call read_eigen_vector_res(hecMESH, startmode, endmode, ndof, numnode, freqData%eigVector)
 
-    call extract_surf2node(hecMESH, fstrFREQ, ndof, loadvecRe, loadvecIm)
+    call extract_surf2node(hecMESH, fstrFREQ, loadvecRe, loadvecIm)
     call assemble_nodeload(hecMESH, fstrFREQ, ndof, loadvecRe, loadvecIm)
 
     !acceleration input (relative motion method)
@@ -615,11 +611,10 @@ contains
     return
   end subroutine
 
-  subroutine extract_surf2node(hecMESH, freqData, numdof, loadvecRe, loadvecIm)
+  subroutine extract_surf2node(hecMESH, freqData, loadvecRe, loadvecIm)
     !---- args
     type(hecmwST_local_mesh), intent(in) :: hecMESH
     type(fstr_freqanalysis), intent(in)  :: freqData
-    integer(kind=kint), intent(in)       :: numdof
     real(kind=kreal), intent(inout)      :: loadvecRe(:) !intend(numnode*ndof)
     real(kind=kreal), intent(inout)      :: loadvecIm(:) !intend(numnode*ndof)
     !---- vals

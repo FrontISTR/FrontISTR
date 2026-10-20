@@ -37,7 +37,7 @@ contains
   !> \brief This subroutine provides function of nonlinear implicit dynamic analysis using the Newmark or HHT method.
   !> Standard Lagrange multiplier algorithm for contact analysis is included in this subroutine.
   subroutine FSTR_SOLVE_NLGEOM_DYNAMIC_IMPLICIT_CONTACTSLAG(hecMESH,hecMAT,fstrSOLID,fstrEIG   &
-      ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
+      ,fstrDYNAMIC,fstrPARAM &
       ,fstrCPL,hecLagMAT,restart_step_num,restart_substep_num,infoCTChange  &
       ,conMAT,restart_step_count )
     implicit none
@@ -47,7 +47,6 @@ contains
     type(hecmwST_matrix), pointer        :: hecMAT0
     type(fstr_eigen)                     :: fstrEIG
     type(fstr_solid)                     :: fstrSOLID
-    type(hecmwST_result_data)            :: fstrRESULT ! unused - kept for interface compatibility
     type(fstr_param)                     :: fstrPARAM
     type(fstr_dynamic)                   :: fstrDYNAMIC
     type(fstr_couple)                    :: fstrCPL !for COUPLE
@@ -138,7 +137,7 @@ contains
       fstrDYNAMIC%kineticEnergy = fstr_calc_kinetic_energy( &
         hecMESH, fstrSOLID, fstrDYNAMIC, fstrDYNAMIC%VEL(:,1))
       call fstr_dynamic_Output(1, 0, 0.d0, hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM, .true.)
-      call dynamic_output_monit(1, 0, 0.d0, hecMESH, fstrPARAM, fstrDYNAMIC, fstrEIG, fstrSOLID)
+      call dynamic_output_monit(1, 0, 0.d0, hecMESH, fstrDYNAMIC, fstrEIG, fstrSOLID)
     endif
 
     fstrDYNAMIC%VEC3(:) =0.d0
@@ -253,7 +252,7 @@ contains
         call fstr_dynamic_Output(tot_step, step_count, fstrDYNAMIC%t_curr, hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM, is_OutPoint)
 
         !C-- output result of monitoring node
-        call dynamic_output_monit(tot_step, sub_step, fstrDYNAMIC%t_curr, hecMESH, fstrPARAM, fstrDYNAMIC, fstrEIG, fstrSOLID)
+        call dynamic_output_monit(tot_step, sub_step, fstrDYNAMIC%t_curr, hecMESH, fstrDYNAMIC, fstrEIG, fstrSOLID)
 
         !---  Restart info
         if( fstrDYNAMIC%restart_nout > 0 ) then

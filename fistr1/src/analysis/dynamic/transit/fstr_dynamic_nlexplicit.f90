@@ -28,14 +28,13 @@ contains
   !C-- subroutine  fstr_solve_LINEAR_DYNAMIC
   !C================================================================C
   subroutine fstr_solve_dynamic_nlexplicit(hecMESH,hecMAT,fstrSOLID,fstrEIG   &
-      ,fstrDYN,fstrRESULT,fstrPARAM,infoCTChange &
+      ,fstrDYN,fstrPARAM,infoCTChange &
       ,fstrCPL, restrt_step_num, restrt_step_count )
     implicit none
     type(hecmwST_local_mesh)             :: hecMESH
     type(hecmwST_matrix)                 :: hecMAT
     type(fstr_eigen)                     :: fstrEIG
     type(fstr_solid)                     :: fstrSOLID
-    type(hecmwST_result_data)            :: fstrRESULT
     type(fstr_param)                     :: fstrPARAM
     type(fstr_dynamic)                   :: fstrDYN
     type(fstr_info_contactChange)        :: infoCTChange !< fstr_info_contactChange
@@ -89,7 +88,7 @@ contains
 
     if( restrt_step_count == 0 ) then
       call fstr_dynamic_Output(1, 0, 0.d0, hecMESH, fstrSOLID, fstrDYN, fstrPARAM, .true.)
-      call dynamic_output_monit(1, 0, 0.d0, hecMESH, fstrPARAM, fstrDYN, fstrEIG, fstrSOLID)
+      call dynamic_output_monit(1, 0, 0.d0, hecMESH, fstrDYN, fstrEIG, fstrSOLID)
     end if
 
     step_count = restrt_step_count
@@ -117,7 +116,7 @@ contains
         is_OutPoint = fstr_TimeInc_isTimePoint( fstrSOLID%step_ctrl(tot_step), fstrPARAM )
 
           !C-- output result of monitoring node
-        call dynamic_output_monit(tot_step, sub_step, fstrDYN%t_curr, hecMESH, fstrPARAM, fstrDYN, fstrEIG, fstrSOLID)
+        call dynamic_output_monit(tot_step, sub_step, fstrDYN%t_curr, hecMESH, fstrDYN, fstrEIG, fstrSOLID)
 
         if( fstrDYN%restart_nout > 0 ) then
           if ( mod(step_count,fstrDYN%restart_nout).eq.0 ) then

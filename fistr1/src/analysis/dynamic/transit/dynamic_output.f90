@@ -357,13 +357,12 @@ contains
   !C================================================================C
   !C-- subroutine dynamic_output_monit
   !C================================================================C
-  subroutine dynamic_output_monit(cstep, istep, t_curr, hecMESH, fstrPARAM, fstrDYNAMIC, fstrEIG, fstrSOLID)
+  subroutine dynamic_output_monit(cstep, istep, t_curr, hecMESH, fstrDYNAMIC, fstrEIG, fstrSOLID)
     use m_fstr
     integer, intent(in)      :: cstep       !< current step number
     integer, intent(in)      :: istep       !< current substep number
     real(kind=kreal), intent(in) :: t_curr      !< current time
     type(hecmwST_local_mesh) :: hecMESH
-    type(fstr_param)         :: fstrPARAM
     type(fstr_dynamic)       :: fstrDYNAMIC
     type(fstr_eigen)         :: fstrEIG
     type(fstr_solid)         :: fstrSOLID
