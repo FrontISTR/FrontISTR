@@ -73,6 +73,14 @@ contains
       do i=1,ncont
         nstate = size(fstrSOLID%contacts(i)%states)
         allocate(fstrSOLID%contacts_bkup(i)%states(nstate))
+        ! slave_surf holds its states through a pointer, so the copy gets arrays of its own
+        if( associated(fstrSOLID%contacts(i)%slave_surf) ) then
+          allocate(fstrSOLID%contacts_bkup(i)%slave_surf(size(fstrSOLID%contacts(i)%slave_surf)))
+          do j=1,size(fstrSOLID%contacts(i)%slave_surf)
+            nstate = size(fstrSOLID%contacts(i)%slave_surf(j)%states)
+            allocate(fstrSOLID%contacts_bkup(i)%slave_surf(j)%states(nstate))
+          end do
+        endif
       end do
     end if
 
@@ -129,6 +137,12 @@ contains
     if( associated(fstrSOLID%contacts) ) then
       do i=1,ncont
         deallocate(fstrSOLID%contacts_bkup(i)%states)
+        if( associated(fstrSOLID%contacts_bkup(i)%slave_surf) ) then
+          do j=1,size(fstrSOLID%contacts_bkup(i)%slave_surf)
+            deallocate(fstrSOLID%contacts_bkup(i)%slave_surf(j)%states)
+          end do
+          deallocate(fstrSOLID%contacts_bkup(i)%slave_surf)
+        endif
       end do
       deallocate(fstrSOLID%contacts_bkup)
     end if
@@ -151,7 +165,7 @@ contains
     type(fstr_info_contactChange), intent(inout) :: infoCTChange !< contact change info
     type(fstr_info_contactChange), intent(inout) :: infoCTChange_bak !< contact change info
 
-    integer(kind=kint) :: i, j
+    integer(kind=kint) :: i, j, k
     integer(kind=kint) :: ng
     integer(kind=kint) :: ncont, nstate
 
@@ -202,6 +216,17 @@ contains
         do j=1,nstate
           call contact_state_copy(fstrSOLID%contacts(i)%states(j), fstrSOLID%contacts_bkup(i)%states(j))
         enddo
+        if( associated(fstrSOLID%contacts_bkup(i)%slave_surf) ) then
+          do k=1,size(fstrSOLID%contacts(i)%slave_surf)
+            fstrSOLID%contacts_bkup(i)%slave_surf(k)%state      = fstrSOLID%contacts(i)%slave_surf(k)%state
+            fstrSOLID%contacts_bkup(i)%slave_surf(k)%state_prev = fstrSOLID%contacts(i)%slave_surf(k)%state_prev
+            nstate = size(fstrSOLID%contacts(i)%slave_surf(k)%states)
+            do j=1,nstate
+              call contact_state_copy(fstrSOLID%contacts(i)%slave_surf(k)%states(j), &
+                fstrSOLID%contacts_bkup(i)%slave_surf(k)%states(j))
+            enddo
+          end do
+        endif
       end do
       infoCTChange_bak = infoCTChange
     end if
@@ -225,7 +250,7 @@ contains
     type(fstr_info_contactChange), intent(inout) :: infoCTChange !< contact change info
     type(fstr_info_contactChange), intent(inout) :: infoCTChange_bak !< contact change info
 
-    integer(kind=kint) :: i, j
+    integer(kind=kint) :: i, j, k
     integer(kind=kint) :: ng
     integer(kind=kint) :: ncont, nstate
 
@@ -278,6 +303,17 @@ contains
         do j=1,nstate
           call contact_state_copy(fstrSOLID%contacts_bkup(i)%states(j), fstrSOLID%contacts(i)%states(j))
         enddo
+        if( associated(fstrSOLID%contacts_bkup(i)%slave_surf) ) then
+          do k=1,size(fstrSOLID%contacts(i)%slave_surf)
+            fstrSOLID%contacts(i)%slave_surf(k)%state      = fstrSOLID%contacts_bkup(i)%slave_surf(k)%state
+            fstrSOLID%contacts(i)%slave_surf(k)%state_prev = fstrSOLID%contacts_bkup(i)%slave_surf(k)%state_prev
+            nstate = size(fstrSOLID%contacts(i)%slave_surf(k)%states)
+            do j=1,nstate
+              call contact_state_copy(fstrSOLID%contacts_bkup(i)%slave_surf(k)%states(j), &
+                fstrSOLID%contacts(i)%slave_surf(k)%states(j))
+            enddo
+          end do
+        endif
       end do
       infoCTChange = infoCTChange_bak
     end if

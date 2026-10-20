@@ -1,0 +1,79 @@
+##############################################################
+## Cutback of a MORTAR=YES contact pair (issue #924).
+## 2box_hex_mortar with the upper box lifted by 0.05.
+## Step 1: the upper box is lowered by 0.045, leaving a gap of
+##         0.005.
+## Step 2: the upper box is lowered by 0.25 more with the whole
+##         step as the initial increment. The slave surface
+##         comes into contact, the Newton iteration does not
+##         converge within MAXITER=2, and the increment is cut
+##         back to a twentieth.
+## The cutback restores the contact states of the integration
+## points of the slave surface to those at t=1. Without it, the
+## retry starts from the states the failed attempt left, the
+## contact scan finds no new contact, and t=1.05 is accepted
+## with no contact force while the slave surface penetrates the
+## master one by 0.0075. The result at t=1.05 then differs from
+## the reference, the last one does not.
+## The deep initial increment and the small ones after the
+## cutback keep the residual of the iteration that fails about
+## 15 times above CONVERG and the largest final residual of the
+## iterations that converge about 15 times below it. Recheck the
+## failure without the restore when changing the gap, the
+## displacement, the increments, MAXITER or CONVERG.
+##############################################################
+!VERSION
+ 3
+!SOLUTION, TYPE=NLSTATIC
+!CONTACT_ALGO,TYPE=ALAGRANGE,AUGITER=3
+!WRITE,RESULT,FREQUENCY=1
+!OUTPUT_RES
+DISP,ON
+NSTRESS,OFF
+NMISES,OFF
+CONTACT_NFORCE,ON
+CONTACT_STATE,ON
+!WRITE,LOG
+!SOLVER,METHOD=CG,PRECOND=1,NSET=0,ITERLOG=NO,TIMELOG=NO
+ 5000, 1
+ 1.0e-06, 1.00, 0.0
+ 0.100, 0.100
+###################################
+#####   BOUNDARY CONDITIONS   #####
+###################################
+!BOUNDARY, GRPID=1
+ SET_1,1,1
+ SET_2,2,2
+ SET_3,3,3
+!BOUNDARY, GRPID=2
+ SET_4,3,3,-0.045
+!BOUNDARY, GRPID=3
+ SET_4,3,3,-0.25
+###################################
+#####   CONTACT DEFINITIONS   #####
+###################################
+!CONTACT, INTERACTION=FSLID, GRPID=1, MORTAR=YES
+CP1,0.0
+###################################
+#####         MATERIAL        #####
+###################################
+!MATERIAL, NAME=MATERIAL_1
+!ELASTIC
+ 1.00000000E+03, 3.00000000E-01
+###################################
+#####       STEP CONTROL      #####
+###################################
+!AUTOINC_PARAM, NAME=AP1
+ 0.25, 1000, 1000, 1000, 1
+ 1.25, 0, 0, 0, 1
+ 0.05, 5
+!STEP, MAXITER=8, SUBSTEPS=1, CONVERG=1.0E-4
+BOUNDARY,1
+BOUNDARY,2
+CONTACT,1
+!STEP, INC_TYPE=AUTO, SUBSTEPS=100, MAXITER=2, CONVERG=1.0E-4, AUTOINCPARAM=AP1
+ 1.0, 1.0, 1.0E-4, 1.0
+BOUNDARY,1
+BOUNDARY,3
+CONTACT,1
+!END

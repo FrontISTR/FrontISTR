@@ -523,10 +523,8 @@ contains
     if( nc>0 ) gnt = gnt/nc
   end subroutine
 
-  !> BEGIN lambda transaction (MORTAR=YES only): clear the working buffer and restore the
-  !> segment state from the committed begin values. Called at the start of every substep
-  !> attempt; a cutback retry does not restore slave_surf, so the failed attempt's lambda
-  !> is discarded here.
+  !> BEGIN lambda transaction (MORTAR=YES only): clear the working buffer. Called at the
+  !> start of every substep attempt, before the first residual reads the multipliers.
   subroutine fstr_begin_lambda_txn( fstrSOLID, cstep )
     type(fstr_solid), intent(inout) :: fstrSOLID
     integer(kind=kint), intent(in)  :: cstep
@@ -545,15 +543,13 @@ contains
         ! stick/slip warm-start is read from begin at resolve time, not restored here
         fstrSOLID%contacts(i)%slave_surf(s)%lam_work_t(:,:,:)  = 0.d0
         fstrSOLID%contacts(i)%slave_surf(s)%lam_work_fstate(:,:) = CONTACTSTICK
-        fstrSOLID%contacts(i)%slave_surf(s)%state      = fstrSOLID%contacts(i)%slave_surf(s)%state_begin
-        fstrSOLID%contacts(i)%slave_surf(s)%state_prev = fstrSOLID%contacts(i)%slave_surf(s)%state_prev_begin
       enddo
     enddo
   end subroutine
 
   !> COMMIT lambda transaction (MORTAR=YES only): keep the masters with a positive per-node
-  !> lambda and swap them into the begin buffer with the segment state. Called only on a
-  !> converged substep exit, so begin is the warm-start source of the next substep.
+  !> lambda and swap them into the begin buffer. Called only on a converged substep exit,
+  !> so begin is the warm-start source of the next substep.
   !> The discharge predicate is the complementarity condition (the assembly clamps at 0).
   subroutine fstr_commit_lambda_txn( fstrSOLID, cstep )
     type(fstr_solid), intent(inout) :: fstrSOLID
@@ -581,8 +577,6 @@ contains
           endif
         enddo
         surf%lam_begin_n = m
-        surf%state_begin      = surf%state
-        surf%state_prev_begin = surf%state_prev
       enddo
     enddo
   end subroutine
