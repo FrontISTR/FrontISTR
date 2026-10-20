@@ -100,3 +100,5 @@ foreach(parallel IN LISTS parallels)
     endif()
   endforeach()
 endforeach()
+
+add_subdirectory(api)
