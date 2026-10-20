@@ -491,7 +491,7 @@ contains
 
       if( header_name == '!ORIENTATION' ) then
         c_localcoord = c_localcoord + 1
-        if( fstr_setup_ORIENTATION( ctrl, hecMESH, c_localcoord, g_LocalCoordSys(c_localcoord) )/=0 ) then
+        if( fstr_setup_ORIENTATION( ctrl, hecMESH, g_LocalCoordSys(c_localcoord) )/=0 ) then
           write(*,*) '### Error: Fail in read in ORIENTATION definition : ', c_localcoord
           write(ILOG,*) '### Error: Fail in read in ORIENTATION definition : ', c_localcoord
           stop HECMW_EXIT_INPUT
@@ -501,7 +501,7 @@ contains
       elseif( header_name == '!CONTACT' ) then
         n = fstr_ctrl_get_data_line_n( ctrl )
         if( .not. fstr_ctrl_get_CONTACT( ctrl, n, fstrSOLID%contacts(c_contact+1:c_contact+n)   &
-            ,ee, pp, rho, alpha, P%PARAM%contact_algo, mName, k ) ) then
+            ,ee, pp, rho, alpha, mName, k ) ) then
           write(*,*) '### Error: Fail in read in contact condition : ', c_contact
           write(ILOG,*) '### Error: Fail in read in contact condition : ', c_contact
           stop HECMW_EXIT_INPUT
@@ -783,7 +783,6 @@ contains
               fstrSOLID%materials(cid)%mtype,       &
               fstrSOLID%materials(cid)%nlgeom_flag, &
               fstrSOLID%materials(cid)%variables,   &
-              fstrSOLID%materials(cid)%table,   &
               fstrSOLID%materials(cid)%dict)/=0 ) then
             write(*,*) '### Error: Fail in read in plasticity definition : ' , cid
             write(ILOG,*) '### Error: Fail in read in plasticity definition : ', cid
@@ -2587,12 +2586,11 @@ contains
   !> Read in !ORIENTATION
   !* ----------------------------------------------------------------------------------------------- *!
 
-  integer function fstr_setup_ORIENTATION( ctrl, hecMESH, cnt, coordsys )
+  integer function fstr_setup_ORIENTATION( ctrl, hecMESH, coordsys )
     use hecmw_setup_util, only: node_global_to_local
     implicit none
     integer(kind=kint)         :: ctrl
     type( hecmwST_local_mesh ) :: hecMESH
-    integer                    :: cnt
     type( tLocalCoordSys )     :: coordsys
 
     character(len=HECMW_NAME_LEN) :: grp_id_name(1)
