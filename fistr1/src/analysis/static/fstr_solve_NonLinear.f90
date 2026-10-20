@@ -31,7 +31,7 @@ module m_fstr_NonLinearMethod
 contains
 
   subroutine fstr_init_Newton(hecMESH, hecMAT, fstrSOLID, &
-      &  ctime, tincr, iter, cstep, dtime, fstrPARAM, hecLagMAT, ndof, ctAlgo, conMAT)
+      &  ctime, tincr, cstep, dtime, fstrPARAM, hecLagMAT, ndof, ctAlgo, conMAT)
     use m_fstr_Update
     implicit none
     type (hecmwST_local_mesh)             :: hecMESH   !< hecmw mesh
@@ -41,7 +41,6 @@ contains
     real(kind=kreal), intent(in)          :: dtime     !< time increment
     type (fstr_param)                     :: fstrPARAM !< type fstr_param
     real(kind=kreal), intent(inout)       :: tincr
-    integer(kind=kint)                    :: iter
     integer, intent(in)                   :: cstep     !< current loading step
     type (hecmwST_matrix_lagrange)        :: hecLagMAT !< type hecmwST_matrix_lagrange
     integer(kind=kint), intent(inout)     :: ndof
@@ -115,7 +114,7 @@ contains
       isLinear = .true.
     endif
 
-    call fstr_init_Newton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, hecLagMAT, ndof, 0, hecMAT)
+    call fstr_init_Newton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, cstep, dtime, fstrPARAM, hecLagMAT, ndof, 0, hecMAT)
 
     allocate(P(hecMESH%n_node*NDOF))
     allocate(coord(hecMESH%n_node*ndof))
@@ -127,7 +126,7 @@ contains
       stepcnt = stepcnt+1
 
       call fstr_CreateMatrix_and_DampingForce( hecMESH, hecMAT, fstrSOLID, ctime, tincr )
-      call fstr_AddSPRING(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
+      call fstr_AddSPRING(cstep, hecMESH, hecMAT, fstrSOLID)
 
       ! ----- Set Boundary condition
       call hecmw_ebc_init(hecMAT, hecEBC)
@@ -236,7 +235,7 @@ contains
     ! ----- BEGIN lambda transaction: clear working before fstr_init_Newton reads the multipliers -----
     if( ctAlgo == kcaALagrange ) call fstr_begin_lambda_txn( fstrSOLID, cstep )
 
-    call fstr_init_Newton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, hecLagMAT, ndof, ctAlgo, conMAT)
+    call fstr_init_Newton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, cstep, dtime, fstrPARAM, hecLagMAT, ndof, ctAlgo, conMAT)
 
     if( cstep == 1 .and. sub_step == restart_substep_num ) then
       call fstr_save_originalMatrixStructure(hecMAT)
@@ -287,7 +286,7 @@ contains
           stepcnt = stepcnt+1
 
           call fstr_CreateMatrix_and_DampingForce( hecMESH, hecMAT, fstrSOLID, ctime, tincr )
-          call fstr_AddSPRING(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
+          call fstr_AddSPRING(cstep, hecMESH, hecMAT, fstrSOLID)
 
           call hecmw_mat_clear( conMAT )
           conMAT%X = 0.0d0
@@ -508,7 +507,7 @@ contains
       call solve_LINEQ_contact_init(hecMESH, hecMAT, hecLagMAT, is_mat_symmetric)
     endif
 
-    call fstr_init_Newton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, hecLagMAT, ndof, ctAlgo, conMAT)
+    call fstr_init_Newton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, cstep, dtime, fstrPARAM, hecLagMAT, ndof, ctAlgo, conMAT)
 
     stepcnt = 0
     count_step = 0
@@ -526,7 +525,7 @@ contains
         stepcnt = stepcnt+1
 
         call fstr_CreateMatrix_and_DampingForce(hecMESH, hecMAT, fstrSOLID, ctime, tincr)
-        call fstr_AddSPRING(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
+        call fstr_AddSPRING(cstep, hecMESH, hecMAT, fstrSOLID)
 
           call hecmw_mat_clear( conMAT )
           conMAT%X = 0.0d0

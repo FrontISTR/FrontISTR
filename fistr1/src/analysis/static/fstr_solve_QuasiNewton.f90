@@ -26,7 +26,7 @@ contains
   !> \brief This subroutine solve nonlinear solid mechanics problems by Newton-Raphson
   !> method
   subroutine fstr_Quasi_Newton( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, &
-    restrt_step_num, sub_step, ctime, dtime )
+    sub_step, ctime, dtime )
     implicit none
 
     integer, intent(in)                   :: cstep     !< current loading step
@@ -45,7 +45,6 @@ contains
     integer(kind=kint) :: ndof
     integer(kind=kint) :: i, iter
     integer(kind=kint) :: stepcnt
-    integer(kind=kint) :: restrt_step_num
     real(kind=kreal)   :: tincr
     logical :: isLinear = .false.
     integer(kind=kint) :: iterStatus
@@ -76,7 +75,7 @@ contains
 
     tincr = dtime
     if( fstrSOLID%step_ctrl(cstep)%solution == stepStatic ) tincr = 0.d0
-    call fstr_init_Newton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, hecLagMAT, ndof, 0, hecMAT)
+    call fstr_init_Newton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, cstep, dtime, fstrPARAM, hecLagMAT, ndof, 0, hecMAT)
     fstrSOLID%GL0(:) = fstrSOLID%GL(:) !store external load at du=0
 
     !! initialize du for non-zero Dirichlet condition
@@ -237,17 +236,12 @@ contains
     deallocate(q)
   end subroutine fstr_calc_direction_LBFGS
 
-  subroutine fstr_apply_alpha0(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k, h_prime, pot)
+  subroutine fstr_apply_alpha0(hecMESH, hecMAT, fstrSOLID, cstep, z_k, h_prime, pot)
     implicit none
     type (hecmwST_local_mesh)             :: hecMESH   !< hecmw mesh
     type (hecmwST_matrix)                 :: hecMAT    !< hecmw matrix
     type (fstr_solid)                     :: fstrSOLID !< fstr_solid
-    real(kind=kreal), intent(in)          :: ctime     !< current time
-    real(kind=kreal), intent(in) :: tincr
-    integer(kind=kint) :: iter
     integer, intent(in)                   :: cstep     !< current loading step
-    real(kind=kreal), intent(in)          :: dtime     !< time increment
-    type (fstr_param)                     :: fstrPARAM !< type fstr_param
     real(kind=kreal), intent(in) :: z_k(:)
     real(kind=kreal) :: h_prime, pot
 
@@ -318,7 +312,7 @@ contains
   end subroutine fstr_init_line_search_range
 
   subroutine fstr_update_range(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k, &
-     alpha_S, h_prime_S, pot_S,  alpha_E, h_prime_E, pot_E,  alpha_c, h_prime_c, pot_c, h_prime_0, pot_0)
+     alpha_S, h_prime_S, pot_S,  alpha_E, h_prime_E, pot_E,  alpha_c, h_prime_c, pot_c, pot_0)
     implicit none
     type (hecmwST_local_mesh)             :: hecMESH   !< hecmw mesh
     type (hecmwST_matrix)                 :: hecMAT    !< hecmw matrix
@@ -333,7 +327,7 @@ contains
     real(kind=kreal) :: alpha_S, h_prime_S, pot_S
     real(kind=kreal) :: alpha_E, h_prime_E, pot_E
     real(kind=kreal) :: alpha_c, h_prime_c, pot_c
-    real(kind=kreal) :: h_prime_0, pot_0
+    real(kind=kreal) :: pot_0
 
     real(kind=kreal) :: alpha_A, h_prime_A, pot_A
     real(kind=kreal) :: alpha_B, h_prime_B, pot_B
@@ -513,7 +507,7 @@ contains
     ndof = hecMAT%NDOF
     len_vector = hecMESH%n_node*hecMesh%n_dof
 
-    call fstr_apply_alpha0(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k, h_prime_0, pot_0)
+    call fstr_apply_alpha0(hecMESH, hecMAT, fstrSOLID, cstep, z_k, h_prime_0, pot_0)
     if (h_prime_0 > 0.0d0) then
       write(6,*) 'residual vector is not directed to potential decretion.', h_prime_0
       stop
@@ -536,14 +530,14 @@ contains
       call fstr_apply_alpha(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k, alpha_c, h_prime_c, pot_c)
 
       if (abs( pot_c - pot_0) <= (omega_Wolfe * C_Wolfe) ) then
-        flag_converged = fstr_approx_wolfe_condition(alpha_c, h_prime_c, pot_c, h_prime_0, pot_0)
+        flag_converged = fstr_approx_wolfe_condition(h_prime_c, pot_c, h_prime_0, pot_0)
       else
         flag_converged = fstr_wolfe_condition(alpha_c, h_prime_c, pot_c, h_prime_0, pot_0)
       endif
       if (flag_converged) exit
 
       call fstr_update_range(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k, &
-        alpha_S, h_prime_S, pot_S,  alpha_E, h_prime_E, pot_E,  alpha_c, h_prime_c, pot_c, h_prime_0, pot_0)
+        alpha_S, h_prime_S, pot_S,  alpha_E, h_prime_E, pot_E,  alpha_c, h_prime_c, pot_c, pot_0)
       iter_ls = iter_ls +1
     enddo
     if( hecMESH%my_rank == 0 ) then
@@ -581,11 +575,11 @@ contains
     if (flag_converged) write(6,'(a, 4es27.16e3)') 'oWolfe: ', wolfe1_left, wolfe1_right, wolfe2_left, wolfe2_right
   end function fstr_wolfe_condition
 
-  function fstr_approx_wolfe_condition(alpha_c, h_prime_c, pot_c, h_prime_0, pot_0) result(flag_converged)
+  function fstr_approx_wolfe_condition(h_prime_c, pot_c, h_prime_0, pot_0) result(flag_converged)
     implicit none
     logical :: flag_converged
 
-    real(kind=kreal), intent(in) :: alpha_c, h_prime_0, h_prime_c, pot_0, pot_c
+    real(kind=kreal), intent(in) :: h_prime_0, h_prime_c, pot_0, pot_c
     real(kind=kreal) :: wolfe1_left, wolfe1_right, wolfe2_left, wolfe2_right
 
     real(kind=kreal) :: pot_eps

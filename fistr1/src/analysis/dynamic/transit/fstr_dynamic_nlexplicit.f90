@@ -97,8 +97,7 @@ contains
 
       sub_step = restrt_step_num
       do while(.true.)
-        call fstr_TimeInc_SetTimeIncrement( fstrSOLID%step_ctrl(tot_step), fstrPARAM, sub_step, &
-          & fstrSOLID%NRstat_i, fstrSOLID%NRstat_r, fstrSOLID%AutoINC_stat, fstrSOLID%CutBack_stat )
+        call fstr_TimeInc_SetTimeIncrement( fstrSOLID%step_ctrl(tot_step), fstrPARAM, sub_step, fstrSOLID )
 
         fstrDYN%t_curr = fstr_get_time()
         fstrDYN%t_delta = fstr_get_timeinc()

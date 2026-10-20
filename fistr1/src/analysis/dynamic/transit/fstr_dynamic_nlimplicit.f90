@@ -164,7 +164,7 @@ contains
     call solve_LINEQ_contact_init(hecMESH,hecMAT,hecLagMAT,is_mat_symmetric)
 
     fstrSOLID%FACTOR = 0.0d0
-    call fstr_cutback_init( hecMESH, fstrSOLID, fstrPARAM )
+    call fstr_cutback_init( hecMESH, fstrSOLID )
     call fstr_cutback_save( fstrSOLID, infoCTChange, infoCTChange_bak )
     
     step_count = restart_step_count
@@ -177,8 +177,7 @@ contains
       do while(.true.)
         if (ndof == 4 .and. hecMESH%my_rank==0) write(*,'(a,i5)')"iter: ",sub_step
         ! ----- time history of factor
-        call fstr_TimeInc_SetTimeIncrement( fstrSOLID%step_ctrl(tot_step), fstrPARAM, sub_step, &
-          &  fstrSOLID%NRstat_i, fstrSOLID%NRstat_r, fstrSOLID%AutoINC_stat, fstrSOLID%CutBack_stat )
+        call fstr_TimeInc_SetTimeIncrement( fstrSOLID%step_ctrl(tot_step), fstrPARAM, sub_step, fstrSOLID )
 
         fstrDYNAMIC%t_curr = fstr_get_time()
         fstrDYNAMIC%t_delta = fstr_get_timeinc()
@@ -189,8 +188,7 @@ contains
 
         ! Time Increment
         if( hecMESH%my_rank == 0 ) call fstr_TimeInc_PrintSTATUS( fstrSOLID%step_ctrl(tot_step), fstrPARAM, &
-          &  tot_step_print, sub_step, fstrSOLID%NRstat_i, fstrSOLID%NRstat_r,   &
-          &  fstrSOLID%AutoINC_stat, fstrSOLID%CutBack_stat )
+          &  tot_step_print, sub_step, fstrSOLID )
         if( fstr_cutback_active() ) then
 
           if( fstrSOLID%CutBack_stat == 0 ) then ! converged
@@ -393,7 +391,7 @@ contains
         stepcnt=stepcnt+1
         call fstr_CreateMatrix_and_DampingForce( hecMESH, hecMAT, fstrSOLID, t_curr, t_delta, fstrDYNAMIC, coef )
 
-        call fstr_AddSPRING(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
+        call fstr_AddSPRING(cstep, hecMESH, hecMAT, fstrSOLID)
 
         !C-- mechanical boundary condition
         call dynamic_mat_ass_load (cstep, t_curr+t_delta, hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, iter )

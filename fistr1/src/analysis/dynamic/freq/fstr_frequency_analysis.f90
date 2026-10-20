@@ -811,7 +811,7 @@ contains
     fstrSOLID%dunode = 0.d0
     call fstr_CreateMatrix_and_DampingForce( hecMESH, hecMAT, fstrSOLID, 0.d0, 0.d0 )
     !!SPRING: the same stiffness as the eigen analysis (fstr_solve_eigen)
-    call fstr_AddSPRING(1, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
+    call fstr_AddSPRING(1, hecMESH, hecMAT, fstrSOLID)
     !no external force
     call hecmw_mat_clear_b(hecMAT)
     !!BOUNDARY: iter=2 gives the constrained DOFs with zero displacement

@@ -106,7 +106,7 @@ contains
 
     fstrSOLID%FACTOR = 0.0d0
     call fstr_begin_nodal_kinematics_step( hecMESH, fstrSOLID, hecMAT%NDOF )
-    call fstr_cutback_init( hecMESH, fstrSOLID, fstrPARAM )
+    call fstr_cutback_init( hecMESH, fstrSOLID )
     infoCTChange%active = .true.
     call fstr_cutback_save( fstrSOLID, infoCTChange, infoCTChange_bak )
 
@@ -132,8 +132,7 @@ contains
       do while(.true.)
 
         ! ----- time history of factor
-        call fstr_TimeInc_SetTimeIncrement( fstrSOLID%step_ctrl(tot_step), fstrPARAM, sub_step, &
-          &  fstrSOLID%NRstat_i, fstrSOLID%NRstat_r, fstrSOLID%AutoINC_stat, fstrSOLID%CutBack_stat )
+        call fstr_TimeInc_SetTimeIncrement( fstrSOLID%step_ctrl(tot_step), fstrPARAM, sub_step, fstrSOLID )
         if( fstrSOLID%TEMP_irres > 0 ) then
           fstrSOLID%FACTOR(1) = 0.d0
           fstrSOLID%FACTOR(2) = 1.d0
@@ -162,7 +161,7 @@ contains
             restart_step_num, sub_step, fstr_get_time(), fstr_get_timeinc() )
           else if( fstrPARAM%nlsolver_method == knsmQUASINEWTON ) then
             call fstr_Quasi_Newton( tot_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM,   &
-            restart_step_num, sub_step, fstr_get_time(), fstr_get_timeinc() )
+            sub_step, fstr_get_time(), fstr_get_timeinc() )
           endif
         else
           if( fstrPARAM%contact_algo == kcaSLagrange ) then
@@ -176,8 +175,7 @@ contains
 
         ! Time Increment
         if( hecMESH%my_rank == 0 ) call fstr_TimeInc_PrintSTATUS( fstrSOLID%step_ctrl(tot_step), fstrPARAM, &
-          &  tot_step_print, sub_step, fstrSOLID%NRstat_i, fstrSOLID%NRstat_r,   &
-          &  fstrSOLID%AutoINC_stat, fstrSOLID%CutBack_stat )
+          &  tot_step_print, sub_step, fstrSOLID )
         if( fstr_cutback_active() ) then
 
           if( fstrSOLID%CutBack_stat == 0 ) then ! converged

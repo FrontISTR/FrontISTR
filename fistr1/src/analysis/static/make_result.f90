@@ -21,14 +21,13 @@ contains
   !C***
   !>  OUTPUT result file for static and dynamic analysis
   !C***
-  subroutine fstr_write_result( hecMESH, fstrSOLID, fstrPARAM, istep, time, flag, fstrDYNAMIC)
+  subroutine fstr_write_result( hecMESH, fstrSOLID, istep, time, flag, fstrDYNAMIC)
     use m_fstr
     use hecmw_util
 
     implicit none
     type (hecmwST_local_mesh) :: hecMESH
     type (fstr_solid)         :: fstrSOLID
-    type (fstr_param       )  :: fstrPARAM    !< analysis control parameters
     integer(kind=kint)        :: istep, flag
     type (fstr_dynamic), intent(in), optional  :: fstrDYNAMIC
     real(kind=kreal)          :: time        !< current time
@@ -1180,10 +1179,10 @@ contains
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     if(is_33shell == 1 .or. ndof == 6)then
       call fstr_make_result_main( hecMESH, fstrSOLID, fstrRESULT, &
-        & fstrSOLID%SHELL, nitem, iitem, ncomp, eitem, jitem, ecomp, 1, "                " )
+        & fstrSOLID%SHELL, nitem, iitem, ncomp, eitem, jitem, ecomp, "                " )
     else
       call fstr_make_result_main( hecMESH, fstrSOLID, fstrRESULT, &
-        & fstrSOLID%SOLID, nitem, iitem, ncomp, eitem, jitem, ecomp, 1, "                " )
+        & fstrSOLID%SOLID, nitem, iitem, ncomp, eitem, jitem, ecomp, "                " )
     endif
 
     !laminated shell
@@ -1196,9 +1195,9 @@ contains
       enddo
       do i=1,ntot_lyr
         call fstr_make_result_main( hecMESH, fstrSOLID, fstrRESULT, &
-          & fstrSOLID%SHELL%LAYER(i)%PLUS,  nitem, iitem, ncomp, eitem, jitem, ecomp, i+1, clyr(2*i-1) )
+          & fstrSOLID%SHELL%LAYER(i)%PLUS,  nitem, iitem, ncomp, eitem, jitem, ecomp, clyr(2*i-1) )
         call fstr_make_result_main( hecMESH, fstrSOLID, fstrRESULT, &
-          & fstrSOLID%SHELL%LAYER(i)%MINUS, nitem, iitem, ncomp, eitem, jitem, ecomp, i+1, clyr(2*i  ) )
+          & fstrSOLID%SHELL%LAYER(i)%MINUS, nitem, iitem, ncomp, eitem, jitem, ecomp, clyr(2*i  ) )
       enddo
       deallocate(clyr)
     endif
@@ -1465,7 +1464,7 @@ contains
   end subroutine fstr_merge_result
 
   subroutine fstr_make_result_main( hecMESH, fstrSOLID, fstrRESULT, RES, nitem, &
-      &                              iitem, ncomp, eitem, jitem, ecomp, nlyr, clyr )
+      &                              iitem, ncomp, eitem, jitem, ecomp, clyr )
     use m_fstr
     use m_out
     use m_static_lib
@@ -1481,7 +1480,7 @@ contains
     character(len=16)                :: clyr
     character(len=12)                :: cnum
     integer(kind=kint) :: i, j, k, ndof, nitem, eitem, nn
-    integer(kind=kint) :: iitem, ncomp, jitem, ecomp, nlyr
+    integer(kind=kint) :: iitem, ncomp, jitem, ecomp
     integer(kind=kint) :: isect, cdsys_ID, serr
     real(kind=kreal) :: coords(3,3), coordsys(3, 3)
     ndof = hecMESH%n_dof
