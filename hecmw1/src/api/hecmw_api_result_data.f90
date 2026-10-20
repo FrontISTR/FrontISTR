@@ -13,20 +13,25 @@ contains
   !> @brief 計算結果ハンドラの生成
   !! @return 計算結果構造体のハンドラ type(c_ptr)
   function hecmw_api_result_new() bind(C,name='hecmw_api_result_new')
+    use hecmw_result, only : hecmw_nullify_result_data
     implicit none
     type(c_ptr) :: hecmw_api_result_new
-    type(hecmwST_result_data), target, save :: hecRESULT
+    type(hecmwST_result_data), pointer :: hecRESULT => null()
+    allocate(hecRESULT)
+    call hecmw_nullify_result_data(hecRESULT)
     hecmw_api_result_new = c_loc(hecRESULT)
   end function
 
   !> @brief 計算結果ハンドラの破棄
   !! @param[in] result 計算結果構造体のハンドラ
   subroutine hecmw_api_result_delete(result) bind(C,name='hecmw_api_result_delete')
+    use hecmw_result, only : hecmw_result_free
     implicit none
     type(c_ptr), value :: result
     type(hecmwST_result_data), pointer :: hecRESULT
     call c_f_pointer(cptr=result, fptr=hecRESULT)
     call hecmw_result_free(hecRESULT)
+    deallocate(hecRESULT)
   end subroutine
 
   !> @brief 計算結果に含まれる大域データの個数の取得

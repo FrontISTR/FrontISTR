@@ -16,7 +16,8 @@ contains
     use hecmw_util, only : hecmw_nullify_mesh
     implicit none
     type(c_ptr) :: hecmw_api_mesh_new
-    type(hecmwST_local_mesh), target, save :: hecMESH
+    type(hecmwST_local_mesh), pointer :: hecMESH => null()
+    allocate(hecMESH)
     call hecmw_nullify_mesh(hecMESH)
     allocate( hecMESH%node_group%grp_index(0:0) )
     hecMESH%node_group%grp_index(0) = 0
@@ -36,6 +37,7 @@ contains
     type(hecmwST_local_mesh), pointer :: hecMESH
     call c_f_pointer(cptr=mesh, fptr=hecMESH)
     call hecmw_dist_free(hecMESH)
+    deallocate(hecMESH)
   end subroutine
 
   !> @brief 節点配列の設定
