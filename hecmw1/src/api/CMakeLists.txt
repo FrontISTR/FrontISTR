@@ -12,4 +12,3 @@ target_sources(hecmw PRIVATE
 target_include_directories(hecmw PUBLIC
   ${CMAKE_CURRENT_LIST_DIR}
 )
-

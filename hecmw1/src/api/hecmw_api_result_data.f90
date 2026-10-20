@@ -10,8 +10,8 @@ module hecmw_api_result_data
 
 contains
 
-  !> @brief 計算結果ハンドラの生成
-  !! @return 計算結果構造体のハンドラ type(c_ptr)
+  !> @brief Generating result handler
+  !! @return Result handler of type(c_ptr)
   function hecmw_api_result_new() bind(C,name='hecmw_api_result_new')
     use hecmw_result, only : hecmw_nullify_result_data
     implicit none
@@ -22,8 +22,8 @@ contains
     hecmw_api_result_new = c_loc(hecRESULT)
   end function
 
-  !> @brief 計算結果ハンドラの破棄
-  !! @param[in] result 計算結果構造体のハンドラ
+  !> @brief Destroying the result handler
+  !! @param[in] result : Result handler
   subroutine hecmw_api_result_delete(result) bind(C,name='hecmw_api_result_delete')
     use hecmw_result, only : hecmw_result_free
     implicit none
@@ -34,9 +34,9 @@ contains
     deallocate(hecRESULT)
   end subroutine
 
-  !> @brief 計算結果に含まれる大域データの個数の取得
-  !! @param[in] result 計算結果構造体のハンドラ
-  !! @return 大域データの個数
+  !> @brief Retrieving the number of global data items included in the results
+  !! @param[in] result : Result handler
+  !! @return Number of global data items
   function hecmw_api_result_ng_component(result) bind(C,name='hecmw_api_result_ng_component')
     implicit none
     type(c_ptr), value :: result
@@ -46,14 +46,14 @@ contains
     hecmw_api_result_ng_component = hecRESULT%ng_component
   end function
 
-  !> @brief 計算結果に含まれる大域データのラベルと値を取得
-  !! @param[in] result 計算結果構造体のハンドラ
-  !! @param[in] i 格納されている大域データのインデックス
-  !! @param[out] dof 大域データの自由度
-  !! @param[inout] label 大域データの名前（呼び出し側で確保済み）
-  !! @param[in] label_len 確保済みの label の大きさ
-  !! @param[out] value 大域データの先頭ポインタ
-  !! @remark value(1:dof) に格納されている
+  !> @brief Retrieve the labels and values ​​of the global data contained in the results.
+  !! @param[in] result : Result handler
+  !! @param[in] i : Index of the stored global data
+  !! @param[out] dof : Degrees of freedom of global data
+  !! @param[inout] label : Name of the global data (already allocated by the caller)
+  !! @param[in] label_len : Size of the allocated label
+  !! @param[out] value : Pointer to the beginning of global data
+  !! @remark stored in value(1:dof)
   subroutine hecmw_api_result_global_val(result,i,dof,label,label_len,value) bind(C,name='hecmw_api_result_global_val')
     use hecmw_api_common, only : f_c_str_copy
     use hecmw_result
@@ -79,9 +79,9 @@ contains
     value = c_loc(hecRESULT%global_val_item(index))
   end subroutine
 
-  !> @brief 計算結果に含まれる節点データの個数の取得
-  !! @param[in] result 計算結果構造体のハンドラ
-  !! @return 節点データの個数
+  !> @brief Retrieving the number of node data entries in the results
+  !! @param[in] result : Result handler
+  !! @return Number of nodal data points
   function hecmw_api_result_nn_component(result) bind(C,name='hecmw_api_result_nn_component')
     implicit none
     type(c_ptr), value :: result
@@ -91,16 +91,16 @@ contains
     hecmw_api_result_nn_component = hecRESULT%nn_component
   end function
 
-  !> @brief 計算結果に含まれる節点データのラベルと値を取得
-  !! @param[in] result 計算結果構造体のハンドラ
-  !! @param[in] i 格納されている節点データのインデックス
-  !! @param[out] dim 節点ごとに格納されている全データの自由度
-  !! @param[out] index 節点ごとにデータが格納されているインデックス
-  !! @param[out] dof 節点データの自由度
-  !! @param[inout] label 節点データの名前（呼び出し側で確保済み）
-  !! @param[in] label_len 確保済みの label の大きさ
-  !! @param[out] value 節点データの先頭ポインタ
-  !! @remark value を (1:dim,1:n_node) に reshape した (index:index+dof,:) に格納されている
+  !> @brief Retrieve the labels and values ​​of the node data contained in the results.
+  !! @param[in] result : Result handler
+  !! @param[in] i : Index of the stored node data
+  !! @param[out] dim : Degrees of freedom for all data stored at each node
+  !! @param[out] index : An index in which data is stored for each node
+  !! @param[out] dof : Degrees of freedom of nodal data
+  !! @param[inout] label : Name of the node data (allocated by the caller)
+  !! @param[in] label_len : Reserved label size
+  !! @param[out] value : Pointer to the beginning of the node data
+  !! @remark Stored in (index:index+dof, :) after reshaping value into (1:dim, 1:n_node)
   subroutine hecmw_api_result_node_val(result,i,dim,index,dof,label,label_len,value) bind(C,name='hecmw_api_result_node_val')
     use hecmw_api_common, only : f_c_str_copy
     use hecmw_result
@@ -133,9 +133,9 @@ contains
     value = c_loc(hecRESULT%node_val_item)
   end subroutine
 
-  !> @brief 計算結果に含まれる要素データの個数の取得
-  !! @param[in] result 計算結果構造体のハンドラ
-  !! @return 要素データの個数
+  !> @brief Retrieving the number of element data items contained in the result
+  !! @param[in] result : Result handler
+  !! @return Number of element data items
   function hecmw_api_result_ne_component(result) bind(C,name='hecmw_api_result_ne_component')
     implicit none
     type(c_ptr), value :: result
@@ -145,16 +145,16 @@ contains
     hecmw_api_result_ne_component = hecRESULT%ne_component
   end function
 
-  !> @brief 計算結果に含まれる要素データのラベルと値を取得
-  !! @param[in] result 計算結果構造体のハンドラ
-  !! @param[in] i 格納されている要素データのインデックス
-  !! @param[out] dim 要素ごとに格納されている全データの自由度
-  !! @param[out] index 要素ごとにデータが格納されているインデックス
-  !! @param[out] dof 要素データの自由度
-  !! @param[inout] label 要素データの名前（呼び出し側で確保済み）
-  !! @param[in] label_len 確保済みの label の大きさ
-  !! @param[out] value 要素データの先頭ポインタ
-  !! @remark value を (1:dim,1:n_elem) に reshape した (index:index+dof,:) に格納されている
+  !> @brief Retrieve the labels and values ​​of the element data contained in the result.
+  !! @param[in] result : Result handler
+  !! @param[in] i : Index of the stored element data
+  !! @param[out] dim : Degrees of freedom for all data stored for each element
+  !! @param[out] index : An index in which data is stored for each element
+  !! @param[out] dof : Degrees of freedom of element data
+  !! @param[inout] label : Name of the element data (already allocated by the caller)
+  !! @param[in] label_len : Reserved label size
+  !! @param[out] value : Pointer to the beginning of the element data
+  !! @remark Stored in (index:index+dof, :) after reshaping value to (1:dim, 1:n_elem)
   subroutine hecmw_api_result_elem_val(result,i,dim,index,dof,label,label_len,value) bind(C,name='hecmw_api_result_elem_val')
     use hecmw_api_common, only : f_c_str_copy
     use hecmw_result
