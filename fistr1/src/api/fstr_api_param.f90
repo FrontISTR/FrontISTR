@@ -16,7 +16,7 @@ contains
     use m_fstr, only : fstr_nullify_fstr_param
     implicit none
     type(c_ptr) :: fstr_api_param_new
-    type(fstr_param), target, allocatable :: fstrPARAM
+    type(fstr_param), pointer :: fstrPARAM => null()
     allocate(fstrPARAM)
     call fstr_nullify_fstr_param(fstrPARAM)
     fstr_api_param_new = c_loc(fstrPARAM)
