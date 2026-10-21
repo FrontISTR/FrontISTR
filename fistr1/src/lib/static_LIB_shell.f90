@@ -2433,6 +2433,7 @@ contains
     real(kind=kreal) :: covariant_basis(3, 3), normal_jac(3), N(3, ndof*nn)
     real(kind=kreal) :: body_force(3), position(3), origin(3), axis(3), radial(3)
     real(kind=kreal) :: val, zeta, surface_weight, thickness_weight, integration_weight, projection
+    real(kind=kreal) :: layer_weight
 
     nsize = ndof*nn
     vect(1:nsize) = 0.0D0
@@ -2461,6 +2462,7 @@ contains
       call ShellMITC_SetupReferenceDirectors(etype, nn, thick, elem, v1, v2, v3, director)
       nlayer = gausses(1)%pMaterial%totallyr
       do ilayer = 1, nlayer
+        layer_weight = gausses(1)%pMaterial%shell_var(ilayer)%weight
         do ly = 1, ny
           call fstr_shell_layer_quadrature_gauss(etype, gausses(1), ilayer, ly, zeta, thickness_weight, ierr_quad)
           if (ierr_quad /= 0) cycle
@@ -2470,7 +2472,7 @@ contains
             call getShapeFunc(etype, naturalcoord, shapefunc)
             call getShapeDeriv(etype, naturalcoord, shapederiv)
             call ShellMITC_CovariantBasis(nn, elem, director, zeta, shapefunc, shapederiv, covariant_basis)
-            integration_weight = surface_weight*thickness_weight *ShellMITC_CovariantJacobian(covariant_basis)
+            integration_weight = surface_weight*thickness_weight *ShellMITC_CovariantJacobian(covariant_basis)*layer_weight
             call ShellMITC_BuildInterpolationMatrix(nn, ndof, zeta, shapefunc, director, N)
 
             body_force = 0.0D0
