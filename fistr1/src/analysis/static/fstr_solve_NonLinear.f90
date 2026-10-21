@@ -233,10 +233,10 @@ contains
 
     ctAlgo = fstrPARAM%contact_algo
 
-    call fstr_init_Newton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, hecLagMAT, ndof, ctAlgo, conMAT)
-
-    ! ----- BEGIN lambda transaction: clear working, restore segment state from begin -----
+    ! ----- BEGIN lambda transaction: clear working before fstr_init_Newton reads the multipliers -----
     if( ctAlgo == kcaALagrange ) call fstr_begin_lambda_txn( fstrSOLID, cstep )
+
+    call fstr_init_Newton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, hecLagMAT, ndof, ctAlgo, conMAT)
 
     if( cstep == 1 .and. sub_step == restart_substep_num ) then
       call fstr_save_originalMatrixStructure(hecMAT)

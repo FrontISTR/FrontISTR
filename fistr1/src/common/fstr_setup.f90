@@ -1525,16 +1525,14 @@ contains
     type(hecmwST_local_mesh),target :: hecMESH
     type(fstr_solid)                :: fstrSOLID
 
-    integer :: i, isect, nodlocal(fstrSOLID%max_ncon), iiS, nn, con_stf
+    integer :: i, nodlocal(fstrSOLID%max_ncon), iiS, nn, con_stf
 
     if( fstrSOLID%max_ncon_stf > 20 ) fstrSOLID%max_ncon_stf = 20   
 
-    do i=1,hecMESH%n_elem
-      isect= hecMESH%section_ID(i)
-      if( hecMESH%elem_type(i) /= fe_tet4n ) cycle
-      if( fstrSOLID%sections(isect)%elemopt341 /= kel341SESNS ) cycle
+    do i=1,hecMESH%elem_type_index(hecMESH%n_elem_type)
+      if( hecMESH%elem_type(i) /= fe_nodesmooth_tet4n .and. hecMESH%elem_type(i) /= fe_edgesmooth_tet4n ) cycle
       iiS = hecMESH%elem_node_index(i-1)
-      nn = hecMESH%elem_node_index(i-1) - iiS
+      nn = hecMESH%elem_node_index(i) - iiS
       nodlocal(1:nn) = hecMESH%elem_node_item(iiS+1:iiS+nn)
       con_stf = Return_nn_comp_C3D4_SESNS(nn, nodlocal)
       if( con_stf > fstrSOLID%max_ncon_stf ) fstrSOLID%max_ncon_stf = con_stf

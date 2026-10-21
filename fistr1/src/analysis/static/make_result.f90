@@ -12,6 +12,7 @@ module m_make_result
   public:: fstr_merge_result
   public:: fstr_reorder_node_shell
   public:: fstr_reorder_rot_shell
+  public:: fstr_reorder_rot_beam
   public:: fstr_reorder_node_beam
   public:: setup_contact_output_variables
 
@@ -209,13 +210,14 @@ contains
         call result_add( id, nitem, label, label_suffix, rnode )
         deallocate( rnode )
       else
-        if ( is_33shell == 1) then
+        if ( is_33shell == 1 .or. is_33beam == 1 ) then
           id = HECMW_RESULT_DTYPE_NODE
           nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(1), ndof )
           label = 'ROTATION'
           allocate( rnode(hecMESH%n_node*ndof) )
           rnode = 0.0d0
-          call fstr_reorder_rot_shell(fstrSOLID, hecMESH, rnode)
+          if( is_33shell == 1 ) call fstr_reorder_rot_shell(fstrSOLID, hecMESH, rnode)
+          if( is_33beam == 1 ) call fstr_reorder_rot_beam(fstrSOLID, hecMESH, rnode)
           call result_add( id, nitem, label, label_suffix, rnode )
           deallocate( rnode )
         end if
@@ -811,13 +813,13 @@ contains
      ncomp = ncomp + 1
      nitem = nitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(17), ndof )
     endif
-    ! --- ROTATION (Only for 781 shell)
+    ! --- ROTATION (6-DOF nodes, or the rotation nodes of 761/781 shells and 641 beams)
     if( fstrSOLID%output_ctrl(4)%outinfo%on(18) ) then
       if(ndof == 6) then
         ncomp = ncomp + 1
         nitem = nitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(18), 3 )
       else
-        if( is_33shell == 1 ) then
+        if( is_33shell == 1 .or. is_33beam == 1 ) then
           ncomp = ncomp + 1
           nitem = nitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(18), ndof )
         endif
@@ -1142,14 +1144,15 @@ contains
         deallocate( unode )
         iitem = iitem + nn
       else
-        if ( is_33shell == 1) then
+        if ( is_33shell == 1 .or. is_33beam == 1 ) then
           ncomp = ncomp + 1
           nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(1), ndof )
           fstrRESULT%nn_dof(ncomp) = nn
           fstrRESULT%node_label(ncomp) = 'ROTATION'
           allocate( unode(ndof*hecMESH%n_node) )
           unode = 0.0d0
-          call fstr_reorder_rot_shell(fstrSOLID, hecMESH, unode)
+          if( is_33shell == 1 ) call fstr_reorder_rot_shell(fstrSOLID, hecMESH, unode)
+          if( is_33beam == 1 ) call fstr_reorder_rot_beam(fstrSOLID, hecMESH, unode)
           do i = 1, hecMESH%n_node
             do j = 1, nn
               fstrRESULT%node_val_item(nitem*(i-1)+j+iitem) = unode(nn*(i-1)+j)
@@ -1833,6 +1836,36 @@ contains
     enddo
 
   end subroutine fstr_reorder_rot_shell
+
+  !> Rotation of 641 beams: nodes 3 and 4 carry the rotations of nodes 1 and 2 as their
+  !> displacements. Each pair gets that rotation, as fstr_reorder_rot_shell does for shells.
+  subroutine fstr_reorder_rot_beam(fstrSOLID, hecMESH, unode)
+    use m_fstr
+
+    implicit none
+    type (fstr_solid)         :: fstrSOLID
+    type (hecmwST_local_mesh) :: hecMESH
+    real(kind=kreal)          :: unode(:)
+    integer(kind=kint) :: j, itype, is, iE, ic_type, jS, icel
+    integer(kind=kint) :: n1, n2
+
+    do itype = 1, hecMESH%n_elem_type
+      is = hecMESH%elem_type_index(itype-1) + 1
+      iE = hecMESH%elem_type_index(itype  )
+      ic_type = hecMESH%elem_type_item(itype)
+      if(ic_type /= 641) cycle
+      do icel = is, iE
+        jS = hecMESH%elem_node_index(icel-1)
+        do j = 1, 2
+          n1 = hecMESH%elem_node_item(jS+j)
+          n2 = hecMESH%elem_node_item(jS+j+2)
+          unode(3*n1-2:3*n1) = fstrSOLID%unode(3*n2-2:3*n2)
+          unode(3*n2-2:3*n2) = fstrSOLID%unode(3*n2-2:3*n2)
+        enddo
+      enddo
+    enddo
+
+  end subroutine fstr_reorder_rot_beam
 
   subroutine fstr_reorder_node_beam(fstrSOLID, hecMESH, unode)
     use m_fstr
