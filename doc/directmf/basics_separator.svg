@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="840" height="380" viewBox="0 0 840 380" font-family="'Noto Sans CJK JP', 'Hiragino Sans', 'Yu Gothic', sans-serif" font-size="12">
+  <rect x="0" y="0" width="840" height="380" fill="white"/>
+
+  <!-- ===== left: mesh with separator ===== -->
+  <text x="60" y="50" fill="#333">メッシュをセパレータ S で分割</text>
+  <!-- grid edges: 5x5 nodes, origin (70,80), spacing 44 -->
+  <g stroke="#bbb" stroke-width="1">
+    <line x1="70" y1="80" x2="246" y2="80"/><line x1="70" y1="124" x2="246" y2="124"/>
+    <line x1="70" y1="168" x2="246" y2="168"/><line x1="70" y1="212" x2="246" y2="212"/>
+    <line x1="70" y1="256" x2="246" y2="256"/>
+    <line x1="70" y1="80" x2="70" y2="256"/><line x1="114" y1="80" x2="114" y2="256"/>
+    <line x1="158" y1="80" x2="158" y2="256"/><line x1="202" y1="80" x2="202" y2="256"/>
+    <line x1="246" y1="80" x2="246" y2="256"/>
+  </g>
+  <!-- nodes: cols 1-2 = A (blue), col 3 = S (orange), cols 4-5 = B (green) -->
+  <g stroke="#666">
+    <g fill="#c6dbef">
+      <circle cx="70" cy="80" r="9"/><circle cx="70" cy="124" r="9"/><circle cx="70" cy="168" r="9"/>
+      <circle cx="70" cy="212" r="9"/><circle cx="70" cy="256" r="9"/>
+      <circle cx="114" cy="80" r="9"/><circle cx="114" cy="124" r="9"/><circle cx="114" cy="168" r="9"/>
+      <circle cx="114" cy="212" r="9"/><circle cx="114" cy="256" r="9"/>
+    </g>
+    <g fill="#fdb863">
+      <circle cx="158" cy="80" r="9"/><circle cx="158" cy="124" r="9"/><circle cx="158" cy="168" r="9"/>
+      <circle cx="158" cy="212" r="9"/><circle cx="158" cy="256" r="9"/>
+    </g>
+    <g fill="#c8e6c9">
+      <circle cx="202" cy="80" r="9"/><circle cx="202" cy="124" r="9"/><circle cx="202" cy="168" r="9"/>
+      <circle cx="202" cy="212" r="9"/><circle cx="202" cy="256" r="9"/>
+      <circle cx="246" cy="80" r="9"/><circle cx="246" cy="124" r="9"/><circle cx="246" cy="168" r="9"/>
+      <circle cx="246" cy="212" r="9"/><circle cx="246" cy="256" r="9"/>
+    </g>
+  </g>
+  <text x="92" y="292" text-anchor="middle" fill="#333">領域 A</text>
+  <text x="158" y="292" text-anchor="middle" fill="#b35c00">S</text>
+  <text x="224" y="292" text-anchor="middle" fill="#2e7d32">領域 B</text>
+  <text x="60" y="330" fill="#555">A と B は S を介してしか結合しない</text>
+
+  <!-- ===== right: reordered matrix in bordered block form ===== -->
+  <text x="430" y="50" fill="#333">A → B → S の順に並べ替えた行列</text>
+  <!-- outer frame: origin (430,80), 250x250; A 95, B 95, S 60 -->
+  <rect x="430" y="80" width="95" height="95" fill="#c6dbef" stroke="#666"/>
+  <rect x="525" y="80" width="95" height="95" fill="white" stroke="#666"/>
+  <rect x="620" y="80" width="60" height="95" fill="#eeeeee" stroke="#666"/>
+  <rect x="430" y="175" width="95" height="95" fill="white" stroke="#666"/>
+  <rect x="525" y="175" width="95" height="95" fill="#c8e6c9" stroke="#666"/>
+  <rect x="620" y="175" width="60" height="95" fill="#eeeeee" stroke="#666"/>
+  <rect x="430" y="270" width="95" height="60" fill="#eeeeee" stroke="#666"/>
+  <rect x="525" y="270" width="95" height="60" fill="#eeeeee" stroke="#666"/>
+  <rect x="620" y="270" width="60" height="60" fill="#fdb863" stroke="#666"/>
+  <g fill="#333" text-anchor="middle">
+    <text x="477" y="132">A</text>
+    <text x="572" y="132">0</text>
+    <text x="650" y="132" font-size="11">A–S</text>
+    <text x="477" y="227">0</text>
+    <text x="572" y="227">B</text>
+    <text x="650" y="227" font-size="11">B–S</text>
+    <text x="477" y="304" font-size="11">A–S</text>
+    <text x="572" y="304" font-size="11">B–S</text>
+    <text x="650" y="304">S</text>
+  </g>
+  <text x="430" y="358" fill="#555">A と B の間は零のまま: 互いに独立に消去でき、</text>
+  <text x="430" y="374" fill="#555">fill-in は各対角ブロックと S との結合部に閉じる</text>
+</svg>

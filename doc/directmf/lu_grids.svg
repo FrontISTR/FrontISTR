@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="880" height="460" viewBox="0 0 880 460" font-family="'Noto Sans CJK JP', 'Hiragino Sans', 'Yu Gothic', sans-serif" font-size="12">
+  <defs>
+    <marker id="lu-r" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 z" fill="#c0392b"/>
+    </marker>
+    <marker id="lu-rs" markerWidth="10" markerHeight="8" refX="1" refY="4" orient="auto">
+      <path d="M10,0 L0,4 L10,8 z" fill="#c0392b"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="880" height="460" fill="white"/>
+  <text x="40" y="30" fill="#333">LU モードの 2 つの格子（4 列の例。1 マス＝1 成分。分解後の中身を示す）</text>
+
+  <!-- ===== left grid: fval, lower triangle with diagonal, origin (90,90), cell 50 ===== -->
+  <text x="90" y="66" fill="#333">第 1 格子 fval（対角以下）</text>
+  <g stroke="#666">
+    <rect x="90" y="90" width="50" height="50" fill="#9ecae1"/>
+    <rect x="90" y="140" width="50" height="50" fill="#c6dbef"/><rect x="140" y="140" width="50" height="50" fill="#9ecae1"/>
+    <rect x="90" y="190" width="50" height="50" fill="#c6dbef"/><rect x="140" y="190" width="50" height="50" fill="#c6dbef"/><rect x="190" y="190" width="50" height="50" fill="#9ecae1"/>
+    <rect x="90" y="240" width="50" height="50" fill="#c6dbef"/><rect x="140" y="240" width="50" height="50" fill="#c6dbef"/><rect x="190" y="240" width="50" height="50" fill="#c6dbef"/><rect x="240" y="240" width="50" height="50" fill="#9ecae1"/>
+  </g>
+  <g fill="#333" text-anchor="middle" font-size="11">
+    <text x="115" y="119">U(1,1)</text>
+    <text x="115" y="169">L(2,1)</text><text x="165" y="169">U(2,2)</text>
+    <text x="115" y="219">L(3,1)</text><text x="165" y="219">L(3,2)</text><text x="215" y="219">U(3,3)</text>
+    <text x="115" y="269">L(4,1)</text><text x="165" y="269">L(4,2)</text><text x="215" y="269">L(4,3)</text><text x="265" y="269">U(4,4)</text>
+  </g>
+  <g fill="#555" font-size="11" text-anchor="end">
+    <text x="84" y="119">行 1</text><text x="84" y="169">行 2</text><text x="84" y="219">行 3</text><text x="84" y="269">行 4</text>
+  </g>
+  <!-- row exchange 2 <-> 3 on the left: rows -->
+  <path d="M310,167 L310,213" fill="none" stroke="#c0392b" stroke-width="2" marker-end="url(#lu-r)" marker-start="url(#lu-rs)"/>
+  <text x="330" y="194" fill="#c0392b" font-size="11">行 2・3 の交換</text>
+  <text x="330" y="209" fill="#c0392b" font-size="11">＝ 行の入れ替え</text>
+
+  <!-- ===== right grid: fvalu, strictly lower = transposed upper, origin (520,90) ===== -->
+  <text x="520" y="66" fill="#333">第 2 格子 fvalu（対角より上を転置して格納）</text>
+  <g stroke="#666">
+    <rect x="520" y="90" width="50" height="50" fill="#f2f2f2" stroke-dasharray="3,3"/>
+    <rect x="520" y="140" width="50" height="50" fill="#fdd0a2"/><rect x="570" y="140" width="50" height="50" fill="#f2f2f2" stroke-dasharray="3,3"/>
+    <rect x="520" y="190" width="50" height="50" fill="#fdd0a2"/><rect x="570" y="190" width="50" height="50" fill="#fdd0a2"/><rect x="620" y="190" width="50" height="50" fill="#f2f2f2" stroke-dasharray="3,3"/>
+    <rect x="520" y="240" width="50" height="50" fill="#fdd0a2"/><rect x="570" y="240" width="50" height="50" fill="#fdd0a2"/><rect x="620" y="240" width="50" height="50" fill="#fdd0a2"/><rect x="670" y="240" width="50" height="50" fill="#f2f2f2" stroke-dasharray="3,3"/>
+  </g>
+  <g fill="#333" text-anchor="middle" font-size="11">
+    <text x="545" y="169">U(1,2)</text>
+    <text x="545" y="219">U(1,3)</text><text x="595" y="219">U(2,3)</text>
+    <text x="545" y="269">U(1,4)</text><text x="595" y="269">U(2,4)</text><text x="645" y="269">U(3,4)</text>
+  </g>
+  <g fill="#555" font-size="11" text-anchor="middle">
+    <text x="545" y="306">列 1</text><text x="595" y="306">列 2</text><text x="645" y="306">列 3</text><text x="695" y="306">列 4</text>
+  </g>
+  <text x="730" y="119" fill="#777" font-size="10">対角は第 1 格子が持つ</text>
+  <!-- row exchange 2 <-> 3 on the right: columns -->
+  <path d="M599,328 L641,328" fill="none" stroke="#c0392b" stroke-width="2" marker-end="url(#lu-r)" marker-start="url(#lu-rs)"/>
+  <text x="660" y="332" fill="#c0392b" font-size="11">同じ行交換 ＝ 列 2・3 の入れ替え</text>
+
+  <text x="40" y="378" fill="#555">・第 2 格子の列 j には U の行 j（U(j, j+1), U(j, j+2), …）が並ぶ。U の行を列として扱えるので、第 1 格子と同じ列向きのタイルカーネルが使える</text>
+  <text x="40" y="398" fill="#555">・求解は、前進代入で第 1 格子の L を、後退代入で U（対角は第 1 格子、対角より上は第 2 格子）を使う</text>
+  <text x="40" y="418" fill="#555">・行 x と行 y（x &lt; y）の交換では、間の列 x+1〜y の成分が 2 行で別の格子にあり、格子をまたいで入れ替わる</text>
+  <text x="40" y="436" fill="#555">（この例の列 3: 行 2 の成分は第 2 格子の U(2,3) の位置、行 3 の成分は第 1 格子の対角 U(3,3) の位置）</text>
+</svg>

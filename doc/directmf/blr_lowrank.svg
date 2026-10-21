@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="350" viewBox="0 0 1000 350" font-family="'Noto Sans CJK JP', 'Hiragino Sans', 'Yu Gothic', sans-serif" font-size="12">
+  <rect x="0" y="0" width="1000" height="350" fill="white"/>
+
+  <!-- ===== left: low-rank approximation of a tile ===== -->
+  <text x="60" y="50" fill="#333">タイルの低ランク近似</text>
+  <rect x="60" y="80" width="130" height="110" fill="#fdd0a2" stroke="#666"/>
+  <text x="125" y="140" text-anchor="middle" fill="#333">タイル</text>
+  <text x="125" y="156" text-anchor="middle" fill="#333">m×n</text>
+  <text x="213" y="140" fill="#333" font-size="16">≈</text>
+  <rect x="240" y="80" width="26" height="110" fill="#c6dbef" stroke="#666"/>
+  <text x="253" y="210" text-anchor="middle" fill="#333">U</text>
+  <text x="253" y="226" text-anchor="middle" fill="#555" font-size="11">m×r</text>
+  <text x="283" y="140" fill="#333" font-size="14">×</text>
+  <rect x="305" y="80" width="110" height="26" fill="#c8e6c9" stroke="#666"/>
+  <text x="360" y="126" text-anchor="middle" fill="#333">Vᵀ</text>
+  <text x="360" y="142" text-anchor="middle" fill="#555" font-size="11">r×n</text>
+  <text x="60" y="262" fill="#333">格納 m×n 個 → (m+n)×r 個の実数（r は近似ランク）</text>
+  <text x="60" y="280" fill="#555">r が小さいほど得。節約にならなければ</text>
+  <text x="60" y="296" fill="#555">full-rank のまま格納</text>
+
+  <!-- ===== right: which tiles of a large front become low rank ===== -->
+  <text x="480" y="50" fill="#333">どのタイルが低ランクになりやすいか</text>
+  <!-- lower-triangular 4x4 tile grid, tile 40, origin (520,80); rows/cols = node clusters A..D along a separator.
+       fill by cluster distance |i-j|: 0-1 orange, 2 pale, 3 green -->
+  <g stroke="#666">
+    <rect x="520" y="80" width="40" height="40" fill="#fdd0a2"/>
+    <rect x="520" y="120" width="40" height="40" fill="#fdd0a2"/>
+    <rect x="560" y="120" width="40" height="40" fill="#fdd0a2"/>
+    <rect x="520" y="160" width="40" height="40" fill="#fff1dc"/>
+    <rect x="560" y="160" width="40" height="40" fill="#fdd0a2"/>
+    <rect x="600" y="160" width="40" height="40" fill="#fdd0a2"/>
+    <rect x="520" y="200" width="40" height="40" fill="#c8e6c9"/>
+    <rect x="560" y="200" width="40" height="40" fill="#fff1dc"/>
+    <rect x="600" y="200" width="40" height="40" fill="#fdd0a2"/>
+    <rect x="640" y="200" width="40" height="40" fill="#fdd0a2"/>
+  </g>
+  <g fill="#555" font-size="11" text-anchor="middle">
+    <text x="540" y="72">A</text><text x="580" y="72">B</text><text x="620" y="72">C</text><text x="660" y="72">D</text>
+  </g>
+  <g fill="#555" font-size="11" text-anchor="end">
+    <text x="512" y="104">A</text><text x="512" y="144">B</text><text x="512" y="184">C</text><text x="512" y="224">D</text>
+  </g>
+  <text x="540" y="224" text-anchor="middle" fill="#2e7d32" font-size="11">低</text>
+  <text x="700" y="96" fill="#555" font-size="11">A〜D は、セパレータ上で順に並ぶ節点群</text>
+  <text x="700" y="112" fill="#555" font-size="11">（BLR 圧縮の章でクラスタと呼ぶ）</text>
+  <text x="700" y="140" fill="#b35c00" font-size="11">自身・隣り合う群どうしの結合（距離 0〜1）:</text>
+  <text x="700" y="156" fill="#b35c00" font-size="11">情報量が多く full-rank のまま</text>
+  <text x="700" y="180" fill="#9a6a2a" font-size="11">1 つおきの群の結合（A–C、B–D。距離 2）:</text>
+  <text x="700" y="196" fill="#9a6a2a" font-size="11">低ランクになるかは問題による。DIRECTmf の既定では</text>
+  <text x="700" y="212" fill="#9a6a2a" font-size="11">圧縮を試さない（「BLR 圧縮」の早期スキップ参照）</text>
+  <text x="700" y="236" fill="#2e7d32" font-size="11">十分離れた群の結合（A–D。距離 3）:</text>
+  <text x="700" y="252" fill="#2e7d32" font-size="11">影響がならされ低ランクで近似できる</text>
+  <text x="480" y="288" fill="#555">消去の後半の大きなフロントほど、離れた節点群の組（低ランクのタイル）が増える。</text>
+  <text x="480" y="306" fill="#555">距離はクラスタ間のグラフ距離で、早期スキップの判定（「BLR 圧縮」の章）に使う。</text>
+  <text x="480" y="324" fill="#555">DIRECTmf が実際に判定・圧縮するタイルの範囲は「BLR 圧縮」の章で限定する</text>
+</svg>

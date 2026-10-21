@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="470" viewBox="0 0 900 470" font-family="'Noto Sans CJK JP', 'Hiragino Sans', 'Yu Gothic', sans-serif" font-size="12">
+  <defs>
+    <marker id="pd-r" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 z" fill="#c0392b"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="900" height="470" fill="white"/>
+  <text x="40" y="30" fill="#333">パネルごとの 2 段構え: fully summed 部 8 列、タイル列 2 本（各 4 列）の例。箱は位置、中の名前は列（DOF）</text>
+
+  <!-- position header, boxes 52 wide from x=200 -->
+  <g fill="#777" font-size="11" text-anchor="middle">
+    <text x="226" y="58">1</text><text x="278" y="58">2</text><text x="330" y="58">3</text><text x="382" y="58">4</text>
+    <text x="434" y="58">5</text><text x="486" y="58">6</text><text x="538" y="58">7</text><text x="590" y="58">8</text>
+  </g>
+  <text x="200" y="44" fill="#555" font-size="11">位置</text>
+  <line x1="408" y1="64" x2="408" y2="352" stroke="#999" stroke-dasharray="4,3"/>
+  <text x="304" y="374" fill="#777" font-size="11" text-anchor="middle">タイル列 1</text>
+  <text x="512" y="374" fill="#777" font-size="11" text-anchor="middle">タイル列 2</text>
+
+  <!-- row 1: initial -->
+  <text x="40" y="94" fill="#333">① 交換なしで試行</text>
+  <g stroke="#666">
+    <rect x="200" y="74" width="52" height="30" fill="#fff3c4"/><rect x="252" y="74" width="52" height="30" fill="#fff3c4"/>
+    <rect x="304" y="74" width="52" height="30" fill="#fff3c4"/><rect x="356" y="74" width="52" height="30" fill="#fff3c4"/>
+    <rect x="408" y="74" width="52" height="30" fill="#f2f2f2"/><rect x="460" y="74" width="52" height="30" fill="#f2f2f2"/>
+    <rect x="512" y="74" width="52" height="30" fill="#f2f2f2"/><rect x="564" y="74" width="52" height="30" fill="#f2f2f2"/>
+  </g>
+  <g fill="#333" text-anchor="middle">
+    <text x="226" y="94">c1</text><text x="278" y="94">c2</text><text x="330" y="94">c3</text><text x="382" y="94">c4</text>
+    <text x="434" y="94">c5</text><text x="486" y="94">c6</text><text x="538" y="94">c7</text><text x="590" y="94">c8</text>
+  </g>
+  <text x="636" y="88" fill="#555" font-size="11">パネル（位置 1〜4）を 1×1 ピボットだけで分解。</text>
+  <text x="636" y="104" fill="#555" font-size="11">c2・c4 が閾値検査を通らず、パネル全体をやり直す</text>
+
+  <!-- row 2: after pivoting kernel -->
+  <text x="40" y="164" fill="#333">② ピボッティング・</text>
+  <text x="40" y="180" fill="#333">　 カーネルで再分解</text>
+  <g stroke="#666">
+    <rect x="200" y="144" width="52" height="30" fill="#c6dbef"/><rect x="252" y="144" width="52" height="30" fill="#c6dbef"/>
+    <rect x="304" y="144" width="52" height="30" fill="#f4b6b0"/><rect x="356" y="144" width="52" height="30" fill="#f4b6b0"/>
+    <rect x="408" y="144" width="52" height="30" fill="#f2f2f2"/><rect x="460" y="144" width="52" height="30" fill="#f2f2f2"/>
+    <rect x="512" y="144" width="52" height="30" fill="#f2f2f2"/><rect x="564" y="144" width="52" height="30" fill="#f2f2f2"/>
+  </g>
+  <g fill="#333" text-anchor="middle">
+    <text x="226" y="164">c1</text><text x="278" y="164">c3</text><text x="330" y="164">c4</text><text x="382" y="164">c2</text>
+    <text x="434" y="164">c5</text><text x="486" y="164">c6</text><text x="538" y="164">c7</text><text x="590" y="164">c8</text>
+  </g>
+  <text x="636" y="158" fill="#555" font-size="11">交換を許して分解し直し、受理した c1・c3 を</text>
+  <text x="636" y="174" fill="#555" font-size="11">パネルの前に、受理できない c2・c4 を末尾に寄せる</text>
+  <text x="636" y="190" fill="#555" font-size="11">（先に寄せた c2 がいちばん後ろになる）</text>
+
+  <!-- row 3: swap with fs end -->
+  <text x="40" y="234" fill="#333">③ fully summed 部の</text>
+  <text x="40" y="250" fill="#333">　 末尾と交換（遅延）</text>
+  <g stroke="#666">
+    <rect x="200" y="214" width="52" height="30" fill="#c6dbef"/><rect x="252" y="214" width="52" height="30" fill="#c6dbef"/>
+    <rect x="304" y="214" width="52" height="30" fill="#f2f2f2"/><rect x="356" y="214" width="52" height="30" fill="#f2f2f2"/>
+    <rect x="408" y="214" width="52" height="30" fill="#f2f2f2"/><rect x="460" y="214" width="52" height="30" fill="#f2f2f2"/>
+    <rect x="512" y="214" width="52" height="30" fill="#e26a6a"/><rect x="564" y="214" width="52" height="30" fill="#e26a6a"/>
+  </g>
+  <g fill="#333" text-anchor="middle">
+    <text x="226" y="234">c1</text><text x="278" y="234">c3</text><text x="330" y="234">c8</text><text x="382" y="234">c7</text>
+    <text x="434" y="234">c5</text><text x="486" y="234">c6</text><text x="538" y="234">c2</text><text x="590" y="234">c4</text>
+  </g>
+  <path d="M330,210 C380,192 540,192 586,210" fill="none" stroke="#c0392b" stroke-width="1.4" marker-end="url(#pd-r)"/>
+  <path d="M382,210 C420,200 500,200 534,210" fill="none" stroke="#c0392b" stroke-width="1.4" marker-end="url(#pd-r)"/>
+  <text x="636" y="228" fill="#555" font-size="11">c4 を位置 8、c2 を位置 7 と交換。位置 7・8 は</text>
+  <text x="636" y="244" fill="#555" font-size="11">このフロントの対象から外れ、親へ持ち越す</text>
+
+  <!-- row 4: narrower panel -->
+  <text x="40" y="304" fill="#333">④ 幅の狭いパネルで</text>
+  <text x="40" y="320" fill="#333">　 ①から繰り返す</text>
+  <g stroke="#666">
+    <rect x="200" y="284" width="52" height="30" fill="#c6dbef"/><rect x="252" y="284" width="52" height="30" fill="#c6dbef"/>
+    <rect x="304" y="284" width="52" height="30" fill="#fff3c4" stroke-width="2.5"/><rect x="356" y="284" width="52" height="30" fill="#fff3c4" stroke-width="2.5"/>
+    <rect x="408" y="284" width="52" height="30" fill="#f2f2f2"/><rect x="460" y="284" width="52" height="30" fill="#f2f2f2"/>
+    <rect x="512" y="284" width="52" height="30" fill="#e26a6a"/><rect x="564" y="284" width="52" height="30" fill="#e26a6a"/>
+  </g>
+  <g fill="#333" text-anchor="middle">
+    <text x="226" y="304">c1</text><text x="278" y="304">c3</text><text x="330" y="304">c8</text><text x="382" y="304">c7</text>
+    <text x="434" y="304">c5</text><text x="486" y="304">c6</text><text x="538" y="304">c2</text><text x="590" y="304">c4</text>
+  </g>
+  <text x="636" y="298" fill="#555" font-size="11">入ってきた c8・c7 の位置 3〜4 を新しいパネルとして</text>
+  <text x="636" y="314" fill="#555" font-size="11">試行する。タイル列 2 は位置 5〜6 だけを処理する</text>
+
+  <!-- legend -->
+  <g stroke="#666">
+    <rect x="40" y="398" width="14" height="14" fill="#fff3c4"/>
+    <rect x="200" y="398" width="14" height="14" fill="#c6dbef"/>
+    <rect x="320" y="398" width="14" height="14" fill="#f4b6b0"/>
+    <rect x="510" y="398" width="14" height="14" fill="#e26a6a"/>
+    <rect x="690" y="398" width="14" height="14" fill="#f2f2f2"/>
+  </g>
+  <text x="60" y="410" fill="#333">処理中のパネル</text>
+  <text x="220" y="410" fill="#333">受理済み</text>
+  <text x="340" y="410" fill="#333">受理できず末尾へ寄せた列</text>
+  <text x="530" y="410" fill="#333">遅延（親へ持ち越す）</text>
+  <text x="710" y="410" fill="#333">未処理</text>
+  <text x="40" y="440" fill="#555">③で交換相手がいない（パネルの後ろに未処理の列が残っていない）ときは、寄せた列はその位置のまま親へ持ち越す。</text>
+</svg>

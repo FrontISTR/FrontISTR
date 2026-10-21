@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="430" viewBox="0 0 980 430" font-family="'Noto Sans CJK JP', 'Hiragino Sans', 'Yu Gothic', sans-serif" font-size="12">
+  <defs>
+    <marker id="arr-o" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 z" fill="#d97a1a"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="980" height="430" fill="white"/>
+  <text x="40" y="30" fill="#333">消去木の節ごとにフロンタル行列を作り、消去し残した contribution block を親へ extend-add する</text>
+
+  <!-- ===== tree edges (child -> parent) ===== -->
+  <line x1="110" y1="284" x2="290" y2="106" stroke="#888" stroke-width="1.5"/>
+  <line x1="480" y1="284" x2="310" y2="106" stroke="#888" stroke-width="1.5"/>
+
+  <!-- ===== parent node and its front ===== -->
+  <circle cx="300" cy="90" r="16" fill="#d8e6f3" stroke="#666"/>
+  <text x="300" y="94" text-anchor="middle" fill="#333">親</text>
+  <!-- front: 90x90 at (350,45); fs 54, cb 36 -->
+  <rect x="350" y="45" width="54" height="54" fill="#9ecae1" stroke="#666"/>
+  <rect x="350" y="99" width="54" height="36" fill="#c6dbef" stroke="#666"/>
+  <rect x="404" y="99" width="36" height="36" fill="#fdd0a2" stroke="#666"/>
+  <rect x="404" y="45" width="36" height="54" fill="none" stroke="#bbb" stroke-dasharray="3,3"/>
+  <text x="450" y="66" fill="#555">親のフロント:</text>
+  <text x="450" y="82" fill="#555">自 DOF の列に当たる全体行列の列ブロック ＋</text>
+  <text x="450" y="98" fill="#555">子 2 つの cb を足し込んで</text>
+  <text x="450" y="114" fill="#555">組み立て、fully summed 部を</text>
+  <text x="450" y="130" fill="#555">消去。残る cb はさらに上の親へ</text>
+
+  <!-- ===== child 1 ===== -->
+  <circle cx="110" cy="300" r="16" fill="#d8e6f3" stroke="#666"/>
+  <text x="110" y="304" text-anchor="middle" fill="#333">子 1</text>
+  <rect x="150" y="255" width="54" height="54" fill="#9ecae1" stroke="#666"/>
+  <rect x="150" y="309" width="54" height="36" fill="#c6dbef" stroke="#666"/>
+  <rect x="204" y="309" width="36" height="36" fill="#fdd0a2" stroke="#666"/>
+  <rect x="204" y="255" width="36" height="54" fill="none" stroke="#bbb" stroke-dasharray="3,3"/>
+
+  <!-- ===== child 2 ===== -->
+  <circle cx="480" cy="300" r="16" fill="#d8e6f3" stroke="#666"/>
+  <text x="480" y="304" text-anchor="middle" fill="#333">子 2</text>
+  <rect x="520" y="255" width="54" height="54" fill="#9ecae1" stroke="#666"/>
+  <rect x="520" y="309" width="54" height="36" fill="#c6dbef" stroke="#666"/>
+  <rect x="574" y="309" width="36" height="36" fill="#fdd0a2" stroke="#666"/>
+  <rect x="574" y="255" width="36" height="54" fill="none" stroke="#bbb" stroke-dasharray="3,3"/>
+
+  <!-- ===== extend-add arrows from child cb to parent front ===== -->
+  <!-- the arrows end at the frame around the whole parent front: the cb entries land anywhere in it -->
+  <rect x="345" y="40" width="100" height="100" fill="none" stroke="#d97a1a" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <path d="M240,322 C300,250 330,190 372,144" fill="none" stroke="#d97a1a" stroke-width="2.2" marker-end="url(#arr-o)"/>
+  <path d="M592,306 C560,230 480,190 430,144" fill="none" stroke="#d97a1a" stroke-width="2.2" marker-end="url(#arr-o)"/>
+  <text x="610" y="180" fill="#b35c00">extend-add（2 本の矢印）:</text>
+  <text x="610" y="196" fill="#b35c00">子の cb を、親のフロント（破線の枠）の</text>
+  <text x="610" y="212" fill="#b35c00">fully summed 部も含む全体へ足し込む</text>
+
+  <!-- ===== legend ===== -->
+  <rect x="650" y="255" width="14" height="14" fill="#9ecae1" stroke="#666"/>
+  <text x="672" y="267" fill="#333">fully summed 部（ここで消去。消去後は因子の対角部）</text>
+  <rect x="650" y="277" width="14" height="14" fill="#c6dbef" stroke="#666"/>
+  <text x="672" y="289" fill="#333">cb の行の因子成分（消去後に保存）</text>
+  <rect x="650" y="299" width="14" height="14" fill="#fdd0a2" stroke="#666"/>
+  <text x="672" y="311" fill="#333">contribution block（cb）</text>
+  <rect x="650" y="321" width="14" height="14" fill="none" stroke="#bbb" stroke-dasharray="3,3"/>
+  <text x="672" y="333" fill="#333">対称なので格納しない</text>
+
+  <!-- ===== steps ===== -->
+  <text x="40" y="384" fill="#333">1. 葉の節: 自 DOF の列に当たる全体行列の列ブロック（＝要素の寄与の和）でフロントを組み立て、fully summed 部を消去する → cb が残る</text>
+  <text x="40" y="402" fill="#333">2. 親の節: 自 DOF の列のブロックに、子の cb を extend-add で足し込んでから消去する（子はすべて先に終わっている）</text>
+  <text x="40" y="420" fill="#333">3. 根まで繰り返す。兄弟の部分木（子 1 と子 2）は互いに独立なので同時に処理できる</text>
+</svg>

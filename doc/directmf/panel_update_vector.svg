@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="440" viewBox="0 0 800 440" font-family="'Noto Sans CJK JP', 'Hiragino Sans', 'Yu Gothic', sans-serif" font-size="12">
+  <rect x="0" y="0" width="800" height="440" fill="white"/>
+  <text x="40" y="34" fill="#333">パネルと更新ベクトル: 検査役が自分の行 i の L(i,j) を計算するのに要る量</text>
+
+  <!-- column headers -->
+  <g fill="#555" font-size="11" text-anchor="middle">
+    <text x="102" y="68">列 k</text>
+    <text x="190" y="68">列 j</text>
+    <text x="146" y="68">…</text>
+    <text x="234" y="68">…</text>
+  </g>
+  <!-- diagonal tile: 4x4 lower triangle incl. diagonal, cell 44, origin (80,76) -->
+  <g stroke="#666">
+    <rect x="80" y="76" width="44" height="44" fill="#c6dbef"/>
+    <rect x="80" y="120" width="44" height="44" fill="#c6dbef"/><rect x="124" y="120" width="44" height="44" fill="#c6dbef"/>
+    <rect x="80" y="164" width="44" height="44" fill="#c6dbef"/><rect x="124" y="164" width="44" height="44" fill="#c6dbef"/><rect x="168" y="164" width="44" height="44" fill="#c6dbef"/>
+    <rect x="80" y="208" width="44" height="44" fill="#c6dbef"/><rect x="124" y="208" width="44" height="44" fill="#c6dbef"/><rect x="168" y="208" width="44" height="44" fill="#c6dbef"/><rect x="212" y="208" width="44" height="44" fill="#c6dbef"/>
+  </g>
+  <!-- checker rows: 3 rows x 4 columns -->
+  <g stroke="#666">
+    <rect x="80" y="264" width="176" height="36" fill="#fdd0a2"/>
+    <rect x="80" y="300" width="176" height="36" fill="#fdd0a2"/>
+  </g>
+  <line x1="124" y1="264" x2="124" y2="336" stroke="#999"/>
+  <line x1="168" y1="264" x2="168" y2="336" stroke="#999"/>
+  <line x1="212" y1="264" x2="212" y2="336" stroke="#999"/>
+  <!-- highlighted cells -->
+  <rect x="80" y="76" width="44" height="44" fill="none" stroke="#1f5f99" stroke-width="2.5"/>
+  <rect x="80" y="164" width="44" height="44" fill="none" stroke="#1f5f99" stroke-width="2.5"/>
+  <rect x="168" y="164" width="44" height="44" fill="none" stroke="#2e7d32" stroke-width="2.5"/>
+  <rect x="80" y="300" width="44" height="36" fill="none" stroke="#b35c00" stroke-width="2.5"/>
+  <rect x="168" y="300" width="44" height="36" fill="none" stroke="#c0392b" stroke-width="2.5"/>
+  <g font-size="11" text-anchor="middle">
+    <text x="102" y="102" fill="#1f5f99">d_k</text>
+    <text x="102" y="190" fill="#1f5f99">L(j,k)</text>
+    <text x="190" y="190" fill="#2e7d32">d_j</text>
+    <text x="102" y="322" fill="#b35c00">L(i,k)</text>
+    <text x="190" y="322" fill="#c0392b">L(i,j) ?</text>
+  </g>
+  <!-- row labels -->
+  <g fill="#555" font-size="11" text-anchor="end">
+    <text x="72" y="102">行 k</text>
+    <text x="72" y="190">行 j</text>
+    <text x="72" y="322">行 i</text>
+  </g>
+  <text x="270" y="80" fill="#b35c00" font-size="11">この図では 1 マス＝1 成分（他の図の 1 マス＝1 タイルと異なる）。図全体が 1 本のタイル列</text>
+  <text x="270" y="95" fill="#b35c00" font-size="11">遅延後に幅の狭いパネルを試す場面。列 j はこのパネル、列 k は前のパネルで受理したピボットの列</text>
+  <!-- side labels -->
+  <text x="270" y="110" fill="#333">対角タイル（対角タイルの所有ランクが持つ）</text>
+  <text x="270" y="126" fill="#555" font-size="11">ピボット d_k と、その列の L(j,k) はここにしかない</text>
+  <text x="270" y="290" fill="#333">パネルの下の行（検査役が持つ）</text>
+  <text x="270" y="306" fill="#555" font-size="11">検査役は自分の行の L(i,k)（計算済み）を持つ</text>
+
+  <!-- formula and explanation -->
+  <text x="40" y="366" fill="#333">L(i,j) = ( a(i,j) − Σ_k L(i,k) · [ d_k L(j,k) ] ) / d_j　　（k は同じタイル列で列 j より前に受理したピボット）</text>
+  <text x="40" y="386" fill="#555">k がこのパネルより前のピボットの分: [ ] の d_k L(j,k) をパネル列 j ごとに並べたものが更新ベクトル。</text>
+  <text x="40" y="404" fill="#555">対角タイルの所有ランクが、試行の合否によらず検査役へ配る。k がパネル内の列の分: 分解済みの対角</text>
+  <text x="40" y="422" fill="#555">ブロック（d_j など。合格のときだけ配る）を使って、検査役が自分の行について解いて求める</text>
+  <text x="270" y="160" fill="#555" font-size="11">配られた更新ベクトルと対角ブロックで、検査役は</text>
+  <text x="270" y="176" fill="#555" font-size="11">自分の行 i の L(i,j) を計算し、|L(i,j)| ≤ 1/u を</text>
+  <text x="270" y="192" fill="#555" font-size="11">列ごとに検査し、列ごとの合否を master へ送る</text>
+</svg>

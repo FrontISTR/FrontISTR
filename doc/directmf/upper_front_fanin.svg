@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="470" viewBox="0 0 920 470" font-family="'Noto Sans CJK JP', 'Hiragino Sans', 'Yu Gothic', sans-serif" font-size="12">
+  <defs>
+    <marker id="fa-b" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 z" fill="#1f5f99"/>
+    </marker>
+    <marker id="fa-o" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 z" fill="#b35c00"/>
+    </marker>
+    <marker id="fa-p" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 z" fill="#6a3d9a"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="920" height="470" fill="white"/>
+  <text x="40" y="34" fill="#333">子の contribution block のスライスが親の上位フロントの所有ランクへ届く様子（前図と同じランク配置）</text>
+
+  <!-- ===== child contribution block (subtree root, held entirely by rank 1) ===== -->
+  <text x="60" y="76" fill="#333">子（部分木の根）の contribution block</text>
+  <text x="60" y="92" fill="#555" font-size="11">所有ランク 1 が丸ごと保持。色は宛先ランク。最も重い子ではない例</text>
+  <text x="60" y="296" fill="#555" font-size="11">（親の master は最も重い子を持つランク 0。この子は master 以外へも送る）</text>
+  <g stroke="#666">
+    <rect x="70" y="104" width="44" height="44" fill="#c6dbef"/>
+    <rect x="70" y="148" width="44" height="44" fill="#fdd0a2"/>
+    <rect x="114" y="148" width="44" height="44" fill="#e1cfe8"/>
+    <rect x="70" y="192" width="44" height="44" fill="#c6dbef"/>
+    <rect x="114" y="192" width="44" height="44" fill="#c6dbef"/>
+    <rect x="158" y="192" width="44" height="44" fill="#c6dbef"/>
+  </g>
+  <rect x="70" y="104" width="132" height="132" fill="none" stroke="#c8e6c9" stroke-width="3"/>
+  <g fill="#333" text-anchor="middle" font-size="11">
+    <text x="92" y="130">(1,1)</text>
+    <text x="92" y="174">(2,1)</text><text x="136" y="174">(2,2)</text>
+    <text x="92" y="218">(3,1)</text><text x="136" y="218">(3,2)</text><text x="180" y="218">(3,3)</text>
+  </g>
+  <g fill="#555" font-size="11">
+    <text x="40" y="130" text-anchor="end">行 1</text>
+    <text x="40" y="174" text-anchor="end">行 2</text>
+    <text x="40" y="218" text-anchor="end">行 3</text>
+  </g>
+  <text x="60" y="258" fill="#555" font-size="11">行 1・2 は親の fully summed タイル行 1・2 に、</text>
+  <text x="60" y="274" fill="#555" font-size="11">行 3 は親の contribution 行タイル 1 に写る</text>
+
+  <!-- ===== parent upper front (2x2 grid, one band row) ===== -->
+  <text x="560" y="76" fill="#333">親の上位フロント（ランク集合 {0,1,2,3}）</text>
+  <text x="560" y="92" fill="#555" font-size="11">数字は所有ランク</text>
+  <g stroke="#666">
+    <rect x="580" y="104" width="44" height="44" fill="#c6dbef"/>
+    <rect x="580" y="148" width="44" height="44" fill="#fdd0a2"/>
+    <rect x="624" y="148" width="44" height="44" fill="#e1cfe8"/>
+    <rect x="580" y="200" width="132" height="30" fill="#c6dbef"/>
+  </g>
+  <g fill="#333" text-anchor="middle" font-size="11">
+    <text x="602" y="130">0</text>
+    <text x="602" y="174">2</text><text x="646" y="174">3</text>
+    <text x="700" y="219">0</text>
+  </g>
+  <text x="724" y="130" fill="#555" font-size="11">fully summed 部のタイル</text>
+  <text x="724" y="146" fill="#555" font-size="11">（2D 格子の所有者）</text>
+  <text x="724" y="219" fill="#555" font-size="11">contribution 行バンド（所有者）</text>
+
+  <!-- ===== slices: one message per destination rank ===== -->
+  <path d="M116,126 L578,126" fill="none" stroke="#1f5f99" stroke-width="2" marker-end="url(#fa-b)"/>
+  <path d="M204,214 L578,214" fill="none" stroke="#1f5f99" stroke-width="2" marker-end="url(#fa-b)"/>
+  <path d="M160,162 L578,170" fill="none" stroke="#b35c00" stroke-width="2" marker-end="url(#fa-o)"/>
+  <path d="M160,180 C300,200 500,196 622,182" fill="none" stroke="#6a3d9a" stroke-width="2" marker-end="url(#fa-p)"/>
+  <g font-size="11">
+    <text x="250" y="106" fill="#1f5f99">ランク 0 へ: (1,1) と (3,1)〜(3,3) の</text>
+    <text x="250" y="120" fill="#1f5f99">計 4 ブロックを 1 メッセージに</text>
+    <text x="250" y="158" fill="#b35c00">ランク 2 へ: (2,1)</text>
+    <text x="330" y="186" fill="#6a3d9a">ランク 3 へ: (2,2)</text>
+  </g>
+
+  <!-- ===== notes ===== -->
+  <text x="40" y="312" fill="#555">・送り手（ランク 1）は宛先ランクごとに 1 メッセージを送る。自分の保持分があれば手元から直接足し込む</text>
+  <text x="40" y="330" fill="#555">・どの成分がどのランクに届くかは、子の行が親のどの位置に写るか（symbolic 構造と子のヘッダ）から、</text>
+  <text x="40" y="346" fill="#555">　送る側・受ける側が同一に決める。調整のための往復通信はない</text>
+  <text x="40" y="364" fill="#555">・子が上位フロントのときは、contribution block を行バンド所有者と master（遅延列の正方ブロック）が</text>
+  <text x="40" y="380" fill="#555">　分けて持ち、それぞれが自分の分について同じ規則でスライスを送る</text>
+  <text x="40" y="398" fill="#777" font-size="11">（模式図。親は前図のフロントのうち、この子の行が写るタイルと 1 本目の行バンドだけを描いた。子の行は親の中で離れた位置に写りうる）</text>
+
+  <!-- ===== legend ===== -->
+  <g stroke="#666">
+    <rect x="40" y="432" width="14" height="14" fill="#c6dbef"/>
+    <rect x="150" y="432" width="14" height="14" fill="#c8e6c9"/>
+    <rect x="340" y="432" width="14" height="14" fill="#fdd0a2"/>
+    <rect x="450" y="432" width="14" height="14" fill="#e1cfe8"/>
+  </g>
+  <text x="60" y="444" fill="#333">ランク 0</text>
+  <text x="170" y="444" fill="#333">ランク 1（送り手の枠）</text>
+  <text x="360" y="444" fill="#333">ランク 2</text>
+  <text x="470" y="444" fill="#333">ランク 3</text>
+</svg>
