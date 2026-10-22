@@ -391,10 +391,6 @@ contains
 
       wg = getWeight( etype, lx )*det
 
-      ! Update strain and stress : plasticity/creep are treated as elastic in UP
-      if( isElastoplastic(gausses(lx)%pMaterial%mtype) .or. &
-        isCreep(gausses(lx)%pMaterial%mtype) ) gausses(lx)%pMaterial%mtype = ELASTIC
-
       epsth = 0.0D0
 
       if( present( tt ) .and. present( t0 ) ) then
