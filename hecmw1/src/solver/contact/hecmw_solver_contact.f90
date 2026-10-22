@@ -32,15 +32,14 @@ contains
     type (hecmwST_matrix)                    :: hecMAT         !< type hecmwST_matrix
     type (hecmwST_matrix_lagrange)           :: hecLagMAT        !< type hecmwST_matrix_lagrange)
     logical :: is_sym
-    integer(kind=kint) :: contact_elim, solver_type, iterlog, timelog, myrank
+    integer(kind=kint) :: contact_elim, solver_type, loglevel, myrank
     logical :: writelog
 
     contact_elim = hecmw_mat_get_contact_elim(hecMAT)
     solver_type = hecmw_mat_get_solver_type(hecMAT)
-    iterlog = hecmw_mat_get_iterlog(hecMAT)
-    timelog = hecmw_mat_get_timelog(hecMAT)
+    loglevel = max(0, hecmw_mat_get_loglevel(hecMAT)) ! LOGLEVEL is -1 when not given
     myrank = hecmw_comm_get_rank()
-    writelog = (myrank==0 .and. (iterlog>0 .or. timelog>0))
+    writelog = (myrank==0 .and. loglevel>0)
 
     if( contact_elim==0 )then ! auto
       if( solver_type==1 )then ! iterative

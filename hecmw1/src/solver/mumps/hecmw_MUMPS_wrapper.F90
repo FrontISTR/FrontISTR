@@ -66,12 +66,12 @@ contains
       endif
     endif
 
-    if (spMAT%timelog == 2) then
+    if (spMAT%loglevel >= 2) then
       mumps_par%ICNTL(1)=6
       mumps_par%ICNTL(2)=0
       mumps_par%ICNTL(3)=6
       mumps_par%ICNTL(4)=2
-    elseif (spMAT%timelog == 1) then
+    elseif (spMAT%loglevel == 1) then
       mumps_par%ICNTL(1)=6
       mumps_par%ICNTL(2)=0
       mumps_par%ICNTL(3)=6

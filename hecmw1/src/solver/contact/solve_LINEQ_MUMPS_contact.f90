@@ -101,7 +101,7 @@ contains
         write(*,*) 'ERROR: MUMPS returned with error', istat
         stop
       endif
-      if ( hecmw_comm_get_rank()==0 ) write(*,*) ' [MUMPS]: Analysis completed.'
+      if ( hecmw_comm_get_rank()==0 .and. spMAT%loglevel > 0 ) write(*,*) ' [MUMPS]: Analysis completed.'
       NEED_ANALYSIS = .false.
     endif
 
@@ -115,7 +115,7 @@ contains
       return
     endif
     call sparse_matrix_contact_get_rhs(spMAT, hecMAT, hecLagMAT)
-    if (hecmw_comm_get_rank()==0) write(*,*) ' [MUMPS]: Factorization and Solution completed.'
+    if (hecmw_comm_get_rank()==0 .and. spMAT%loglevel > 0) write(*,*) ' [MUMPS]: Factorization and Solution completed.'
 
     call hecmw_mat_dump_solution(hecMAT)
 
