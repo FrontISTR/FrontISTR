@@ -746,6 +746,8 @@ contains
     nlgeom = UPDATELAG   !default value
     if( fstr_ctrl_get_param_ex( ctrl, 'KIRCHHOFF ',  '# ',    0,   'E',   ipt )/= 0) return
     if( ipt/=0 ) nlgeom = TOTALLAG
+    if( fstr_ctrl_get_param_ex( ctrl, 'INFINITESIMAL ',  '# ',    0,   'E',   ipt )/= 0) return
+    if( ipt/=0 ) nlgeom = INFINITESIMAL
 
     ipt=1
     s = 'NORTON,USER '
