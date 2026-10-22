@@ -393,7 +393,7 @@ contains
 
       ! Update strain and stress : plasticity/creep are treated as elastic in UP
       if( isElastoplastic(gausses(lx)%pMaterial%mtype) .or. &
-        ( gausses(lx)%pMaterial%mtype == NORTON ) ) gausses(lx)%pMaterial%mtype = ELASTIC
+        isCreep(gausses(lx)%pMaterial%mtype) ) gausses(lx)%pMaterial%mtype = ELASTIC
 
       epsth = 0.0D0
 

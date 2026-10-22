@@ -57,9 +57,12 @@ module mMaterial
   !     For spring_d or dashpot_d, joint_d etc.
   !       k: number of dof param (2nd digit)
   !   Six digit:
-  !     For visco-elastoplastic deformation, visco law
-  !       0: Norton                     i.e.  150000
-  !       1: Striab                           150001
+  !     For viscoelastic deformation, time-temperature superposition
+  !       1: WLF                        i.e.  140001
+  !       2: Arrhenius                        140002
+  !     For elastoplastic deformation, creep law
+  !       0: none                       i.e.  120000
+  !       1: Norton                           120001
   integer(kind=kint), parameter :: USERMATERIAL          = 100000
 
   integer(kind=kint), parameter :: ELASTIC               = 110000
@@ -353,6 +356,17 @@ contains
     isViscoelastic = .false.
     itype = fetchDigit( 2, mtype )
     if( itype==4 ) isViscoelastic = .true.
+  end function
+
+  !> If it is a material with creep?
+  logical function isCreep( mtype )
+    integer, intent(in) :: mtype
+    isCreep = .false.
+    if( mtype==NORTON ) then
+      isCreep = .true.
+    else if( isElastoplastic( mtype ) ) then
+      if( fetchDigit( 6, mtype )==1 ) isCreep = .true.
+    endif
   end function
 
   !> Set material type of elastoplastic to elastic

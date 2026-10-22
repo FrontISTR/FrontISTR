@@ -613,7 +613,7 @@ contains
 
     mtype = gauss%pMaterial%mtype
 
-    if( isElastoplastic(mtype) .OR. mtype == NORTON )then
+    if( isElastoplastic(mtype) .OR. isCreep(mtype) )then
       isEp = 1
     else
       isEp = 0
