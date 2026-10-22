@@ -695,9 +695,8 @@ contains
     end if
 
     if( isElastoplastic(mtype) ) then
-      call BackwardEuler( gauss%pMaterial, gauss%stress, gauss%plstrain, &
-        gauss%istatus(1), gauss%fstatus, gauss%plpotential, ttc )
-        gauss%strain_energy = gauss%strain_energy+gauss%plpotential
+      call StressUpdate( gauss, D3, dstrain, gauss%stress, coordsys, time, tincr, ttc, ttn, hdflag=hdflag_in )
+      gauss%strain_energy = gauss%strain_energy+gauss%plpotential
     end if
 
     !convert stress/strain measure for output

@@ -121,6 +121,9 @@ contains
       call calUpdateElasticMooneyRivlinAniso( gauss%pMaterial, sectType, strain, stress, cdsys, hdflag=hdflag )
     elseif( gauss%pMaterial%mtype==USERHYPERELASTIC .or. gauss%pMaterial%mtype==USERELASTIC ) then ! user-defined
       call uElasticUpdate( gauss%pMaterial%variables(101:), strain, stress )
+    elseif( isElastoplastic( gauss%pMaterial%mtype ) ) then
+      call BackwardEuler( gauss%pMaterial, stress, gauss%plstrain, gauss%istatus(1), gauss%fstatus, &
+        gauss%plpotential, temp )
     elseif( isViscoelastic( gauss%pMaterial%mtype) ) then
       if( .not. present(dtime) ) stop "error in viscoelastic update!"
       call UpdateViscoelastic( gauss%pMaterial, sectType, strain, stress, gauss%fstatus, dtime, temp, tempn )
