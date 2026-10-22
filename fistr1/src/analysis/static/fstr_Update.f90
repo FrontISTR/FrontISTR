@@ -332,9 +332,7 @@ contains
   subroutine fstr_UpdateState( hecMESH, fstrSOLID, tincr)
     use m_fstr
     use m_static_lib
-    use m_ElastoPlastic
-    use mCreep
-    use mViscoElastic
+    use m_MatMatrix, only: MatlStateUpdate
     type(hecmwST_local_mesh) :: hecMESH     !< hecmw mesh
     type(fstr_solid) :: fstrSOLID   !< fstr_solid
     real(kind=kreal) :: tincr
@@ -357,25 +355,8 @@ contains
 
       ngauss = NumOfQuadPoints( ic_type )
       do icel = is, iE
-        if( isElastoplastic( fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype ) ) then
-          do i = 1, ngauss
-            call updateEPState( fstrSOLID%elements(icel)%gausses(i) )
-          enddo
-        elseif( fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype == NORTON ) then
-          if( tincr>0.d0 ) then
-            do i = 1, ngauss
-              call updateViscoState( fstrSOLID%elements(icel)%gausses(i) )
-            enddo
-          endif
-        elseif( isViscoelastic( fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype ) ) then
-          if( tincr > 0.d0 ) then
-            do i = 1, ngauss
-              call updateViscoElasticState( fstrSOLID%elements(icel)%gausses(i) )
-            enddo
-          endif
-        endif
-
         do i = 1, ngauss
+          call MatlStateUpdate( fstrSOLID%elements(icel)%gausses(i), tincr )
           fstrSOLID%elements(icel)%gausses(i)%strain_bak = fstrSOLID%elements(icel)%gausses(i)%strain
           fstrSOLID%elements(icel)%gausses(i)%stress_bak = fstrSOLID%elements(icel)%gausses(i)%stress
           fstrSOLID%elements(icel)%gausses(i)%strain_energy_bak = fstrSOLID%elements(icel)%gausses(i)%strain_energy
@@ -383,9 +364,7 @@ contains
 
         if( associated( fstrSOLID%elements(icel)%shell_layer_gausses ) ) then
           do ishell = 1, size( fstrSOLID%elements(icel)%shell_layer_gausses )
-            if( isElastoplastic( fstrSOLID%elements(icel)%shell_layer_gausses(ishell)%pMaterial%mtype ) ) then
-              call updateEPState( fstrSOLID%elements(icel)%shell_layer_gausses(ishell) )
-            endif
+            call MatlStateUpdate( fstrSOLID%elements(icel)%shell_layer_gausses(ishell), tincr )
             fstrSOLID%elements(icel)%shell_layer_gausses(ishell)%strain_bak = &
               fstrSOLID%elements(icel)%shell_layer_gausses(ishell)%strain
             fstrSOLID%elements(icel)%shell_layer_gausses(ishell)%stress_bak = &

@@ -135,6 +135,21 @@ contains
 
   end subroutine StressUpdate
 
+  !> Commit the material history of a converged increment
+  subroutine MatlStateUpdate( gauss, tincr )
+    type( tGaussStatus ), intent(inout) :: gauss  !> status of qudrature point
+    real(kind=kreal), intent(in)        :: tincr  !> time increment
+
+    if( isElastoplastic( gauss%pMaterial%mtype ) ) then
+      call updateEPState( gauss )
+    elseif( gauss%pMaterial%mtype==NORTON ) then
+      if( tincr>0.d0 ) call updateViscoState( gauss )
+    elseif( isViscoelastic( gauss%pMaterial%mtype ) ) then
+      if( tincr>0.d0 ) call updateViscoElasticState( gauss )
+    endif
+
+  end subroutine MatlStateUpdate
+
   !> Transfer rank 4 constituive matrix to rank 2 form
   subroutine mat_c2d( cijkl, dij, itype )
     real(kind=kreal),   intent(in)  :: cijkl(3,3,3,3)
