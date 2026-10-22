@@ -677,6 +677,11 @@ contains
     if( present(hdflag) ) hdflag_in = hdflag
 
     ytype = getYieldFunction( matl%mtype )
+    ! The return mappings leave the trial state untouched when the trial stress is elastic.
+    if( ytype /= 3 ) then
+      fstat(1) = plstrain
+      if( isKinematicHarden( matl%mtype ) ) fstat(2:7) = fstat(8:13)
+    endif
     select case (ytype)
     case (0)
       call BackwardEuler_VM( matl, stress, plstrain, istat, fstat, plpotential, temp, hdflag_in )

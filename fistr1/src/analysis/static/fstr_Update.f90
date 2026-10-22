@@ -40,7 +40,7 @@ contains
 
     integer(kind=kint) :: nodLOCAL(fstrSOLID%max_ncon)
     real(kind=kreal)   :: ecoord(3, fstrSOLID%max_ncon)
-    real(kind=kreal)   :: thick, thick0(6)
+    real(kind=kreal)   :: thick
     integer(kind=kint) :: ndof, itype, is, iE, ic_type, nn, icel, iiS, i, j, nbase
 
     real(kind=kreal)   :: total_disp(6, fstrSOLID%max_ncon), du(6, fstrSOLID%max_ncon), ddu(6, fstrSOLID%max_ncon)
@@ -98,7 +98,7 @@ contains
         !$omp&  private(icel,iiS,j,nn,nodLOCAL,i,nbase,ecoord,ddu,du,total_disp,triad_tri,triad_cur, &
         !$omp&  triad_ref, &
         !$omp&  shell_drill, &
-        !$omp&  cdsys_ID,coords,thick,qf,isect,ihead,tmp,ndim,ddaux,thick0, &
+        !$omp&  cdsys_ID,coords,thick,qf,isect,ihead,tmp,ndim,ddaux, &
         !$omp&  lambda,ddlambda), &
         !$omp&  shared(iS,iE,hecMESH,fstrSOLID,ndof,hecMAT,ic_type,fstrPARAM, &
         !$omp&         strainEnergy,iter,time,tincr,initt,g_InitialCnd), &
@@ -110,18 +110,6 @@ contains
         iiS = hecMESH%elem_node_index(icel-1)
         nn = hecMESH%elem_node_index(icel)-iiS
         !if( nn>150 ) stop "elemental nodes > 150!"
-
-        thick = 0.d0
-        do j = 1, size(fstrSOLID%elements(icel)%gausses)
-          thick0(1:6) = fstrSOLID%elements(icel)%gausses(j)%stress(1:6)
-          thick = thick + dsqrt(dot_product(thick0(1:6),thick0(1:6)))
-        enddo
-        if( thick < 1.d-10 ) then
-          do j = 1, size(fstrSOLID%elements(icel)%gausses)
-            if( associated(fstrSOLID%elements(icel)%gausses(j)%fstatus) ) &
-              &  fstrSOLID%elements(icel)%gausses(j)%fstatus = 0.d0
-          enddo
-        end if
 
         do j = 1, nn
           nodLOCAL(j) = hecMESH%elem_node_item (iiS+j)
