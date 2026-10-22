@@ -639,7 +639,6 @@ contains
       end if
       if( isViscoelastic(mtype) .AND. tincr /= 0.0D0 ) then
         call StressUpdate( gauss, D3, dstrain, gauss%stress, coordsys, time, tincr, ttc, ttn, hdflag=hdflag_in )
-        gauss%stress = real(gauss%stress)
       else if( mtype == NORTON .AND. tincr /= 0.0D0 .AND. any( gauss%stress /= 0.0D0 ) ) then
         call StressUpdate( gauss, D3, dstrain, gauss%stress, coordsys, time, tincr, ttc, ttn, hdflag=hdflag_in )
       end if
@@ -662,7 +661,7 @@ contains
       if( isViscoelastic(mtype) .AND. tincr /= 0.0D0 ) then
         call StressUpdate( gauss, D3, dstrain, gauss%stress, coordsys, time, tincr, ttc, tt0, hdflag=hdflag_in )
       else
-        dstress = real( matmul( D(1:6,1:6), dstrain(1:6) ) )
+        dstress = matmul( D(1:6,1:6), dstrain(1:6) )
         dumstress(1,1) = gauss%stress_bak(1)
         dumstress(2,2) = gauss%stress_bak(2)
         dumstress(3,3) = gauss%stress_bak(3)
