@@ -77,6 +77,7 @@ contains
       iparm(18) = 0
       iparm(19) = 0
       msglvl = 0 ! print statistical information
+      if (spMAT%loglevel > 1) msglvl = 1
       INITIALIZED = .true.
     else
       if( phase_start == 1 ) then
@@ -122,8 +123,10 @@ contains
     end if
 
     t2=hecmw_wtime()
+    if (myrank==0 .and. spMAT%loglevel > 0) &
+      write(*,'(A)') ' [Cluster Pardiso]: Additional Setup completed.'
     if (myrank==0 .and. spMAT%timelog > 0) &
-      write(*,'(A,f10.3)') ' [Cluster Pardiso]: Additional Setup completed. time(sec)=',t2-t1
+      write(*,'(A,f10.3)') ' [Cluster Pardiso]: Additional Setup time(sec)=',t2-t1
 
     if ( phase_start == 1 ) then
       ! ANALYSIS
@@ -134,14 +137,16 @@ contains
         pt, maxfct, mnum, mtype, phase, nn, aval, irow, jcol, &
         idum, nrhs, iparm, msglvl, rhs, solx, hecmw_comm_get_comm(), istat )
       if (istat < 0) then
-        if (myrank==0 .and. spMAT%timelog > 0) call print_iparm_parameters()
+        if (myrank==0 .and. spMAT%loglevel > 0) call print_iparm_parameters()
         write(*,*) 'ERROR: MKL returned with error in phase 1', istat
         return
       endif
 
       t3=hecmw_wtime()
+      if (myrank==0 .and. spMAT%loglevel > 0) &
+        write(*,'(A)') ' [Cluster Pardiso]: Analysis completed.'
       if (myrank==0 .and. spMAT%timelog > 0) &
-        write(*,'(A,f10.3)') ' [Cluster Pardiso]: Analysis completed.         time(sec)=',t3-t2
+        write(*,'(A,f10.3)') ' [Cluster Pardiso]: Analysis time(sec)=',t3-t2
     endif
 
     ! FACTORIZATION
@@ -153,13 +158,15 @@ contains
         pt, maxfct, mnum, mtype, phase, nn, aval, irow, jcol, &
         idum, nrhs, iparm, msglvl, rhs, solx, hecmw_comm_get_comm(), istat )
       if (istat < 0) then
-        if (myrank==0 .and. spMAT%timelog > 0) call print_iparm_parameters()
+        if (myrank==0 .and. spMAT%loglevel > 0) call print_iparm_parameters()
         write(*,*) 'ERROR: MKL returned with error in phase 2', istat
         return
       endif
       t4=hecmw_wtime()
+      if (myrank==0 .and. spMAT%loglevel > 0) &
+        write(*,'(A)') ' [Cluster Pardiso]: Factorization completed.'
       if (myrank==0 .and. spMAT%timelog > 0) &
-        write(*,'(A,f10.3)') ' [Cluster Pardiso]: Factorization completed.    time(sec)=',t4-t3
+        write(*,'(A,f10.3)') ' [Cluster Pardiso]: Factorization time(sec)=',t4-t3
     endif
 
     t4=hecmw_wtime()
@@ -170,7 +177,7 @@ contains
       pt, maxfct, mnum, mtype, phase, nn, aval, irow, jcol, &
       idum, nrhs, iparm, msglvl, rhs, solx, hecmw_comm_get_comm(), istat )
     if (istat < 0) then
-      if (myrank==0 .and. spMAT%timelog > 0) call print_iparm_parameters()
+      if (myrank==0 .and. spMAT%loglevel > 0) call print_iparm_parameters()
       write(*,*) 'ERROR: MKL returned with error in phase 3', istat
       return
     endif
@@ -186,8 +193,11 @@ contains
     ! to use this routine properly.
 
     t5=hecmw_wtime()
+    if (myrank==0 .and. spMAT%loglevel > 0) then
+      write(*,'(A)') ' [Cluster Pardiso]: Solution completed.'
+    end if
     if (myrank==0 .and. spMAT%timelog > 0) then
-      write(*,'(A,f10.3)') ' [Cluster Pardiso]: Solution completed.         time(sec)=',t5-t4
+      write(*,'(A,f10.3)') ' [Cluster Pardiso]: Solution time(sec)=',t5-t4
     end if
     if( CLUSTERMKL_DEBUG>0 .and. myrank==0 ) call print_iparm_parameters()
 

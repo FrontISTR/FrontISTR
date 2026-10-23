@@ -143,17 +143,34 @@ check_log () {
   fi
   while IFS= read -r pat; do
     case "$pat" in
+      # skip empty lines and comments; hence a check pattern cannot start with '#'
       ''|'#'*) continue;;
       'np1:'*)
         # the pattern applies to single-process runs only
         [ $mpi_num_process -ne 1 ] && continue
         pat=${pat#np1:};;
     esac
+    negate=
+    case "$pat" in
+      'no:'*)
+        # the pattern must not appear in the log
+        negate=1
+        pat=${pat#no:};;
+    esac
     if grep -E -q "$pat" fistr1.log; then
-      echo_success "    log: '$pat' found"
+      if [ -z "$negate" ]; then
+        echo_success "    log: '$pat' found"
+      else
+        echo_err     "    log: '$pat' found (must not appear)"
+        : $((errors++))
+      fi
     else
-      echo_err     "    log: '$pat' not found"
-      : $((errors++))
+      if [ -z "$negate" ]; then
+        echo_err     "    log: '$pat' not found"
+        : $((errors++))
+      else
+        echo_success "    log: '$pat' absent"
+      fi
     fi
   done < $chk
 }

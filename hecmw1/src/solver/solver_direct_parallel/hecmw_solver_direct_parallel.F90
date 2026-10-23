@@ -98,8 +98,8 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     imsg=ii ! set message file
 
-    ! set timelog
-    if (hecMAT%Iarray(22) .ge. 1) then ! = timelog = kYES (kYES is defined in m_fstr
+    ! enable the timestamped progress trace
+    if (hecMAT%Iarray(24) .ge. 2) then ! = LOGLEVEL >= 2 (-1 when not given)
       lelap = .true.
     end if
 
@@ -182,6 +182,8 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! misc !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     integer(kind=kint) :: ierr
     integer(kind=kint) :: i,j,k
+    integer(kind=kint) :: timelog
+    real(kind=kreal) :: t1, t2, t3
 
     ! for MPI
     integer(kind=kint) :: istatus(MPI_STATUS_SIZE)
@@ -191,6 +193,8 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     integer(kind=kint) :: nspdsln
 
     ierr=0
+    timelog = hecMAT%Iarray(22)
+    t1 = hecmw_wtime()
     call elapout('sp_direct_parent: entered') !elap
 
 
@@ -339,6 +343,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       nusol_ready = .true.
     end if
+    t2 = hecmw_wtime()
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !
@@ -460,6 +465,11 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     end do
 
     call elapout('sp_direct_parent: end solve Ax=b') !elap
+    t3 = hecmw_wtime()
+    if (timelog > 0) then
+      write(*,*) 'setup time : ',t2-t1
+      write(*,*) 'solve time : ',t3-t2
+    endif
     deallocate(b, bd, bdbuf, oldb)
     return
   end subroutine sp_direct_parent

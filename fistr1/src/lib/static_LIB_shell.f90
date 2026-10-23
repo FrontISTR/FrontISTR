@@ -1532,7 +1532,7 @@ contains
   end subroutine ShellMITC_GetDrillingAlpha
 
   subroutine ShellMITC_GetMaterialTangent(etype, nn, gauss, n_layer, material_local_basis, &
-      material_reciprocal_basis, tangent, alpha)
+      material_reciprocal_basis, tangent, alpha, cdsys)
     use mMechGauss, only: tGaussStatus
     use m_MatMatrix, only: MatlMatrix_Shell
     use m_ElastoPlastic, only: PlaneStressJ2Tangent, J2_BAD_STATE
@@ -1544,6 +1544,7 @@ contains
     integer, intent(in) :: n_layer
     real(kind=kreal), intent(in) :: material_local_basis(3,3), material_reciprocal_basis(3,3)
     real(kind=kreal), intent(out) :: tangent(5,5), alpha
+    real(kind=kreal), intent(in), optional :: cdsys(3, 3)
 
     integer(kind=kint) :: ierr
     real(kind=kreal) :: local_stress(6), local_tangent(5,5)
@@ -1553,7 +1554,7 @@ contains
       call MatlMatrix_Shell(gauss, Shell, tangent, material_local_basis(:, SHELL_XI), &
         material_local_basis(:, SHELL_ETA), material_local_basis(:, SHELL_ZETA), &
         material_reciprocal_basis(:, SHELL_XI), material_reciprocal_basis(:, SHELL_ETA), &
-        material_reciprocal_basis(:, SHELL_ZETA), alpha, n_layer)
+        material_reciprocal_basis(:, SHELL_ZETA), alpha, n_layer, cdsys)
       return
     endif
 
@@ -1576,7 +1577,7 @@ contains
   !> Calculate shell stress and optionally update the integration-point state.
   !> The constitutive matrix is local to this routine, as in Update_Stress3D.
   subroutine ShellMITC_UpdateStress(etype, nn, flag, update_state, gauss, n_layer, dstrain, &
-      material_local_basis, material_reciprocal_basis, stress, alpha)
+      material_local_basis, material_reciprocal_basis, stress, alpha, cdsys)
     use mMechGauss
     use m_ElastoPlastic, only: Update_PlaneStressJ2, J2_BAD_STATE
     use mMaterial, only: UPDATELAG, isElastoplastic
@@ -1590,6 +1591,7 @@ contains
     real(kind=kreal), intent(in) :: material_local_basis(3, 3)
     real(kind=kreal), intent(in) :: material_reciprocal_basis(3, 3)
     real(kind=kreal), intent(out) :: stress(6), alpha
+    real(kind=kreal), intent(in), optional :: cdsys(3, 3)
 
     real(kind=kreal) :: D(5, 5), strain(5), stress_shell(5)
     real(kind=kreal) :: dstress(6), dstress_trace(6), trace_coeff
@@ -1637,7 +1639,7 @@ contains
 
     strain = (/ dstrain(1), dstrain(2), dstrain(4), dstrain(5), dstrain(6) /)
     call ShellMITC_GetMaterialTangent(etype, nn, gauss, n_layer, material_local_basis, &
-      material_reciprocal_basis, D, alpha)
+      material_reciprocal_basis, D, alpha, cdsys)
     stress_shell = matmul(D, strain)
     dstress = (/ stress_shell(1), stress_shell(2), 0.0D0, stress_shell(3), stress_shell(4), stress_shell(5) /)
     stress = dstress
@@ -1861,7 +1863,7 @@ contains
       finite_rotation, use_director_tangent, use_green_lagrange, &
       add_geometric_stiffness, ecoord, elem, shell_disp, gausses, element, &
       v1, v2, v3, director, reference_director, director_tangent, &
-      director_second_tangent, nodal_kinematic_dofs, nddrill, stiff_work)
+      director_second_tangent, nodal_kinematic_dofs, nddrill, stiff_work, cdsys)
     use mMechGauss
     use m_MatMatrix
     use mMaterial, only: UPDATELAG
@@ -1880,6 +1882,7 @@ contains
     real(kind=kreal), intent(in) :: nodal_kinematic_dofs(ndof*nn)
     real(kind=kreal), intent(in), optional :: nddrill(nn)
     real(kind=kreal), intent(inout) :: stiff_work(ndof*nn, ndof*nn)
+    real(kind=kreal), intent(in), optional :: cdsys(3, 3)
 
     integer :: lx, ly, ny, isize, jsize, ishell
     integer(kind=kint) :: ierr
@@ -1952,10 +1955,10 @@ contains
 
         if( ishell > 0 ) then
           call ShellMITC_GetMaterialTangent(etype, nn, element%shell_layer_gausses(ishell), ilayer, &
-            material_local_basis, material_reciprocal_basis, D, alpha)
+            material_local_basis, material_reciprocal_basis, D, alpha, cdsys)
         else
           call ShellMITC_GetMaterialTangent(etype, nn, gausses(lx), ilayer, material_local_basis, &
-            material_reciprocal_basis, D, alpha)
+            material_reciprocal_basis, D, alpha, cdsys)
         endif
 
         call ShellMITC_BuildFirstStrainVariation(nn, ndof, zeta_ly, shapefunc, shapederiv, &
@@ -2028,7 +2031,7 @@ contains
       finite_rotation, use_director_tangent, use_green_lagrange, update_state, &
       ecoord, evaluation_coords, total_nodal_state, strain_nodal_state, gausses, element, &
       v1, v2, v3, director, reference_director, director_tangent, stress_elem, &
-      stress_director, stress_director_increment, nodal_kinematic_dofs, nddrill, qf_work)
+      stress_director, stress_director_increment, nodal_kinematic_dofs, nddrill, qf_work, cdsys)
     use mMechGauss
     use mMaterial, only: UPDATELAG
     implicit none
@@ -2048,6 +2051,7 @@ contains
     real(kind=kreal), intent(in) :: nodal_kinematic_dofs(ndof*nn)
     real(kind=kreal), intent(in), optional :: nddrill(nn)
     real(kind=kreal), intent(inout) :: qf_work(ndof*nn)
+    real(kind=kreal), intent(in), optional :: cdsys(3, 3)
 
     integer :: lx, ly, ny, ishell
     integer(kind=kint) :: ierr
@@ -2150,7 +2154,7 @@ contains
         endif
 
         call ShellMITC_UpdateStress(etype, nn, kinematics, store_state, gauss, ilayer, dstrain, &
-          stress_material_local_basis, stress_material_reciprocal_basis, stress, alpha)
+          stress_material_local_basis, stress_material_reciprocal_basis, stress, alpha, cdsys)
 
         if( store_state ) then
           if( kinematics == UPDATELAG ) then
@@ -2193,9 +2197,30 @@ contains
   !=====================================================================
 
   !--------------------------------------------------------------------
+  !> Build the material coordinate system of a shell section (ORIENTATION), as the
+  !> solid elements do. coordsys is left unallocated, i.e. passed on as an absent
+  !> optional argument, unless an orientation is given.
+  subroutine ShellMITC_SetupOrientation(cdsys_ID, coords, coordsys)
+    use m_common_struct, only: set_localcoordsys, g_LocalCoordSys
+    implicit none
+
+    integer(kind=kint), intent(in), optional :: cdsys_ID
+    real(kind=kreal), intent(inout), optional :: coords(3, 3)
+    real(kind=kreal), allocatable, intent(out) :: coordsys(:, :)
+
+    integer :: serr
+
+    if( .not. present(cdsys_ID) .or. .not. present(coords) ) return
+    if( cdsys_ID <= 0 ) return
+    allocate(coordsys(3, 3))
+    call set_localcoordsys(coords, g_LocalCoordSys(cdsys_ID), coordsys, serr)
+    if( serr == -1 ) stop "Fail to setup local coordinate"
+  end subroutine ShellMITC_SetupOrientation
+
+  !--------------------------------------------------------------------
   !> Calculate the tangent stiffness matrix of a MITC shell element.
   subroutine STF_Shell_MITC(etype, nn, ndof, ecoord, gausses, stiff, thick, mixflag, &
-      nddisp, element, ndtriad, ndreftriad, ndcurtriad, nddrill)
+      nddisp, element, ndtriad, ndreftriad, ndcurtriad, nddrill, cdsys_ID, coords)
 
     use mMechGauss
     implicit none
@@ -2211,11 +2236,14 @@ contains
     real(kind=kreal), intent(in), optional :: ndtriad(9, nn)
     real(kind=kreal), intent(in), optional :: ndreftriad(9, nn), ndcurtriad(9, nn)
     real(kind=kreal), intent(in), optional :: nddrill(nn)
+    integer(kind=kint), intent(in), optional :: cdsys_ID
+    real(kind=kreal), intent(inout), optional :: coords(3, 3)    !< variables to define material coordinate system
 
     integer :: ndof_shell, nb, ilayer, nlayer
     integer(kind=kint) :: kinematics
     logical :: finite_rotation, use_director_tangent, use_green_lagrange
     logical :: add_geometric_stiffness, update_state
+    real(kind=kreal), allocatable :: coordsys(:, :)
     real(kind=kreal) :: elem(3, nn), shell_disp(6, nn)
     real(kind=kreal) :: v1(3, nn), v2(3, nn), v3(3, nn)
     real(kind=kreal) :: director(3, nn), reference_director(3, nn)
@@ -2228,6 +2256,7 @@ contains
     director_second_tangent = 0.0D0
     ndof_shell = min(ndof, 6)
     if( present(nddisp) ) shell_disp(1:ndof_shell, :) = nddisp(1:ndof_shell, :)
+    call ShellMITC_SetupOrientation(cdsys_ID, coords, coordsys)
 
     call ShellMITC_ResolveFormulation(etype, nn, ndof, gausses(1), present(nddisp), &
       present(element), .true., kinematics, ndof_shell, finite_rotation, &
@@ -2250,7 +2279,7 @@ contains
         finite_rotation, use_director_tangent, use_green_lagrange, &
         add_geometric_stiffness, ecoord, elem, shell_disp, gausses, element, &
         v1, v2, v3, director, reference_director, director_tangent, &
-        director_second_tangent, nodal_kinematic_dofs, nddrill, stiff_work)
+        director_second_tangent, nodal_kinematic_dofs, nddrill, stiff_work, coordsys)
     end do
 
     stiff(1:nn*ndof, 1:nn*ndof) = stiff_work
@@ -2258,7 +2287,7 @@ contains
   end subroutine STF_Shell_MITC
 
   subroutine STF_Shell_MITC33(etype, nn, ndof, ecoord, u, u_prev, gausses, stiff, thick, mixflag, &
-      element, ndtriad, ndreftriad, ndcurtriad, nddrill)
+      element, ndtriad, ndreftriad, ndcurtriad, nddrill, cdsys_ID, coords)
     use mMechGauss
     implicit none
 
@@ -2268,6 +2297,8 @@ contains
     real(kind=kreal), intent(out) :: stiff(:, :)
     type(tElement), intent(in) :: element
     real(kind=kreal), intent(in) :: ndtriad(9, nn), ndreftriad(9, nn), ndcurtriad(9, nn), nddrill(nn)
+    integer(kind=kint), intent(in), optional :: cdsys_ID
+    real(kind=kreal), intent(inout), optional :: coords(3, 3)
 
     integer :: i, sstable(ndof*nn)
     real(kind=kreal) :: mixed_disp(ndof*nn), mixed_prev(ndof*nn)
@@ -2298,14 +2329,15 @@ contains
 
     call STF_Shell_MITC(etype, nn, ndof, ecoord, gausses, stiff, thick, mixflag, &
       nddisp=shell_disp, element=element, ndtriad=ndtriad, ndreftriad=ndreftriad, &
-      ndcurtriad=ndcurtriad, nddrill=nddrill)
+      ndcurtriad=ndcurtriad, nddrill=nddrill, cdsys_ID=cdsys_ID, coords=coords)
   end subroutine STF_Shell_MITC33
 
   !--------------------------------------------------------------------
   !> Evaluate MITC shell stress and strain for result output.
   subroutine ElementStress_Shell_MITC(etype, nn, ndof, ecoord, gausses, edisp, &
       strain, stress, thick, zeta, n_layer, surface_gauss_points, &
-      local_strain, local_stress, local_stress_override, ndtriad, ndreftriad, ndbase_disp, surface_gauss_index)
+      local_strain, local_stress, local_stress_override, ndtriad, ndreftriad, ndbase_disp, surface_gauss_index, &
+      cdsys_ID, coords)
     use mMechGauss
     use mMaterial, only: UPDATELAG
     implicit none
@@ -2324,12 +2356,15 @@ contains
     !> The director itself (0.5*thick*e3) is computed inside ShellMITC_SetupNodalDirectors.
     real(kind=kreal), intent(in), optional :: ndtriad(9, nn), ndreftriad(9, nn)
     real(kind=kreal), intent(in), optional :: ndbase_disp(6, nn)
+    integer(kind=kint), intent(in), optional :: cdsys_ID
+    real(kind=kreal), intent(inout), optional :: coords(3, 3)    !< variables to define material coordinate system
 
     integer :: lx, ip, npoints
     integer(kind=kint) :: ierr_quad, kinematics, ndof_shell
     logical :: finite_rotation, use_director_tangent, use_green_lagrange
     logical :: add_geometric_stiffness, update_state, use_surface_gauss, use_override
     type(tGaussStatus), target :: gauss_work
+    real(kind=kreal), allocatable :: coordsys(:, :)
     real(kind=kreal) :: elem(3, nn), naturalcoord(2), nncoord(nn, 2), zeta_ly
     real(kind=kreal) :: director(3, nn), director_increment(3, nn)
     real(kind=kreal) :: v1(3, nn), v2(3, nn), v3(3, nn)
@@ -2342,6 +2377,8 @@ contains
     real(kind=kreal) :: material_local_basis(3, 3), material_reciprocal_basis(3, 3)
     real(kind=kreal) :: reference_basis(3, 3), current_basis(3, 3)
     real(kind=kreal) :: reference_jacobian, current_jacobian
+
+    call ShellMITC_SetupOrientation(cdsys_ID, coords, coordsys)
 
     use_surface_gauss = .false.
     if( present(surface_gauss_points) ) use_surface_gauss = surface_gauss_points
@@ -2399,7 +2436,7 @@ contains
       else
         gauss_work = gausses(ip)
         call ShellMITC_UpdateStress(etype, nn, kinematics, update_state, gauss_work, n_layer, &
-          point_strain, material_local_basis, material_reciprocal_basis, point_stress, alpha)
+          point_strain, material_local_basis, material_reciprocal_basis, point_stress, alpha, coordsys)
       endif
 
       call ShellStressVectorToTensor(point_stress, stress_tensor)
@@ -2433,6 +2470,7 @@ contains
     real(kind=kreal) :: covariant_basis(3, 3), normal_jac(3), N(3, ndof*nn)
     real(kind=kreal) :: body_force(3), position(3), origin(3), axis(3), radial(3)
     real(kind=kreal) :: val, zeta, surface_weight, thickness_weight, integration_weight, projection
+    real(kind=kreal) :: layer_weight
 
     nsize = ndof*nn
     vect(1:nsize) = 0.0D0
@@ -2461,6 +2499,7 @@ contains
       call ShellMITC_SetupReferenceDirectors(etype, nn, thick, elem, v1, v2, v3, director)
       nlayer = gausses(1)%pMaterial%totallyr
       do ilayer = 1, nlayer
+        layer_weight = gausses(1)%pMaterial%shell_var(ilayer)%weight
         do ly = 1, ny
           call fstr_shell_layer_quadrature_gauss(etype, gausses(1), ilayer, ly, zeta, thickness_weight, ierr_quad)
           if (ierr_quad /= 0) cycle
@@ -2470,7 +2509,7 @@ contains
             call getShapeFunc(etype, naturalcoord, shapefunc)
             call getShapeDeriv(etype, naturalcoord, shapederiv)
             call ShellMITC_CovariantBasis(nn, elem, director, zeta, shapefunc, shapederiv, covariant_basis)
-            integration_weight = surface_weight*thickness_weight *ShellMITC_CovariantJacobian(covariant_basis)
+            integration_weight = surface_weight*thickness_weight *ShellMITC_CovariantJacobian(covariant_basis)*layer_weight
             call ShellMITC_BuildInterpolationMatrix(nn, ndof, zeta, shapefunc, director, N)
 
             body_force = 0.0D0
@@ -2524,7 +2563,7 @@ contains
 
   !> Update shell stress and assemble the equivalent nodal force.
   subroutine UPDATE_Shell_MITC(etype, nn, ndof, ecoord, u, du, gausses, qf, thick, mixflag, &
-      nddisp, element, ndtriad, ndreftriad, ndcurtriad, nddrill)
+      nddisp, element, ndtriad, ndreftriad, ndcurtriad, nddrill, cdsys_ID, coords)
 
     use mMechGauss
     use mMaterial, only: UPDATELAG
@@ -2540,11 +2579,14 @@ contains
     !> The director itself (0.5*thick*e3) is computed inside this routine.
     real(kind=kreal), intent(in), optional :: ndtriad(9, nn), ndreftriad(9, nn)
     real(kind=kreal), intent(in), optional :: ndcurtriad(9, nn), nddrill(nn)
+    integer(kind=kint), intent(in), optional :: cdsys_ID
+    real(kind=kreal), intent(inout), optional :: coords(3, 3)    !< variables to define material coordinate system
 
     integer :: ndof_shell, nb, ilayer, nlayer
     integer(kind=kint) :: kinematics
     logical :: finite_rotation, use_director_tangent, use_green_lagrange
     logical :: add_geometric_stiffness, update_state
+    real(kind=kreal), allocatable :: coordsys(:, :)
     real(kind=kreal) :: total_nodal_state(6, nn), strain_nodal_state(6, nn)
     real(kind=kreal) :: step_base_nodal_state(6, nn)
     real(kind=kreal) :: nodal_kinematic_dofs(ndof*nn), qf_work(ndof*nn)
@@ -2554,6 +2596,8 @@ contains
     real(kind=kreal) :: director_tangent(3, 3, nn)
     real(kind=kreal) :: director_second_tangent(3, 3, 3, nn)
     real(kind=kreal) :: stress_director(3, nn), stress_director_increment(3, nn)
+
+    call ShellMITC_SetupOrientation(cdsys_ID, coords, coordsys)
 
     call ShellMITC_ResolveFormulation(etype, nn, ndof, gausses(1), .true., present(element), &
       .true., kinematics, ndof_shell, finite_rotation, use_director_tangent, &
@@ -2602,7 +2646,7 @@ contains
         finite_rotation, use_director_tangent, use_green_lagrange, update_state, &
         ecoord, evaluation_coords, total_nodal_state, strain_nodal_state, gausses, element, &
         v1, v2, v3, director, reference_director, director_tangent, stress_elem, &
-        stress_director, stress_director_increment, nodal_kinematic_dofs, nddrill, qf_work)
+        stress_director, stress_director_increment, nodal_kinematic_dofs, nddrill, qf_work, coordsys)
     end do
 
     qf(1:ndof*nn) = qf_work
@@ -2611,7 +2655,7 @@ contains
 
   !> Shell adapter for the split translational/rotational node layout.
   subroutine UPDATE_Shell_MITC33(etype, nn, ndof, ecoord, u, du, gausses, qf, thick, mixflag, &
-      nddisp, element, ndtriad, ndreftriad, ndcurtriad, nddrill)
+      nddisp, element, ndtriad, ndreftriad, ndcurtriad, nddrill, cdsys_ID, coords)
 
     use mMechGauss
     implicit none
@@ -2623,6 +2667,8 @@ contains
     real(kind=kreal), intent(in), optional :: nddisp(3, nn)
     type(tElement), intent(inout), optional :: element
     real(kind=kreal), intent(in), optional :: ndtriad(9, nn), ndreftriad(9, nn), ndcurtriad(9, nn), nddrill(nn)
+    integer(kind=kint), intent(in), optional :: cdsys_ID
+    real(kind=kreal), intent(inout), optional :: coords(3, 3)
 
     integer :: i, sstable(ndof*nn)
     real(kind=kreal) :: mixed_u(ndof*nn), mixed_du(ndof*nn)
@@ -2655,20 +2701,21 @@ contains
         shell_nddisp(1:3, :) = nddisp
         call UPDATE_Shell_MITC(etype, nn, ndof, ecoord, shell_u, shell_du, gausses, qf, thick, mixflag, &
           nddisp=shell_nddisp, element=element, ndtriad=ndtriad, ndreftriad=ndreftriad, &
-          ndcurtriad=ndcurtriad, nddrill=nddrill)
+          ndcurtriad=ndcurtriad, nddrill=nddrill, cdsys_ID=cdsys_ID, coords=coords)
       else
         call UPDATE_Shell_MITC(etype, nn, ndof, ecoord, shell_u, shell_du, gausses, qf, thick, mixflag, &
           element=element, ndtriad=ndtriad, ndreftriad=ndreftriad, &
-          ndcurtriad=ndcurtriad, nddrill=nddrill)
+          ndcurtriad=ndcurtriad, nddrill=nddrill, cdsys_ID=cdsys_ID, coords=coords)
       endif
     else
       if( present(nddisp) ) then
         shell_nddisp = shell_u+shell_du
         shell_nddisp(1:3, :) = nddisp
         call UPDATE_Shell_MITC(etype, nn, ndof, ecoord, shell_u, shell_du, gausses, qf, thick, mixflag, &
-          nddisp=shell_nddisp)
+          nddisp=shell_nddisp, cdsys_ID=cdsys_ID, coords=coords)
       else
-        call UPDATE_Shell_MITC(etype, nn, ndof, ecoord, shell_u, shell_du, gausses, qf, thick, mixflag)
+        call UPDATE_Shell_MITC(etype, nn, ndof, ecoord, shell_u, shell_du, gausses, qf, thick, mixflag, &
+          cdsys_ID=cdsys_ID, coords=coords)
       endif
     endif
   end subroutine UPDATE_Shell_MITC33
