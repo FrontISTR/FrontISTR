@@ -433,24 +433,24 @@ contains
         stiff_mat(1:nn*ndof,1:nn*ndof), thick, 0, nddisp=u(1:ndof,1:nn), &
         element=fstrSOLID%elements(icel), ndtriad=triad_tri(1:9,1:nn), &
         ndreftriad=triad_ref(1:9,1:nn), &
-        ndcurtriad=triad_cur(1:9,1:nn), nddrill=shell_drill(1:nn))
+        ndcurtriad=triad_cur(1:9,1:nn), nddrill=shell_drill(1:nn), cdsys_ID=cdsys_ID, coords=coords)
 
     else if( ic_type == 761 ) then   ! for shell-solid mixed analysis
       if( material%nlgeom_flag == INFINITESIMAL ) then
         call STF_Shell_MITC(731, 3, 6, ecoord(1:3,1:3), fstrSOLID%elements(icel)%gausses(:), &
-          stiff_mat(1:nn*ndof,1:nn*ndof), thick, 2)
+          stiff_mat(1:nn*ndof,1:nn*ndof), thick, 2, cdsys_ID=cdsys_ID, coords=coords)
       else
         call STF_Shell_MITC33(731, 3, 6, ecoord(1:3,1:3), u(1:3,1:6), u_prev(1:3,1:6), &
           fstrSOLID%elements(icel)%gausses(:), stiff_mat(1:nn*ndof,1:nn*ndof), thick, 2, &
           fstrSOLID%elements(icel), triad_tri(1:9,1:3), triad_ref(1:9,1:3), &
-          triad_cur(1:9,1:3), shell_drill(1:3))
+          triad_cur(1:9,1:3), shell_drill(1:3), cdsys_ID=cdsys_ID, coords=coords)
       endif
 
     else if( ic_type == 781 ) then   ! for shell-solid mixed analysis
       call STF_Shell_MITC33(741, 4, 6, ecoord(1:3,1:4), u(1:3,1:8), u_prev(1:3,1:8), &
         fstrSOLID%elements(icel)%gausses(:), stiff_mat(1:nn*ndof,1:nn*ndof), thick, 1, &
         fstrSOLID%elements(icel), triad_tri(1:9,1:4), triad_ref(1:9,1:4), &
-        triad_cur(1:9,1:4), shell_drill(1:4))
+        triad_cur(1:9,1:4), shell_drill(1:4), cdsys_ID=cdsys_ID, coords=coords)
 
     elseif( ic_type==3414 ) then
       if( material%mtype /= INCOMP_NEWTONIAN ) call CreateMat_abort( ic_type, 3, material%mtype )

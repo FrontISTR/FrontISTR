@@ -192,7 +192,7 @@ contains
   subroutine LinearElastic_Shell                     &
       (matl, sectType, c,                     &
       e1_hat, e2_hat, e3_hat, cg1, cg2, cg3, &
-      alpha, n_layer)
+      alpha, n_layer, cdsys)
     !####################################################################
 
     type( tMaterial ), intent(in)   :: matl
@@ -201,6 +201,7 @@ contains
     real(kind = kreal), intent(in)  :: e1_hat(3), e2_hat(3), e3_hat(3) !< local Orthonormal frame
     real(kind = kreal), intent(in)  :: cg1(3), cg2(3), cg3(3)            !< contravaraint frame
     real(kind = kreal), intent(out) :: alpha
+    real(kind = kreal), intent(in), optional :: cdsys(3, 3)
 
     !--------------------------------------------------------------------
 
@@ -210,6 +211,8 @@ contains
     real(kind = kreal) :: c_hat(3, 3, 3, 3), D(5,5), D_hat(5,5), D_temp(5,5), T(5,5)
     real(kind = kreal) :: e_hat_dot_cg(3, 3)
     real(kind = kreal) :: alpha_over_mu
+    real(kind = kreal) :: v_ref(3), v_proj(3), v_proj_abs
+    real(kind = kreal) :: v_ref_y(3), v_sense
 
     integer :: index_i(5), index_j(5), index_k(5), index_l(5)
     integer :: is, js, ii, ij, ik, il
@@ -293,6 +296,17 @@ contains
       g31 = matl%shell_var(n_layer)%g31
       theta = matl%shell_var(n_layer)%angle
 
+      v_ref = 0.0D0
+      v_ref_y = 0.0D0
+      if( present(cdsys) ) v_ref(1:3) = cdsys(1, 1:3)
+      if( present(cdsys) ) v_ref_y(1:3) = cdsys(2, 1:3)
+      v_proj(1:3) = v_ref(1:3) - dot_product(v_ref, e3_hat) * e3_hat(1:3)
+      v_proj_abs = dsqrt( dot_product(v_proj, v_proj) )
+      v_sense = dot_product(v_proj, e1_hat) * dot_product(v_ref_y, e2_hat) &
+        - dot_product(v_proj, e2_hat) * dot_product(v_ref_y, e1_hat)
+      theta = sign(1.0D0, v_sense) * theta &
+        + datan2( dot_product(v_proj, e2_hat), dot_product(v_proj, e1_hat) )
+
       alpha_over_mu = matl%variables(M_ALPHA_OVER_MU)
 
       !--------------------------------------------------------------------
@@ -333,8 +347,8 @@ contains
       T(3,1) = -2.0D0 * sin(theta) * cos(theta)
       T(3,2) =  2.0D0 * sin(theta) * cos(theta)
       T(4,4) = cos(theta)
-      T(4,5) = sin(theta)
-      T(5,4) = -sin(theta)
+      T(4,5) = -sin(theta)
+      T(5,4) = sin(theta)
       T(5,5) = cos(theta)
 
       !--------------------- D_temp = [D]*[T]

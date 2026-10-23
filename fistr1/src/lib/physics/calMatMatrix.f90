@@ -218,7 +218,7 @@ contains
   subroutine MatlMatrix_Shell                        &
       (gauss, sectType, D,                    &
       e1_hat, e2_hat, e3_hat, cg1, cg2, cg3, &
-      alpha, n_layer)
+      alpha, n_layer, cdsys)
     !####################################################################
 
     type(tGaussStatus), intent(in)  :: gauss
@@ -227,6 +227,7 @@ contains
     real(kind = kreal), intent(in)  :: e1_hat(3), e2_hat(3), e3_hat(3)
     real(kind = kreal), intent(in)  :: cg1(3), cg2(3), cg3(3)
     real(kind = kreal), intent(out) :: alpha
+    real(kind = kreal), intent(in), optional :: cdsys(3, 3)
 
     !--------------------------------------------------------------------
 
@@ -243,7 +244,7 @@ contains
       call LinearElastic_Shell                     &
         (matl, sectType, c,                     &
         e1_hat, e2_hat, e3_hat, cg1, cg2, cg3, &
-        alpha, n_layer)
+        alpha, n_layer, cdsys)
 
       call mat_c2d_Shell(c, D, sectType)
     else

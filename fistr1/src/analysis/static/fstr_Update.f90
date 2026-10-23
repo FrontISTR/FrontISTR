@@ -244,24 +244,28 @@ contains
             du(1:ndof,1:nn), fstrSOLID%elements(icel)%gausses(:), qf(1:nn*ndof), thick, 0, &
             element=fstrSOLID%elements(icel), ndtriad=triad_tri(1:9,1:nn), &
             ndreftriad=triad_ref(1:9,1:nn), &
-            ndcurtriad=triad_cur(1:9,1:nn), nddrill=shell_drill(1:nn))
+            ndcurtriad=triad_cur(1:9,1:nn), nddrill=shell_drill(1:nn), &
+            cdsys_ID=cdsys_ID, coords=coords)
 
         else if( ic_type == 761 ) then   !for shell-solid mixed analysis
           if( fstrPARAM%nlgeom ) then
             call UPDATE_Shell_MITC33(731, 3, 6, ecoord(1:3, 1:3), total_disp(1:ndof,1:nn), du(1:ndof,1:nn), &
               fstrSOLID%elements(icel)%gausses(:), qf(1:nn*ndof), thick, 2, &
               element=fstrSOLID%elements(icel), ndtriad=triad_tri(1:9,1:3), &
-              ndreftriad=triad_ref(1:9,1:3), ndcurtriad=triad_cur(1:9,1:3), nddrill=shell_drill(1:3))
+              ndreftriad=triad_ref(1:9,1:3), ndcurtriad=triad_cur(1:9,1:3), nddrill=shell_drill(1:3), &
+              cdsys_ID=cdsys_ID, coords=coords)
           else
             call UPDATE_Shell_MITC33(731, 3, 6, ecoord(1:3, 1:3), total_disp(1:ndof,1:nn), du(1:ndof,1:nn), &
-              fstrSOLID%elements(icel)%gausses(:), qf(1:nn*ndof), thick, 2)
+              fstrSOLID%elements(icel)%gausses(:), qf(1:nn*ndof), thick, 2, &
+              cdsys_ID=cdsys_ID, coords=coords)
           endif
 
         else if( ic_type == 781 ) then   !for shell-solid mixed analysis
           call UPDATE_Shell_MITC33(741, 4, 6, ecoord(1:3, 1:4), total_disp(1:ndof,1:nn), du(1:ndof,1:nn), &
             fstrSOLID%elements(icel)%gausses(:), qf(1:nn*ndof), thick, 1, &
             element=fstrSOLID%elements(icel), ndtriad=triad_tri(1:9,1:4), &
-            ndreftriad=triad_ref(1:9,1:4), ndcurtriad=triad_cur(1:9,1:4), nddrill=shell_drill(1:4))
+            ndreftriad=triad_ref(1:9,1:4), ndcurtriad=triad_cur(1:9,1:4), nddrill=shell_drill(1:4), &
+            cdsys_ID=cdsys_ID, coords=coords)
 
         else if ( ic_type == 3414 ) then
           if(fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype /= INCOMP_NEWTONIAN) &
