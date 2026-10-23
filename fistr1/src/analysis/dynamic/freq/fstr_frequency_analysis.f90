@@ -8,6 +8,7 @@ module fstr_frequency_analysis
   use m_fstr
   use m_fstr_CreateMatrix_and_DampingForce
   use m_fstr_AddBC
+  use m_fstr_spring
   use m_fstr_EIG_setMASS
   use m_fstr_NodalKinematics
   use m_fstr_Update
@@ -17,6 +18,7 @@ module fstr_frequency_analysis
   use m_hecmw2fstr_mesh_conv
   use hecmw_setup_util, only: node_global_to_local
   use hecmw_ebc_defer
+  use m_solve_LINEQ !for the quasi-static displacement of !FACCELERATION
 
   implicit none
 
@@ -51,8 +53,12 @@ contains
     real(kind=kreal), allocatable :: eigenvalue(:), loadvecRe(:), loadvecIm(:)
     real(kind=kreal), allocatable :: bjre(:), bjim(:)
     real(kind=kreal), allocatable :: dispRe(:), dispIm(:), velRe(:), velIm(:), accRe(:), accIm(:)
+    real(kind=kreal), allocatable :: usRe(:), usIm(:)           !quasi-static displacement of !FACCELERATION
+    real(kind=kreal), allocatable :: totloadRe(:), totloadIm(:) !!FLOAD plus the load of !FACCELERATION
     real(kind=kreal)              :: freq, omega, val, dx, dy, dz, f_start, f_end
     real(kind=kreal)              :: t_start, t_end, time, dxi, dyi, dzi
+    complex(kind=kreal)           :: eiwt  !exp(i*omega*time)
+    logical                       :: isacc !.true. if !FACCELERATION is given
     type(fstr_freqanalysis_data)  :: freqData
 
     numnode   = hecMESH%n_node
@@ -105,9 +111,15 @@ contains
     allocate(velIm(numnode*ndof))
     allocate(accRe(numnode*ndof))
     allocate(accIm(numnode*ndof))
+    allocate(usRe(numnode*ndof))
+    allocate(usIm(numnode*ndof))
+    allocate(totloadRe(numnode*ndof))
+    allocate(totloadIm(numnode*ndof))
 
     loadvecRe(:) = 0.0D0
     loadvecIm(:) = 0.0D0
+    usRe(:)      = 0.0D0
+    usIm(:)      = 0.0D0
 
     if( myrank == 0 ) then
       write(*,*) "--frequency analysis--"
@@ -132,6 +144,21 @@ contains
     call extract_surf2node(hecMESH, fstrFREQ, ndof, loadvecRe, loadvecIm)
     call assemble_nodeload(hecMESH, fstrFREQ, ndof, loadvecRe, loadvecIm)
 
+    !acceleration input (relative motion method)
+    !  the displacement is u = -us/omega^2 + (relative response by the modes), where us is
+    !  the quasi-static displacement with the acceleration amplitude given as the displacement
+    !  of the excited DOFs.
+    !  without !FACCELERATION, the analysis follows the same path as before.
+    isacc = fstrFREQ%FACC_ngrp_tot > 0
+    if( isacc ) then
+      !the modes must be fixed at the excited DOFs
+      call checkAccelerationDOF(hecMESH, fstrFREQ, freqData)
+      if( myrank == 0 ) write(*,*) "calc quasi-static displacement of acceleration input"
+      !us for the real part (LOAD CASE=1) and the imaginary part (LOAD CASE=2) of the amplitude
+      call calcQuasiStaticDisp(hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrFREQ, hecLagMAT, kFLOADCASE_RE, usRe)
+      call calcQuasiStaticDisp(hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrFREQ, hecLagMAT, kFLOADCASE_IM, usIm)
+    end if
+
     if( myrank == 0 ) write(*,*) "calc mass matrix"
     call calcMassMatrix(fstrPARAM, hecMESH, hecMAT, fstrSOLID, fstrEIG, hecLagMAT)
     if( myrank == 0 ) write(*,*) "scale eigenvector"
@@ -152,10 +179,21 @@ contains
       freq = (f_end-f_start)/dble(numfreq)*dble(im) + f_start
       omega = 2.0D0 * 3.14159265358979D0 * freq
 
-      call calcFreqCoeff(hecMESH, freqData, loadvecRe, loadvecIm, omega, bjRe, bjIm)
+      !load of the relative response: !FLOAD plus the load of !FACCELERATION, which depends on omega
+      totloadRe(:) = loadvecRe(:)
+      totloadIm(:) = loadvecIm(:)
+      if( isacc ) call addAccelerationLoad(fstrEIG, freqData, omega, usRe, usIm, totloadRe, totloadIm)
+      call calcFreqCoeff(hecMESH, freqData, totloadRe, totloadIm, omega, bjRe, bjIm)
       call calcDispVector(freqData, bjRe, bjIm, dispRe, dispIm)
       call calcVelVector(freqData, omega, bjRe, bjIm, velRe, velIm)
       call calcAccVector(freqData, omega, bjRe, bjIm, accRe, accIm)
+      !absolute response: add the quasi-static part
+      !  disp: -us/omega^2, vel: -i*us/omega, acc: us
+      if( isacc ) then
+        call addQuasiStaticVector(dcmplx(-1.0D0/omega**2, 0.0D0), usRe, usIm, dispRe, dispIm)
+        call addQuasiStaticVector(dcmplx(0.0D0, -1.0D0/omega), usRe, usIm, velRe, velIm)
+        call addQuasiStaticVector(dcmplx(1.0D0, 0.0D0), usRe, usIm, accRe, accIm)
+      end if
 
       if( imonit > 0 ) then
         dx  = sqrt(dispRe(3*(imonit-1)+1)**2 + dispIm(3*(imonit-1)+1)**2)
@@ -195,14 +233,34 @@ contains
       write(ilog,*) "num disp:", numdisp
     end if
 
+    !the quasi-static part of the displacement and the velocity is divided by omega
+    if( isacc .and. freq <= 0.0D0 ) then
+      if( myrank == 0 ) then
+        write(*,   *) "Error: !FACCELERATION requires a positive frequency for the time history output"
+        write(ilog,*) "Error: !FACCELERATION requires a positive frequency for the time history output"
+      end if
+      call hecmw_abort( hecmw_comm_get_comm() )
+    end if
+
     omega = 2.0D0 * 3.14159265358979D0 * freq
-    call calcFreqCoeff(hecMESH, freqData, loadvecRe, loadvecIm, omega, bjRe, bjIm)
+    !load of the relative response at the frequency of the time history output
+    totloadRe(:) = loadvecRe(:)
+    totloadIm(:) = loadvecIm(:)
+    if( isacc ) call addAccelerationLoad(fstrEIG, freqData, omega, usRe, usIm, totloadRe, totloadIm)
+    call calcFreqCoeff(hecMESH, freqData, totloadRe, totloadIm, omega, bjRe, bjIm)
 
     do im=1, numdisp
       time = (t_end-t_start)/dble(numdisp)*dble(im-1) + t_start
       call calcDispVectorTime(freqData, time, omega, bjRe, bjIm, dispRe, dispIm)
       call calcVelVectorTime(freqData, time, omega, bjRe, bjIm, velRe, velIm)
       call calcAccVectorTime(freqData, time, omega, bjRe, bjIm, accRe, accIm)
+      !absolute response: add the quasi-static part multiplied by exp(i*omega*time)
+      if( isacc ) then
+        eiwt = exp(dcmplx(0.0D0, omega*time))
+        call addQuasiStaticVector(eiwt*dcmplx(-1.0D0/omega**2, 0.0D0), usRe, usIm, dispRe, dispIm)
+        call addQuasiStaticVector(eiwt*dcmplx(0.0D0, -1.0D0/omega), usRe, usIm, velRe, velIm)
+        call addQuasiStaticVector(eiwt, usRe, usIm, accRe, accIm)
+      end if
       if( imonit > 0 ) then
         dx  = dispRe(3*(imonit-1)+1)
         dy  = dispRe(3*(imonit-1)+2)
@@ -240,6 +298,10 @@ contains
     deallocate(velIm)
     deallocate(accRe)
     deallocate(accIm)
+    deallocate(usRe)
+    deallocate(usIm)
+    deallocate(totloadRe)
+    deallocate(totloadIm)
 
   end subroutine
 
@@ -708,6 +770,139 @@ contains
 
   end subroutine
 
+  !
+  ! The response to the acceleration input is the quasi-static displacement us, which
+  ! satisfies K us = 0 with the input amplitude on the excited DOFs and zero on the other
+  ! constrained DOFs, plus the relative response expanded by the modes fixed at the
+  ! excited DOFs. us is computed for the part of the amplitude selected by loadcase.
+  !
+  subroutine calcQuasiStaticDisp(hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrFREQ, hecLagMAT, loadcase, us)
+    !---- args
+    type(hecmwST_local_mesh)             :: hecMESH
+    type(hecmwST_matrix)                 :: hecMAT
+    type(fstr_solid)                     :: fstrSOLID
+    type(fstr_param)                     :: fstrPARAM
+    type(fstr_freqanalysis), intent(in)  :: fstrFREQ
+    type(hecmwST_matrix_lagrange)        :: hecLagMAT
+    integer(kind=kint), intent(in)       :: loadcase
+    real(kind=kreal), intent(inout)      :: us(:) !intend (numnodeDOF)
+    !---- vals
+    type(hecmwST_local_mesh), pointer :: hecMESHmpc
+    type(hecmwST_matrix), pointer     :: hecMATmpc
+    type(hecmwST_ebc)                 :: hecEBC
+    integer(kind=kint)                :: ndof, ntotal, i, ig, ik, in, idof, idofS, idofE
+    real(kind=kreal)                  :: val(fstrFREQ%FACC_ngrp_tot) !amplitude of each entry
+    !---- body
+
+    ndof   = hecMESH%n_dof
+    ntotal = ndof*hecMESH%n_node
+    us(:)  = 0.0D0
+
+    !amplitude of each entry for the part selected by loadcase
+    if( loadcase == kFLOADCASE_RE ) then
+      val(:) = fstrFREQ%FACC_ngrp_valre(1:fstrFREQ%FACC_ngrp_tot)
+    else
+      val(:) = fstrFREQ%FACC_ngrp_valim(1:fstrFREQ%FACC_ngrp_tot)
+    end if
+    !us = 0 without solving if this part of the amplitude is zero
+    if( maxval(abs(val)) <= 0.0D0 ) return
+
+    !the following steps are the same as those of the linear static analysis (fstr_Newton)
+    call hecmw_mpc_mat_init(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
+
+    !stiffness matrix at the initial state
+    fstrSOLID%dunode = 0.d0
+    call fstr_CreateMatrix_and_DampingForce( hecMESH, hecMAT, fstrSOLID, 0.d0, 0.d0 )
+    !!SPRING: the same stiffness as the eigen analysis (fstr_solve_eigen)
+    call fstr_AddSPRING(1, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
+    !no external force
+    call hecmw_mat_clear_b(hecMAT)
+    !!BOUNDARY: iter=2 gives the constrained DOFs with zero displacement
+    call hecmw_ebc_init(hecMAT, hecEBC)
+    call fstr_AddBC(1, hecMESH, hecMAT, fstrSOLID, fstrPARAM, hecLagMAT, 2, hecEBC)
+    !!FACCELERATION: the amplitude is given as the displacement of the excited DOFs.
+    !it overwrites the value of !BOUNDARY on the same DOF.
+    do i=1, fstrFREQ%FACC_ngrp_tot
+      ig    = fstrFREQ%FACC_ngrp_ID(i)
+      !decode 10*dof_start + dof_end
+      idofS = fstrFREQ%FACC_ngrp_type(i)/10
+      idofE = fstrFREQ%FACC_ngrp_type(i) - idofS*10
+      !all nodes of the group, including the external nodes
+      do ik=hecMESH%node_group%grp_index(ig-1)+1, hecMESH%node_group%grp_index(ig)
+        in = hecMESH%node_group%grp_item(ik)
+        do idof=idofS, idofE
+          call hecmw_ebc_set(hecEBC, in, idof, val(i))
+        end do
+      end do
+    end do
+    !apply the MPC and the prescribed displacements to the matrix and the right hand side
+    call hecmw_mpc_mat_ass(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
+    call hecmw_mpc_trans_rhs(hecMESH, hecMAT, hecMATmpc)
+    call hecmw_ebc_apply(hecMESHmpc, hecMATmpc, hecEBC)
+
+    !solve K us = 0
+    hecMATmpc%Iarray(98) = 1 !need symbolic setup of the solver
+    hecMATmpc%Iarray(97) = 1 !need numerical setup of the solver
+    hecMATmpc%X = 0.0D0
+    call solve_LINEQ(hecMESHmpc, hecMATmpc)
+    call hecmw_mpc_tback_sol(hecMESH, hecMAT, hecMATmpc)
+    !values of the external nodes
+    call hecmw_update_R(hecMESH, hecMAT%X, hecMAT%NP, ndof)
+    us(1:ntotal) = hecMAT%X(1:ntotal)
+
+    call hecmw_ebc_finalize(hecEBC)
+    call hecmw_mpc_mat_finalize(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
+  end subroutine
+
+  !
+  ! The modes must vanish on the excited DOFs, i.e. the eigen analysis must constrain them.
+  ! Otherwise the relative response would move the excited DOFs and their acceleration
+  ! would differ from the input. Stop with an error in that case.
+  !
+  subroutine checkAccelerationDOF(hecMESH, fstrFREQ, freqData)
+    !---- args
+    type(hecmwST_local_mesh), intent(in)     :: hecMESH
+    type(fstr_freqanalysis), intent(in)      :: fstrFREQ
+    type(fstr_freqanalysis_data), intent(in) :: freqData
+    !---- vals
+    real(kind=kreal), parameter :: tol = 1.0D-8 !relative to the largest component of the mode
+    integer(kind=kint)          :: ndof, i, ig, ik, in, idof, idofS, idofE, imode, nerr
+    real(kind=kreal)            :: vmax
+    !---- body
+
+    ndof = hecMESH%n_dof
+    nerr = 0
+    do imode=1, freqData%numMode
+      !largest component of the mode over all ranks, used as the scale of the tolerance
+      vmax = maxval(abs(freqData%eigVector(1:hecMESH%nn_internal*ndof, imode)))
+      call hecmw_allreduce_R1(hecMESH, vmax, hecmw_max)
+      do i=1, fstrFREQ%FACC_ngrp_tot
+        ig    = fstrFREQ%FACC_ngrp_ID(i)
+        !decode 10*dof_start + dof_end (DOFs beyond ndof are not checked)
+        idofS = fstrFREQ%FACC_ngrp_type(i)/10
+        idofE = min(fstrFREQ%FACC_ngrp_type(i) - idofS*10, ndof)
+        do ik=hecMESH%node_group%grp_index(ig-1)+1, hecMESH%node_group%grp_index(ig)
+          in = hecMESH%node_group%grp_item(ik)
+          !each node is checked by the rank that owns it
+          if( in > hecMESH%nn_internal ) cycle
+          do idof=idofS, idofE
+            !count the excited DOFs where the mode does not vanish
+            if( abs(freqData%eigVector(ndof*(in-1)+idof, imode)) > tol*vmax ) nerr = nerr + 1
+          end do
+        end do
+      end do
+    end do
+    !stop on all ranks if any rank has found an error
+    call hecmw_allreduce_I1(hecMESH, nerr, hecmw_sum)
+    if( nerr > 0 ) then
+      if( myrank == 0 ) then
+        write(*,   *) "Error: the DOFs of !FACCELERATION must be constrained in the eigen analysis"
+        write(ilog,*) "Error: the DOFs of !FACCELERATION must be constrained in the eigen analysis"
+      end if
+      call hecmw_abort( hecmw_comm_get_comm() )
+    end if
+  end subroutine
+
   subroutine scaleEigenVector(hecMESH, fstrEIG, ntotaldof, nmode, eigenvector)
     !---- args
     type(hecmwST_local_mesh), intent(in) :: hecMESH
@@ -819,6 +1014,51 @@ contains
       bjIm(imode) = a / b
     end do
     return
+  end subroutine
+
+  !
+  ! The inertia and the mass proportional damping of the quasi-static motion load the
+  ! relative response as -M us (1 - i alpha/omega). The stiffness proportional part
+  ! vanishes on the free DOFs since K us = 0 there.
+  !
+  subroutine addAccelerationLoad(fstrEIG, freqData, omega, usRe, usIm, loadRe, loadIm)
+    !---- args
+    type(fstr_eigen), intent(in)             :: fstrEIG
+    type(fstr_freqanalysis_data), intent(in) :: freqData
+    real(kind=kreal), intent(in)             :: omega
+    real(kind=kreal), intent(in)             :: usRe(:) !intend (numNodeDOF)
+    real(kind=kreal), intent(in)             :: usIm(:) !intend (numNodeDOF)
+    real(kind=kreal), intent(inout)          :: loadRe(:) !intend (numNodeDOF)
+    real(kind=kreal), intent(inout)          :: loadIm(:) !intend (numNodeDOF)
+    !---- vals
+    integer(kind=kint) :: n
+    real(kind=kreal)   :: c
+    !---- body
+
+    n = freqData%numNodeDOF
+    c = freqData%rayAlpha / omega
+    !fstrEIG%mass is the lumped mass (diagonal) computed by calcMassMatrix
+    !real and imaginary parts of -M (usRe + i usIm) (1 - i c)
+    loadRe(1:n) = loadRe(1:n) - fstrEIG%mass(1:n)*(usRe(1:n) + c*usIm(1:n))
+    loadIm(1:n) = loadIm(1:n) - fstrEIG%mass(1:n)*(usIm(1:n) - c*usRe(1:n))
+  end subroutine
+
+  !
+  ! Add coef*us (complex) to the vector vec (complex), i.e. the quasi-static part of
+  ! the displacement, the velocity or the acceleration.
+  !
+  subroutine addQuasiStaticVector(coef, usRe, usIm, vecRe, vecIm)
+    !---- args
+    complex(kind=kreal), intent(in) :: coef
+    real(kind=kreal), intent(in)    :: usRe(:) !intend (numNodeDOF)
+    real(kind=kreal), intent(in)    :: usIm(:) !intend (numNodeDOF)
+    real(kind=kreal), intent(inout) :: vecRe(:) !intend (numNodeDOF)
+    real(kind=kreal), intent(inout) :: vecIm(:) !intend (numNodeDOF)
+    !---- body
+
+    !(coefRe + i coefIm) (usRe + i usIm)
+    vecRe(:) = vecRe(:) + dble(coef)*usRe(:) - aimag(coef)*usIm(:)
+    vecIm(:) = vecIm(:) + dble(coef)*usIm(:) + aimag(coef)*usRe(:)
   end subroutine
 
   subroutine calcDispVector(freqData, bjRe, bjIm, dispRe, dispIm)

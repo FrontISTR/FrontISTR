@@ -180,7 +180,7 @@ as the base configuration so that the effect of the varied condition stays isola
 |:-----------|:-----------------|:------|
 | `element`  | element type     | `FQ341` `FQ342` `FQ351` `FQ352` `FQ361` `FQ362` |
 | `load`     | `!FLOAD`         | `FQL01` real, `FQL02` imaginary, `FQL03` complex on several groups and DOFs, `FQL04` traction on a surface group |
-| `boundary` | `!BOUNDARY`      | `FQB01` cantilever, `FQB02` additional sliding support, `FQB03` both ends fixed |
+| `boundary` | `!BOUNDARY`, `!FACCELERATION` | `FQB01` cantilever, `FQB02` additional sliding support, `FQB03` both ends fixed, `FQB04` acceleration input at the free end, `FQB05` acceleration input at the fixed end |
 | `modal`    | damping and mode range | `FQM01` mass proportional, `FQM02` mass and stiffness proportional, `FQM03` `!EIGENREAD` starting from the 2nd mode |
 | `output`   | `!OUTPUT_RES`    | `FQO01` nodal strain and principal values, `FQO02` elemental values |
 

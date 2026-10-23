@@ -619,6 +619,12 @@ module m_fstr
     integer(kind=kint), pointer       :: FLOAD_ngrp_DOF(:)   => null()
     real(kind=kreal), pointer         :: FLOAD_ngrp_valre(:) => null()
     real(kind=kreal), pointer         :: FLOAD_ngrp_valim(:) => null()
+    !acceleration input given by !FACCELERATION (one entry per data line)
+    integer(kind=kint)                :: FACC_ngrp_tot                 !< number of entries
+    integer(kind=kint), pointer       :: FACC_ngrp_ID(:)     => null() !< node group ID
+    integer(kind=kint), pointer       :: FACC_ngrp_type(:)   => null() !< 10*dof_start + dof_end (same as !ACCELERATION)
+    real(kind=kreal), pointer         :: FACC_ngrp_valre(:)  => null() !< real part of the acceleration amplitude (LOAD CASE=1)
+    real(kind=kreal), pointer         :: FACC_ngrp_valim(:)  => null() !< imaginary part of the acceleration amplitude (LOAD CASE=2)
     character(len=HECMW_FILENAME_LEN) :: eigenlog_filename
     integer(kind=kint)                :: start_mode
     integer(kind=kint)                :: end_mode
@@ -869,6 +875,12 @@ contains
     nullify( f%FLOAD_ngrp_DOF )
     nullify( f%FLOAD_ngrp_valre )
     nullify( f%FLOAD_ngrp_valim )
+    !no acceleration input unless !FACCELERATION is given
+    f%FACC_ngrp_tot = 0
+    nullify( f%FACC_ngrp_ID )
+    nullify( f%FACC_ngrp_type )
+    nullify( f%FACC_ngrp_valre )
+    nullify( f%FACC_ngrp_valim )
   end subroutine fstr_nullify_fstr_freqanalysis
 
   subroutine fstr_nullify_fstr_eigen( E )
