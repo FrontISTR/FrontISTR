@@ -502,7 +502,7 @@ contains
     use m_fstr_NodalStress, only: fstr_get_shell_gauss_output
     implicit none
     type(hecmwST_local_mesh), intent(in) :: hecMESH
-    type(fstr_solid), intent(in) :: fstrSOLID
+    type(fstr_solid), intent(inout) :: fstrSOLID
     character(len=*), intent(in) :: label_suffix
     integer(kind=kint) :: i, k, ngauss, nfield
     real(kind=kreal) :: strain(6), stress(6)
