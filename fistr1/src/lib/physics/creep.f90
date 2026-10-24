@@ -81,13 +81,13 @@ contains
     !
     dstri=dsqrt(1.5d0*(stri(1)*stri(1)+stri(2)*stri(2)+stri(3)*stri(3)+    &
       2.d0*(stri(4)*stri(4)+stri(5)*stri(5)+stri(6)*stri(6))) )
+    if( dstri<1.d-10 ) return
     !
     !     unit trial vector
     !
     stri(:)=sqrt(1.5d0)*stri(:)/dstri
 
     eqvs = dstri
-    if( eqvs<1.d-10 ) eqvs=1.d-10
     f=aa*eqvs**xxn
     df=xxn*f/eqvs
     !
@@ -183,6 +183,11 @@ contains
     !
     dstri=dsqrt(1.5d0*(stri(1)*stri(1)+stri(2)*stri(2)+stri(3)*stri(3)+    &
       2.d0*(stri(4)*stri(4)+stri(5)*stri(5)+stri(6)*stri(6))) )
+    if( dstri<1.d-10 ) then
+      plstrain = 0.d0
+      extval(1) = dstri
+      return
+    endif
     !
     !     determination of the consistency parameter
     !
