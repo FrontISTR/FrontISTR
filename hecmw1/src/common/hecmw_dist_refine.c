@@ -1402,6 +1402,28 @@ static int rebuild_elem_ID(const struct hecmwST_local_mesh *mesh,
   return HECMW_SUCCESS;
 }
 
+/* new IDs are numbered downward from *min_ID; shift the start so that the IDs
+ * of each rank do not overlap with those of the other ranks */
+static int shift_new_global_ID(int *min_ID, int n_new) {
+  HECMW_Comm comm = HECMW_comm_get_comm();
+  int n_proc      = HECMW_comm_get_size();
+  int my_rank     = HECMW_comm_get_rank();
+  int min_ID_g, i;
+  int *n_new_all;
+
+  n_new_all = (int *)HECMW_malloc(sizeof(int) * n_proc);
+  if (n_new_all == NULL) {
+    HECMW_set_error(errno, "");
+    return HECMW_ERROR;
+  }
+  HECMW_Allreduce(min_ID, &min_ID_g, 1, HECMW_INT, HECMW_MIN, comm);
+  HECMW_Allgather(&n_new, 1, HECMW_INT, n_new_all, 1, HECMW_INT, comm);
+  *min_ID = min_ID_g;
+  for (i = 0; i < my_rank; i++) *min_ID -= n_new_all[i];
+  HECMW_free(n_new_all);
+  return HECMW_SUCCESS;
+}
+
 static int rebuild_global_elem_ID(const struct hecmwST_local_mesh *mesh,
                                   struct hecmwST_local_mesh *ref_mesh) {
   int i, j, k;
@@ -1421,6 +1443,10 @@ static int rebuild_global_elem_ID(const struct hecmwST_local_mesh *mesh,
     if (global_elem_ID_org[i] < min_ID)
       min_ID = global_elem_ID_org[i];
   }
+  /* contact search tells master elements of different ranks apart by IDs */
+  if (shift_new_global_ID(&min_ID, ref_mesh->n_elem_gross -
+                                       mesh->n_elem_gross) != HECMW_SUCCESS)
+    return HECMW_ERROR;
   global_elem_ID_ref = ref_mesh->global_elem_ID;
   for (i = 0; i < mesh->n_elem_type; i++) {
     int etype, istart, iend, n_elem, ierror, ndiv;
