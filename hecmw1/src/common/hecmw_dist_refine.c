@@ -808,6 +808,9 @@ static int refine_element(struct hecmwST_local_mesh *mesh,
     istart = mesh->elem_type_index[i];
     iend   = mesh->elem_type_index[i + 1];
     n_elem = iend - istart;
+    /* rcapRefineElement reads the first items of both node arrays even when
+     * there is no element, which can be past the end of the arrays */
+    if (n_elem == 0) continue;
     nn     = HECMW_get_max_node(etype);
     if (HECMW_is_etype_link(etype) || HECMW_is_etype_truss(etype)) {
       n_elem_ref = n_elem;
