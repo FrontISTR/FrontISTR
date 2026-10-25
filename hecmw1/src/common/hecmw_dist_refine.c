@@ -2208,6 +2208,17 @@ static int check_node_rank(const struct hecmwST_local_mesh *mesh,
 
   HECMW_log(HECMW_LOG_DEBUG, "Started check_node_rank...\n");
 
+  /* a rank without neighbors has nothing to check, but has to join the
+   * agreements of the other ranks */
+  if (mesh->n_neighbor_pe == 0) {
+    comm = HECMW_comm_get_comm();
+    HECMW_Allreduce(&n_error, &n_error_g, 1, HECMW_INT, HECMW_SUM, comm);
+    if (n_error_g > 0) return HECMW_ERROR;
+    HECMW_Allreduce(&n_error, &n_error_g, 1, HECMW_INT, HECMW_SUM, comm);
+    if (n_error_g > 0) return HECMW_ERROR;
+    return HECMW_SUCCESS;
+  }
+
   /* alloc memory */
   n_shared_nodes = (int *)HECMW_malloc(sizeof(int) * mesh->n_neighbor_pe);
   if (n_shared_nodes == NULL) {
@@ -2694,6 +2705,9 @@ static int rebuild_comm_tables(const struct hecmwST_local_mesh *mesh,
   struct hecmw_varray_int *shared;
 
   if (mesh->n_neighbor_pe == 0) { /* SERIAL */
+    if (check_node_rank(mesh, NULL, ref_mesh) != HECMW_SUCCESS) {
+      return HECMW_ERROR;
+    }
     return rebuild_comm_tables_serial(mesh, ref_mesh);
   }
 
@@ -2794,7 +2808,14 @@ static int check_comm_table_len(const struct hecmwST_local_mesh *ref_mesh) {
   int *send_buf;
   int n_error = 0, n_error_g;
 
-  if (ref_mesh->n_neighbor_pe == 0) return HECMW_SUCCESS;
+  /* a rank without neighbors has nothing to check, but has to join the
+   * agreement of the other ranks */
+  if (ref_mesh->n_neighbor_pe == 0) {
+    comm = HECMW_comm_get_comm();
+    HECMW_Allreduce(&n_error, &n_error_g, 1, HECMW_INT, HECMW_SUM, comm);
+    if (n_error_g > 0) return HECMW_ERROR;
+    return HECMW_SUCCESS;
+  }
 
   HECMW_log(HECMW_LOG_DEBUG, "Started checking communication tables...\n");
 
