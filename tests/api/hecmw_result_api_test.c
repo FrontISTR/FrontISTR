@@ -13,6 +13,9 @@ int main()
     printf("FrontISTR API Test : hecmwST_result_data\n");
     void* result = hecmw_api_result_new();
     assert(result != 0);
+    assert(hecmw_api_result_ng_component(result)==0);
+    assert(hecmw_api_result_nn_component(result)==0);
+    assert(hecmw_api_result_ne_component(result)==0);
     hecmw_api_result_delete(result);
     return 0;
 }

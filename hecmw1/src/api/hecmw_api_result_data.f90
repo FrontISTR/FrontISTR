@@ -19,6 +19,9 @@ contains
     type(hecmwST_result_data), pointer :: hecRESULT => null()
     allocate(hecRESULT)
     call hecmw_nullify_result_data(hecRESULT)
+    hecRESULT%ng_component = 0
+    hecRESULT%nn_component = 0
+    hecRESULT%ne_component = 0
     hecmw_api_result_new = c_loc(hecRESULT)
   end function
 

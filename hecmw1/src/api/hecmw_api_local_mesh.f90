@@ -18,6 +18,14 @@ contains
     type(c_ptr) :: hecmw_api_mesh_new
     type(hecmwST_local_mesh), pointer :: hecMESH => null()
     allocate(hecMESH)
+    hecMESH%n_node = 0
+    hecMESH%nn_internal = 0
+    hecMESH%n_elem = 0
+    hecMESH%n_dof = 0
+    hecMESH%n_elem_type = 0
+    hecMESH%node_group%n_grp = 0
+    hecMESH%surf_group%n_grp = 0
+    hecMESH%elem_group%n_grp = 0
     call hecmw_nullify_mesh(hecMESH)
     allocate( hecMESH%node_group%grp_index(0:0) )
     hecMESH%node_group%grp_index(0) = 0
@@ -300,7 +308,11 @@ contains
     type(hecmwST_local_mesh), pointer :: hecMESH
     integer(c_int) hecmw_api_mesh_n_elem_node_item
     call c_f_pointer(cptr=mesh, fptr=hecMESH)
-    hecmw_api_mesh_n_elem_node_item = hecMESH%elem_node_index(hecMESH%n_elem)
+    if( hecMESH%n_elem>0 ) then
+      hecmw_api_mesh_n_elem_node_item = hecMESH%elem_node_index(hecMESH%n_elem)
+    else
+      hecmw_api_mesh_n_elem_node_item = 0
+    endif
   end function
 
   !> @brief Number of node groups

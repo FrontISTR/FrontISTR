@@ -12,19 +12,34 @@ int main()
 {
     printf("FrontISTR API Test : hecmwST_local_mesh\n");
     void* mesh1 = hecmw_api_mesh_new();
+    void* mesh2 = hecmw_api_mesh_new();
+
+    assert(hecmw_api_mesh_n_node(mesh1)==0);
+    assert(hecmw_api_mesh_n_node(mesh2)==0);
+    assert(hecmw_api_mesh_n_elem(mesh1)==0);
+    assert(hecmw_api_mesh_n_elem(mesh2)==0);
+    assert(hecmw_api_mesh_n_elem_node_item(mesh1)==0);
+    assert(hecmw_api_mesh_n_elem_node_item(mesh2)==0);
+    assert(hecmw_api_mesh_n_ngrp(mesh1)==0);
+    assert(hecmw_api_mesh_n_ngrp(mesh2)==0);
+    assert(hecmw_api_mesh_n_sgrp(mesh1)==0);
+    assert(hecmw_api_mesh_n_sgrp(mesh2)==0);
+    assert(hecmw_api_mesh_n_egrp(mesh1)==0);
+    assert(hecmw_api_mesh_n_egrp(mesh2)==0);
+
     double node1[] = {0.0,1.0,2.0};
     hecmw_api_mesh_set_node(mesh1,1,node1);
-    assert(hecmw_api_mesh_n_node(mesh1)==1);
-    hecmw_api_mesh_delete(mesh1);
 
-    void* mesh2 = hecmw_api_mesh_new();
     double node2[] = {
         0.0,1.0,2.0,
         3.0,4.0,5.0,
         6.0,7.0,8.0,
     };
     hecmw_api_mesh_set_node(mesh2,3,node2);
+
+    assert(hecmw_api_mesh_n_node(mesh1)==1);
     assert(hecmw_api_mesh_n_node(mesh2)==3);
+
     int elemtype[] = {
         111,
         231,
@@ -57,6 +72,7 @@ int main()
     assert(sectID2[0]==1);
     assert(sectID2[1]==1);
     assert(sectID2[2]==2);
+    hecmw_api_mesh_delete(mesh1);
     hecmw_api_mesh_delete(mesh2);
     return 0;
 }

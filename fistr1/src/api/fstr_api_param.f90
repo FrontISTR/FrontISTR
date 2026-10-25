@@ -19,6 +19,7 @@ contains
     type(fstr_param), pointer :: fstrPARAM => null()
     allocate(fstrPARAM)
     call fstr_nullify_fstr_param(fstrPARAM)
+    fstrPARAM%analysis_n = 0
     fstr_api_param_new = c_loc(fstrPARAM)
   end function
 
