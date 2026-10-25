@@ -305,7 +305,7 @@ contains
       ! Shear correction factor
       k_correction = 5.0D0/6.0D0
 
-      ! Laminate transverse shear ratio, applied in the material frame before rotation
+      ! Laminate transverse shear ratio in the shell frame
       call ShellTransShearRatio( matl, r44, r55 )
 
       !--------------------------------------------------------------------
@@ -328,8 +328,8 @@ contains
       D(2,1) = pp2 * ee / (1.0D0- pp * pp2)
       D(2,2) = ee2 / (1.0D0 - pp * pp2)
       D(3,3) = g12
-      D(4,4) = k_correction * g23 * r44
-      D(5,5) = k_correction * g31 * r55
+      D(4,4) = k_correction * g23
+      D(5,5) = k_correction * g31
 
       T(1,1) = cos(theta) * cos(theta)
       T(1,2) = sin(theta) * sin(theta)
@@ -376,6 +376,12 @@ contains
       D_hat(4,5) = T(4,4)*D_temp(4,5)+T(5,4)*D_temp(5,5)
       D_hat(5,4) = T(4,5)*D_temp(4,4)+T(5,5)*D_temp(5,4)
       D_hat(5,5) = T(4,5)*D_temp(4,5)+T(5,5)*D_temp(5,5)
+
+      ! Scaling as diag(sqrt(r44),sqrt(r55))*D_hat*diag(sqrt(r44),sqrt(r55)) keeps the shear block positive definite
+      D_hat(4,4) = r44 * D_hat(4,4)
+      D_hat(4,5) = sqrt(r44 * r55) * D_hat(4,5)
+      D_hat(5,4) = sqrt(r44 * r55) * D_hat(5,4)
+      D_hat(5,5) = r55 * D_hat(5,5)
 
       !--------------------------------------------------------------------
 
@@ -697,13 +703,14 @@ contains
 
   !> Ratio of the energy-equivalent transverse shear stiffness D**2/int(g**2/G dz) of a laminate,
   !> where g(z) is the shear distribution from bending equilibrium, to k*sum(G*t).
-  !> r44 is for gamma_23 (bending along e2) and r55 for gamma_31 (bending along e1), in the material frame.
+  !> r44 is for gamma_23 (bending along e2) and r55 for gamma_31 (bending along e1), in the shell frame.
   subroutine ShellTransShearRatio( matl, r44, r55 )
     type( tMaterial ), intent(in)   :: matl
     real(kind = kreal), intent(out) :: r44, r55
 
     real(kind = kreal) :: e_layer(2, matl%totallyr), g_layer(2, matl%totallyr)
     real(kind = kreal) :: ee, pp, pp2, k_correction, ratio(2)
+    real(kind = kreal) :: q11, q22, q12h, cs, sn
     real(kind = kreal) :: zb, zt, zn, z, ea, es, d_bend, g_bot, g_pt, gg_int, gt_sum
     real(kind = kreal) :: gauss_xi(3), gauss_w(3)
     integer :: nlyr, idir, i, ip
@@ -722,10 +729,15 @@ contains
       pp = matl%shell_var(i)%pp
       if( matl%shell_var(i)%ortho == 1 ) then
         pp2 = pp * matl%shell_var(i)%ee2 / ee
-        e_layer(1, i) = matl%shell_var(i)%ee2 / (1.0D0 - pp * pp2)
-        e_layer(2, i) = ee / (1.0D0 - pp * pp2)
-        g_layer(1, i) = matl%shell_var(i)%g23
-        g_layer(2, i) = matl%shell_var(i)%g31
+        q11 = ee / (1.0D0 - pp * pp2)
+        q22 = matl%shell_var(i)%ee2 / (1.0D0 - pp * pp2)
+        q12h = 2.0D0 * (pp2 * q11 + 2.0D0 * matl%shell_var(i)%g12)
+        cs = cos( matl%shell_var(i)%angle )
+        sn = sin( matl%shell_var(i)%angle )
+        e_layer(1, i) = sn**4 * q11 + cs**2 * sn**2 * q12h + cs**4 * q22
+        e_layer(2, i) = cs**4 * q11 + cs**2 * sn**2 * q12h + sn**4 * q22
+        g_layer(1, i) = cs**2 * matl%shell_var(i)%g23 + sn**2 * matl%shell_var(i)%g31
+        g_layer(2, i) = sn**2 * matl%shell_var(i)%g23 + cs**2 * matl%shell_var(i)%g31
       else
         e_layer(:, i) = ee / (1.0D0 - pp * pp)
         g_layer(:, i) = 0.5D0 * ee / (1.0D0 + pp)
