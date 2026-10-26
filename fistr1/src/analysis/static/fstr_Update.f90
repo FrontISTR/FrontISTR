@@ -40,7 +40,7 @@ contains
 
     integer(kind=kint) :: nodLOCAL(fstrSOLID%max_ncon)
     real(kind=kreal)   :: ecoord(3, fstrSOLID%max_ncon)
-    real(kind=kreal)   :: thick, thick0(6)
+    real(kind=kreal)   :: thick
     integer(kind=kint) :: ndof, itype, is, iE, ic_type, nn, icel, iiS, i, j, nbase
 
     real(kind=kreal)   :: total_disp(6, fstrSOLID%max_ncon), du(6, fstrSOLID%max_ncon), ddu(6, fstrSOLID%max_ncon)
@@ -98,7 +98,7 @@ contains
         !$omp&  private(icel,iiS,j,nn,nodLOCAL,i,nbase,ecoord,ddu,du,total_disp,triad_tri,triad_cur, &
         !$omp&  triad_ref, &
         !$omp&  shell_drill, &
-        !$omp&  cdsys_ID,coords,thick,qf,isect,ihead,tmp,ndim,ddaux,thick0, &
+        !$omp&  cdsys_ID,coords,thick,qf,isect,ihead,tmp,ndim,ddaux, &
         !$omp&  lambda,ddlambda), &
         !$omp&  shared(iS,iE,hecMESH,fstrSOLID,ndof,hecMAT,ic_type,fstrPARAM, &
         !$omp&         strainEnergy,iter,time,tincr,initt,g_InitialCnd), &
@@ -110,18 +110,6 @@ contains
         iiS = hecMESH%elem_node_index(icel-1)
         nn = hecMESH%elem_node_index(icel)-iiS
         !if( nn>150 ) stop "elemental nodes > 150!"
-
-        thick = 0.d0
-        do j = 1, size(fstrSOLID%elements(icel)%gausses)
-          thick0(1:6) = fstrSOLID%elements(icel)%gausses(j)%stress(1:6)
-          thick = thick + dsqrt(dot_product(thick0(1:6),thick0(1:6)))
-        enddo
-        if( thick < 1.d-10 ) then
-          do j = 1, size(fstrSOLID%elements(icel)%gausses)
-            if( associated(fstrSOLID%elements(icel)%gausses(j)%fstatus) ) &
-              &  fstrSOLID%elements(icel)%gausses(j)%fstatus = 0.d0
-          enddo
-        end if
 
         do j = 1, nn
           nodLOCAL(j) = hecMESH%elem_node_item (iiS+j)
@@ -136,7 +124,7 @@ contains
 
           if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres > 0 ) then
             if( isElastoplastic(fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype) .or. &
-                fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype == NORTON .or. &
+                isCreep(fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype) .or. &
                 fstrSOLID%elements(icel)%gausses(1)%pMaterial%nlgeom_flag == UPDATELAG ) then
               tt0(j)=fstrSOLID%last_temp( nodLOCAL(j) )
             else
@@ -332,9 +320,7 @@ contains
   subroutine fstr_UpdateState( hecMESH, fstrSOLID, tincr)
     use m_fstr
     use m_static_lib
-    use m_ElastoPlastic
-    use mCreep
-    use mViscoElastic
+    use m_MatMatrix, only: MatlStateUpdate
     type(hecmwST_local_mesh) :: hecMESH     !< hecmw mesh
     type(fstr_solid) :: fstrSOLID   !< fstr_solid
     real(kind=kreal) :: tincr
@@ -357,25 +343,8 @@ contains
 
       ngauss = NumOfQuadPoints( ic_type )
       do icel = is, iE
-        if( isElastoplastic( fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype ) ) then
-          do i = 1, ngauss
-            call updateEPState( fstrSOLID%elements(icel)%gausses(i) )
-          enddo
-        elseif( fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype == NORTON ) then
-          if( tincr>0.d0 ) then
-            do i = 1, ngauss
-              call updateViscoState( fstrSOLID%elements(icel)%gausses(i) )
-            enddo
-          endif
-        elseif( isViscoelastic( fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype ) ) then
-          if( tincr > 0.d0 ) then
-            do i = 1, ngauss
-              call updateViscoElasticState( fstrSOLID%elements(icel)%gausses(i) )
-            enddo
-          endif
-        endif
-
         do i = 1, ngauss
+          call MatlStateUpdate( fstrSOLID%elements(icel)%gausses(i), tincr )
           fstrSOLID%elements(icel)%gausses(i)%strain_bak = fstrSOLID%elements(icel)%gausses(i)%strain
           fstrSOLID%elements(icel)%gausses(i)%stress_bak = fstrSOLID%elements(icel)%gausses(i)%stress
           fstrSOLID%elements(icel)%gausses(i)%strain_energy_bak = fstrSOLID%elements(icel)%gausses(i)%strain_energy
@@ -383,9 +352,7 @@ contains
 
         if( associated( fstrSOLID%elements(icel)%shell_layer_gausses ) ) then
           do ishell = 1, size( fstrSOLID%elements(icel)%shell_layer_gausses )
-            if( isElastoplastic( fstrSOLID%elements(icel)%shell_layer_gausses(ishell)%pMaterial%mtype ) ) then
-              call updateEPState( fstrSOLID%elements(icel)%shell_layer_gausses(ishell) )
-            endif
+            call MatlStateUpdate( fstrSOLID%elements(icel)%shell_layer_gausses(ishell), tincr )
             fstrSOLID%elements(icel)%shell_layer_gausses(ishell)%strain_bak = &
               fstrSOLID%elements(icel)%shell_layer_gausses(ishell)%strain
             fstrSOLID%elements(icel)%shell_layer_gausses(ishell)%stress_bak = &

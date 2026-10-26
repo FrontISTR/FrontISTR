@@ -613,7 +613,7 @@ contains
 
     mtype = gauss%pMaterial%mtype
 
-    if( isElastoplastic(mtype) .OR. mtype == NORTON )then
+    if( isElastoplastic(mtype) .OR. isCreep(mtype) )then
       isEp = 1
     else
       isEp = 0
@@ -624,7 +624,9 @@ contains
 
     call MatlMatrix( gauss, D3, D, time, tincr, coordsys, ttc, isEp, hdflag=hdflag_in )
 
-    if( flag == INFINITESIMAL ) then
+    ! Plasticity and creep keep no inelastic strain tensor; their trial stress is the elastic increment
+    ! from the converged state, also with Green-Lagrange strain and 2nd Piola-Kirchhoff stress in TOTALLAG.
+    if( flag == INFINITESIMAL .OR. ( flag == TOTALLAG .AND. isEp == 1 ) ) then
 
       if( isEp == 1 ) then
         dstress(1:6) = matmul( D(1:6, 1:6), dstrain(1:6)-gauss%strain_bak(1:6) )
@@ -637,15 +639,15 @@ contains
       end if
       if( isViscoelastic(mtype) .AND. tincr /= 0.0D0 ) then
         call StressUpdate( gauss, D3, dstrain, gauss%stress, coordsys, time, tincr, ttc, ttn, hdflag=hdflag_in )
-        gauss%stress = real(gauss%stress)
+      else if( mtype == NORTON .AND. tincr /= 0.0D0 .AND. any( gauss%stress /= 0.0D0 ) ) then
+        call StressUpdate( gauss, D3, dstrain, gauss%stress, coordsys, time, tincr, ttc, ttn, hdflag=hdflag_in )
       end if
-      
+
     else if( flag == TOTALLAG ) then
 
       if( isHyperelastic(mtype) .OR. mtype == USERELASTIC .OR. mtype == USERMATERIAL ) then
         call StressUpdate( gauss, D3, dstrain, gauss%stress, coordsys, temp=0.d0, tempn=0.d0, hdflag=hdflag_in )
-      else if( ( isViscoelastic(mtype) .OR. mtype == NORTON ) .AND. tincr /= 0.0D0 ) then
-        gauss%pMaterial%mtype=mtype
+      else if( isViscoelastic(mtype) .AND. tincr /= 0.0D0 ) then
         call StressUpdate( gauss, D3, dstrain, gauss%stress, coordsys, time, tincr, ttc, ttn, hdflag=hdflag_in )
       else
         gauss%stress(1:6) = matmul( D(1:6, 1:6), dstrain(1:6) )
@@ -659,7 +661,7 @@ contains
       if( isViscoelastic(mtype) .AND. tincr /= 0.0D0 ) then
         call StressUpdate( gauss, D3, dstrain, gauss%stress, coordsys, time, tincr, ttc, tt0, hdflag=hdflag_in )
       else
-        dstress = real( matmul( D(1:6,1:6), dstrain(1:6) ) )
+        dstress = matmul( D(1:6,1:6), dstrain(1:6) )
         dumstress(1,1) = gauss%stress_bak(1)
         dumstress(2,2) = gauss%stress_bak(2)
         dumstress(3,3) = gauss%stress_bak(3)
@@ -695,9 +697,8 @@ contains
     end if
 
     if( isElastoplastic(mtype) ) then
-      call BackwardEuler( gauss%pMaterial, gauss%stress, gauss%plstrain, &
-        gauss%istatus(1), gauss%fstatus, gauss%plpotential, ttc )
-        gauss%strain_energy = gauss%strain_energy+gauss%plpotential
+      call StressUpdate( gauss, D3, dstrain, gauss%stress, coordsys, time, tincr, ttc, ttn, hdflag=hdflag_in )
+      gauss%strain_energy = gauss%strain_energy+gauss%plpotential
     end if
 
     !convert stress/strain measure for output
