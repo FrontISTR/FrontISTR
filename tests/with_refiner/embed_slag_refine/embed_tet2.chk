@@ -1,0 +1,2 @@
+# all the embedded nodes of the refined mesh are caught in the first scan and kept
+Contact change: Free2Cont= +275 .* ActiveNodes= +275$
