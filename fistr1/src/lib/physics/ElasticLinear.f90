@@ -207,12 +207,14 @@ contains
 
     real(kind = kreal) :: ee, pp, ee2, g12, g23, g31, theta, pp2
     real(kind = kreal) :: outa(2)
-    real(kind = kreal) :: lambda1, lambda2, mu, k_correction
+    real(kind = kreal) :: lambda1, lambda2, mu, k_correction, r44, r55
     real(kind = kreal) :: c_hat(3, 3, 3, 3), D(5,5), D_hat(5,5), D_temp(5,5), T(5,5)
     real(kind = kreal) :: e_hat_dot_cg(3, 3)
     real(kind = kreal) :: alpha_over_mu
     real(kind = kreal) :: v_ref(3), v_proj(3), v_proj_abs
     real(kind = kreal) :: v_ref_y(3), v_sense
+    real(kind = kreal) :: theta_ref, phi, c_ref, s_ref, c_phi, s_phi
+    real(kind = kreal) :: d44_ref, d45_ref, d55_ref
 
     integer :: index_i(5), index_j(5), index_k(5), index_l(5)
     integer :: is, js, ii, ij, ik, il
@@ -255,6 +257,11 @@ contains
       k_correction = 5.0D0/6.0D0
       !k_correction = 1.0D0
 
+      ! Laminate transverse shear ratio (layers share ee and pp when table data is given)
+      r44 = 1.0D0
+      r55 = 1.0D0
+      if( ierr ) call ShellTransShearRatio( matl, r44, r55 )
+
       !--------------------------------------------------------------------
 
       alpha = alpha_over_mu*mu
@@ -274,14 +281,14 @@ contains
       c_hat(1, 2, 2, 1) = mu
       c_hat(2, 1, 1, 2) = mu
       c_hat(2, 1, 2, 1) = mu
-      c_hat(1, 3, 1, 3) = k_correction*mu
-      c_hat(1, 3, 3, 1) = k_correction*mu
-      c_hat(2, 3, 2, 3) = k_correction*mu
-      c_hat(2, 3, 3, 2) = k_correction*mu
-      c_hat(3, 1, 3, 1) = k_correction*mu
-      c_hat(3, 1, 1, 3) = k_correction*mu
-      c_hat(3, 2, 3, 2) = k_correction*mu
-      c_hat(3, 2, 2, 3) = k_correction*mu
+      c_hat(1, 3, 1, 3) = k_correction*mu*r55
+      c_hat(1, 3, 3, 1) = k_correction*mu*r55
+      c_hat(2, 3, 2, 3) = k_correction*mu*r44
+      c_hat(2, 3, 3, 2) = k_correction*mu*r44
+      c_hat(3, 1, 3, 1) = k_correction*mu*r55
+      c_hat(3, 1, 1, 3) = k_correction*mu*r55
+      c_hat(3, 2, 3, 2) = k_correction*mu*r44
+      c_hat(3, 2, 2, 3) = k_correction*mu*r44
 
       !--------------------------------------------------------
 
@@ -304,8 +311,11 @@ contains
       v_proj_abs = dsqrt( dot_product(v_proj, v_proj) )
       v_sense = dot_product(v_proj, e1_hat) * dot_product(v_ref_y, e2_hat) &
         - dot_product(v_proj, e2_hat) * dot_product(v_ref_y, e1_hat)
-      theta = sign(1.0D0, v_sense) * theta &
-        + datan2( dot_product(v_proj, e2_hat), dot_product(v_proj, e1_hat) )
+      ! theta_ref: layer angle from the projected orientation axis
+      ! phi: angle from e1_hat to the projected orientation axis
+      theta_ref = sign(1.0D0, v_sense) * theta
+      phi = datan2( dot_product(v_proj, e2_hat), dot_product(v_proj, e1_hat) )
+      theta = theta_ref + phi
 
       alpha_over_mu = matl%variables(M_ALPHA_OVER_MU)
 
@@ -313,6 +323,9 @@ contains
 
       ! Shear correction factor
       k_correction = 5.0D0/6.0D0
+
+      ! Laminate transverse shear ratio, defined in the orientation frame
+      call ShellTransShearRatio( matl, r44, r55 )
 
       !--------------------------------------------------------------------
 
@@ -382,6 +395,21 @@ contains
       D_hat(4,5) = T(4,4)*D_temp(4,5)+T(5,4)*D_temp(5,5)
       D_hat(5,4) = T(4,5)*D_temp(4,4)+T(5,5)*D_temp(5,4)
       D_hat(5,5) = T(4,5)*D_temp(4,5)+T(5,5)*D_temp(5,5)
+
+      ! Apply the correction in the orientation frame, preserving positive definiteness,
+      ! then rotate the transverse shear block by phi into the shell frame
+      c_ref = cos(theta_ref)
+      s_ref = sin(theta_ref)
+      d44_ref = r44 * ( c_ref * c_ref * D(4,4) + s_ref * s_ref * D(5,5) )
+      d45_ref = sqrt(r44 * r55) * c_ref * s_ref * ( D(5,5) - D(4,4) )
+      d55_ref = r55 * ( s_ref * s_ref * D(4,4) + c_ref * c_ref * D(5,5) )
+
+      c_phi = cos(phi)
+      s_phi = sin(phi)
+      D_hat(4,4) = c_phi * c_phi * d44_ref + 2.0D0 * c_phi * s_phi * d45_ref + s_phi * s_phi * d55_ref
+      D_hat(4,5) = c_phi * s_phi * ( d55_ref - d44_ref ) + ( c_phi * c_phi - s_phi * s_phi ) * d45_ref
+      D_hat(5,4) = D_hat(4,5)
+      D_hat(5,5) = s_phi * s_phi * d44_ref - 2.0D0 * c_phi * s_phi * d45_ref + c_phi * c_phi * d55_ref
 
       !--------------------------------------------------------------------
 
@@ -700,6 +728,90 @@ contains
   end subroutine LinearElastic_Shell
   !####################################################################
   ! > (Gaku Hashimoto, The University of Tokyo, 2012/11/15)
+
+  !> Ratio of the energy-equivalent transverse shear stiffness D**2/int(g**2/G dz) of a laminate,
+  !> where g(z) is the shear distribution from bending equilibrium, to k*sum(G*t).
+  !> r44 is for gamma_23 (bending along e2) and r55 for gamma_31 (bending along e1), in the material frame.
+  subroutine ShellTransShearRatio( matl, r44, r55 )
+    type( tMaterial ), intent(in)   :: matl
+    real(kind = kreal), intent(out) :: r44, r55
+
+    real(kind = kreal) :: e_layer(2, matl%totallyr), g_layer(2, matl%totallyr)
+    real(kind = kreal) :: ee, pp, pp2, k_correction, ratio(2)
+    real(kind = kreal) :: zb, zt, zn, z, ea, es, d_bend, g_bot, g_pt, gg_int, gt_sum
+    real(kind = kreal) :: gauss_xi(3), gauss_w(3)
+    real(kind = kreal) :: q11, q22, q12h, cs, sn
+    integer :: nlyr, idir, i, ip
+
+    r44 = 1.0D0
+    r55 = 1.0D0
+    nlyr = matl%totallyr
+    if( nlyr <= 1 ) return
+
+    k_correction = 5.0D0/6.0D0
+    gauss_xi = (/ -sqrt(0.6D0), 0.0D0, sqrt(0.6D0) /)
+    gauss_w  = (/ 5.0D0/9.0D0, 8.0D0/9.0D0, 5.0D0/9.0D0 /)
+
+    do i = 1, nlyr
+      ee = matl%shell_var(i)%ee
+      pp = matl%shell_var(i)%pp
+      if( matl%shell_var(i)%ortho == 1 ) then
+        pp2 = pp * matl%shell_var(i)%ee2 / ee
+        q11 = ee / (1.0D0 - pp * pp2)
+        q22 = matl%shell_var(i)%ee2 / (1.0D0 - pp * pp2)
+        q12h = 2.0D0 * (pp2 * q11 + 2.0D0 * matl%shell_var(i)%g12)
+        cs = cos( matl%shell_var(i)%angle )
+        sn = sin( matl%shell_var(i)%angle )
+        e_layer(1, i) = sn**4 * q11 + cs**2 * sn**2 * q12h + cs**4 * q22
+        e_layer(2, i) = cs**4 * q11 + cs**2 * sn**2 * q12h + sn**4 * q22
+        g_layer(1, i) = cs**2 * matl%shell_var(i)%g23 + sn**2 * matl%shell_var(i)%g31
+        g_layer(2, i) = sn**2 * matl%shell_var(i)%g23 + cs**2 * matl%shell_var(i)%g31
+      else
+        e_layer(:, i) = ee / (1.0D0 - pp * pp)
+        g_layer(:, i) = 0.5D0 * ee / (1.0D0 + pp)
+      endif
+    end do
+
+    ! Layer 1 is at the bottom surface; weights are thickness fractions summing to 1
+    ratio(:) = 1.0D0
+    do idir = 1, 2
+      if( any( g_layer(idir, :) <= 0.0D0 ) ) cycle
+
+      ea = 0.0D0
+      es = 0.0D0
+      zb = -0.5D0
+      do i = 1, nlyr
+        zt = zb + matl%shell_var(i)%weight
+        ea = ea + e_layer(idir, i) * (zt - zb)
+        es = es + e_layer(idir, i) * 0.5D0 * (zt * zt - zb * zb)
+        zb = zt
+      end do
+      if( ea <= 0.0D0 ) cycle
+      zn = es / ea
+
+      d_bend = 0.0D0
+      gg_int = 0.0D0
+      gt_sum = 0.0D0
+      g_bot = 0.0D0
+      zb = -0.5D0
+      do i = 1, nlyr
+        zt = zb + matl%shell_var(i)%weight
+        d_bend = d_bend + e_layer(idir, i) * ((zt - zn)**3 - (zb - zn)**3) / 3.0D0
+        do ip = 1, 3
+          z = 0.5D0 * (zb + zt) + 0.5D0 * (zt - zb) * gauss_xi(ip)
+          g_pt = g_bot + 0.5D0 * e_layer(idir, i) * ((z - zn)**2 - (zb - zn)**2)
+          gg_int = gg_int + 0.5D0 * (zt - zb) * gauss_w(ip) * g_pt * g_pt / g_layer(idir, i)
+        end do
+        g_bot = g_bot + 0.5D0 * e_layer(idir, i) * ((zt - zn)**2 - (zb - zn)**2)
+        gt_sum = gt_sum + g_layer(idir, i) * (zt - zb)
+        zb = zt
+      end do
+      if( gg_int > 0.0D0 ) ratio(idir) = d_bend * d_bend / gg_int / (k_correction * gt_sum)
+    end do
+
+    r44 = ratio(1)
+    r55 = ratio(2)
+  end subroutine ShellTransShearRatio
 
 
 
