@@ -278,4 +278,47 @@ contains
 
   end subroutine fstr_solid_append_temperature
 
+  !-----------------------------------------------------------------------------!
+  !> Append !SPRING                                                             !
+  !-----------------------------------------------------------------------------!
+  subroutine fstr_solid_append_spring( hecMESH, fstrSOLID, header_name, gid, incremental, &
+      amp_name, n, grp_names, dofs, vals )
+    implicit none
+    type(hecmwST_local_mesh), target          :: hecMESH
+    type(fstr_solid)                          :: fstrSOLID
+    character(len=*), intent(in)              :: header_name
+    integer(kind=kint), intent(in)            :: gid
+    integer(kind=kint), intent(in)            :: incremental
+    character(len=HECMW_NAME_LEN), intent(in) :: amp_name
+    integer(kind=kint), intent(in)            :: n
+    character(len=HECMW_NAME_LEN), intent(in) :: grp_names(:)
+    integer(kind=kint), intent(in)            :: dofs(:)
+    real(kind=kreal), intent(in)              :: vals(:)
+
+    integer(kind=kint) :: amp_id
+    integer(kind=kint) :: i, old_size, new_size
+
+    if( n == 0 ) return
+    old_size = fstrSOLID%SPRING_ngrp_tot
+    new_size = old_size + n
+    fstrSOLID%SPRING_ngrp_tot = new_size
+    call hecmw_expand_integer_array ( fstrSOLID%SPRING_ngrp_GRPID, old_size, new_size )
+    call hecmw_expand_integer_array ( fstrSOLID%SPRING_ngrp_ID,  old_size, new_size )
+    call hecmw_expand_integer_array ( fstrSOLID%SPRING_ngrp_DOF, old_size, new_size )
+    call hecmw_expand_real_array    ( fstrSOLID%SPRING_ngrp_val, old_size, new_size )
+    call hecmw_expand_integer_array ( fstrSOLID%SPRING_ngrp_amp, old_size, new_size )
+    call hecmw_expand_integer_array ( fstrSOLID%SPRING_incremental, old_size, new_size )
+
+    call amp_name_to_id( hecMESH, header_name, amp_name, amp_id )
+    do i=1,n
+      fstrSOLID%SPRING_ngrp_amp(old_size+i) = amp_id
+      fstrSOLID%SPRING_ngrp_DOF(old_size+i) = dofs(i)
+      fstrSOLID%SPRING_ngrp_val(old_size+i) = vals(i)
+    end do
+    fstrSOLID%SPRING_ngrp_GRPID(old_size+1:new_size) = gid
+    call node_grp_name_to_id_ex( hecMESH, header_name, n, grp_names, fstrSOLID%SPRING_ngrp_ID(old_size+1:))
+    fstrSOLID%SPRING_incremental(old_size+1:new_size) = incremental
+
+  end subroutine fstr_solid_append_spring
+
 end module fstr_setup_solid
