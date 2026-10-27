@@ -246,4 +246,36 @@ contains
 
   end subroutine fstr_solid_append_dload
 
+  !-----------------------------------------------------------------------------!
+  !> Append !TEMPERATURE                                                        !
+  !-----------------------------------------------------------------------------!
+  !> Not used for the temperature read from a result (TEMP_irres > 0).
+  subroutine fstr_solid_append_temperature( hecMESH, fstrSOLID, header_name, gid, n, grp_names, vals )
+    implicit none
+    type(hecmwST_local_mesh), target          :: hecMESH
+    type(fstr_solid)                          :: fstrSOLID
+    character(len=*), intent(in)              :: header_name
+    integer(kind=kint), intent(in)            :: gid
+    integer(kind=kint), intent(in)            :: n
+    character(len=HECMW_NAME_LEN), intent(in) :: grp_names(:)
+    real(kind=kreal), intent(in)              :: vals(:)
+
+    integer(kind=kint) :: i, old_size, new_size
+
+    if( n == 0 ) return
+    old_size = fstrSOLID%TEMP_ngrp_tot
+    new_size = old_size + n
+    call hecmw_expand_integer_array ( fstrSOLID%TEMP_ngrp_GRPID, old_size, new_size )
+    call hecmw_expand_integer_array ( fstrSOLID%TEMP_ngrp_ID, old_size, new_size )
+    call hecmw_expand_real_array    ( fstrSOLID%TEMP_ngrp_val,old_size, new_size )
+
+    do i = 1, n
+      fstrSOLID%TEMP_ngrp_val(old_size+i) = vals(i)
+    enddo
+    fstrSOLID%TEMP_ngrp_GRPID(old_size+1:new_size) = gid
+    fstrSOLID%TEMP_ngrp_tot = new_size
+    call node_grp_name_to_id_ex( hecMESH, header_name, n, grp_names, fstrSOLID%TEMP_ngrp_ID(old_size+1:))
+
+  end subroutine fstr_solid_append_temperature
+
 end module fstr_setup_solid
