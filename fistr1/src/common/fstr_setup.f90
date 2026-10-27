@@ -3247,9 +3247,6 @@ end function fstr_setup_INITIAL
   !-----------------------------------------------------------------------------!
 
   subroutine fstr_setup_TEMPERATURE( ctrl, counter, P )
-    use hecmw_setup_util, only &
-      : hecmw_expand_integer_array &
-      , hecmw_expand_real_array
     implicit none
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: counter
@@ -3258,7 +3255,7 @@ end function fstr_setup_INITIAL
     integer(kind=kint) :: rcode, gid
     character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
     real(kind=kreal),pointer :: val_ptr(:)
-    integer(kind=kint) :: i, n, old_size, new_size
+    integer(kind=kint) :: n
 
     if( P%SOLID%file_type /= kbcfFSTR ) return
 
@@ -3266,16 +3263,6 @@ end function fstr_setup_INITIAL
     rcode = fstr_ctrl_get_param_ex( ctrl, 'GRPID ',  '# ',            0, 'I', gid  )
 
     n = fstr_ctrl_get_data_line_n( ctrl )
-    old_size = P%SOLID%TEMP_ngrp_tot
-    if( n > 0 ) then
-      new_size = old_size + n
-    else
-      new_size = old_size + 1
-    endif
-    call hecmw_expand_integer_array ( P%SOLID%TEMP_ngrp_GRPID, old_size, new_size )
-    call hecmw_expand_integer_array ( P%SOLID%TEMP_ngrp_ID, old_size, new_size )
-    call hecmw_expand_real_array    ( P%SOLID%TEMP_ngrp_val,old_size, new_size )
-
     allocate( grp_id_name(n))
     allocate( val_ptr(n) )
     val_ptr = 0.0d0
@@ -3288,21 +3275,14 @@ end function fstr_setup_INITIAL
       grp_id_name, HECMW_NAME_LEN,  &
       val_ptr )
     if( rcode /= 0 ) call fstr_ctrl_err_stop
-    do i = 1, n
-      P%SOLID%TEMP_ngrp_val(old_size+i) = val_ptr(i)
-    enddo
-    deallocate( val_ptr )
-    nullify( val_ptr )
-
-    P%SOLID%TEMP_ngrp_GRPID(old_size+1:new_size) = gid
-    if( n > 0 ) then
-      if( P%SOLID%TEMP_irres == 0 ) then
-        P%SOLID%TEMP_ngrp_tot = new_size
-        call node_grp_name_to_id_ex( P%MESH, '!TEMPERATURE', &
-          n, grp_id_name, P%SOLID%TEMP_ngrp_ID(old_size+1:))
-      endif
-      deallocate( grp_id_name )
+    if( P%SOLID%TEMP_irres == 0 ) then
+      call fstr_solid_append_temperature( P%MESH, P%SOLID, '!TEMPERATURE', gid, n, grp_id_name, val_ptr )
     endif
+
+    deallocate( grp_id_name )
+    deallocate( val_ptr )
+    nullify( grp_id_name )
+    nullify( val_ptr )
 
   end subroutine fstr_setup_TEMPERATURE
 
