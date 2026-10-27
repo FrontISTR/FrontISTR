@@ -14,6 +14,7 @@ module m_fstr_setup
   use fstr_setup_util
   use fstr_setup_solid
   use m_fstr_setup_heat
+  use fstr_setup_freq
   use fstr_ctrl_common
   use fstr_ctrl_static
   use fstr_ctrl_heat
@@ -3052,9 +3053,6 @@ end function fstr_setup_INITIAL
   !> Read in !FLOAD                                                             !
   !-----------------------------------------------------------------------------!
   subroutine fstr_setup_FLOAD( ctrl, counter, P )
-    use hecmw_setup_util, only &
-      : hecmw_expand_integer_array &
-      , hecmw_expand_real_array
     implicit none
   !---- args
     integer(kind=kint)   :: ctrl
@@ -3065,7 +3063,7 @@ end function fstr_setup_INITIAL
     character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
     real(kind=kreal), pointer           :: val_ptr(:)
     integer(kind=kint), pointer        :: id_ptr(:)
-    integer(kind=kint)                  :: i, n, old_size, new_size
+    integer(kind=kint)                  :: n
     integer(kind=kint)                  :: gid, loadcase
   !---- body
 
@@ -3083,17 +3081,6 @@ end function fstr_setup_INITIAL
     !read the num of dataline
     n = fstr_ctrl_get_data_line_n( ctrl )
     if( n == 0 ) return
-    old_size = P%FREQ%FLOAD_ngrp_tot
-    new_size = old_size + n
-
-    !expand data array
-    P%FREQ%FLOAD_ngrp_tot = new_size
-    call hecmw_expand_integer_array( P%FREQ%FLOAD_ngrp_GRPID, old_size, new_size )
-    call hecmw_expand_integer_array( P%FREQ%FLOAD_ngrp_ID,    old_size, new_size )
-    call hecmw_expand_integer_array( P%FREQ%FLOAD_ngrp_TYPE,  old_size, new_size )
-    call hecmw_expand_integer_array( P%FREQ%FLOAD_ngrp_DOF,   old_size, new_size )
-    call hecmw_expand_real_array   ( P%FREQ%FLOAD_ngrp_valre, old_size, new_size )
-    call hecmw_expand_real_array   ( P%FREQ%FLOAD_ngrp_valim, old_size, new_size )
 
     !fill bc data
     allocate( grp_id_name(n) )
@@ -3103,25 +3090,14 @@ end function fstr_setup_INITIAL
     val_ptr = 0.0d0
     rcode = fstr_ctrl_get_FLOAD( ctrl, grp_id_name, HECMW_NAME_LEN, id_ptr, val_ptr)
     if( rcode /= 0 ) call fstr_ctrl_err_stop
-    if(loadcase == kFLOADCASE_RE) then
-      do i = 1, n
-        P%FREQ%FLOAD_ngrp_DOF(old_size+i) = id_ptr(i)
-        P%FREQ%FLOAD_ngrp_valre(old_size+i) = val_ptr(i)
-      enddo
-    else if(loadcase == kFLOADCASE_IM) then
-      do i = 1, n
-        P%FREQ%FLOAD_ngrp_DOF(old_size+i) = id_ptr(i)
-        P%FREQ%FLOAD_ngrp_valim(old_size+i) = val_ptr(i)
-      enddo
-    else
+    if(loadcase /= kFLOADCASE_RE .and. loadcase /= kFLOADCASE_IM) then
       !error
       write(*,*)    "Error this load set is not defined!"
       write(ilog,*) "Error this load set is not defined!"
       stop HECMW_EXIT_MODEL
     end if
-    P%FREQ%FLOAD_ngrp_GRPID(old_size+1:new_size) = gid
-    call nodesurf_grp_name_to_id_ex( P%MESH, '!FLOAD', n, grp_id_name, &
-         P%FREQ%FLOAD_ngrp_ID(old_size+1:), P%FREQ%FLOAD_ngrp_TYPE(old_size+1:))
+    call fstr_freq_append_fload( P%MESH, P%FREQ, '!FLOAD', gid, loadcase, &
+      n, grp_id_name, id_ptr, val_ptr )
 
     deallocate( grp_id_name )
     deallocate( id_ptr )
@@ -3158,9 +3134,6 @@ end function fstr_setup_INITIAL
   !> part (LOAD CASE=1, default) or the imaginary part (LOAD CASE=2).
   !> counter is not used; it is kept for the same interface as the other readers.
   subroutine fstr_setup_FACCELERATION( ctrl, counter, P )
-    use hecmw_setup_util, only &
-      : hecmw_expand_integer_array &
-      , hecmw_expand_real_array
     implicit none
   !---- args
     integer(kind=kint)    :: ctrl
@@ -3172,7 +3145,7 @@ end function fstr_setup_INITIAL
     integer(kind=kint), pointer        :: dof_ids(:)
     integer(kind=kint), pointer        :: dof_ide(:)
     real(kind=kreal), pointer          :: val_ptr(:)
-    integer(kind=kint)                 :: i, n, old_size, new_size
+    integer(kind=kint)                 :: n
     integer(kind=kint)                 :: loadcase
   !---- body
 
@@ -3188,18 +3161,8 @@ end function fstr_setup_INITIAL
       stop HECMW_EXIT_INPUT
     end if
 
-    !append the data lines of this header to the entries read so far
     n = fstr_ctrl_get_data_line_n( ctrl )
     if( n == 0 ) return
-    old_size = P%FREQ%FACC_ngrp_tot
-    new_size = old_size + n
-
-    !the expanded part is zero, so the part not given by loadcase stays zero
-    P%FREQ%FACC_ngrp_tot = new_size
-    call hecmw_expand_integer_array( P%FREQ%FACC_ngrp_ID,    old_size, new_size )
-    call hecmw_expand_integer_array( P%FREQ%FACC_ngrp_type,  old_size, new_size )
-    call hecmw_expand_real_array   ( P%FREQ%FACC_ngrp_valre, old_size, new_size )
-    call hecmw_expand_real_array   ( P%FREQ%FACC_ngrp_valim, old_size, new_size )
 
     !read the data lines into temporary arrays
     allocate( grp_id_name(n) )
@@ -3209,25 +3172,9 @@ end function fstr_setup_INITIAL
     val_ptr = 0.0d0
     rcode = fstr_ctrl_get_FACCELERATION( ctrl, grp_id_name, HECMW_NAME_LEN, dof_ids, dof_ide, val_ptr )
     if( rcode /= 0 ) call fstr_ctrl_err_stop
-    !node ID or node group name -> node group ID
-    call node_grp_name_to_id_ex( P%MESH, '!FACCELERATION', n, grp_id_name, P%FREQ%FACC_ngrp_ID(old_size+1:) )
-
-    do i = 1, n
-      !check the range of the DOFs as !ACCELERATION does
-      if( (dof_ids(i) < 1).or.(6 < dof_ids(i)).or.(dof_ide(i) < dof_ids(i)).or.(6 < dof_ide(i)) ) then
-        write(*,*)    'fstr control file error : !FACCELERATION : range of dof_ids and dof_ide is from 1 to 6'
-        write(ilog,*) 'fstr control file error : !FACCELERATION : range of dof_ids and dof_ide is from 1 to 6'
-        stop HECMW_EXIT_INPUT
-      end if
-      !encode the DOF range as !ACCELERATION does
-      P%FREQ%FACC_ngrp_type(old_size+i) = 10 * dof_ids(i) + dof_ide(i)
-      !store the amplitude in the part selected by loadcase
-      if( loadcase == kFLOADCASE_RE ) then
-        P%FREQ%FACC_ngrp_valre(old_size+i) = val_ptr(i)
-      else
-        P%FREQ%FACC_ngrp_valim(old_size+i) = val_ptr(i)
-      end if
-    end do
+    !append the data lines of this header to the entries read so far
+    call fstr_freq_append_facceleration( P%MESH, P%FREQ, '!FACCELERATION', loadcase, &
+      n, grp_id_name, dof_ids, dof_ide, val_ptr )
 
     deallocate( grp_id_name )
     deallocate( dof_ids )
@@ -3916,7 +3863,6 @@ end function fstr_setup_INITIAL
   !-----------------------------------------------------------------------------!
 
   subroutine fstr_setup_VELOCITY( ctrl, counter, P )
-    use hecmw_setup_util, only: hecmw_expand_integer_array, hecmw_expand_real_array
     implicit none
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: counter
@@ -3925,12 +3871,11 @@ end function fstr_setup_INITIAL
     integer(kind=kint) :: rcode
     integer(kind=kint) :: vType
     character(HECMW_NAME_LEN) :: amp, rotc_name(1)
-    integer(kind=kint) :: amp_id, rotc_id(1), n_rotc
     character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
     integer(kind=kint),pointer :: dof_ids (:)
     integer(kind=kint),pointer :: dof_ide (:)
     real(kind=kreal),pointer :: val_ptr(:)
-    integer(kind=kint) :: i, j, n, old_size, new_size
+    integer(kind=kint) :: n
     integer(kind=kint) :: gid
 
     gid = 1
@@ -3938,63 +3883,26 @@ end function fstr_setup_INITIAL
 
     ! get center of rotation ( same syntax as !BOUNDARY,ROT_CENTER= )
     rotc_name = ' '
-    rotc_id = -1
-    n_rotc = -1
     rcode = fstr_ctrl_get_param_ex( ctrl, 'ROT_CENTER ', '# ', 0, 'S', rotc_name )
     if( rcode /= 0 ) call fstr_ctrl_err_stop
-    if( rotc_name(1) /= ' ' ) then
-      P%SOLID%VELOCITY_ngrp_rot = P%SOLID%VELOCITY_ngrp_rot + 1
-      n_rotc = P%SOLID%VELOCITY_ngrp_rot
-      call node_grp_name_to_id_ex( P%MESH, '!VELOCITY,ROT_CENTER=', 1, rotc_name, rotc_id)
-    endif
 
     n = fstr_ctrl_get_data_line_n( ctrl )
-    if( n == 0 ) return
-    old_size = P%SOLID%VELOCITY_ngrp_tot
-    new_size = old_size + n
-    P%SOLID%VELOCITY_ngrp_tot = new_size
-
-    call hecmw_expand_integer_array (P%SOLID%VELOCITY_ngrp_GRPID, old_size, new_size )
-    call hecmw_expand_integer_array (P%SOLID%VELOCITY_ngrp_ID  , old_size, new_size )
-    call hecmw_expand_integer_array (P%SOLID%VELOCITY_ngrp_type, old_size, new_size )
-    call hecmw_expand_real_array    (P%SOLID%VELOCITY_ngrp_val , old_size, new_size )
-    call hecmw_expand_integer_array (P%SOLID%VELOCITY_ngrp_amp , old_size, new_size )
-    call hecmw_expand_integer_array (P%SOLID%VELOCITY_ngrp_rotID, old_size, new_size )
-    call hecmw_expand_integer_array (P%SOLID%VELOCITY_ngrp_centerID, old_size, new_size )
-
     allocate( grp_id_name(n))
     allocate( dof_ids (n))
     allocate( dof_ide (n))
     allocate( val_ptr(n) )
 
+    vType = kbcTransit
     amp = ''
     val_ptr = 0.0d0
-    rcode = fstr_ctrl_get_VELOCITY( ctrl,  vType, amp,   &
-      grp_id_name, HECMW_NAME_LEN,  &
-      dof_ids, dof_ide, val_ptr )
-    if( rcode /= 0 ) call fstr_ctrl_err_stop
-    P%SOLID%VELOCITY_type = vType
-    if( vType == kbcInitial ) P%DYN%VarInitialize = .true.
-    call amp_name_to_id( P%MESH, '!VELOCITY', amp, amp_id )
-    call node_grp_name_to_id_ex( P%MESH, '!VELOCITY', &
-      n, grp_id_name, P%SOLID%VELOCITY_ngrp_ID(old_size+1:))
-    P%SOLID%VELOCITY_ngrp_GRPID(old_size+1:new_size) = gid
-
-    ! set up information about rotation ( default value is set if ROT_CENTER is not given.)
-    P%SOLID%VELOCITY_ngrp_rotID(old_size+1:) = n_rotc
-    P%SOLID%VELOCITY_ngrp_centerID(old_size+1:) = rotc_id(1)
-
-    j = old_size+1
-    do i = 1, n
-      if( (dof_ids(i) < 1).or.(6 < dof_ids(i)).or.(dof_ide(i) < 1).or.(6 < dof_ide(i)) ) then
-        write(ILOG,*) 'fstr control file error : !VELOCITY : range of dof_ids and dof_ide is from 1 to 6'
-        stop HECMW_EXIT_INPUT
-      end if
-      P%SOLID%VELOCITY_ngrp_type(j) = 10 * dof_ids(i) + dof_ide(i)
-      P%SOLID%VELOCITY_ngrp_amp(j) = amp_id
-      P%SOLID%VELOCITY_ngrp_val(old_size+i) = val_ptr(i)
-      j = j+1
-    end do
+    if( n > 0 ) then
+      rcode = fstr_ctrl_get_VELOCITY( ctrl,  vType, amp,   &
+        grp_id_name, HECMW_NAME_LEN,  &
+        dof_ids, dof_ide, val_ptr )
+      if( rcode /= 0 ) call fstr_ctrl_err_stop
+    endif
+    call fstr_solid_append_velocity( P%MESH, P%SOLID, P%DYN, '!VELOCITY', gid, vType, rotc_name(1), &
+      amp, n, grp_id_name, dof_ids, dof_ide, val_ptr )
 
     deallocate( grp_id_name )
     deallocate( dof_ids )
@@ -4013,7 +3921,6 @@ end function fstr_setup_INITIAL
   !-----------------------------------------------------------------------------!
 
   subroutine fstr_setup_ACCELERATION( ctrl, counter, P )
-    use hecmw_setup_util, only: hecmw_expand_integer_array, hecmw_expand_real_array
     implicit none
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: counter
@@ -4022,12 +3929,11 @@ end function fstr_setup_INITIAL
     integer(kind=kint) :: rcode
     integer(kind=kint) :: aType
     character(HECMW_NAME_LEN) :: amp
-    integer(kind=kint) :: amp_id
     character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
     integer(kind=kint),pointer :: dof_ids (:)
     integer(kind=kint),pointer :: dof_ide (:)
     real(kind=kreal),pointer :: val_ptr(:)
-    integer(kind=kint) :: i, j, n, old_size, new_size
+    integer(kind=kint) :: n
     integer(kind=kint) :: gid
 
     gid = 1
@@ -4035,15 +3941,6 @@ end function fstr_setup_INITIAL
 
     n = fstr_ctrl_get_data_line_n( ctrl )
     if( n == 0 ) return
-    old_size = P%SOLID%ACCELERATION_ngrp_tot
-    new_size = old_size + n
-    P%SOLID%ACCELERATION_ngrp_tot = new_size
-
-    call hecmw_expand_integer_array (P%SOLID%ACCELERATION_ngrp_GRPID, old_size, new_size )
-    call hecmw_expand_integer_array (P%SOLID%ACCELERATION_ngrp_ID  , old_size, new_size )
-    call hecmw_expand_integer_array (P%SOLID%ACCELERATION_ngrp_type, old_size, new_size )
-    call hecmw_expand_real_array    (P%SOLID%ACCELERATION_ngrp_val , old_size, new_size )
-    call hecmw_expand_integer_array (P%SOLID%ACCELERATION_ngrp_amp , old_size, new_size )
 
     allocate( grp_id_name(n))
     allocate( dof_ids (n))
@@ -4056,24 +3953,8 @@ end function fstr_setup_INITIAL
       grp_id_name, HECMW_NAME_LEN,  &
       dof_ids, dof_ide,  val_ptr)
     if( rcode /= 0 ) call fstr_ctrl_err_stop
-    P%SOLID%ACCELERATION_type = aType
-    if( aType == kbcInitial )P%DYN%VarInitialize = .true.
-    call amp_name_to_id( P%MESH, '!ACCELERATION', amp, amp_id )
-    call node_grp_name_to_id_ex( P%MESH, '!ACCELERATION', &
-      n, grp_id_name, P%SOLID%ACCELERATION_ngrp_ID(old_size+1:))
-    P%SOLID%ACCELERATION_ngrp_GRPID(old_size+1:new_size) = gid
-
-    j = old_size+1
-    do i = 1, n
-      if( (dof_ids(i) < 1).or.(6 < dof_ids(i)).or.(dof_ide(i) < 1).or.(6 < dof_ide(i)) ) then
-        write(ILOG,*) 'fstr control file error : !ACCELERATION : range of dof_ids and dof_ide is from 1 to 6'
-        stop HECMW_EXIT_INPUT
-      end if
-      P%SOLID%ACCELERATION_ngrp_type(j) = 10 * dof_ids(i) + dof_ide(i)
-      P%SOLID%ACCELERATION_ngrp_amp(j) = amp_id
-      P%SOLID%ACCELERATION_ngrp_val(old_size+i) = val_ptr(i)
-      j = j+1
-    end do
+    call fstr_solid_append_acceleration( P%MESH, P%SOLID, P%DYN, '!ACCELERATION', gid, aType, &
+      amp, n, grp_id_name, dof_ids, dof_ide, val_ptr )
 
     deallocate( grp_id_name )
     deallocate( dof_ids )
