@@ -17,6 +17,7 @@ target_sources(fistr PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/fstr_ctrl_dynamic.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_get_prop.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_setup_solid.f90
+  ${CMAKE_CURRENT_LIST_DIR}/fstr_setup_heat.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_setup.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_rcap_io.F90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_element_activation.f90

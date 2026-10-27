@@ -13,6 +13,7 @@ module m_fstr_setup
     , hecmw_streqr
   use fstr_setup_util
   use fstr_setup_solid
+  use m_fstr_setup_heat
   use fstr_ctrl_common
   use fstr_ctrl_static
   use fstr_ctrl_heat
@@ -3514,11 +3515,6 @@ end function fstr_setup_INITIAL
   !-----------------------------------------------------------------------------!
 
   subroutine fstr_setup_FIXTEMP( ctrl, counter, P )
-    use hecmw_setup_util, only &
-      : get_grp_member &
-      , get_grp_member_n &
-      , hecmw_expand_integer_array &
-      , hecmw_expand_real_array
     implicit none
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: counter
@@ -3526,12 +3522,9 @@ end function fstr_setup_INITIAL
 
     integer(kind=kint) :: rcode
     character(HECMW_NAME_LEN) :: amp
-    integer(kind=kint) :: amp_id
     character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
     real(kind=kreal),pointer :: value(:)
-    integer(kind=kint) :: i, j, n, m, head, id, member_n, old_size, new_size
-    integer(kind=kint),pointer :: member(:)
-    integer(kind=kint) :: local_id, rtc
+    integer(kind=kint) :: n
     ! ------------------------------------------------
 
     n = fstr_ctrl_get_data_line_n( ctrl )
@@ -3545,56 +3538,7 @@ end function fstr_setup_INITIAL
       grp_id_name, HECMW_NAME_LEN, value )
     if( rcode /= 0 ) call fstr_ctrl_err_stop
 
-    call amp_name_to_id( P%MESH, '!FIXTEMP', amp, amp_id )
-
-    m = 0
-    do i = 1, n
-      !rtc = get_local_member_index( P%MESH, 'node', grp_id_name(i), local_id )
-      rtc = get_sorted_local_member_index( P%MESH, P%PARAM, 'node', grp_id_name(i), local_id )
-      if( rtc > 0 ) then
-        m = m + 1
-      else if( rtc < 0 ) then
-        m = m + get_grp_member_n( P%MESH, 'node_grp', grp_id_name(i) )
-      end if
-    end do
-
-    if (m == 0) then
-      deallocate( grp_id_name )
-      deallocate( value )
-      return
-    endif
-
-    ! JP-8
-    old_size = P%HEAT%T_FIX_tot
-    new_size = old_size + m
-    call hecmw_expand_integer_array( P%HEAT%T_FIX_node, old_size, new_size )
-    call hecmw_expand_integer_array( P%HEAT%T_FIX_ampl, old_size, new_size )
-    call hecmw_expand_real_array(    P%HEAT%T_FIX_val,  old_size, new_size )
-    P%HEAT%T_FIX_tot = new_size
-
-    head = old_size + 1
-    member => P%HEAT%T_FIX_node(head:)
-    id = head
-    do i = 1, n
-      !rtc = get_local_member_index( P%MESH, 'node', grp_id_name(i), local_id )
-      rtc = get_sorted_local_member_index( P%MESH, P%PARAM, 'node', grp_id_name(i), local_id )
-      if( rtc > 0 ) then
-        member(1) = local_id
-        member_n = 1
-      else if( rtc < 0 ) then
-        member_n = get_grp_member( P%MESH, 'node_grp', grp_id_name(i), member )
-      else
-        cycle
-      end if
-      if( i<n ) then
-        member => member( member_n+1 : )
-      endif
-      do j = 1, member_n
-        P%HEAT%T_FIX_val  (id) = value(i)
-        P%HEAT%T_FIX_ampl (id) = amp_id
-        id = id + 1
-      end do
-    end do
+    call fstr_heat_append_fixtemp( P%MESH, P%PARAM, P%HEAT, '!FIXTEMP', amp, n, grp_id_name, value )
 
     deallocate( grp_id_name )
     deallocate( value )
@@ -3606,11 +3550,6 @@ end function fstr_setup_INITIAL
   !-----------------------------------------------------------------------------!
 
   subroutine fstr_setup_CFLUX( ctrl, counter, P )
-    use hecmw_setup_util, only &
-      : get_grp_member &
-      , get_grp_member_n &
-      , hecmw_expand_integer_array &
-      , hecmw_expand_real_array
     implicit none
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: counter
@@ -3618,12 +3557,9 @@ end function fstr_setup_INITIAL
 
     integer(kind=kint) :: rcode
     character(HECMW_NAME_LEN) :: amp
-    integer(kind=kint) :: amp_id
     character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
     real(kind=kreal),pointer :: value(:)
-    integer(kind=kint) :: i, j, n, m, head, id, member_n, old_size, new_size
-    integer(kind=kint),pointer :: member(:)
-    integer(kind=kint) :: local_id, rtc
+    integer(kind=kint) :: n
     ! ------------------------------------------------
 
     n = fstr_ctrl_get_data_line_n( ctrl )
@@ -3637,53 +3573,7 @@ end function fstr_setup_INITIAL
       grp_id_name, HECMW_NAME_LEN, value )
     if( rcode /= 0 ) call fstr_ctrl_err_stop
 
-    call amp_name_to_id( P%MESH, '!CFLUX', amp, amp_id )
-
-    m = 0
-
-    do i = 1, n
-      rtc = get_local_member_index( P%MESH, 'node', grp_id_name(i), local_id )
-      if( rtc > 0 ) then
-        m = m + 1
-      else if( rtc < 0 ) then
-        m = m + get_grp_member_n( P%MESH, 'node_grp', grp_id_name(i) )
-      end if
-    end do
-
-    if (m == 0) then
-      deallocate( grp_id_name )
-      deallocate( value )
-      return
-    endif
-
-    ! JP-9
-    old_size = P%HEAT%Q_NOD_tot
-    new_size = old_size + m
-    call hecmw_expand_integer_array( P%HEAT%Q_NOD_node, old_size, new_size )
-    call hecmw_expand_integer_array( P%HEAT%Q_NOD_ampl, old_size, new_size )
-    call hecmw_expand_real_array(    P%HEAT%Q_NOD_val,  old_size, new_size )
-    P%HEAT%Q_NOD_tot = new_size
-
-    head = old_size + 1
-    member => P%HEAT%Q_NOD_node(head:)
-    id = head
-    do i = 1, n
-      rtc = get_local_member_index( P%MESH, 'node', grp_id_name(i), local_id )
-      if( rtc > 0 ) then
-        member(1) = local_id
-        member_n = 1
-      else if( rtc < 0 ) then
-        member_n = get_grp_member( P%MESH, 'node_grp', grp_id_name(i), member )
-      else
-        cycle
-      end if
-      if( i<n ) member => member( member_n+1 : )
-      do j = 1, member_n
-        P%HEAT%Q_NOD_val  (id) = value(i)
-        P%HEAT%Q_NOD_ampl (id) = amp_id
-        id = id + 1
-      end do
-    end do
+    call fstr_heat_append_cflux( P%MESH, P%HEAT, '!CFLUX', amp, n, grp_id_name, value )
 
     deallocate( grp_id_name )
     deallocate( value )
@@ -3696,11 +3586,6 @@ end function fstr_setup_INITIAL
 
 
   subroutine fstr_setup_DFLUX( ctrl, counter, P )
-    use hecmw_setup_util, only &
-      : get_grp_member &
-      , get_grp_member_n &
-      , hecmw_expand_integer_array &
-      , hecmw_expand_real_array
     implicit none
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: counter
@@ -3708,13 +3593,10 @@ end function fstr_setup_INITIAL
 
     integer(kind=kint) :: rcode
     character(HECMW_NAME_LEN) :: amp
-    integer(kind=kint) :: amp_id
     character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
     integer(kind=kint),pointer :: load_type(:)
     real(kind=kreal),pointer :: value(:)
-    integer(kind=kint) :: i, j, n, m, head, id, member_n, old_size, new_size
-    integer(kind=kint),pointer :: member(:)
-    integer(kind=kint) :: local_id, rtc
+    integer(kind=kint) :: n
     ! ------------------------------------------------
 
     n = fstr_ctrl_get_data_line_n( ctrl )
@@ -3729,55 +3611,7 @@ end function fstr_setup_INITIAL
       grp_id_name, HECMW_NAME_LEN, load_type, value )
     if( rcode /= 0 ) call fstr_ctrl_err_stop
 
-    call amp_name_to_id( P%MESH, '!DFLUX', amp, amp_id )
-
-    m = 0
-    do i = 1, n
-      rtc = get_local_member_index( P%MESH, 'element', grp_id_name(i), local_id )
-      if( rtc > 0 ) then
-        m = m + 1
-      else if( rtc < 0 ) then
-        m = m + get_grp_member_n( P%MESH, 'elem_grp', grp_id_name(i) )
-      end if
-    end do
-
-    if (m == 0) then
-      deallocate( grp_id_name )
-      deallocate( load_type )
-      deallocate( value )
-      return
-    endif
-
-    ! JP-10
-    old_size = P%HEAT%Q_SUF_tot
-    new_size = old_size + m
-    call hecmw_expand_integer_array( P%HEAT%Q_SUF_elem, old_size, new_size )
-    call hecmw_expand_integer_array( P%HEAT%Q_SUF_ampl, old_size, new_size )
-    call hecmw_expand_integer_array( P%HEAT%Q_SUF_surf, old_size, new_size )
-    call hecmw_expand_real_array(    P%HEAT%Q_SUF_val,  old_size, new_size )
-    P%HEAT%Q_SUF_tot = new_size
-
-    head = old_size + 1
-    member => P%HEAT%Q_SUF_elem(head:)
-    id = head
-    do i = 1, n
-      rtc = get_local_member_index( P%MESH, 'element', grp_id_name(i), local_id )
-      if( rtc > 0 ) then
-        member(1) = local_id
-        member_n = 1
-      else if( rtc < 0 ) then
-        member_n = get_grp_member( P%MESH, 'elem_grp', grp_id_name(i), member )
-      else
-        cycle
-      end if
-      if( i<n ) member => member( member_n+1 : )
-      do j = 1, member_n
-        P%HEAT%Q_SUF_surf (id) = load_type(i)
-        P%HEAT%Q_SUF_val  (id) = value(i)
-        P%HEAT%Q_SUF_ampl (id) = amp_id
-        id = id + 1
-      end do
-    end do
+    call fstr_heat_append_dflux( P%MESH, P%HEAT, '!DFLUX', amp, n, grp_id_name, load_type, value )
 
     deallocate( grp_id_name )
     deallocate( load_type )
@@ -3791,11 +3625,6 @@ end function fstr_setup_INITIAL
 
 
   subroutine fstr_setup_SFLUX( ctrl, counter, P )
-    use hecmw_setup_util, only &
-      : get_grp_member &
-      , get_grp_member_n &
-      , hecmw_expand_integer_array &
-      , hecmw_expand_real_array
     implicit none
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: counter
@@ -3803,11 +3632,9 @@ end function fstr_setup_INITIAL
 
     integer(kind=kint) :: rcode
     character(HECMW_NAME_LEN) :: amp
-    integer(kind=kint) :: amp_id
     character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
     real(kind=kreal),pointer :: value(:)
-    integer(kind=kint) :: i, j, n, m, head, id, member_n, old_size, new_size
-    integer(kind=kint),pointer :: member1(:), member2(:)
+    integer(kind=kint) :: n
     ! ------------------------------------------------
 
     n = fstr_ctrl_get_data_line_n( ctrl )
@@ -3821,44 +3648,7 @@ end function fstr_setup_INITIAL
       grp_id_name, HECMW_NAME_LEN, value )
     if( rcode /= 0 ) call fstr_ctrl_err_stop
 
-    call amp_name_to_id( P%MESH, '!SFLUX', amp, amp_id )
-
-    m = 0
-    do i = 1, n
-      m = m + get_grp_member_n( P%MESH, 'surf_grp', grp_id_name(i) )
-    end do
-
-    if (m == 0) then
-      deallocate( grp_id_name )
-      deallocate( value )
-      return
-    endif
-
-    ! JP-11
-    old_size = P%HEAT%Q_SUF_tot
-    new_size = old_size + m
-    call hecmw_expand_integer_array( P%HEAT%Q_SUF_elem, old_size, new_size )
-    call hecmw_expand_integer_array( P%HEAT%Q_SUF_ampl, old_size, new_size )
-    call hecmw_expand_integer_array( P%HEAT%Q_SUF_surf, old_size, new_size )
-    call hecmw_expand_real_array(    P%HEAT%Q_SUF_val,  old_size, new_size )
-    P%HEAT%Q_SUF_tot = new_size
-
-    head = old_size + 1
-    member1 => P%HEAT%Q_SUF_elem(head:)
-    member2 => P%HEAT%Q_SUF_surf(head:)
-    id = head
-    do i = 1, n
-      member_n = get_grp_member( P%MESH, 'surf_grp', grp_id_name(i), member1, member2 )
-      if( i<n ) then
-        member1 => member1( member_n+1 : )
-        member2 => member2( member_n+1 : )
-      end if
-      do j = 1, member_n
-        P%HEAT%Q_SUF_val  (id) = value(i)
-        P%HEAT%Q_SUF_ampl (id) = amp_id
-        id = id + 1
-      end do
-    end do
+    call fstr_heat_append_sflux( P%MESH, P%HEAT, '!SFLUX', amp, n, grp_id_name, value )
 
     deallocate( grp_id_name )
     deallocate( value )
@@ -3871,12 +3661,6 @@ end function fstr_setup_INITIAL
 
 
   subroutine fstr_setup_FILM( ctrl, counter, P )
-    use hecmw_setup_util, only &
-      : get_grp_member &
-      , get_grp_member_n &
-      , hecmw_expand_integer_array &
-      , hecmw_expand_integer_array2 &
-      , hecmw_expand_real_array2
     implicit none
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: counter
@@ -3884,14 +3668,11 @@ end function fstr_setup_INITIAL
 
     integer(kind=kint) :: rcode
     character(HECMW_NAME_LEN) :: amp1, amp2
-    integer(kind=kint) :: amp_id1, amp_id2
     character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
     integer(kind=kint),pointer :: load_type(:)
     real(kind=kreal),pointer :: value(:)
     real(kind=kreal),pointer :: shink(:)
-    integer(kind=kint) :: i, j, n, m, head, id, member_n, old_size, new_size
-    integer(kind=kint),pointer :: member(:)
-    integer(kind=kint) :: local_id, rtc
+    integer(kind=kint) :: n
     ! ------------------------------------------------
 
     n = fstr_ctrl_get_data_line_n( ctrl )
@@ -3909,59 +3690,8 @@ end function fstr_setup_INITIAL
       grp_id_name, HECMW_NAME_LEN, load_type, value, shink )
     if( rcode /= 0 ) call fstr_ctrl_err_stop
 
-    call amp_name_to_id( P%MESH, '!FILM', amp1, amp_id1 )
-    call amp_name_to_id( P%MESH, '!FILM', amp2, amp_id2 )
-
-    m = 0
-    do i = 1, n
-      rtc = get_local_member_index( P%MESH, 'element', grp_id_name(i), local_id )
-      if( rtc > 0 ) then
-        m = m + 1
-      else if( rtc < 0 ) then
-        m = m + get_grp_member_n( P%MESH, 'elem_grp', grp_id_name(i) )
-      end if
-    end do
-
-    if (m == 0) then
-      deallocate( grp_id_name )
-      deallocate( load_type )
-      deallocate( value )
-      deallocate( shink )
-      return
-    endif
-
-    ! JP-12
-    old_size = P%HEAT%H_SUF_tot
-    new_size = old_size + m
-    call hecmw_expand_integer_array(  P%HEAT%H_SUF_elem,    old_size, new_size )
-    call hecmw_expand_integer_array2( P%HEAT%H_SUF_ampl, 2, old_size, new_size )
-    call hecmw_expand_integer_array(  P%HEAT%H_SUF_surf,    old_size, new_size )
-    call hecmw_expand_real_array2(    P%HEAT%H_SUF_val,  2, old_size, new_size )
-    P%HEAT%H_SUF_tot = new_size
-
-    head = old_size + 1
-    member => P%HEAT%H_SUF_elem(head:)
-    id = head
-    do i = 1, n
-      rtc = get_local_member_index( P%MESH, 'element', grp_id_name(i), local_id )
-      if( rtc > 0 ) then
-        member(1) = local_id
-        member_n = 1
-      else if( rtc < 0 ) then
-        member_n = get_grp_member( P%MESH, 'elem_grp', grp_id_name(i), member )
-      else
-        cycle
-      end if
-      if( i<n ) member => member( member_n+1 : )
-      do j = 1, member_n
-        P%HEAT%H_SUF_surf (id)   = load_type(i)
-        P%HEAT%H_SUF_val  (id,1) = value(i)
-        P%HEAT%H_SUF_val  (id,2) = shink(i)
-        P%HEAT%H_SUF_ampl (id,1) = amp_id1
-        P%HEAT%H_SUF_ampl (id,2) = amp_id2
-        id= id + 1
-      end do
-    end do
+    call fstr_heat_append_film( P%MESH, P%HEAT, '!FILM', amp1, amp2, &
+      n, grp_id_name, load_type, value, shink )
 
     deallocate( grp_id_name )
     deallocate( load_type )
@@ -3976,12 +3706,6 @@ end function fstr_setup_INITIAL
 
 
   subroutine fstr_setup_SFILM( ctrl, counter, P )
-    use hecmw_setup_util, only &
-      : get_grp_member &
-      , get_grp_member_n &
-      , hecmw_expand_integer_array &
-      , hecmw_expand_integer_array2 &
-      , hecmw_expand_real_array2
     implicit none
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: counter
@@ -3989,12 +3713,10 @@ end function fstr_setup_INITIAL
 
     integer(kind=kint) :: rcode
     character(HECMW_NAME_LEN) :: amp1, amp2
-    integer(kind=kint) :: amp_id1, amp_id2
     character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
     real(kind=kreal),pointer :: value(:)
     real(kind=kreal),pointer :: shink(:)
-    integer(kind=kint) :: i, j, n, m, head, id, member_n, old_size, new_size
-    integer(kind=kint),pointer :: member1(:), member2(:)
+    integer(kind=kint) :: n
     ! ------------------------------------------------
 
     n = fstr_ctrl_get_data_line_n( ctrl )
@@ -4010,48 +3732,8 @@ end function fstr_setup_INITIAL
       grp_id_name, HECMW_NAME_LEN, value, shink )
     if( rcode /= 0 ) call fstr_ctrl_err_stop
 
-    call amp_name_to_id( P%MESH, '!SFILM', amp1, amp_id1 )
-    call amp_name_to_id( P%MESH, '!SFILM', amp2, amp_id2 )
-
-    m = 0
-    do i = 1, n
-      m = m + get_grp_member_n( P%MESH, 'surf_grp', grp_id_name(i) )
-    end do
-
-    if (m == 0) then
-      deallocate( grp_id_name )
-      deallocate( value )
-      deallocate( shink )
-      return
-    endif
-
-    ! JP-13
-    old_size = P%HEAT%H_SUF_tot
-    new_size = old_size + m
-    call hecmw_expand_integer_array(  P%HEAT%H_SUF_elem,    old_size, new_size )
-    call hecmw_expand_integer_array2( P%HEAT%H_SUF_ampl, 2, old_size, new_size )
-    call hecmw_expand_integer_array(  P%HEAT%H_SUF_surf,    old_size, new_size )
-    call hecmw_expand_real_array2(    P%HEAT%H_SUF_val,  2, old_size, new_size )
-    P%HEAT%H_SUF_tot = new_size
-
-    head = old_size + 1
-    member1 => P%HEAT%H_SUF_elem(head:)
-    member2 => P%HEAT%H_SUF_surf(head:)
-    id = head
-    do i = 1, n
-      member_n = get_grp_member( P%MESH, 'surf_grp', grp_id_name(i), member1, member2 )
-      if( i<n ) then
-        member1 => member1( member_n+1 : )
-        member2 => member2( member_n+1 : )
-      end if
-      do j = 1, member_n
-        P%HEAT%H_SUF_val  (id,1) = value(i)
-        P%HEAT%H_SUF_val  (id,2) = shink(i)
-        P%HEAT%H_SUF_ampl (id,1) = amp_id1
-        P%HEAT%H_SUF_ampl (id,2) = amp_id2
-        id = id + 1
-      end do
-    end do
+    call fstr_heat_append_sfilm( P%MESH, P%HEAT, '!SFILM', amp1, amp2, &
+      n, grp_id_name, value, shink )
 
     deallocate( grp_id_name )
     deallocate( value )
@@ -4065,12 +3747,6 @@ end function fstr_setup_INITIAL
 
 
   subroutine fstr_setup_RADIATE( ctrl, counter, P )
-    use hecmw_setup_util, only &
-      : get_grp_member &
-      , get_grp_member_n &
-      , hecmw_expand_integer_array &
-      , hecmw_expand_integer_array2 &
-      , hecmw_expand_real_array2
     implicit none
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: counter
@@ -4078,14 +3754,11 @@ end function fstr_setup_INITIAL
 
     integer(kind=kint) :: rcode
     character(HECMW_NAME_LEN) :: amp1, amp2
-    integer(kind=kint) :: amp_id1, amp_id2
     character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
     integer(kind=kint),pointer :: load_type(:)
     real(kind=kreal),pointer :: value(:)
     real(kind=kreal),pointer :: shink(:)
-    integer(kind=kint) :: i, j, n, m, head, id, member_n, old_size, new_size
-    integer(kind=kint),pointer :: member(:)
-    integer(kind=kint) :: local_id, rtc
+    integer(kind=kint) :: n
     ! ------------------------------------------------
 
     n = fstr_ctrl_get_data_line_n( ctrl )
@@ -4102,59 +3775,8 @@ end function fstr_setup_INITIAL
       grp_id_name, HECMW_NAME_LEN, load_type, value, shink )
     if( rcode /= 0 ) call fstr_ctrl_err_stop
 
-    call amp_name_to_id( P%MESH, '!RADIATE', amp1, amp_id1 )
-    call amp_name_to_id( P%MESH, '!RADIATE', amp2, amp_id2 )
-
-    m = 0
-    do i = 1, n
-      rtc = get_local_member_index( P%MESH, 'element', grp_id_name(i), local_id )
-      if( rtc > 0 ) then
-        m = m + 1
-      else if( rtc < 0 ) then
-        m = m + get_grp_member_n( P%MESH, 'elem_grp', grp_id_name(i) )
-      end if
-    end do
-
-    if (m == 0) then
-      deallocate( grp_id_name )
-      deallocate( load_type )
-      deallocate( value )
-      deallocate( shink )
-      return
-    endif
-
-    ! JP-14
-    old_size = P%HEAT%R_SUF_tot
-    new_size = old_size + m
-    call hecmw_expand_integer_array(  P%HEAT%R_SUF_elem,    old_size, new_size )
-    call hecmw_expand_integer_array2( P%HEAT%R_SUF_ampl, 2, old_size, new_size )
-    call hecmw_expand_integer_array(  P%HEAT%R_SUF_surf,    old_size, new_size )
-    call hecmw_expand_real_array2(    P%HEAT%R_SUF_val,  2, old_size, new_size )
-    P%HEAT%R_SUF_tot = new_size
-
-    head = old_size + 1
-    member => P%HEAT%R_SUF_elem(head:)
-    id = head
-    do i = 1, n
-      rtc = get_local_member_index( P%MESH, 'element', grp_id_name(i), local_id )
-      if( rtc > 0 ) then
-        member(1) = local_id
-        member_n = 1
-      else if( rtc < 0 ) then
-        member_n = get_grp_member( P%MESH, 'elem_grp', grp_id_name(i), member )
-      else
-        cycle
-      end if
-      if( i<n ) member => member( member_n+1 : )
-      do j = 1, member_n
-        P%HEAT%R_SUF_surf (id)   = load_type(i)
-        P%HEAT%R_SUF_val  (id,1) = value(i)
-        P%HEAT%R_SUF_val  (id,2) = shink(i)
-        P%HEAT%R_SUF_ampl (id,1) = amp_id1
-        P%HEAT%R_SUF_ampl (id,2) = amp_id2
-        id = id + 1
-      end do
-    end do
+    call fstr_heat_append_radiate( P%MESH, P%HEAT, '!RADIATE', amp1, amp2, &
+      n, grp_id_name, load_type, value, shink )
 
     deallocate( grp_id_name )
     deallocate( load_type )
@@ -4169,12 +3791,6 @@ end function fstr_setup_INITIAL
 
 
   subroutine fstr_setup_SRADIATE( ctrl, counter, P )
-    use hecmw_setup_util, only &
-      : get_grp_member &
-      , get_grp_member_n &
-      , hecmw_expand_integer_array &
-      , hecmw_expand_integer_array2 &
-      , hecmw_expand_real_array2
     implicit none
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: counter
@@ -4182,12 +3798,10 @@ end function fstr_setup_INITIAL
 
     integer(kind=kint) :: rcode
     character(HECMW_NAME_LEN) :: amp1, amp2
-    integer(kind=kint) :: amp_id1, amp_id2
     character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
     real(kind=kreal),pointer :: value(:)
     real(kind=kreal),pointer :: shink(:)
-    integer(kind=kint) :: i, j, n, m, head, id, member_n, old_size, new_size
-    integer(kind=kint),pointer :: member1(:), member2(:)
+    integer(kind=kint) :: n
     ! ------------------------------------------------
 
     n = fstr_ctrl_get_data_line_n( ctrl )
@@ -4202,48 +3816,8 @@ end function fstr_setup_INITIAL
     rcode = fstr_ctrl_get_SRADIATE( ctrl, amp1, amp2, grp_id_name, HECMW_NAME_LEN, value, shink )
     if( rcode /= 0 ) call fstr_ctrl_err_stop
 
-    call amp_name_to_id( P%MESH, '!SRADIATE', amp1, amp_id1 )
-    call amp_name_to_id( P%MESH, '!SRADIATE', amp2, amp_id2 )
-
-    m = 0
-    do i = 1, n
-      m = m + get_grp_member_n( P%MESH, 'surf_grp', grp_id_name(i) )
-    end do
-
-    if (m == 0) then
-      deallocate( grp_id_name )
-      deallocate( value )
-      deallocate( shink )
-      return
-    endif
-
-    ! JP-15
-    old_size = P%HEAT%R_SUF_tot
-    new_size = old_size + m
-    call hecmw_expand_integer_array(  P%HEAT%R_SUF_elem,    old_size, new_size )
-    call hecmw_expand_integer_array2( P%HEAT%R_SUF_ampl, 2, old_size, new_size )
-    call hecmw_expand_integer_array(  P%HEAT%R_SUF_surf,    old_size, new_size )
-    call hecmw_expand_real_array2(    P%HEAT%R_SUF_val,  2, old_size, new_size )
-    P%HEAT%R_SUF_tot = new_size
-
-    head = old_size + 1
-    member1 => P%HEAT%R_SUF_elem(head:)
-    member2 => P%HEAT%R_SUF_surf(head:)
-    id = head
-    do i = 1, n
-      member_n = get_grp_member( P%MESH, 'surf_grp', grp_id_name(i), member1, member2 )
-      if( i<n ) then
-        member1 => member1( member_n+1 : )
-        member2 => member2( member_n+1 : )
-      end if
-      do j = 1, member_n
-        P%HEAT%R_SUF_val  (id,1) = value(i)
-        P%HEAT%R_SUF_val  (id,2) = shink(i)
-        P%HEAT%R_SUF_ampl (id,1) = amp_id1
-        P%HEAT%R_SUF_ampl (id,2) = amp_id2
-        id = id + 1
-      end do
-    end do
+    call fstr_heat_append_sradiate( P%MESH, P%HEAT, '!SRADIATE', amp1, amp2, &
+      n, grp_id_name, value, shink )
 
     deallocate( grp_id_name )
     deallocate( value )

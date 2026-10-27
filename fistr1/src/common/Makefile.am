@@ -100,6 +100,7 @@ OBJSF = \
 	fstr_ctrl_dynamic.@f90objfilepostfix@ \
 	fstr_get_prop.@f90objfilepostfix@ \
 	fstr_setup_solid.@f90objfilepostfix@ \
+	fstr_setup_heat.@f90objfilepostfix@ \
 	fstr_setup.@f90objfilepostfix@ \
 	fstr_rcap_io.@f90objfilepostfix@
 
