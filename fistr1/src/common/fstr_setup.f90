@@ -1930,7 +1930,7 @@ contains
        end if
     endif
 
-    ! Allocated in in fstr_setup_CLOAD
+    ! Allocated in fstr_solid_append_cload
     if( associated(fstrSOLID%CLOAD_ngrp_GRPID) ) then
        deallocate(fstrSOLID%CLOAD_ngrp_GRPID, stat=ierror)
        if( ierror /= 0 ) then
@@ -2917,9 +2917,6 @@ end function fstr_setup_INITIAL
   !-----------------------------------------------------------------------------!
 
   subroutine fstr_setup_CLOAD( ctrl, counter, P )
-    use hecmw_setup_util, only &
-      : hecmw_expand_integer_array &
-      , hecmw_expand_real_array
     implicit none
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: counter
@@ -2927,13 +2924,11 @@ end function fstr_setup_INITIAL
 
     integer(kind=kint) :: rcode
     character(HECMW_NAME_LEN) :: amp, rotc_name(1)
-    integer(kind=kint) :: amp_id, rotc_id(1), n_rotc
     character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
     real(kind=kreal),pointer :: val_ptr(:)
     integer(kind=kint),pointer :: id_ptr(:)
-    integer(kind=kint) :: i, n, old_size, new_size
-    integer(kind=kint) :: gid, ngrp_id, nnode_grp
-    character(len=HECMW_MSG_LEN) :: msg(2)
+    integer(kind=kint) :: n
+    integer(kind=kint) :: gid
 
     if( P%SOLID%file_type /= kbcfFSTR ) return
     gid = 1
@@ -2942,52 +2937,22 @@ end function fstr_setup_INITIAL
 
     ! get center of torque load
     rotc_name = ' '
-    rotc_id = -1
-    n_rotc = -1
     rcode = fstr_ctrl_get_param_ex( ctrl, 'ROT_CENTER ', '# ', 0, 'S', rotc_name )
     if( rcode /= 0 ) call fstr_ctrl_err_stop
-    if(  rotc_name(1) /= ' ' ) then
-      P%SOLID%CLOAD_ngrp_rot = P%SOLID%CLOAD_ngrp_rot + 1
-      n_rotc = P%SOLID%CLOAD_ngrp_rot
-      call node_grp_name_to_id_ex( P%MESH, '!CLOAD,ROT_CENTER=', 1, rotc_name, rotc_id)
-    endif
 
     n = fstr_ctrl_get_data_line_n( ctrl )
-    if( n == 0 ) return
-    old_size = P%SOLID%CLOAD_ngrp_tot
-    new_size = old_size + n
-    P%SOLID%CLOAD_ngrp_tot = new_size
-    ! Keiji Suemitsu (20140624) <
-    call hecmw_expand_integer_array ( P%SOLID%CLOAD_ngrp_GRPID, old_size, new_size )
-    call hecmw_expand_integer_array ( P%SOLID%CLOAD_ngrp_ID,  old_size, new_size )
-    call hecmw_expand_integer_array ( P%SOLID%CLOAD_ngrp_DOF, old_size, new_size )
-    call hecmw_expand_real_array    ( P%SOLID%CLOAD_ngrp_val, old_size, new_size )
-    call hecmw_expand_integer_array ( P%SOLID%CLOAD_ngrp_amp, old_size, new_size )
-    call hecmw_expand_integer_array ( P%SOLID%CLOAD_ngrp_rotID, old_size, new_size )
-    call hecmw_expand_integer_array ( P%SOLID%CLOAD_ngrp_centerID, old_size, new_size )
-    ! > Keiji Suemitsu (20140624)
-
     allocate( grp_id_name(n))
     allocate( id_ptr(n) )
     allocate( val_ptr(n) )
     amp = ' '
     id_ptr = 0
     val_ptr = 0.0d0
-    rcode = fstr_ctrl_get_CLOAD( ctrl, amp, grp_id_name, HECMW_NAME_LEN, id_ptr, val_ptr )
-    if( rcode /= 0 ) call fstr_ctrl_err_stop
-
-    ! set up information about torque load ( default value is set if ROT_CENTER is not given.)
-    P%SOLID%CLOAD_ngrp_rotID(old_size+1:) = n_rotc
-    P%SOLID%CLOAD_ngrp_centerID(old_size+1:) = rotc_id(1)
-
-    call amp_name_to_id( P%MESH, '!CLOAD', amp, amp_id )
-    do i=1,n
-      P%SOLID%CLOAD_ngrp_amp(old_size+i) = amp_id
-      P%SOLID%CLOAD_ngrp_DOF(old_size+i) = id_ptr(i)
-      P%SOLID%CLOAD_ngrp_val(old_size+i) = val_ptr(i)
-    end do
-    P%SOLID%CLOAD_ngrp_GRPID(old_size+1:new_size) = gid
-    call node_grp_name_to_id_ex( P%MESH, '!CLOAD', n, grp_id_name, P%SOLID%CLOAD_ngrp_ID(old_size+1:))
+    if( n > 0 ) then
+      rcode = fstr_ctrl_get_CLOAD( ctrl, amp, grp_id_name, HECMW_NAME_LEN, id_ptr, val_ptr )
+      if( rcode /= 0 ) call fstr_ctrl_err_stop
+    endif
+    call fstr_solid_append_cload( P%MESH, P%SOLID, '!CLOAD', gid, rotc_name(1), &
+      amp, n, grp_id_name, id_ptr, val_ptr )
 
     deallocate( grp_id_name )
     deallocate( id_ptr )
@@ -2995,22 +2960,6 @@ end function fstr_setup_INITIAL
     nullify( grp_id_name )
     nullify( id_ptr )
     nullify( val_ptr )
-
-    ! the refinement adds nodes to the group, so the load given to each node of the group
-    ! sums up to more than intended before the refinement
-    if( P%MESH%n_refine > 0 ) then
-      do i=1,n
-        ngrp_id = P%SOLID%CLOAD_ngrp_ID(old_size+i)
-        nnode_grp = hecmw_ngrp_get_number(P%MESH, ngrp_id)
-        if( nnode_grp > 1 .and. P%MESH%my_rank == 0 ) then
-          msg(1) = ' ### Warning: !CLOAD on a refined mesh'
-          write(msg(2),'(a,a,a,i0,a)') '   node group "', trim(P%MESH%node_group%grp_name(ngrp_id)), &
-            '" now has ', nnode_grp, ' nodes; the same load is applied to each of them'
-          write(*,'(/a/a/)') trim(msg(1)), trim(msg(2))
-          write(ILOG,'(/a/a/)') trim(msg(1)), trim(msg(2))
-        endif
-      enddo
-    endif
 
   end subroutine fstr_setup_CLOAD
 

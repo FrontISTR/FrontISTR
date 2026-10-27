@@ -88,4 +88,80 @@ contains
 
   end subroutine fstr_solid_append_boundary
 
+  !-----------------------------------------------------------------------------!
+  !> Append !CLOAD                                                              !
+  !-----------------------------------------------------------------------------!
+  !> With n = 0, only the group of rotation center is counted.
+  subroutine fstr_solid_append_cload( hecMESH, fstrSOLID, header_name, gid, rotc_name, &
+      amp_name, n, grp_names, dofs, vals )
+    implicit none
+    type(hecmwST_local_mesh), target          :: hecMESH
+    type(fstr_solid)                          :: fstrSOLID
+    character(len=*), intent(in)              :: header_name
+    integer(kind=kint), intent(in)            :: gid
+    character(len=HECMW_NAME_LEN), intent(in) :: rotc_name
+    character(len=HECMW_NAME_LEN), intent(in) :: amp_name
+    integer(kind=kint), intent(in)            :: n
+    character(len=HECMW_NAME_LEN), intent(in) :: grp_names(:)
+    integer(kind=kint), intent(in)            :: dofs(:)
+    real(kind=kreal), intent(in)              :: vals(:)
+
+    character(len=HECMW_NAME_LEN) :: rotc(1)
+    integer(kind=kint) :: amp_id, rotc_id(1), n_rotc
+    integer(kind=kint) :: i, old_size, new_size
+    integer(kind=kint) :: ngrp_id, nnode_grp
+    character(len=HECMW_MSG_LEN) :: msg(2)
+
+    rotc_id = -1
+    n_rotc = -1
+    if( rotc_name /= ' ' ) then
+      fstrSOLID%CLOAD_ngrp_rot = fstrSOLID%CLOAD_ngrp_rot + 1
+      n_rotc = fstrSOLID%CLOAD_ngrp_rot
+      rotc(1) = rotc_name
+      call node_grp_name_to_id_ex( hecMESH, header_name//',ROT_CENTER=', 1, rotc, rotc_id )
+    endif
+
+    if( n == 0 ) return
+    old_size = fstrSOLID%CLOAD_ngrp_tot
+    new_size = old_size + n
+    fstrSOLID%CLOAD_ngrp_tot = new_size
+    call hecmw_expand_integer_array ( fstrSOLID%CLOAD_ngrp_GRPID, old_size, new_size )
+    call hecmw_expand_integer_array ( fstrSOLID%CLOAD_ngrp_ID,  old_size, new_size )
+    call hecmw_expand_integer_array ( fstrSOLID%CLOAD_ngrp_DOF, old_size, new_size )
+    call hecmw_expand_real_array    ( fstrSOLID%CLOAD_ngrp_val, old_size, new_size )
+    call hecmw_expand_integer_array ( fstrSOLID%CLOAD_ngrp_amp, old_size, new_size )
+    call hecmw_expand_integer_array ( fstrSOLID%CLOAD_ngrp_rotID, old_size, new_size )
+    call hecmw_expand_integer_array ( fstrSOLID%CLOAD_ngrp_centerID, old_size, new_size )
+
+    ! set up information about torque load ( default value is set if ROT_CENTER is not given.)
+    fstrSOLID%CLOAD_ngrp_rotID(old_size+1:) = n_rotc
+    fstrSOLID%CLOAD_ngrp_centerID(old_size+1:) = rotc_id(1)
+
+    call amp_name_to_id( hecMESH, header_name, amp_name, amp_id )
+    do i=1,n
+      fstrSOLID%CLOAD_ngrp_amp(old_size+i) = amp_id
+      fstrSOLID%CLOAD_ngrp_DOF(old_size+i) = dofs(i)
+      fstrSOLID%CLOAD_ngrp_val(old_size+i) = vals(i)
+    end do
+    fstrSOLID%CLOAD_ngrp_GRPID(old_size+1:new_size) = gid
+    call node_grp_name_to_id_ex( hecMESH, header_name, n, grp_names, fstrSOLID%CLOAD_ngrp_ID(old_size+1:))
+
+    ! the refinement adds nodes to the group, so the load given to each node of the group
+    ! sums up to more than intended before the refinement
+    if( hecMESH%n_refine > 0 ) then
+      do i=1,n
+        ngrp_id = fstrSOLID%CLOAD_ngrp_ID(old_size+i)
+        nnode_grp = hecmw_ngrp_get_number(hecMESH, ngrp_id)
+        if( nnode_grp > 1 .and. hecMESH%my_rank == 0 ) then
+          msg(1) = ' ### Warning: '//header_name//' on a refined mesh'
+          write(msg(2),'(a,a,a,i0,a)') '   node group "', trim(hecMESH%node_group%grp_name(ngrp_id)), &
+            '" now has ', nnode_grp, ' nodes; the same load is applied to each of them'
+          write(*,'(/a/a/)') trim(msg(1)), trim(msg(2))
+          write(ILOG,'(/a/a/)') trim(msg(1)), trim(msg(2))
+        endif
+      enddo
+    endif
+
+  end subroutine fstr_solid_append_cload
+
 end module fstr_setup_solid
