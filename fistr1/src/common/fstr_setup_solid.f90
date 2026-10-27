@@ -14,6 +14,7 @@ module fstr_setup_solid
     , hecmw_expand_real_array
   use fstr_setup_util, only &
     : amp_name_to_id &
+    , dload_grp_name_to_id_ex &
     , fstr_setup_util_err_stop
   implicit none
 
@@ -163,5 +164,86 @@ contains
     endif
 
   end subroutine fstr_solid_append_cload
+
+  !-----------------------------------------------------------------------------!
+  !> Reset !DLOAD                                                        !
+  !-----------------------------------------------------------------------------!
+
+  subroutine fstr_expand_dload_array( array, old_size, new_size )
+    implicit none
+    real(kind=kreal), pointer :: array(:,:)
+    integer(kind=kint) :: old_size, new_size, i, j
+    real(kind=kreal), pointer :: temp(:,:)
+
+    if( old_size >= new_size ) then
+      return
+    end if
+
+    if( associated( array ) ) then
+      allocate(temp(0:6, old_size))
+      temp = array
+      deallocate(array)
+      allocate(array(0:6, new_size))
+      array = 0
+      do i=1,old_size
+        do j=0,6
+          array(j,i) = temp(j,i)
+        end do
+      end do
+      deallocate(temp)
+    else
+      allocate(array(0:6, new_size))
+      array = 0
+    end if
+  end subroutine fstr_expand_dload_array
+
+  !-----------------------------------------------------------------------------!
+  !> Append !DLOAD                                                              !
+  !-----------------------------------------------------------------------------!
+  !> follow is one value shared by all the DLOAD conditions; each call with n > 0 overwrites it.
+  subroutine fstr_solid_append_dload( hecMESH, fstrSOLID, header_name, gid, follow, &
+      amp_name, n, grp_names, lids, params )
+    implicit none
+    type(hecmwST_local_mesh), target          :: hecMESH
+    type(fstr_solid)                          :: fstrSOLID
+    character(len=*), intent(in)              :: header_name
+    integer(kind=kint), intent(in)            :: gid
+    integer(kind=kint), intent(in)            :: follow
+    character(len=HECMW_NAME_LEN), intent(in) :: amp_name
+    integer(kind=kint), intent(in)            :: n
+    character(len=HECMW_NAME_LEN), intent(in) :: grp_names(:)
+    integer(kind=kint), intent(in)            :: lids(:)
+    real(kind=kreal), intent(in)              :: params(0:,:)
+
+    logical, allocatable :: fg_surface(:)
+    integer(kind=kint) :: amp_id
+    integer(kind=kint) :: i, j, old_size, new_size
+
+    if( n == 0 ) return
+    old_size = fstrSOLID%DLOAD_ngrp_tot
+    new_size = old_size + n
+    fstrSOLID%DLOAD_ngrp_tot = new_size
+    call hecmw_expand_integer_array ( fstrSOLID%DLOAD_ngrp_GRPID, old_size, new_size )
+    call hecmw_expand_integer_array ( fstrSOLID%DLOAD_ngrp_ID,  old_size, new_size )
+    call hecmw_expand_integer_array ( fstrSOLID%DLOAD_ngrp_LID, old_size, new_size )
+    call hecmw_expand_integer_array ( fstrSOLID%DLOAD_ngrp_amp, old_size, new_size )
+    call fstr_expand_dload_array ( fstrSOLID%DLOAD_ngrp_params, old_size, new_size )
+
+    allocate( fg_surface(n) )
+    call amp_name_to_id( hecMESH, header_name, amp_name, amp_id )
+    fstrSOLID%DLOAD_follow = follow
+    do i=1,n
+      fstrSOLID%DLOAD_ngrp_amp(old_size+i) = amp_id
+      fstrSOLID%DLOAD_ngrp_LID(old_size+i) = lids(i)
+      do j=0, 6
+        fstrSOLID%DLOAD_ngrp_params(j,old_size+i) = params(j,i)
+      end do
+      fg_surface(i) =  ( lids(i) == 100 )
+    end do
+    fstrSOLID%DLOAD_ngrp_GRPID(old_size+1:new_size) = gid
+    call dload_grp_name_to_id_ex( hecMESH, n, grp_names, fg_surface, fstrSOLID%DLOAD_ngrp_ID(old_size+1:))
+    deallocate( fg_surface )
+
+  end subroutine fstr_solid_append_dload
 
 end module fstr_setup_solid
