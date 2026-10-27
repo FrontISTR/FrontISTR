@@ -3196,42 +3196,8 @@ end function fstr_setup_INITIAL
 
   end subroutine
 
-  !-----------------------------------------------------------------------------!
-  !> Reset !DLOAD                                                        !
-  !-----------------------------------------------------------------------------!
-
-  subroutine fstr_expand_dload_array( array, old_size, new_size )
-    implicit none
-    real(kind=kreal), pointer :: array(:,:)
-    integer(kind=kint) :: old_size, new_size, i, j
-    real(kind=kreal), pointer :: temp(:,:)
-
-    if( old_size >= new_size ) then
-      return
-    end if
-
-    if( associated( array ) ) then
-      allocate(temp(0:6, old_size))
-      temp = array
-      deallocate(array)
-      allocate(array(0:6, new_size))
-      array = 0
-      do i=1,old_size
-        do j=0,6
-          array(j,i) = temp(j,i)
-        end do
-      end do
-      deallocate(temp)
-    else
-      allocate(array(0:6, new_size))
-      array = 0
-    end if
-  end subroutine fstr_expand_dload_array
-
   !> Read in !DLOAD
   subroutine fstr_setup_DLOAD( ctrl, counter, P )
-    use hecmw_setup_util, only &
-      : hecmw_expand_integer_array
     implicit none
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: counter
@@ -3239,13 +3205,11 @@ end function fstr_setup_INITIAL
 
     integer(kind=kint) :: rcode
     character(HECMW_NAME_LEN) :: amp
-    integer(kind=kint) :: amp_id
     integer(kind=kint) :: follow
     character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
     real(kind=kreal),pointer :: new_params(:,:)
-    logical,pointer :: fg_surface(:)
     integer(kind=kint),pointer :: lid_ptr(:)
-    integer(kind=kint) :: i, j, n, old_size, new_size
+    integer(kind=kint) :: n
     integer(kind=kint) :: gid
 
     if( P%SOLID%file_type /= kbcfFSTR ) return
@@ -3255,21 +3219,10 @@ end function fstr_setup_INITIAL
 
     n = fstr_ctrl_get_data_line_n( ctrl )
     if( n == 0 ) return
-    old_size = P%SOLID%DLOAD_ngrp_tot
-    new_size = old_size + n
-    P%SOLID%DLOAD_ngrp_tot = new_size
-    ! Keiji Suemitsu (20140624) <
-    call hecmw_expand_integer_array ( P%SOLID%DLOAD_ngrp_GRPID, old_size, new_size )
-    call hecmw_expand_integer_array ( P%SOLID%DLOAD_ngrp_ID,  old_size, new_size )
-    call hecmw_expand_integer_array ( P%SOLID%DLOAD_ngrp_LID, old_size, new_size )
-    call hecmw_expand_integer_array ( P%SOLID%DLOAD_ngrp_amp, old_size, new_size )
-    call fstr_expand_dload_array ( P%SOLID%DLOAD_ngrp_params, old_size, new_size )
-    ! > Keiji Suemitsu (20140624)
 
     allocate( grp_id_name(n))
     allocate( lid_ptr(n) )
     allocate( new_params(0:6,n))
-    allocate( fg_surface(n))
     new_params = 0
     amp = ' '
     follow = P%SOLID%DLOAD_follow
@@ -3278,26 +3231,14 @@ end function fstr_setup_INITIAL
       grp_id_name, HECMW_NAME_LEN,    &
       lid_ptr, new_params )
     if( rcode /= 0 ) call fstr_ctrl_err_stop
-    call amp_name_to_id( P%MESH, '!DLOAD', amp, amp_id )
-    P%SOLID%DLOAD_follow = follow
-    do i=1,n
-      P%SOLID%DLOAD_ngrp_amp(old_size+i) = amp_id
-      P%SOLID%DLOAD_ngrp_LID(old_size+i) = lid_ptr(i)
-      do j=0, 6
-        P%SOLID%DLOAD_ngrp_params(j,old_size+i) = new_params(j,i)
-      end do
-      fg_surface(i) =  ( lid_ptr(i) == 100 )
-    end do
-    P%SOLID%DLOAD_ngrp_GRPID(old_size+1:new_size) = gid
-    call dload_grp_name_to_id_ex( P%MESH, n, grp_id_name, fg_surface, P%SOLID%DLOAD_ngrp_ID(old_size+1:))
+    call fstr_solid_append_dload( P%MESH, P%SOLID, '!DLOAD', gid, follow, &
+      amp, n, grp_id_name, lid_ptr, new_params )
     deallocate( grp_id_name )
     deallocate( lid_ptr )
     deallocate( new_params )
-    deallocate( fg_surface )
     nullify( grp_id_name )
     nullify( lid_ptr )
     nullify( new_params )
-    nullify( fg_surface )
   end subroutine fstr_setup_DLOAD
 
 
