@@ -10,6 +10,8 @@ module fstr_setup_solid
   use m_fstr
   use hecmw_setup_util, only &
     : node_grp_name_to_id_ex &
+    , elem_grp_name_to_id_ex &
+    , surf_grp_name_to_id_ex &
     , hecmw_expand_integer_array &
     , hecmw_expand_real_array
   use fstr_setup_util, only &
@@ -448,5 +450,84 @@ contains
     end do
 
   end subroutine fstr_solid_append_acceleration
+
+  !-----------------------------------------------------------------------------!
+  !> Append !COUPLE                                                             !
+  !-----------------------------------------------------------------------------!
+  subroutine fstr_solid_append_couple( hecMESH, fstrSOLID, fstrPARAM, header_name, n, grp_names )
+    implicit none
+    type(hecmwST_local_mesh), target          :: hecMESH
+    type(fstr_solid)                          :: fstrSOLID
+    type(fstr_param)                          :: fstrPARAM
+    character(len=*), intent(in)              :: header_name
+    integer(kind=kint), intent(in)            :: n
+    character(len=HECMW_NAME_LEN), intent(in) :: grp_names(:)
+
+    integer(kind=kint) :: old_size, new_size
+
+    if( n == 0 ) return
+    old_size = fstrSOLID%COUPLE_ngrp_tot
+    new_size = old_size + n
+    fstrSOLID%COUPLE_ngrp_tot = new_size
+
+    call hecmw_expand_integer_array ( fstrSOLID%COUPLE_ngrp_ID,  old_size, new_size )
+
+    call surf_grp_name_to_id_ex( hecMESH, header_name, &
+      n, grp_names, fstrSOLID%COUPLE_ngrp_ID(old_size+1:))
+
+    fstrPARAM%fg_couple = 1
+
+  end subroutine fstr_solid_append_couple
+
+  !-----------------------------------------------------------------------------!
+  !> Append !ELEMENT_ACTIVATION                                                 !
+  !-----------------------------------------------------------------------------!
+  subroutine fstr_solid_append_element_activation( hecMESH, fstrSOLID, header_name, gid, &
+      amp_name, eps, measure, state, n, grp_names, thlow, thup )
+    implicit none
+    type(hecmwST_local_mesh), target          :: hecMESH
+    type(fstr_solid)                          :: fstrSOLID
+    character(len=*), intent(in)              :: header_name
+    integer(kind=kint), intent(in)            :: gid
+    character(len=HECMW_NAME_LEN), intent(in) :: amp_name
+    real(kind=kreal), intent(in)              :: eps
+    integer(kind=kint), intent(in)            :: measure
+    integer(kind=kint), intent(in)            :: state
+    integer(kind=kint), intent(in)            :: n
+    character(len=HECMW_NAME_LEN), intent(in) :: grp_names(:)
+    real(kind=kreal), intent(in)              :: thlow(:)
+    real(kind=kreal), intent(in)              :: thup(:)
+
+    integer(kind=kint) :: amp_id
+    integer(kind=kint) :: i, old_size, new_size
+
+    if( n == 0 ) return
+    old_size = fstrSOLID%elemact%ELEMACT_egrp_tot
+    new_size = old_size + n
+    fstrSOLID%elemact%ELEMACT_egrp_tot = new_size
+
+    call hecmw_expand_integer_array ( fstrSOLID%elemact%ELEMACT_egrp_GRPID, old_size, new_size )
+    call hecmw_expand_integer_array ( fstrSOLID%elemact%ELEMACT_egrp_ID,  old_size, new_size )
+    call hecmw_expand_integer_array ( fstrSOLID%elemact%ELEMACT_egrp_amp, old_size, new_size )
+    call hecmw_expand_real_array ( fstrSOLID%elemact%ELEMACT_egrp_eps, old_size, new_size )
+    call hecmw_expand_integer_array ( fstrSOLID%elemact%ELEMACT_egrp_depends, old_size, new_size )
+    call hecmw_expand_real_array ( fstrSOLID%elemact%ELEMACT_egrp_ts_lower, old_size, new_size )
+    call hecmw_expand_real_array ( fstrSOLID%elemact%ELEMACT_egrp_ts_upper, old_size, new_size )
+    call hecmw_expand_integer_array ( fstrSOLID%elemact%ELEMACT_egrp_state, old_size, new_size )
+
+    call amp_name_to_id( hecMESH, header_name, amp_name, amp_id )
+    do i=1,n
+      fstrSOLID%elemact%ELEMACT_egrp_amp(old_size+i) = amp_id
+      fstrSOLID%elemact%ELEMACT_egrp_eps(old_size+i) = eps
+    end do
+    fstrSOLID%elemact%ELEMACT_egrp_GRPID(old_size+1:new_size) = gid
+    fstrSOLID%elemact%ELEMACT_egrp_depends(old_size+1:new_size) = measure
+    fstrSOLID%elemact%ELEMACT_egrp_ts_lower(old_size+1:new_size) = thlow(1:n)
+    fstrSOLID%elemact%ELEMACT_egrp_ts_upper(old_size+1:new_size) = thup(1:n)
+    fstrSOLID%elemact%ELEMACT_egrp_state(old_size+1:new_size) = state
+
+    call elem_grp_name_to_id_ex( hecMESH, header_name, n, grp_names, fstrSOLID%elemact%ELEMACT_egrp_ID(old_size+1:))
+
+  end subroutine fstr_solid_append_element_activation
 
 end module fstr_setup_solid
