@@ -13,13 +13,29 @@ contains
   !> @brief Generating parameter handler
   !! @return Parameter handler of type(c_ptr)
   function fstr_api_param_new() bind(C,name='fstr_api_param_new')
-    use m_fstr, only : fstr_nullify_fstr_param
+    use m_fstr
     implicit none
     type(c_ptr) :: fstr_api_param_new
     type(fstr_param), pointer :: fstrPARAM => null()
     allocate(fstrPARAM)
     call fstr_nullify_fstr_param(fstrPARAM)
+
+    fstrPARAM%solution_type = kstSTATIC
     fstrPARAM%analysis_n = 0
+    fstrPARAM%contact_algo = kcaSLagrange
+
+    ! -------  global pointer setting ----------
+    REF_TEMP => fstrPARAM%ref_temp
+    IECHO    => fstrPARAM%fg_echo
+    IRESULT  => fstrPARAM%fg_result
+    IVISUAL  => fstrPARAM%fg_visual
+    ! for heat ...
+    INEUTRAL => fstrPARAM%fg_neutral
+    IRRES    => fstrPARAM%fg_irres
+    IWRES    => fstrPARAM%fg_iwres
+    NRRES    => fstrPARAM%nrres
+    NPRINT   => fstrPARAM%nprint
+
     fstr_api_param_new = c_loc(fstrPARAM)
   end function
 
