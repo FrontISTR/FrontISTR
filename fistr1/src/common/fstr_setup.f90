@@ -65,17 +65,12 @@ contains
     integer, parameter :: MAXOUTFILE = 10
     double precision, parameter :: dpi = 3.14159265358979323846D0
 
-    integer(kind=kint) :: version, result, visual, femap, n_totlyr
-    integer(kind=kint) :: rcode, n, i, cid, nout, ierror, cparam_id
+    integer(kind=kint) :: version, result, visual, femap
+    integer(kind=kint) :: rcode, n, i, cid, nout, ierror
     character(len=HECMW_NAME_LEN) :: header_name
-    real(kind=kreal) :: ee, pp, rho, alpha, thick, alpha_over_mu
-    real(kind=kreal) :: beam_radius,                          &
-      beam_angle1, beam_angle2, beam_angle3,&
-      beam_angle4, beam_angle5, beam_angle6
-    logical          :: isOK
+    real(kind=kreal) :: ee, pp, rho, alpha
     type(t_output_ctrl) :: outctrl
-    type(tshellmat),pointer :: shmat(:)
-    character(len=HECMW_FILENAME_LEN) :: logfileNAME, mName, mName2, mName3
+    character(len=HECMW_FILENAME_LEN) :: mName, mName2, mName3
 
     ! counters
     integer(kind=kint) :: c_solution, c_solver, c_nlsolver, c_step, c_echo, c_amplitude
@@ -90,10 +85,7 @@ contains
     integer(kind=kint) :: c_elemopt, c_aincparam, c_timepoints, c_cnvparam
     integer(kind=kint) :: c_output, islog
     integer(kind=kint) :: k
-    integer(kind=kint) :: ss_nslav, ss_nmas_vis, ss_nmas_glob, ss_bad   ! MORTAR=YES visibility guard scratch
     integer(kind=kint) :: cache = 1
-
-    write( logfileNAME, '(i5,''.log'')' ) myrank
 
     ! packaging
     P%MESH   => hecMESH
