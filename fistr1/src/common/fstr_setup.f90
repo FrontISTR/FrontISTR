@@ -12,6 +12,7 @@ module m_fstr_setup
     , surf_grp_name_to_id_ex &
     , hecmw_streqr
   use fstr_setup_util
+  use fstr_setup_solid
   use fstr_ctrl_common
   use fstr_ctrl_static
   use fstr_ctrl_heat
@@ -1863,7 +1864,7 @@ contains
       end if
     endif
 
-    ! Allocated in in f str_setup_BOUNDARY */
+    ! Allocated in fstr_solid_append_boundary
     if( associated(fstrSOLID%BOUNDARY_ngrp_GRPID) ) then
        deallocate(fstrSOLID%BOUNDARY_ngrp_GRPID, stat=ierror)
        if( ierror /= 0 ) then
@@ -2854,9 +2855,6 @@ end function fstr_setup_INITIAL
   !-----------------------------------------------------------------------------!
 
   subroutine fstr_setup_BOUNDARY( ctrl, counter, P )
-    use hecmw_setup_util, only &
-      : hecmw_expand_integer_array &
-      , hecmw_expand_real_array
     implicit none
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: counter
@@ -2864,12 +2862,11 @@ end function fstr_setup_INITIAL
 
     integer(kind=kint) :: rcode
     character(HECMW_NAME_LEN) :: amp, rotc_name(1)
-    integer(kind=kint) :: amp_id, rotc_id(1), n_rotc
     character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
     integer(kind=kint),pointer :: dof_ids (:)
     integer(kind=kint),pointer :: dof_ide (:)
     real(kind=kreal),pointer :: val_ptr(:)
-    integer(kind=kint) :: i, n, old_size, new_size
+    integer(kind=kint) :: n
 
     integer(kind=kint) :: gid, istot
 
@@ -2882,39 +2879,13 @@ end function fstr_setup_INITIAL
 
     ! get center of torque load
     rotc_name = ' '
-    rotc_id = -1
-    n_rotc = -1
     rcode = fstr_ctrl_get_param_ex( ctrl, 'ROT_CENTER ', '# ', 0, 'S', rotc_name )
     if( rcode /= 0 ) call fstr_ctrl_err_stop
-    if(  rotc_name(1) /= ' ' ) then
-      if( istot /= 0 ) then
-        write(*,*) 'fstr control file error : !BOUNDARY : rotational boundary cannot be specified with total value'
-        write(ILOG,*) 'fstr control file error : !BOUNDARY : rotational boundary cannot be specified with total value'
-        call fstr_ctrl_err_stop
-      endif
-      P%SOLID%BOUNDARY_ngrp_rot = P%SOLID%BOUNDARY_ngrp_rot + 1
-      n_rotc = P%SOLID%BOUNDARY_ngrp_rot
-      call node_grp_name_to_id_ex( P%MESH, '!BOUNDARY,ROT_CENTER=', 1, rotc_name, rotc_id)
-    endif
-
 
     ! ENTIRE -----------------------------------------------
     P%SOLID%file_type = kbcfFSTR
 
     n = fstr_ctrl_get_data_line_n( ctrl )
-    if( n == 0 ) return
-    old_size = P%SOLID%BOUNDARY_ngrp_tot
-    new_size = old_size + n
-    P%SOLID%BOUNDARY_ngrp_tot = new_size
-    call hecmw_expand_integer_array (P%SOLID%BOUNDARY_ngrp_GRPID, old_size, new_size )
-    call hecmw_expand_integer_array (P%SOLID%BOUNDARY_ngrp_ID,    old_size, new_size )
-    call hecmw_expand_integer_array (P%SOLID%BOUNDARY_ngrp_type,  old_size, new_size )
-    call hecmw_expand_real_array    (P%SOLID%BOUNDARY_ngrp_val,   old_size, new_size )
-    call hecmw_expand_integer_array (P%SOLID%BOUNDARY_ngrp_amp,   old_size, new_size )
-    call hecmw_expand_integer_array (P%SOLID%BOUNDARY_ngrp_istot, old_size, new_size )
-    call hecmw_expand_integer_array (P%SOLID%BOUNDARY_ngrp_rotID, old_size, new_size )
-    call hecmw_expand_integer_array (P%SOLID%BOUNDARY_ngrp_centerID, old_size, new_size )
-
     allocate( grp_id_name(n) )
     allocate( dof_ids (n) )
     allocate( dof_ide (n) )
@@ -2922,27 +2893,12 @@ end function fstr_setup_INITIAL
 
     amp = ' '
     val_ptr = 0.0d0
-    rcode = fstr_ctrl_get_BOUNDARY( ctrl, amp, grp_id_name, HECMW_NAME_LEN, dof_ids, dof_ide, val_ptr)
-    if( rcode /= 0 ) call fstr_ctrl_err_stop
-    call amp_name_to_id( P%MESH, '!BOUNDARY', amp, amp_id )
-    P%SOLID%BOUNDARY_ngrp_GRPID(old_size+1:new_size) = gid
-    call node_grp_name_to_id_ex( P%MESH, '!BOUNDARY', n, grp_id_name, P%SOLID%BOUNDARY_ngrp_ID(old_size+1:))
-    P%SOLID%BOUNDARY_ngrp_istot(old_size+1:new_size) = istot
-
-    ! set up information about rotation ( default value is set if ROT_CENTER is not given.)
-    P%SOLID%BOUNDARY_ngrp_rotID(old_size+1:) = n_rotc
-    P%SOLID%BOUNDARY_ngrp_centerID(old_size+1:) = rotc_id(1)
-
-    do i = 1, n
-      if( (dof_ids(i) < 1).or.(6 < dof_ids(i)).or.(dof_ide(i) < 1).or.(6 < dof_ide(i)) ) then
-        write(*,*) 'fstr control file error : !BOUNDARY : range of dof_ids and dof_ide is from 1 to 6'
-        write(ILOG,*) 'fstr control file error : !BOUNDARY : range of dof_ids and dof_ide is from 1 to 6'
-        call fstr_ctrl_err_stop
-      end if
-      P%SOLID%BOUNDARY_ngrp_val(old_size+i) = val_ptr(i)
-      P%SOLID%BOUNDARY_ngrp_type(old_size+i) = 10 * dof_ids(i) + dof_ide(i)
-      P%SOLID%BOUNDARY_ngrp_amp(old_size+i) = amp_id
-    end do
+    if( n > 0 ) then
+      rcode = fstr_ctrl_get_BOUNDARY( ctrl, amp, grp_id_name, HECMW_NAME_LEN, dof_ids, dof_ide, val_ptr)
+      if( rcode /= 0 ) call fstr_ctrl_err_stop
+    endif
+    call fstr_solid_append_boundary( P%MESH, P%SOLID, '!BOUNDARY', gid, istot, rotc_name(1), &
+      amp, n, grp_id_name, dof_ids, dof_ide, val_ptr )
 
     deallocate( grp_id_name )
     deallocate( dof_ids )
