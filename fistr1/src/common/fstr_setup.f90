@@ -431,30 +431,7 @@ contains
           write(ILOG,*) '### Error: Fail in read in step definition : ', c_istep
           stop HECMW_EXIT_INPUT
         endif
-        call fstr_setup_step_convergence( fstrSOLID%step_ctrl(c_istep), mName3, fstrPARAM%cnvparam, c_istep )
-        ! For DYNAMIC fixed-increment: keep the !DYNAMIC time increment while preserving !STEP duration.
-        ! fstr_ctrl_get_ISTEP unconditionally sets initdt=1/num_substep which is wrong for DYNAMIC.
-        ! Only override initdt/mindt/maxdt; keep elapsetime and num_substep as-is.
-        if( p%PARAM%solution_type==kstDYNAMIC .and. &
-          & fstrSOLID%step_ctrl(c_istep)%inc_type == stepFixedInc ) then
-          fstrSOLID%step_ctrl(c_istep)%initdt      = fstrDYNAMIC%t_delta
-          fstrSOLID%step_ctrl(c_istep)%mindt       = fstrDYNAMIC%t_delta
-          fstrSOLID%step_ctrl(c_istep)%maxdt       = fstrDYNAMIC%t_delta
-        endif
-        if( associated(fstrPARAM%timepoints) ) then
-          do i=1,size(fstrPARAM%timepoints)
-            if( hecmw_streqr( fstrPARAM%timepoints(i)%name, mName ) ) then
-              fstrSOLID%step_ctrl(c_istep)%timepoint_id = i; exit
-            endif
-          enddo
-        endif
-        if( associated(fstrPARAM%ainc) ) then
-          do i=1,size(fstrPARAM%ainc)-1
-            if( hecmw_streqr( fstrPARAM%ainc(i)%name, mName2 ) ) then
-              fstrSOLID%step_ctrl(c_istep)%AincParam_id = i; exit
-            endif
-          enddo
-        endif
+        call fstr_setup_step_links( fstrPARAM, fstrSOLID, fstrDYNAMIC, c_istep, mName, mName2, mName3 )
 
       else if( header_name == '!HEAT'  ) then
         c_heat = c_heat + 1
@@ -2506,6 +2483,46 @@ contains
     endif
 
   end subroutine fstr_setup_step_convergence
+
+  !> Links step_ctrl(istep), whose step is already read, to !TIME_POINTS, !AUTOINC_PARAM and
+  !> !CONVERG_PARAM given by name, and keeps the !DYNAMIC time increment for a fixed increment.
+  subroutine fstr_setup_step_links( fstrPARAM, fstrSOLID, fstrDYNAMIC, istep, tp_name, ainc_name, cnv_name )
+    implicit none
+    type(fstr_param)               :: fstrPARAM
+    type(fstr_solid)               :: fstrSOLID
+    type(fstr_dynamic)             :: fstrDYNAMIC
+    integer(kind=kint), intent(in) :: istep          !< step number
+    character(len=*), intent(in)   :: tp_name        !< name of !TIME_POINTS
+    character(len=*), intent(in)   :: ainc_name      !< name of !AUTOINC_PARAM
+    character(len=*), intent(in)   :: cnv_name       !< name of !CONVERG_PARAM
+
+    integer(kind=kint) :: i
+
+    call fstr_setup_step_convergence( fstrSOLID%step_ctrl(istep), cnv_name, fstrPARAM%cnvparam, istep )
+    ! For DYNAMIC fixed-increment: keep the !DYNAMIC time increment while preserving !STEP duration.
+    ! fstr_ctrl_get_ISTEP unconditionally sets initdt=1/num_substep which is wrong for DYNAMIC.
+    ! Only override initdt/mindt/maxdt; keep elapsetime and num_substep as-is.
+    if( fstrPARAM%solution_type==kstDYNAMIC .and. &
+      & fstrSOLID%step_ctrl(istep)%inc_type == stepFixedInc ) then
+      fstrSOLID%step_ctrl(istep)%initdt      = fstrDYNAMIC%t_delta
+      fstrSOLID%step_ctrl(istep)%mindt       = fstrDYNAMIC%t_delta
+      fstrSOLID%step_ctrl(istep)%maxdt       = fstrDYNAMIC%t_delta
+    endif
+    if( associated(fstrPARAM%timepoints) ) then
+      do i=1,size(fstrPARAM%timepoints)
+        if( hecmw_streqr( fstrPARAM%timepoints(i)%name, tp_name ) ) then
+          fstrSOLID%step_ctrl(istep)%timepoint_id = i; exit
+        endif
+      enddo
+    endif
+    if( associated(fstrPARAM%ainc) ) then
+      do i=1,size(fstrPARAM%ainc)-1
+        if( hecmw_streqr( fstrPARAM%ainc(i)%name, ainc_name ) ) then
+          fstrSOLID%step_ctrl(istep)%AincParam_id = i; exit
+        endif
+      enddo
+    endif
+  end subroutine fstr_setup_step_links
 
   integer(kind=kint) function fstr_setup_INITIAL( ctrl, cond, hecMESH )
     implicit none
