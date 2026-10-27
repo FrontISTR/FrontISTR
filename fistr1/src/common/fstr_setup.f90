@@ -3292,9 +3292,6 @@ end function fstr_setup_INITIAL
   !-----------------------------------------------------------------------------!
 
   subroutine fstr_setup_SPRING( ctrl, counter, P )
-    use hecmw_setup_util, only &
-      : hecmw_expand_integer_array &
-      , hecmw_expand_real_array
     implicit none
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: counter
@@ -3302,11 +3299,10 @@ end function fstr_setup_INITIAL
 
     integer(kind=kint) :: rcode, incremental
     character(HECMW_NAME_LEN) :: amp
-    integer(kind=kint) :: amp_id
     character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
     real(kind=kreal),pointer :: val_ptr(:)
     integer(kind=kint),pointer :: id_ptr(:)
-    integer(kind=kint) :: i, n, old_size, new_size
+    integer(kind=kint) :: n
     integer(kind=kint) :: gid
 
     if( P%SOLID%file_type /= kbcfFSTR ) return
@@ -3314,15 +3310,6 @@ end function fstr_setup_INITIAL
     rcode = fstr_ctrl_get_param_ex( ctrl, 'GRPID ',  '# ',            0, 'I', gid  )
     n = fstr_ctrl_get_data_line_n( ctrl )
     if( n == 0 ) return
-    old_size = P%SOLID%SPRING_ngrp_tot
-    new_size = old_size + n
-    P%SOLID%SPRING_ngrp_tot = new_size
-    call hecmw_expand_integer_array ( P%SOLID%SPRING_ngrp_GRPID, old_size, new_size )
-    call hecmw_expand_integer_array ( P%SOLID%SPRING_ngrp_ID,  old_size, new_size )
-    call hecmw_expand_integer_array ( P%SOLID%SPRING_ngrp_DOF, old_size, new_size )
-    call hecmw_expand_real_array    ( P%SOLID%SPRING_ngrp_val, old_size, new_size )
-    call hecmw_expand_integer_array ( P%SOLID%SPRING_ngrp_amp, old_size, new_size )
-    call hecmw_expand_integer_array ( P%SOLID%SPRING_incremental, old_size, new_size )
 
     allocate( grp_id_name(n))
     allocate( id_ptr(n) )
@@ -3333,16 +3320,8 @@ end function fstr_setup_INITIAL
     val_ptr = 0.0d0
     rcode = fstr_ctrl_get_SPRING( ctrl, amp, grp_id_name, HECMW_NAME_LEN, id_ptr, val_ptr, incremental )
     if( rcode /= 0 ) call fstr_ctrl_err_stop
-
-    call amp_name_to_id( P%MESH, '!SPRING', amp, amp_id )
-    do i=1,n
-      P%SOLID%SPRING_ngrp_amp(old_size+i) = amp_id
-      P%SOLID%SPRING_ngrp_DOF(old_size+i) = id_ptr(i)
-      P%SOLID%SPRING_ngrp_val(old_size+i) = val_ptr(i)
-    end do
-    P%SOLID%SPRING_ngrp_GRPID(old_size+1:new_size) = gid
-    call node_grp_name_to_id_ex( P%MESH, '!SPRING', n, grp_id_name, P%SOLID%SPRING_ngrp_ID(old_size+1:))
-    P%SOLID%SPRING_incremental(old_size+1:new_size) = incremental
+    call fstr_solid_append_spring( P%MESH, P%SOLID, '!SPRING', gid, incremental, &
+      amp, n, grp_id_name, id_ptr, val_ptr )
 
     deallocate( grp_id_name )
     deallocate( id_ptr )
