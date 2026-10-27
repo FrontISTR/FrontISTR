@@ -329,135 +329,14 @@ contains
     end do
 
     ! -----
-    fstrSOLID%n_contacts = c_contact
-    if( c_contact>0 ) then
-      allocate( fstrSOLID%contacts( c_contact ) )
-      ! convert SURF_SURF contact to NODE_SURF contact
-      call fstr_convert_contact_type( P%MESH )
-    endif
-    call fstr_convert_rotation_dof( P )
-    fstrSOLID%n_embeds = c_embed
-    if( c_embed>0 )  allocate( fstrSOLID%embeds( c_embed ) )
-    if( c_weldline>0 ) allocate( fstrHEAT%weldline( c_weldline ) )
-    if( c_initial>0 ) allocate( g_InitialCnd( c_initial ) )
-    if( c_istep>0 ) then
-      allocate( fstrSOLID%step_ctrl( c_istep ) )
-      do i=1, c_istep
-        call init_stepInfo( fstrSOLID%step_ctrl(i) )
-        if( p%PARAM%solution_type==kstDYNAMIC ) then
-          fstrSOLID%step_ctrl(i)%num_substep = fstrDYNAMIC%n_step
-          fstrSOLID%step_ctrl(i)%initdt      = fstrDYNAMIC%t_delta
-          fstrSOLID%step_ctrl(i)%elapsetime  = dble(fstrDYNAMIC%n_step) * fstrDYNAMIC%t_delta
-          fstrSOLID%step_ctrl(i)%mindt       = fstrDYNAMIC%t_delta
-          fstrSOLID%step_ctrl(i)%maxdt       = fstrDYNAMIC%t_delta
-        endif
-      end do
-    endif
-    if( c_localcoord>0 ) allocate( g_LocalCoordSys(c_localcoord) )
-    allocate( fstrPARAM%ainc(0:c_aincparam) )
-    do i=0,c_aincparam
-      call init_AincParam( fstrPARAM%ainc(i) )
-    end do
-    allocate( fstrPARAM%cnvparam(0:c_cnvparam) )
-    do i=0,c_cnvparam
-      call init_ConvergParam( fstrPARAM%cnvparam(i) )
-    end do
-    if( c_timepoints>0 ) allocate( fstrPARAM%timepoints(c_timepoints) )
-    allocate( fstrPARAM%contactparam(0:c_contactparam) )
-    do i=0,c_contactparam
-      call init_ContactParam( fstrPARAM%contactparam(i) )
-    end do
-    if( c_contact_if>0 )then 
-      allocate( fstrPARAM%contact_if( c_contact_if ) )
-      do i=1,c_contact_if
-        call init_Contact_IF( fstrPARAM%contact_if(i) )
-      end do
-    end if
+    call fstr_setup_alloc( P, c_contact, c_embed, c_weldline, c_initial, c_istep, c_localcoord, &
+      c_aincparam, c_cnvparam, c_timepoints, c_contactparam, c_contact_if, c_material )
 
-    P%SOLID%is_33shell = 0
-    P%SOLID%is_33beam  = 0
-
-    do i=1,hecMESH%n_elem_type
-      n =  hecMESH%elem_type_item(i)
-      if (n == 781 .or. n == 761)then
-        P%SOLID%is_33shell = 1
-      elseif (n == 641)then
-        P%SOLID%is_33beam  = 1
-      endif
-    enddo
-
-    n = c_material
-    if( hecMESH%material%n_mat>n ) n= hecMESH%material%n_mat
-    if( n==0 ) stop "material property not defined!"
-    allocate( fstrSOLID%materials( n ) )
-    do i = 1, n
-      call initMaterial(fstrSOLID%materials(i))
-    enddo
-
-    ! for section control
-    allocate( fstrSOLID%sections(hecMESH%section%n_sect) )
+    ! !DENSITY, !PLASTIC and the others checked by cid before the first !MATERIAL go to the material of the last section
+    cid = 0
     do i=1,hecMESH%section%n_sect
-      ! set default 361 element formulation
-      if( p%PARAM%solution_type==kstSTATIC .or. p%PARAM%solution_type==kstDYNAMIC ) then
-        if( p%PARAM%nlgeom ) then
-          fstrSOLID%sections(i)%elemopt361 = kel361FBAR
-        else
-          fstrSOLID%sections(i)%elemopt361 = kel361IC
-        end if
-      else if( p%PARAM%solution_type==kstEIGEN ) then
-        fstrSOLID%sections(i)%elemopt361 = kel361IC
-      else if( p%PARAM%solution_type==kstSTATICEIGEN ) then
-        fstrSOLID%sections(i)%elemopt361 = kel361FBAR
-      else
-        fstrSOLID%sections(i)%elemopt361 = kel361FI
-      end if
-      fstrSOLID%sections(i)%elemopt341 = kel341FI
-      fstrSOLID%sections(i)%elemopt611 = kel611EULER
-      ! INTERFACE sections are skipped in the loop below and keep this thickness
-      fstrSOLID%sections(i)%thickness = 1.0d0
+      if( hecMESH%section%sect_type(i) /= 4 ) cid = hecMESH%section%sect_mat_ID_item(i)
     enddo
-
-    if( hecMESH%section%n_sect >0 ) then
-      do i=1,hecMESH%section%n_sect
-        if( hecMESH%section%sect_type(i) == 4 ) cycle
-        cid = hecMESH%section%sect_mat_ID_item(i)
-        if( cid>n ) stop "Error in material property definition!"
-        if( fstrPARAM%nlgeom .or. fstrPARAM%solution_type==kstSTATICEIGEN ) &
-          fstrSOLID%materials(cid)%nlgeom_flag = 1
-        nullify(shmat)
-        call fstr_get_prop(hecMESH,shmat,i,ee,pp,rho,alpha,thick,&
-          n_totlyr,alpha_over_mu, &
-          beam_radius,beam_angle1,beam_angle2,beam_angle3, &
-          beam_angle4,beam_angle5,beam_angle6)
-        fstrSOLID%sections(i)%thickness = thick
-        fstrSOLID%materials(cid)%name = hecMESH%material%mat_name(cid)
-        fstrSOLID%materials(cid)%variables(M_YOUNGS)=ee
-        fstrSOLID%materials(cid)%variables(M_POISSON)=pp
-        fstrSOLID%materials(cid)%variables(M_DENSITY)=rho
-        fstrSOLID%materials(cid)%variables(M_EXPANSION)=alpha
-        fstrSOLID%materials(cid)%variables(M_ALPHA_OVER_MU)= alpha_over_mu
-        fstrSOLID%materials(cid)%variables(M_BEAM_RADIUS)=beam_radius
-        fstrSOLID%materials(cid)%variables(M_BEAM_ANGLE1)=beam_angle1
-        fstrSOLID%materials(cid)%variables(M_BEAM_ANGLE2)=beam_angle2
-        fstrSOLID%materials(cid)%variables(M_BEAM_ANGLE3)=beam_angle3
-        fstrSOLID%materials(cid)%variables(M_BEAM_ANGLE4)=beam_angle4
-        fstrSOLID%materials(cid)%variables(M_BEAM_ANGLE5)=beam_angle5
-        fstrSOLID%materials(cid)%variables(M_BEAM_ANGLE6)=beam_angle6
-        fstrSOLID%materials(cid)%mtype = ELASTIC
-        if( hecMESH%section%sect_type(i) == 2 ) then
-          fstrSOLID%materials(cid)%totallyr = n_totlyr
-          fstrSOLID%materials(cid)%shell_var => shmat
-        endif
-      enddo
-    endif
-
-    allocate( fstrSOLID%output_ctrl( 4 ) )
-    call fstr_init_outctrl(fstrSOLID%output_ctrl(1))
-    fstrSOLID%output_ctrl( 1 )%filename = trim(logfileNAME)
-    fstrSOLID%output_ctrl( 1 )%filenum = ILOG
-    call fstr_init_outctrl(fstrSOLID%output_ctrl(2))
-    call fstr_init_outctrl(fstrSOLID%output_ctrl(3))
-    call fstr_init_outctrl(fstrSOLID%output_ctrl(4))
 
     ! -----
     rcode = fstr_ctrl_rewind( ctrl )
@@ -935,32 +814,7 @@ contains
 
         ! == Following output control ==
       else if( header_name == '!WRITE' ) then
-        call fstr_ctrl_get_output( ctrl, outctrl, islog, result, visual, femap )
-        if( islog == 1 ) then
-          c_output=1
-          outctrl%filename = trim(logfileNAME)
-          outctrl%filenum = ILOG
-          call fstr_copy_outctrl(fstrSOLID%output_ctrl(c_output), outctrl)
-        endif
-        if( femap == 1 ) then
-          c_output=2
-          write( outctrl%filename, '(a,i0,a)') 'utable.',myrank,'.dat'
-          outctrl%filenum = IUTB
-          call fstr_copy_outctrl(fstrSOLID%output_ctrl(c_output), outctrl)
-          open( unit=outctrl%filenum, file=outctrl%filename, status='REPLACE', iostat=ierror )
-          if( ierror /= 0 ) then
-            write(*,*) 'Warning: cannot open output file: ', trim(outctrl%filename)
-          endif
-          fstrSOLID%output_ctrl(c_output)%outinfo%grp_id = 1
-        endif
-        if( result == 1 ) then
-          c_output=3
-          call fstr_copy_outctrl(fstrSOLID%output_ctrl(c_output), outctrl)
-        endif
-        if( visual == 1 ) then
-          c_output=4
-          call fstr_copy_outctrl(fstrSOLID%output_ctrl(c_output), outctrl)
-        endif
+        call fstr_setup_WRITE_store( ctrl, P )
 
       else if( header_name == '!OUTPUT_RES' ) then
         c_output=3
@@ -1072,6 +926,195 @@ contains
       endif
 
     end do
+
+    call fstr_setup_finish( ctrl, P, c_material )
+    rcode = fstr_ctrl_close( ctrl )
+
+  end subroutine fstr_setup
+
+  !> Allocation after the cards are counted: the arrays sized by the counts, the materials
+  !> and sections from the mesh, and the output controls. The section defaults depend on
+  !> the analysis type, and fstr_convert_rotation_dof rewrites the boundary conditions,
+  !> so this is called after the analysis type and all the boundary conditions are read.
+  subroutine fstr_setup_alloc( P, c_contact, c_embed, c_weldline, c_initial, c_istep, c_localcoord, &
+      c_aincparam, c_cnvparam, c_timepoints, c_contactparam, c_contact_if, c_material )
+    use mMaterial
+    implicit none
+    type(fstr_param_pack) :: P
+    integer(kind=kint), intent(in) :: c_contact, c_embed, c_weldline, c_initial, c_istep, c_localcoord
+    integer(kind=kint), intent(in) :: c_aincparam, c_cnvparam, c_timepoints, c_contactparam, c_contact_if
+    integer(kind=kint), intent(in) :: c_material
+
+    type(hecmwST_local_mesh), pointer :: hecMESH
+    type(fstr_param), pointer :: fstrPARAM
+    type(fstr_solid), pointer :: fstrSOLID
+    type(fstr_heat), pointer :: fstrHEAT
+    type(fstr_dynamic), pointer :: fstrDYNAMIC
+    integer(kind=kint) :: n, i, cid, n_totlyr
+    real(kind=kreal) :: ee, pp, rho, alpha, thick, alpha_over_mu
+    real(kind=kreal) :: beam_radius,                          &
+      beam_angle1, beam_angle2, beam_angle3,&
+      beam_angle4, beam_angle5, beam_angle6
+    type(tshellmat),pointer :: shmat(:)
+    character(len=HECMW_FILENAME_LEN) :: logfileNAME
+
+    hecMESH => P%MESH
+    fstrPARAM => P%PARAM
+    fstrSOLID => P%SOLID
+    fstrHEAT => P%HEAT
+    fstrDYNAMIC => P%DYN
+    write( logfileNAME, '(i5,''.log'')' ) myrank
+
+    fstrSOLID%n_contacts = c_contact
+    if( c_contact>0 ) then
+      allocate( fstrSOLID%contacts( c_contact ) )
+      ! convert SURF_SURF contact to NODE_SURF contact
+      call fstr_convert_contact_type( P%MESH )
+    endif
+    call fstr_convert_rotation_dof( P )
+    fstrSOLID%n_embeds = c_embed
+    if( c_embed>0 )  allocate( fstrSOLID%embeds( c_embed ) )
+    if( c_weldline>0 ) allocate( fstrHEAT%weldline( c_weldline ) )
+    if( c_initial>0 ) allocate( g_InitialCnd( c_initial ) )
+    if( c_istep>0 ) then
+      allocate( fstrSOLID%step_ctrl( c_istep ) )
+      do i=1, c_istep
+        call init_stepInfo( fstrSOLID%step_ctrl(i) )
+        if( p%PARAM%solution_type==kstDYNAMIC ) then
+          fstrSOLID%step_ctrl(i)%num_substep = fstrDYNAMIC%n_step
+          fstrSOLID%step_ctrl(i)%initdt      = fstrDYNAMIC%t_delta
+          fstrSOLID%step_ctrl(i)%elapsetime  = dble(fstrDYNAMIC%n_step) * fstrDYNAMIC%t_delta
+          fstrSOLID%step_ctrl(i)%mindt       = fstrDYNAMIC%t_delta
+          fstrSOLID%step_ctrl(i)%maxdt       = fstrDYNAMIC%t_delta
+        endif
+      end do
+    endif
+    if( c_localcoord>0 ) allocate( g_LocalCoordSys(c_localcoord) )
+    allocate( fstrPARAM%ainc(0:c_aincparam) )
+    do i=0,c_aincparam
+      call init_AincParam( fstrPARAM%ainc(i) )
+    end do
+    allocate( fstrPARAM%cnvparam(0:c_cnvparam) )
+    do i=0,c_cnvparam
+      call init_ConvergParam( fstrPARAM%cnvparam(i) )
+    end do
+    if( c_timepoints>0 ) allocate( fstrPARAM%timepoints(c_timepoints) )
+    allocate( fstrPARAM%contactparam(0:c_contactparam) )
+    do i=0,c_contactparam
+      call init_ContactParam( fstrPARAM%contactparam(i) )
+    end do
+    if( c_contact_if>0 )then
+      allocate( fstrPARAM%contact_if( c_contact_if ) )
+      do i=1,c_contact_if
+        call init_Contact_IF( fstrPARAM%contact_if(i) )
+      end do
+    end if
+
+    P%SOLID%is_33shell = 0
+    P%SOLID%is_33beam  = 0
+
+    do i=1,hecMESH%n_elem_type
+      n =  hecMESH%elem_type_item(i)
+      if (n == 781 .or. n == 761)then
+        P%SOLID%is_33shell = 1
+      elseif (n == 641)then
+        P%SOLID%is_33beam  = 1
+      endif
+    enddo
+
+    n = c_material
+    if( hecMESH%material%n_mat>n ) n= hecMESH%material%n_mat
+    if( n==0 ) stop "material property not defined!"
+    allocate( fstrSOLID%materials( n ) )
+    do i = 1, n
+      call initMaterial(fstrSOLID%materials(i))
+    enddo
+
+    ! for section control
+    allocate( fstrSOLID%sections(hecMESH%section%n_sect) )
+    do i=1,hecMESH%section%n_sect
+      ! set default 361 element formulation
+      if( p%PARAM%solution_type==kstSTATIC .or. p%PARAM%solution_type==kstDYNAMIC ) then
+        if( p%PARAM%nlgeom ) then
+          fstrSOLID%sections(i)%elemopt361 = kel361FBAR
+        else
+          fstrSOLID%sections(i)%elemopt361 = kel361IC
+        end if
+      else if( p%PARAM%solution_type==kstEIGEN ) then
+        fstrSOLID%sections(i)%elemopt361 = kel361IC
+      else if( p%PARAM%solution_type==kstSTATICEIGEN ) then
+        fstrSOLID%sections(i)%elemopt361 = kel361FBAR
+      else
+        fstrSOLID%sections(i)%elemopt361 = kel361FI
+      end if
+      fstrSOLID%sections(i)%elemopt341 = kel341FI
+      fstrSOLID%sections(i)%elemopt611 = kel611EULER
+      ! INTERFACE sections are skipped in the loop below and keep this thickness
+      fstrSOLID%sections(i)%thickness = 1.0d0
+    enddo
+
+    if( hecMESH%section%n_sect >0 ) then
+      do i=1,hecMESH%section%n_sect
+        if( hecMESH%section%sect_type(i) == 4 ) cycle
+        cid = hecMESH%section%sect_mat_ID_item(i)
+        if( cid>n ) stop "Error in material property definition!"
+        if( fstrPARAM%nlgeom .or. fstrPARAM%solution_type==kstSTATICEIGEN ) &
+          fstrSOLID%materials(cid)%nlgeom_flag = 1
+        nullify(shmat)
+        call fstr_get_prop(hecMESH,shmat,i,ee,pp,rho,alpha,thick,&
+          n_totlyr,alpha_over_mu, &
+          beam_radius,beam_angle1,beam_angle2,beam_angle3, &
+          beam_angle4,beam_angle5,beam_angle6)
+        fstrSOLID%sections(i)%thickness = thick
+        fstrSOLID%materials(cid)%name = hecMESH%material%mat_name(cid)
+        fstrSOLID%materials(cid)%variables(M_YOUNGS)=ee
+        fstrSOLID%materials(cid)%variables(M_POISSON)=pp
+        fstrSOLID%materials(cid)%variables(M_DENSITY)=rho
+        fstrSOLID%materials(cid)%variables(M_EXPANSION)=alpha
+        fstrSOLID%materials(cid)%variables(M_ALPHA_OVER_MU)= alpha_over_mu
+        fstrSOLID%materials(cid)%variables(M_BEAM_RADIUS)=beam_radius
+        fstrSOLID%materials(cid)%variables(M_BEAM_ANGLE1)=beam_angle1
+        fstrSOLID%materials(cid)%variables(M_BEAM_ANGLE2)=beam_angle2
+        fstrSOLID%materials(cid)%variables(M_BEAM_ANGLE3)=beam_angle3
+        fstrSOLID%materials(cid)%variables(M_BEAM_ANGLE4)=beam_angle4
+        fstrSOLID%materials(cid)%variables(M_BEAM_ANGLE5)=beam_angle5
+        fstrSOLID%materials(cid)%variables(M_BEAM_ANGLE6)=beam_angle6
+        fstrSOLID%materials(cid)%mtype = ELASTIC
+        if( hecMESH%section%sect_type(i) == 2 ) then
+          fstrSOLID%materials(cid)%totallyr = n_totlyr
+          fstrSOLID%materials(cid)%shell_var => shmat
+        endif
+      enddo
+    endif
+
+    allocate( fstrSOLID%output_ctrl( 4 ) )
+    call fstr_init_outctrl(fstrSOLID%output_ctrl(1))
+    fstrSOLID%output_ctrl( 1 )%filename = trim(logfileNAME)
+    fstrSOLID%output_ctrl( 1 )%filenum = ILOG
+    call fstr_init_outctrl(fstrSOLID%output_ctrl(2))
+    call fstr_init_outctrl(fstrSOLID%output_ctrl(3))
+    call fstr_init_outctrl(fstrSOLID%output_ctrl(4))
+  end subroutine fstr_setup_alloc
+
+  !> Processing after all the cards are read: the temperature arrays, the default step,
+  !> the element initialization and the checks, and the result arrays (fstr_setup_post).
+  !> ctrl is used only for !VISUAL.
+  subroutine fstr_setup_finish( ctrl, P, c_material )
+    implicit none
+    integer(kind=kint) :: ctrl
+    type(fstr_param_pack) :: P
+    integer(kind=kint), intent(in) :: c_material
+
+    type(hecmwST_local_mesh), pointer :: hecMESH
+    type(fstr_param), pointer :: fstrPARAM
+    type(fstr_solid), pointer :: fstrSOLID
+    type(fstr_dynamic), pointer :: fstrDYNAMIC
+    integer(kind=kint) :: n, i, cid, ierror, n_totlyr
+
+    hecMESH => P%MESH
+    fstrPARAM => P%PARAM
+    fstrSOLID => P%SOLID
+    fstrDYNAMIC => P%DYN
 
     ! ----- material type judgement. in case of infinitive analysis, nlgeom_flag=0
     if( .not. P%PARAM%nlgeom ) then
@@ -1185,9 +1228,50 @@ contains
     P%SOLID%max_lyr = n_totlyr
 
     call fstr_setup_post( ctrl, P )
-    rcode = fstr_ctrl_close( ctrl )
+  end subroutine fstr_setup_finish
 
-  end subroutine fstr_setup
+  !> Read in !WRITE after fstr_setup_alloc and store the output controls.
+  !> fg_result and fg_visual are set by the caller before fstr_setup_alloc.
+  subroutine fstr_setup_WRITE_store( ctrl, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    type(fstr_param_pack) :: P
+
+    type(fstr_solid), pointer :: fstrSOLID
+    type(t_output_ctrl) :: outctrl
+    integer(kind=kint) :: islog, result, visual, femap, c_output, ierror
+    character(len=HECMW_FILENAME_LEN) :: logfileNAME
+
+    fstrSOLID => P%SOLID
+    write( logfileNAME, '(i5,''.log'')' ) myrank
+
+    call fstr_ctrl_get_output( ctrl, outctrl, islog, result, visual, femap )
+    if( islog == 1 ) then
+      c_output=1
+      outctrl%filename = trim(logfileNAME)
+      outctrl%filenum = ILOG
+      call fstr_copy_outctrl(fstrSOLID%output_ctrl(c_output), outctrl)
+    endif
+    if( femap == 1 ) then
+      c_output=2
+      write( outctrl%filename, '(a,i0,a)') 'utable.',myrank,'.dat'
+      outctrl%filenum = IUTB
+      call fstr_copy_outctrl(fstrSOLID%output_ctrl(c_output), outctrl)
+      open( unit=outctrl%filenum, file=outctrl%filename, status='REPLACE', iostat=ierror )
+      if( ierror /= 0 ) then
+        write(*,*) 'Warning: cannot open output file: ', trim(outctrl%filename)
+      endif
+      fstrSOLID%output_ctrl(c_output)%outinfo%grp_id = 1
+    endif
+    if( result == 1 ) then
+      c_output=3
+      call fstr_copy_outctrl(fstrSOLID%output_ctrl(c_output), outctrl)
+    endif
+    if( visual == 1 ) then
+      c_output=4
+      call fstr_copy_outctrl(fstrSOLID%output_ctrl(c_output), outctrl)
+    endif
+  end subroutine fstr_setup_WRITE_store
 
   subroutine fstr_check_up_inputs(hecMESH, fstrSOLID)
     type(hecmwST_local_mesh), intent(in) :: hecMESH
