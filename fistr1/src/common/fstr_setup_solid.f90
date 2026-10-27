@@ -321,4 +321,132 @@ contains
 
   end subroutine fstr_solid_append_spring
 
+  !-----------------------------------------------------------------------------!
+  !> Append !VELOCITY                                                           !
+  !-----------------------------------------------------------------------------!
+  !> With n = 0, only the group of rotation center is counted.
+  !> vtype is one value shared by all the VELOCITY conditions; each call with n > 0 overwrites it.
+  subroutine fstr_solid_append_velocity( hecMESH, fstrSOLID, fstrDYNAMIC, header_name, gid, vtype, &
+      rotc_name, amp_name, n, grp_names, dof_ids, dof_ide, vals )
+    implicit none
+    type(hecmwST_local_mesh), target          :: hecMESH
+    type(fstr_solid)                          :: fstrSOLID
+    type(fstr_dynamic)                        :: fstrDYNAMIC
+    character(len=*), intent(in)              :: header_name
+    integer(kind=kint), intent(in)            :: gid
+    integer(kind=kint), intent(in)            :: vtype
+    character(len=HECMW_NAME_LEN), intent(in) :: rotc_name
+    character(len=HECMW_NAME_LEN), intent(in) :: amp_name
+    integer(kind=kint), intent(in)            :: n
+    character(len=HECMW_NAME_LEN), intent(in) :: grp_names(:)
+    integer(kind=kint), intent(in)            :: dof_ids(:)
+    integer(kind=kint), intent(in)            :: dof_ide(:)
+    real(kind=kreal), intent(in)              :: vals(:)
+
+    character(len=HECMW_NAME_LEN) :: rotc(1)
+    integer(kind=kint) :: amp_id, rotc_id(1), n_rotc
+    integer(kind=kint) :: i, j, old_size, new_size
+
+    rotc_id = -1
+    n_rotc = -1
+    if( rotc_name /= ' ' ) then
+      fstrSOLID%VELOCITY_ngrp_rot = fstrSOLID%VELOCITY_ngrp_rot + 1
+      n_rotc = fstrSOLID%VELOCITY_ngrp_rot
+      rotc(1) = rotc_name
+      call node_grp_name_to_id_ex( hecMESH, header_name//',ROT_CENTER=', 1, rotc, rotc_id )
+    endif
+
+    if( n == 0 ) return
+    old_size = fstrSOLID%VELOCITY_ngrp_tot
+    new_size = old_size + n
+    fstrSOLID%VELOCITY_ngrp_tot = new_size
+
+    call hecmw_expand_integer_array (fstrSOLID%VELOCITY_ngrp_GRPID, old_size, new_size )
+    call hecmw_expand_integer_array (fstrSOLID%VELOCITY_ngrp_ID  , old_size, new_size )
+    call hecmw_expand_integer_array (fstrSOLID%VELOCITY_ngrp_type, old_size, new_size )
+    call hecmw_expand_real_array    (fstrSOLID%VELOCITY_ngrp_val , old_size, new_size )
+    call hecmw_expand_integer_array (fstrSOLID%VELOCITY_ngrp_amp , old_size, new_size )
+    call hecmw_expand_integer_array (fstrSOLID%VELOCITY_ngrp_rotID, old_size, new_size )
+    call hecmw_expand_integer_array (fstrSOLID%VELOCITY_ngrp_centerID, old_size, new_size )
+
+    fstrSOLID%VELOCITY_type = vtype
+    if( vtype == kbcInitial ) fstrDYNAMIC%VarInitialize = .true.
+    call amp_name_to_id( hecMESH, header_name, amp_name, amp_id )
+    call node_grp_name_to_id_ex( hecMESH, header_name, &
+      n, grp_names, fstrSOLID%VELOCITY_ngrp_ID(old_size+1:))
+    fstrSOLID%VELOCITY_ngrp_GRPID(old_size+1:new_size) = gid
+
+    ! set up information about rotation ( default value is set if ROT_CENTER is not given.)
+    fstrSOLID%VELOCITY_ngrp_rotID(old_size+1:) = n_rotc
+    fstrSOLID%VELOCITY_ngrp_centerID(old_size+1:) = rotc_id(1)
+
+    j = old_size+1
+    do i = 1, n
+      if( (dof_ids(i) < 1).or.(6 < dof_ids(i)).or.(dof_ide(i) < 1).or.(6 < dof_ide(i)) ) then
+        call fstr_setup_util_err_stop( 'fstr control file error : '//header_name// &
+          ' : range of dof_ids and dof_ide is from 1 to 6' )
+      end if
+      fstrSOLID%VELOCITY_ngrp_type(j) = 10 * dof_ids(i) + dof_ide(i)
+      fstrSOLID%VELOCITY_ngrp_amp(j) = amp_id
+      fstrSOLID%VELOCITY_ngrp_val(old_size+i) = vals(i)
+      j = j+1
+    end do
+
+  end subroutine fstr_solid_append_velocity
+
+  !-----------------------------------------------------------------------------!
+  !> Append !ACCELERATION                                                       !
+  !-----------------------------------------------------------------------------!
+  !> atype is one value shared by all the ACCELERATION conditions; each call with n > 0 overwrites it.
+  subroutine fstr_solid_append_acceleration( hecMESH, fstrSOLID, fstrDYNAMIC, header_name, gid, atype, &
+      amp_name, n, grp_names, dof_ids, dof_ide, vals )
+    implicit none
+    type(hecmwST_local_mesh), target          :: hecMESH
+    type(fstr_solid)                          :: fstrSOLID
+    type(fstr_dynamic)                        :: fstrDYNAMIC
+    character(len=*), intent(in)              :: header_name
+    integer(kind=kint), intent(in)            :: gid
+    integer(kind=kint), intent(in)            :: atype
+    character(len=HECMW_NAME_LEN), intent(in) :: amp_name
+    integer(kind=kint), intent(in)            :: n
+    character(len=HECMW_NAME_LEN), intent(in) :: grp_names(:)
+    integer(kind=kint), intent(in)            :: dof_ids(:)
+    integer(kind=kint), intent(in)            :: dof_ide(:)
+    real(kind=kreal), intent(in)              :: vals(:)
+
+    integer(kind=kint) :: amp_id
+    integer(kind=kint) :: i, j, old_size, new_size
+
+    if( n == 0 ) return
+    old_size = fstrSOLID%ACCELERATION_ngrp_tot
+    new_size = old_size + n
+    fstrSOLID%ACCELERATION_ngrp_tot = new_size
+
+    call hecmw_expand_integer_array (fstrSOLID%ACCELERATION_ngrp_GRPID, old_size, new_size )
+    call hecmw_expand_integer_array (fstrSOLID%ACCELERATION_ngrp_ID  , old_size, new_size )
+    call hecmw_expand_integer_array (fstrSOLID%ACCELERATION_ngrp_type, old_size, new_size )
+    call hecmw_expand_real_array    (fstrSOLID%ACCELERATION_ngrp_val , old_size, new_size )
+    call hecmw_expand_integer_array (fstrSOLID%ACCELERATION_ngrp_amp , old_size, new_size )
+
+    fstrSOLID%ACCELERATION_type = atype
+    if( atype == kbcInitial )fstrDYNAMIC%VarInitialize = .true.
+    call amp_name_to_id( hecMESH, header_name, amp_name, amp_id )
+    call node_grp_name_to_id_ex( hecMESH, header_name, &
+      n, grp_names, fstrSOLID%ACCELERATION_ngrp_ID(old_size+1:))
+    fstrSOLID%ACCELERATION_ngrp_GRPID(old_size+1:new_size) = gid
+
+    j = old_size+1
+    do i = 1, n
+      if( (dof_ids(i) < 1).or.(6 < dof_ids(i)).or.(dof_ide(i) < 1).or.(6 < dof_ide(i)) ) then
+        call fstr_setup_util_err_stop( 'fstr control file error : '//header_name// &
+          ' : range of dof_ids and dof_ide is from 1 to 6' )
+      end if
+      fstrSOLID%ACCELERATION_ngrp_type(j) = 10 * dof_ids(i) + dof_ide(i)
+      fstrSOLID%ACCELERATION_ngrp_amp(j) = amp_id
+      fstrSOLID%ACCELERATION_ngrp_val(old_size+i) = vals(i)
+      j = j+1
+    end do
+
+  end subroutine fstr_solid_append_acceleration
+
 end module fstr_setup_solid

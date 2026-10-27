@@ -8,7 +8,8 @@ fstr_ctrl_static.o : fstr_ctrl_static.f90 ../../include/fstr_ctrl_util_f.mod
 fstr_element_activation.o : fstr_element_activation.f90
 fstr_get_prop.o : fstr_get_prop.f90
 fstr_rcap_io.o : fstr_rcap_io.F90
-fstr_setup.o : fstr_setup.f90 ../../include/fstr_ctrl_util_f.mod fstr_get_prop.o fstr_ctrl_material.o fstr_ctrl_dynamic.o fstr_ctrl_eigen.o fstr_ctrl_heat.o fstr_ctrl_static.o fstr_ctrl_common.o fstr_setup_util.o fstr_setup_solid.o fstr_setup_heat.o
+fstr_setup.o : fstr_setup.f90 ../../include/fstr_ctrl_util_f.mod fstr_get_prop.o fstr_ctrl_material.o fstr_ctrl_dynamic.o fstr_ctrl_eigen.o fstr_ctrl_heat.o fstr_ctrl_static.o fstr_ctrl_common.o fstr_setup_util.o fstr_setup_solid.o fstr_setup_heat.o fstr_setup_freq.o
+fstr_setup_freq.o : fstr_setup_freq.f90 fstr_setup_util.o
 fstr_setup_heat.o : fstr_setup_heat.f90 fstr_setup_util.o
 fstr_setup_solid.o : fstr_setup_solid.f90 fstr_setup_util.o
 fstr_setup_util.o : fstr_setup_util.f90 ../../include/fstr_ctrl_util_f.mod 
