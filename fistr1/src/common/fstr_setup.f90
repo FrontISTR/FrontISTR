@@ -385,115 +385,10 @@ contains
           write(ILOG,*) '### Error: Fail in read in contact condition : ', c_contact
           stop HECMW_EXIT_INPUT
         endif
-        cparam_id = 0
-        do i=1,size(fstrPARAM%contactparam)-1
-          if( hecmw_streqr( fstrPARAM%contactparam(i)%name, mName ) ) then
-            cparam_id = i; exit
-          endif
-        enddo
         ! initialize contact condition (cdotp and mut are now obsolete - penalty is in tContact)
         if( rho>0.d0 ) cgn = rho
         if( alpha>0.d0 ) cgt = alpha
-        do i=1,n
-          fstrSOLID%contacts(c_contact+i)%smoothing = k
-          if( .not. fstr_contact_check( fstrSOLID%contacts(c_contact+i), P%MESH ) ) then
-            write(*,*) '### Error: Inconsistence in contact and surface definition : ' , i+c_contact
-            write(ILOG,*) '### Error: Inconsistence in contact and surface definition : ', i+c_contact
-            stop HECMW_EXIT_MODEL
-          else
-            isOK = fstr_contact_init( fstrSOLID%contacts(c_contact+i), P%MESH, fstrPARAM%contactparam(cparam_id))
-            ! !CONTACT_ALGO, FRICTION_CONE=FOLLOW gives up the symmetry of the ALagrange
-            ! friction terms; see getContactStiffness_Alag
-            fstrSOLID%contacts(c_contact+i)%symmetric = .not. P%PARAM%fric_cone_follow
-            fstrSOLID%contacts(c_contact+i)%eps_fric_band = P%PARAM%eps_fric_band
-          endif
-          if( fstrSOLID%contacts(c_contact+i)%method == CONTACTS2S ) then
-            ! Only the static path is wired for MORTAR=YES. The implicit dynamic solver calls
-            ! the shared scan / matrix connectivity / stiffness routines, so the pair would be
-            ! dispatched to the mortar code, but it never calls fstr_begin_lambda_txn /
-            ! fstr_commit_lambda_txn and the multipliers would not advance over the substeps.
-            ! The explicit solver applies the NODE-SURF scan to every pair regardless of the
-            ! method. Both would be silent, so this must be an error.
-            ! ELEMCHECK and NZPROF run no analysis at all (fstr_input_precheck returns before
-            ! the solver dispatch and never touches the contact pairs), so they are let through.
-            if( P%PARAM%solution_type /= kstSTATIC .and. &
-              & P%PARAM%solution_type /= kstPRECHECK .and. &
-              & P%PARAM%solution_type /= kstNZPROF ) then
-              write(*,*)    '### Error: MORTAR=YES is supported only in static analysis : ', i+c_contact
-              write(ILOG,*) '### Error: MORTAR=YES is supported only in static analysis : ', i+c_contact
-              write(*,*)    '           Specify !SOLUTION, TYPE=STATIC or TYPE=NLSTATIC.'
-              write(ILOG,*) '           Specify !SOLUTION, TYPE=STATIC or TYPE=NLSTATIC.'
-              stop HECMW_EXIT_MODEL
-            endif
-            ! Restart is not supported. The restart file keeps the node-level contact state
-            ! only (contacts(i)%states over contacts(i)%slave), so the segment states in
-            ! slave_surf and the converged multipliers are not saved. A resumed run would
-            ! start with every segment free and without the warm start, and the initial scan
-            ! is skipped on restart, so the difference would be silent.
-            if( fstrSOLID%restart_nout < 0 ) then
-              write(*,*)    '### Error: MORTAR=YES does not support restart : ', i+c_contact
-              write(ILOG,*) '### Error: MORTAR=YES does not support restart : ', i+c_contact
-              write(*,*)    '           The contact state of mortar pairs is not saved in the restart file.'
-              write(ILOG,*) '           The contact state of mortar pairs is not saved in the restart file.'
-              stop HECMW_EXIT_MODEL
-            endif
-            if( P%PARAM%contact_algo == kcaSLagrange ) then
-              write(*,*)    '### Error: MORTAR=YES is not supported with !CONTACT_ALGO TYPE=SLAGRANGE : ', i+c_contact
-              write(ILOG,*) '### Error: MORTAR=YES is not supported with !CONTACT_ALGO TYPE=SLAGRANGE : ', i+c_contact
-              stop HECMW_EXIT_MODEL
-            endif
-            if( fstrSOLID%contacts(c_contact+i)%surf_id1_sgrp <= 0 ) then
-              write(*,*)    '### Error: MORTAR=YES requires !CONTACT_PAIR TYPE=SURF-SURF : ', i+c_contact
-              write(ILOG,*) '### Error: MORTAR=YES requires !CONTACT_PAIR TYPE=SURF-SURF : ', i+c_contact
-              stop HECMW_EXIT_MODEL
-            endif
-            ! Only finite sliding is implemented. With any other INTERACTION the per-integration
-            ! point tracking is skipped, and with it the activation of the slave segment, so the
-            ! assembly sees every segment as free and no contact force is produced at all
-            ! (a silent no-op). INTERACTION defaults to SSLID, so this must be an error.
-            if( fstrSOLID%contacts(c_contact+i)%algtype /= CONTACTFSLID ) then
-              write(*,*)    '### Error: MORTAR=YES is supported only with INTERACTION=FSLID : ', i+c_contact
-              write(ILOG,*) '### Error: MORTAR=YES is supported only with INTERACTION=FSLID : ', i+c_contact
-              write(*,*)    '           Specify INTERACTION=FSLID on !CONTACT (the default is SSLID).'
-              write(ILOG,*) '           Specify INTERACTION=FSLID on !CONTACT (the default is SSLID).'
-              stop HECMW_EXIT_MODEL
-            endif
-            if( fstrSOLID%contacts(c_contact+i)%smoothing /= kcsNONE ) then
-              write(*,*)    '### Error: MORTAR=YES is not supported with SMOOTHING= : ', i+c_contact
-              write(ILOG,*) '### Error: MORTAR=YES is not supported with SMOOTHING= : ', i+c_contact
-              stop HECMW_EXIT_MODEL
-            endif
-            ! Visibility guard: the mortar integral of a slave segment needs every master face
-            ! it can project onto, so a rank owning slave faces must see the entire master
-            ! surface (owned + ghost), which !PARTITION, CONTACT_OWNER=SLAVE provides. Verified
-            ! by comparing the visible master count with the global owned-only count.
-            ! Serial (np=1) skips the block, so the numerical path is unchanged.
-            if( hecmw_comm_get_size() > 1 ) then
-              ss_nslav     = size( fstrSOLID%contacts(c_contact+i)%slave_surf )
-              ss_nmas_vis  = size( fstrSOLID%contacts(c_contact+i)%master )
-              ss_nmas_glob = fstrSOLID%contacts(c_contact+i)%n_master_owned
-              call hecmw_allreduce_I1( P%MESH, ss_nmas_glob, hecmw_sum )
-              ! a slave-owning rank must see every master face; flag incomplete ghost
-              if( ss_nslav > 0 .and. ss_nmas_vis /= ss_nmas_glob ) then
-                ss_bad = 1
-              else
-                ss_bad = 0
-              endif
-              call hecmw_allreduce_I1( P%MESH, ss_bad, hecmw_max )
-              if( ss_bad /= 0 ) then
-                write(*,*)    '### Error: MORTAR=YES contact pair has incomplete master ghost : ', i+c_contact
-                write(ILOG,*) '### Error: MORTAR=YES contact pair has incomplete master ghost : ', i+c_contact
-                write(*,*)    '           A rank owning slave faces cannot see the full master surface.'
-                write(ILOG,*) '           A rank owning slave faces cannot see the full master surface.'
-                write(*,*)    '           Re-partition the mesh with !PARTITION, CONTACT_OWNER=SLAVE,'
-                write(ILOG,*) '           Re-partition the mesh with !PARTITION, CONTACT_OWNER=SLAVE,'
-                write(*,*)    '           or run serial (np=1).'
-                write(ILOG,*) '           or run serial (np=1).'
-                stop HECMW_EXIT_MODEL
-              endif
-            endif
-          endif
-        enddo
+        call fstr_solid_init_contacts( P%MESH, fstrSOLID, fstrPARAM, c_contact, n, mName, k )
         c_contact = c_contact+n
 
         ! ----- EMBED condition setting
@@ -504,22 +399,7 @@ contains
           write(ILOG,*) '### Error: Fail in read in embed condition : ', c_embed
           stop HECMW_EXIT_INPUT
         endif
-        cparam_id = 0
-        do i=1,size(fstrPARAM%contactparam)-1
-          if( hecmw_streqr( fstrPARAM%contactparam(i)%name, mName ) ) then
-            cparam_id = i; exit
-          endif
-        enddo
-        do i=1,n
-          fstrSOLID%embeds(c_embed+i)%smoothing = k
-          if( .not. fstr_contact_check( fstrSOLID%embeds(c_embed+i), P%MESH ) ) then
-            write(*,*) '### Error: Inconsistence in contact and surface definition : ' , i+c_embed
-            write(ILOG,*) '### Error: Inconsistence in contact and surface definition : ', i+c_embed
-            stop HECMW_EXIT_MODEL
-          else
-            isOK = fstr_embed_init( fstrSOLID%embeds(c_embed+i), P%MESH, fstrPARAM%contactparam(cparam_id))
-          endif
-        enddo
+        call fstr_solid_init_embeds( P%MESH, fstrSOLID, fstrPARAM, c_embed, n, mName, k )
         c_embed = c_embed+n
 
       else if( header_name == '!ISTEP'  ) then
