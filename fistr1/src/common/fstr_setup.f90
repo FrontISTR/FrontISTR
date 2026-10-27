@@ -2766,25 +2766,18 @@ end function fstr_setup_INITIAL
   !-----------------------------------------------------------------------------!
 
   subroutine fstr_setup_COUPLE( ctrl, counter, P )
-    use hecmw_setup_util, only &
-      : hecmw_expand_integer_array
     implicit none
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: counter
     type(fstr_param_pack) :: P
     integer(kind=kint) :: rcode
     character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
-    integer(kind=kint) :: n, old_size, new_size
+    integer(kind=kint) :: n
 
     if( P%SOLID%file_type /= kbcfFSTR ) return
 
     n = fstr_ctrl_get_data_line_n( ctrl )
     if( n == 0 ) return
-    old_size = P%SOLID%COUPLE_ngrp_tot
-    new_size = old_size + n
-    P%SOLID%COUPLE_ngrp_tot = new_size
-
-    call hecmw_expand_integer_array ( P%SOLID%COUPLE_ngrp_ID,  old_size, new_size )
 
     allocate( grp_id_name(n))
     rcode = fstr_ctrl_get_COUPLE( ctrl,           &
@@ -2794,11 +2787,9 @@ end function fstr_setup_INITIAL
       grp_id_name, HECMW_NAME_LEN  )
     if( rcode /= 0 ) call fstr_ctrl_err_stop
 
-    call surf_grp_name_to_id_ex( P%MESH, '!COUPLE', &
-      n, grp_id_name, P%SOLID%COUPLE_ngrp_ID(old_size+1:))
+    call fstr_solid_append_couple( P%MESH, P%SOLID, P%PARAM, '!COUPLE', n, grp_id_name )
 
     deallocate( grp_id_name )
-    P%PARAM%fg_couple = 1
 
   end subroutine fstr_setup_COUPLE
 
@@ -2831,9 +2822,6 @@ end function fstr_setup_INITIAL
 
   !> Read in !ELEMENT_ACTIVATION
   subroutine fstr_setup_ELEMENT_ACTIVATION( ctrl, counter, P )
-    use hecmw_setup_util, only &
-      : hecmw_expand_integer_array &
-      , hecmw_expand_real_array
     implicit none
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: counter
@@ -2841,9 +2829,8 @@ end function fstr_setup_INITIAL
 
     integer(kind=kint) :: rcode
     character(HECMW_NAME_LEN) :: amp
-    integer(kind=kint) :: amp_id
     character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
-    integer(kind=kint) :: i, n, old_size, new_size
+    integer(kind=kint) :: n
     integer(kind=kint) :: gid, mode, measure, state
     real(kind=kreal)   :: eps
     real(kind=kreal), pointer :: thlow(:), thup(:)
@@ -2853,18 +2840,6 @@ end function fstr_setup_INITIAL
 
     n = fstr_ctrl_get_data_line_n( ctrl )
     if( n == 0 ) return
-    old_size = P%SOLID%elemact%ELEMACT_egrp_tot
-    new_size = old_size + n
-    P%SOLID%elemact%ELEMACT_egrp_tot = new_size
-
-    call hecmw_expand_integer_array ( P%SOLID%elemact%ELEMACT_egrp_GRPID, old_size, new_size )
-    call hecmw_expand_integer_array ( P%SOLID%elemact%ELEMACT_egrp_ID,  old_size, new_size )
-    call hecmw_expand_integer_array ( P%SOLID%elemact%ELEMACT_egrp_amp, old_size, new_size )
-    call hecmw_expand_real_array ( P%SOLID%elemact%ELEMACT_egrp_eps, old_size, new_size )
-    call hecmw_expand_integer_array ( P%SOLID%elemact%ELEMACT_egrp_depends, old_size, new_size )
-    call hecmw_expand_real_array ( P%SOLID%elemact%ELEMACT_egrp_ts_lower, old_size, new_size )
-    call hecmw_expand_real_array ( P%SOLID%elemact%ELEMACT_egrp_ts_upper, old_size, new_size )
-    call hecmw_expand_integer_array ( P%SOLID%elemact%ELEMACT_egrp_state, old_size, new_size )
 
     allocate( grp_id_name(n), thlow(n), thup(n) )
     amp = ' '
@@ -2872,18 +2847,8 @@ end function fstr_setup_INITIAL
     rcode = fstr_ctrl_get_ELEMENT_ACTIVATION( ctrl, amp, eps, grp_id_name, mode, measure, state, thlow, thup )
     if( rcode /= 0 ) call fstr_ctrl_err_stop
 
-    call amp_name_to_id( P%MESH, '!ELEMENT_ACTIVATION', amp, amp_id )
-    do i=1,n
-      P%SOLID%elemact%ELEMACT_egrp_amp(old_size+i) = amp_id
-      P%SOLID%elemact%ELEMACT_egrp_eps(old_size+i) = eps
-    end do
-    P%SOLID%elemact%ELEMACT_egrp_GRPID(old_size+1:new_size) = gid
-    P%SOLID%elemact%ELEMACT_egrp_depends(old_size+1:new_size) = measure
-    P%SOLID%elemact%ELEMACT_egrp_ts_lower(old_size+1:new_size) = thlow(1:n)
-    P%SOLID%elemact%ELEMACT_egrp_ts_upper(old_size+1:new_size) = thup(1:n)
-    P%SOLID%elemact%ELEMACT_egrp_state(old_size+1:new_size) = state
-
-    call elem_grp_name_to_id_ex( P%MESH, '!ELEMENT_ACTIVATION', n, grp_id_name, P%SOLID%elemact%ELEMACT_egrp_ID(old_size+1:))
+    call fstr_solid_append_element_activation( P%MESH, P%SOLID, '!ELEMENT_ACTIVATION', gid, &
+      amp, eps, measure, state, n, grp_id_name, thlow, thup )
 
     deallocate( grp_id_name )
   end subroutine fstr_setup_ELEMENT_ACTIVATION
