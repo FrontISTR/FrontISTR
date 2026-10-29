@@ -261,7 +261,7 @@ contains
     endif
     if( associated(contact%states) ) deallocate(contact%states)
     call hecmw_contact_comm_finalize(contact%comm)
-!    call bucketDB_finalize( contact%master_bktDB )
+    call bucketDB_finalize( contact%master_bktDB )
   end subroutine
 
   !>  Check the consistency with given mesh of contact definition

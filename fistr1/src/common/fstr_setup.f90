@@ -2108,15 +2108,15 @@ contains
     if(associated(fstrSOLID%QFORCE_bak)) deallocate(fstrSOLID%QFORCE_bak)
 
     if(associated(fstrSOLID%contacts)) then
-      do i=1, size(fstrSOLID%contacts)
-        call fstr_contact_finalize(fstrSOLID%contacts(i))
-      end do
+!      do i=1, size(fstrSOLID%contacts)
+!        call fstr_contact_finalize(fstrSOLID%contacts(i))
+!      end do
       deallocate(fstrSOLID%contacts)
     end if
     if(associated(fstrSOLID%embeds)) then
-      do i=1, size(fstrSOLID%embeds)
-        call fstr_contact_finalize(fstrSOLID%embeds(i))
-      end do
+!      do i=1, size(fstrSOLID%embeds)
+!        call fstr_contact_finalize(fstrSOLID%embeds(i))
+!      end do
       deallocate(fstrSOLID%embeds)
     end if
     if(associated(fstrSOLID%unode_bkup)) deallocate(fstrSOLID%unode_bkup)
@@ -2144,15 +2144,15 @@ contains
       deallocate(fstrSOLID%elements_bkup)
     end if
     if(associated(fstrSOLID%contacts_bkup)) then
-      do i=1, size(fstrSOLID%contacts_bkup)
-        call fstr_contact_finalize(fstrSOLID%contacts_bkup(i))
-      end do
+!      do i=1, size(fstrSOLID%contacts_bkup)
+!        call fstr_contact_finalize(fstrSOLID%contacts_bkup(i))
+!      end do
       deallocate(fstrSOLID%contacts_bkup)
     end if
     if(associated(fstrSOLID%embeds_bkup)) then
-      do i=1, size(fstrSOLID%embeds_bkup)
-        call fstr_contact_finalize(fstrSOLID%embeds_bkup(i))
-      end do
+!      do i=1, size(fstrSOLID%embeds_bkup)
+!        call fstr_contact_finalize(fstrSOLID%embeds_bkup(i))
+!      end do
       deallocate(fstrSOLID%embeds_bkup)
     end if
 
