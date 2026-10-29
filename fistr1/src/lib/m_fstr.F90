@@ -163,63 +163,63 @@ module m_fstr
 
   !>  FSTR INNER CONTROL PARAMETERS  (fstrPARAM)
   type fstr_param
-    integer(kind=kint) :: solution_type !< solution type number
-    integer(kind=kint) :: solver_method !< solver method number
-    integer(kind=kint) :: nlsolver_method !< solver method number for nonlinear equation
-    logical            :: nlgeom        !< is geometrical nonlinearity considered
+    integer(kind=kint) :: solution_type=kstSTATIC    !< solution type number
+    integer(kind=kint) :: solver_method=ksmCG        !< solver method number
+    integer(kind=kint) :: nlsolver_method=knsmNEWTON !< solver method number for nonlinear equation
+    logical            :: nlgeom=.false.             !< is geometrical nonlinearity considered
 
     !> STATIC !HEAT
-    integer(kind=kint) :: analysis_n      !< Number of analysis
-    real(kind=kreal), pointer  :: dtime(:) !< (=DT)    STEP_DLTIME
-    real(kind=kreal), pointer  :: etime(:) !< (/=ETIME) STEP_EETIME
-    real(kind=kreal), pointer  :: dtmin(:) !< (=DTMIN) STEP_DELMIN
-    real(kind=kreal), pointer  :: delmax(:)!< (=DTMAX) STEP_DELMAX
-    integer(kind=kint), pointer:: itmax(:) !< (/=ITMAX)
-    real(kind=kreal), pointer  :: eps(:)   !< (/=ESP)
-    real(kind=kreal)           :: ref_temp !< (=REF_TEMP)
-    integer(kind=kint)         :: timepoint_id !< time point ID for heat analysis
+    integer(kind=kint) :: analysis_n=0             !< Number of analysis
+    real(kind=kreal), pointer  :: dtime(:)=>null() !< (=DT)    STEP_DLTIME
+    real(kind=kreal), pointer  :: etime(:)=>null() !< (/=ETIME) STEP_EETIME
+    real(kind=kreal), pointer  :: dtmin(:)=>null() !< (=DTMIN) STEP_DELMIN
+    real(kind=kreal), pointer  :: delmax(:)=>null()!< (=DTMAX) STEP_DELMAX
+    integer(kind=kint), pointer:: itmax(:)=>null() !< (/=ITMAX)
+    real(kind=kreal), pointer  :: eps(:)=>null()   !< (/=ESP)
+    real(kind=kreal)           :: ref_temp=0.d0    !< (=REF_TEMP)
+    integer(kind=kint)         :: timepoint_id=0   !< time point ID for heat analysis
 
     !> output control
-    integer(kind=kint) :: fg_echo       !< output echo   (kYES/kNO) (=IECHO)
-    integer(kind=kint) :: fg_result     !< output result (kYES/kNO) (=IRESULT)
-    integer(kind=kint) :: fg_visual     !< visualization (kYES/kNO) (=IVISUAL)
+    integer(kind=kint) :: fg_echo=kOFF       !< output echo   (kYES/kNO) (=IECHO)
+    integer(kind=kint) :: fg_result=kOFF     !< output result (kYES/kNO) (=IRESULT)
+    integer(kind=kint) :: fg_visual=kOFF     !< visualization (kYES/kNO) (=IVISUAL)
 
     !> for heat ...
-    integer(kind=kint) :: fg_neutral    !< write by neutral (=INEUTRAL)
-    integer(kind=kint) :: fg_irres      !< restart read     (=IRRES)
-    integer(kind=kint) :: fg_iwres      !< restart write    (=IWRES)
-    integer(kind=kint) :: nrres         !< NRRES
-    integer(kind=kint) :: nprint        !< NPRINT
+    integer(kind=kint) :: fg_neutral=kOFF   !< write by neutral (=INEUTRAL)
+    integer(kind=kint) :: fg_irres=kNO      !< restart read     (=IRRES)
+    integer(kind=kint) :: fg_iwres=kNO      !< restart write    (=IWRES)
+    integer(kind=kint) :: nrres=1           !< NRRES
+    integer(kind=kint) :: nprint=1          !< NPRINT
 
     !> index table for global node ID sorting
-    integer(kind=kint) :: n_node        !< hecMESH%n_node
-    integer(kind=kint) :: nn_internal   !< hecMESH%nn_internal
-    integer(kind=kint), pointer :: global_local_ID(:,:)  !> (2:nn_internal) (1,:):global, (2,:):local
+    integer(kind=kint) :: n_node=0        !< hecMESH%n_node
+    integer(kind=kint) :: nn_internal=0   !< hecMESH%nn_internal
+    integer(kind=kint), pointer :: global_local_ID(:,:)=>null()  !> (2:nn_internal) (1,:):global, (2,:):local
 
     !> for couple analysis
-    integer( kind=kint ) :: fg_couple          !< (default:0)
-    integer( kind=kint ) :: fg_couple_type     !< (default:0)
-    integer( kind=kint ) :: fg_couple_first    !< (default:0)
-    integer( kind=kint ) :: fg_couple_window   !< (default:0)
+    integer( kind=kint ) :: fg_couple=0          !< (default:0)
+    integer( kind=kint ) :: fg_couple_type=0     !< (default:0)
+    integer( kind=kint ) :: fg_couple_first=0    !< (default:0)
+    integer( kind=kint ) :: fg_couple_window=0   !< (default:0)
 
     !> for restart control
-    integer( kind=kint ) :: restart_out_type   !< output type of restart file
-    integer( kind=kint ) :: restart_version    !< version of restart file
+    integer( kind=kint ) :: restart_out_type=0   !< output type of restart file
+    integer( kind=kint ) :: restart_version=6    !< version of restart file
 
     !> for contact analysis
-    integer( kind=kint ) :: contact_algo       !< contact analysis algorithm number(SLagrange or Alagrange)
-    integer( kind=kint ) :: augiter            !< augmentation iteration for ALagrange algorithm
-    logical              :: fric_cone_follow   !< if the ALagrange friction cone follows the applied normal force
-    real( kind=kreal )   :: eps_fric_band      !< hysteresis half-band of the stick/slip switch (0 = no band)
-    type(tContactParam), pointer :: contactparam(:)  !< parameter sets for contact scan
-    type(tContactInterference), pointer :: contact_if(:)  !< parameter sets for contact scan
+    integer( kind=kint ) :: contact_algo=kcaSLagrange !< contact analysis algorithm number(SLagrange or Alagrange)
+    integer( kind=kint ) :: augiter=2                 !< augmentation iteration for ALagrange algorithm
+    logical              :: fric_cone_follow=.true.   !< if the ALagrange friction cone follows the applied normal force
+    real( kind=kreal )   :: eps_fric_band=0.d0        !< hysteresis half-band of the stick/slip switch (0 = no band)
+    type(tContactParam), pointer :: contactparam(:)=>null()  !< parameter sets for contact scan
+    type(tContactInterference), pointer :: contact_if(:)=>null()  !< parameter sets for contact scan
 
     !> for auto increment and cutback
-    type(tParamAutoInc), pointer :: ainc(:)        !< auto increment control
-    type(time_points), pointer :: timepoints(:)  !< time points data
+    type(tParamAutoInc), pointer :: ainc(:)=>null()      !< auto increment control
+    type(time_points), pointer :: timepoints(:)=>null()  !< time points data
 
     !> for convergence check
-    type(tParamConverg), pointer :: cnvparam(:)    !< convergence criteria
+    type(tParamConverg), pointer :: cnvparam(:)=>null()    !< convergence criteria
   end type fstr_param
 
   !> Data for STATIC ANSLYSIS  (fstrSOLID)
@@ -251,40 +251,40 @@ module m_fstr
   end type fstr_solid_physic_val
 
   type fstr_solid
-    integer(kind=kint) :: file_type  ! kbcfFSTR or kbcfNASTRAN
-    integer(kind=kint) :: StaticType ! 1:Total, 2:Updated, 3:Infinitesimal
-    integer(kind=kint) :: nstep_tot
+    integer(kind=kint) :: file_type=kbcfFSTR  ! kbcfFSTR or kbcfNASTRAN
+    integer(kind=kint) :: StaticType=1        ! 1:Total, 2:Updated, 3:Infinitesimal
+    integer(kind=kint) :: nstep_tot=0
 
     type(step_info), pointer       :: step_ctrl(:)  =>null()   !< step information
     type(t_output_ctrl),  pointer  :: output_ctrl(:)=>null()   !< output  information
 
     !> BOUNDARY
-    integer(kind=kint) :: BOUNDARY_ngrp_tot                    !< Following boundary conditions
+    integer(kind=kint) :: BOUNDARY_ngrp_tot=0                  !< Following boundary conditions
     integer(kind=kint), pointer :: BOUNDARY_ngrp_GRPID  (:)  =>null()
     integer(kind=kint), pointer :: BOUNDARY_ngrp_ID     (:)  =>null()
     integer(kind=kint), pointer :: BOUNDARY_ngrp_type   (:)  =>null()
     integer(kind=kint), pointer :: BOUNDARY_ngrp_amp    (:)  =>null()
     real(kind=kreal), pointer   :: BOUNDARY_ngrp_val    (:)  =>null()
     integer(kind=kint), pointer :: BOUNDARY_ngrp_istot  (:)  =>null()
-    integer(kind=kint) :: BOUNDARY_ngrp_rot                   !< number of rotational boundary conditions
+    integer(kind=kint) :: BOUNDARY_ngrp_rot=0                 !< number of rotational boundary conditions
     integer(kind=kint), pointer :: BOUNDARY_ngrp_rotID     (:) =>null()
     integer(kind=kint), pointer :: BOUNDARY_ngrp_centerID  (:) =>null()
 
     !> VELOCITY
-    integer(kind=kint) :: VELOCITY_type
-    integer(kind=kint) :: VELOCITY_ngrp_tot                    !< Following velocity boundary condition
+    integer(kind=kint) :: VELOCITY_type=kbcInitial
+    integer(kind=kint) :: VELOCITY_ngrp_tot=0                 !< Following velocity boundary condition
     integer(kind=kint), pointer :: VELOCITY_ngrp_GRPID  (:)  =>null()
     integer(kind=kint), pointer :: VELOCITY_ngrp_ID     (:)  =>null()
     integer(kind=kint), pointer :: VELOCITY_ngrp_type   (:)  =>null()
     integer(kind=kint), pointer :: VELOCITY_ngrp_amp    (:)  =>null()
     real(kind=kreal), pointer   :: VELOCITY_ngrp_val    (:)  =>null()
-    integer(kind=kint) :: VELOCITY_ngrp_rot                     !< number of rotational velocity boundary conditions
+    integer(kind=kint) :: VELOCITY_ngrp_rot=0                 !< number of rotational velocity boundary conditions
     integer(kind=kint), pointer :: VELOCITY_ngrp_rotID    (:) =>null()
     integer(kind=kint), pointer :: VELOCITY_ngrp_centerID (:) =>null()
 
     !> ACCELERATION
-    integer(kind=kint) :: ACCELERATION_type
-    integer(kind=kint) :: ACCELERATION_ngrp_tot                !< Following accelerate boundary condition
+    integer(kind=kint) :: ACCELERATION_type=kbcInitial
+    integer(kind=kint) :: ACCELERATION_ngrp_tot=0              !< Following accelerate boundary condition
     integer(kind=kint), pointer :: ACCELERATION_ngrp_GRPID  (:)  =>null()
     integer(kind=kint), pointer :: ACCELERATION_ngrp_ID     (:)  =>null()
     integer(kind=kint), pointer :: ACCELERATION_ngrp_type   (:)  =>null()
@@ -292,132 +292,132 @@ module m_fstr
     real(kind=kreal), pointer   :: ACCELERATION_ngrp_val    (:)  =>null()
 
     !> CLOAD
-    integer(kind=kint) :: CLOAD_ngrp_tot                       !< Following concetrated external load
+    integer(kind=kint) :: CLOAD_ngrp_tot=0                     !< Following concetrated external load
     integer(kind=kint), pointer :: CLOAD_ngrp_GRPID     (:) =>null()
-    integer(kind=kint), pointer :: CLOAD_ngrp_ID        (:)
-    integer(kind=kint), pointer :: CLOAD_ngrp_DOF       (:)
-    integer(kind=kint), pointer :: CLOAD_ngrp_amp       (:)
-    real(kind=kreal), pointer   :: CLOAD_ngrp_val       (:)
-    integer(kind=kint) :: CLOAD_ngrp_rot                   !< number of torque load conditions
+    integer(kind=kint), pointer :: CLOAD_ngrp_ID        (:) =>null()
+    integer(kind=kint), pointer :: CLOAD_ngrp_DOF       (:) =>null()
+    integer(kind=kint), pointer :: CLOAD_ngrp_amp       (:) =>null()
+    real(kind=kreal), pointer   :: CLOAD_ngrp_val       (:) =>null()
+    integer(kind=kint) :: CLOAD_ngrp_rot=0                   !< number of torque load conditions
     integer(kind=kint), pointer :: CLOAD_ngrp_rotID     (:) =>null()
     integer(kind=kint), pointer :: CLOAD_ngrp_centerID  (:) =>null()
 
     !> DLOAD
-    integer(kind=kint) :: DLOAD_ngrp_tot                       !< Following distributed external load
-    integer(kind=kint) :: DLOAD_follow
+    integer(kind=kint) :: DLOAD_ngrp_tot=0                       !< Following distributed external load
+    integer(kind=kint) :: DLOAD_follow=0
     integer(kind=kint), pointer :: DLOAD_ngrp_GRPID     (:) =>null()
-    integer(kind=kint), pointer :: DLOAD_ngrp_ID        (:)
-    integer(kind=kint), pointer :: DLOAD_ngrp_LID       (:)
-    integer(kind=kint), pointer :: DLOAD_ngrp_amp       (:)
-    real(kind=kreal), pointer   :: DLOAD_ngrp_params    (:,:)
+    integer(kind=kint), pointer :: DLOAD_ngrp_ID        (:) =>null()
+    integer(kind=kint), pointer :: DLOAD_ngrp_LID       (:) =>null()
+    integer(kind=kint), pointer :: DLOAD_ngrp_amp       (:) =>null()
+    real(kind=kreal), pointer   :: DLOAD_ngrp_params    (:,:) =>null()
 
     !> TEMPERATURE
-    integer(kind=kint) :: TEMP_ngrp_tot                        !< Following temperature conditions
-    integer(kind=kint) :: TEMP_irres
-    integer(kind=kint) :: TEMP_tstep
-    integer(kind=kint) :: TEMP_interval
-    integer(kind=kint) :: TEMP_rtype      ! type of reading result; 1: step-based; 2: time-based
-    real(kind=kreal)   :: TEMP_FACTOR
+    integer(kind=kint) :: TEMP_ngrp_tot=0                        !< Following temperature conditions
+    integer(kind=kint) :: TEMP_irres=0
+    integer(kind=kint) :: TEMP_tstep=0
+    integer(kind=kint) :: TEMP_interval=0
+    integer(kind=kint) :: TEMP_rtype=1      ! type of reading result; 1: step-based; 2: time-based
+    real(kind=kreal)   :: TEMP_FACTOR=0.d0
     integer(kind=kint), pointer :: TEMP_ngrp_GRPID     (:) =>null()
-    integer(kind=kint), pointer :: TEMP_ngrp_ID        (:)
-    real(kind=kreal), pointer   :: TEMP_ngrp_val       (:)
+    integer(kind=kint), pointer :: TEMP_ngrp_ID        (:) =>null()
+    real(kind=kreal), pointer   :: TEMP_ngrp_val       (:) =>null()
 
     !> SPRING
-    integer(kind=kint) :: SPRING_ngrp_tot                      !< Following spring boundary conditions
+    integer(kind=kint) :: SPRING_ngrp_tot=0                      !< Following spring boundary conditions
     integer(kind=kint), pointer :: SPRING_ngrp_GRPID    (:) =>null()
-    integer(kind=kint), pointer :: SPRING_ngrp_ID       (:)
-    integer(kind=kint), pointer :: SPRING_ngrp_DOF      (:)
-    integer(kind=kint), pointer :: SPRING_ngrp_amp      (:)
-    real(kind=kreal), pointer   :: SPRING_ngrp_val      (:)
-    integer(kind=kint), pointer :: SPRING_incremental   (:)    !< resist only the current increment or not
+    integer(kind=kint), pointer :: SPRING_ngrp_ID       (:) =>null()
+    integer(kind=kint), pointer :: SPRING_ngrp_DOF      (:) =>null()
+    integer(kind=kint), pointer :: SPRING_ngrp_amp      (:) =>null()
+    real(kind=kreal), pointer   :: SPRING_ngrp_val      (:) =>null()
+    integer(kind=kint), pointer :: SPRING_incremental   (:) =>null()    !< resist only the current increment or not
 
     !> ELEMACT
     type(tElemact) :: elemact
 
     !> for couple analysis
-    integer( kind=kint ) :: COUPLE_ngrp_tot                   !< Following for coupling analysis
-    integer( kind=kint ),pointer :: COUPLE_ngrp_ID(:)
+    integer( kind=kint ) :: COUPLE_ngrp_tot=0                   !< Following for coupling analysis
+    integer( kind=kint ),pointer :: COUPLE_ngrp_ID(:) =>null()
 
     !> VALUE
-    integer(kind=kint) :: maxn_gauss
+    integer(kind=kint) :: maxn_gauss=0
 
-    real(kind=kreal), pointer :: STRESS(:)    !< nodal stress
-    real(kind=kreal), pointer :: STRAIN(:)    !< nodal strain
-    real(kind=kreal), pointer :: MISES(:)     !< nodal MISES
+    real(kind=kreal), pointer :: STRESS(:) =>null()    !< nodal stress
+    real(kind=kreal), pointer :: STRAIN(:) =>null()    !< nodal strain
+    real(kind=kreal), pointer :: MISES(:) =>null()     !< nodal MISES
 
-    real(kind=kreal), pointer :: PSTRESS(:)   !< nodal principal stress
-    real(kind=kreal), pointer :: PSTRAIN(:)   !< nodal principal strain
-    real(kind=kreal), pointer :: PSTRESS_VECT(:,:)   !< nodal principal stress vector
-    real(kind=kreal), pointer :: PSTRAIN_VECT(:,:)   !< nodal principal strain vector
+    real(kind=kreal), pointer :: PSTRESS(:) =>null()   !< nodal principal stress
+    real(kind=kreal), pointer :: PSTRAIN(:) =>null()   !< nodal principal strain
+    real(kind=kreal), pointer :: PSTRESS_VECT(:,:) =>null()   !< nodal principal stress vector
+    real(kind=kreal), pointer :: PSTRAIN_VECT(:,:) =>null()   !< nodal principal strain vector
 
-    real(kind=kreal), pointer :: ESTRESS(:)   !< elemental stress
-    real(kind=kreal), pointer :: ESTRAIN(:)   !< elemental strain
-    real(kind=kreal), pointer :: EMISES(:)    !< elemental MISES
-    real(kind=kreal), pointer :: EPLSTRAIN(:)    !< elemental plastic strain
+    real(kind=kreal), pointer :: ESTRESS(:) =>null()   !< elemental stress
+    real(kind=kreal), pointer :: ESTRAIN(:) =>null()   !< elemental strain
+    real(kind=kreal), pointer :: EMISES(:) =>null()    !< elemental MISES
+    real(kind=kreal), pointer :: EPLSTRAIN(:) =>null()    !< elemental plastic strain
 
-    real(kind=kreal), pointer :: EPSTRESS(:)   !< elemental principal stress
-    real(kind=kreal), pointer :: EPSTRAIN(:)   !< elemental principal strain
-    real(kind=kreal), pointer :: EPSTRESS_VECT(:,:)   !< elemental principal stress vector
-    real(kind=kreal), pointer :: EPSTRAIN_VECT(:,:)   !< elemental principal strain vector
+    real(kind=kreal), pointer :: EPSTRESS(:) =>null()   !< elemental principal stress
+    real(kind=kreal), pointer :: EPSTRAIN(:) =>null()   !< elemental principal strain
+    real(kind=kreal), pointer :: EPSTRESS_VECT(:,:) =>null()   !< elemental principal stress vector
+    real(kind=kreal), pointer :: EPSTRAIN_VECT(:,:) =>null()   !< elemental principal strain vector
 
-    real(kind=kreal), pointer :: TNSTRAIN(:)   !< thermal nodal strain
-    real(kind=kreal), pointer :: TESTRAIN(:)   !< thermal elemental strain
+    real(kind=kreal), pointer :: TNSTRAIN(:) =>null()   !< thermal nodal strain
+    real(kind=kreal), pointer :: TESTRAIN(:) =>null()   !< thermal elemental strain
 
-    real(kind=kreal), pointer :: YIELD_RATIO(:)    !< yield ratio
+    real(kind=kreal), pointer :: YIELD_RATIO(:) =>null()    !< yield ratio
 
-    real(kind=kreal), pointer :: ENQM(:)      !< elemental NQM
-    real(kind=kreal), pointer :: REACTION(:)    !< reaction_force
+    real(kind=kreal), pointer :: ENQM(:) =>null()      !< elemental NQM
+    real(kind=kreal), pointer :: REACTION(:) =>null()    !< reaction_force
 
-    real(kind=kreal), pointer :: CONT_NFORCE(:)  !< contact normal force for output
-    real(kind=kreal), pointer :: CONT_FRIC(:)    !< contact friction force for output
-    real(kind=kreal), pointer :: CONT_RELVEL(:)  !< contact ralative velocity for output
-    real(kind=kreal), pointer :: CONT_STATE(:)   !< contact state for output
-    integer(kind=kint), pointer :: CONT_SGRP_ID(:) !< contact element surf ids for output
-    real(kind=kreal), pointer :: CONT_AREA(:)    !< contact area
-    real(kind=kreal), pointer :: CONT_NTRAC(:)   !< contact normal traction force for output
-    real(kind=kreal), pointer :: CONT_FTRAC(:)   !< contact friction traction force for output
-    real(kind=kreal), pointer :: EMBED_NFORCE(:)  !< embed force for output
+    real(kind=kreal), pointer :: CONT_NFORCE(:) =>null()  !< contact normal force for output
+    real(kind=kreal), pointer :: CONT_FRIC(:) =>null()    !< contact friction force for output
+    real(kind=kreal), pointer :: CONT_RELVEL(:) =>null()  !< contact ralative velocity for output
+    real(kind=kreal), pointer :: CONT_STATE(:) =>null()   !< contact state for output
+    integer(kind=kint), pointer :: CONT_SGRP_ID(:) =>null() !< contact element surf ids for output
+    real(kind=kreal), pointer :: CONT_AREA(:) =>null()    !< contact area
+    real(kind=kreal), pointer :: CONT_NTRAC(:) =>null()   !< contact normal traction force for output
+    real(kind=kreal), pointer :: CONT_FTRAC(:) =>null()   !< contact friction traction force for output
+    real(kind=kreal), pointer :: EMBED_NFORCE(:) =>null()  !< embed force for output
 
     type(fstr_solid_physic_val), pointer :: SOLID=>null()     !< for solid physical value stracture
     type(fstr_solid_physic_val), pointer :: SHELL=>null()     !< for shell physical value stracture
     type(fstr_solid_physic_val), pointer :: BEAM =>null()     !< for beam physical value stracture
 
     !> ANALYSIS CONTROL for NLGEOM
-    integer(kind=kint) :: restart_nout   !< output interval of restart file
+    integer(kind=kint) :: restart_nout=0   !< output interval of restart file
     !< (if  .gt.0) restart file write
     !< (if  .lt.0) restart file read and write
-    integer(kind=kint) :: restart_nin    !< input number of restart
+    integer(kind=kint) :: restart_nin=0    !< input number of restart
     type(step_info)    :: step_ctrl_restart  !< step information for restart
 
-    integer(kind=kint) :: max_lyr          !< maximum num of layer
-    integer(kind=kint) :: is_33shell
-    integer(kind=kint) :: is_33beam
-    integer(kind=kint) :: is_heat
-    integer(kind=kint) :: max_ncon_stf     !< maximum num of stiffness matrix size
-    integer(kind=kint) :: max_ncon         !< maximum num of element connectivity
+    integer(kind=kint) :: max_lyr=0          !< maximum num of layer
+    integer(kind=kint) :: is_33shell=0
+    integer(kind=kint) :: is_33beam=0
+    integer(kind=kint) :: is_heat=0
+    integer(kind=kint) :: max_ncon_stf=0     !< maximum num of stiffness matrix size
+    integer(kind=kint) :: max_ncon=0         !< maximum num of element connectivity
     integer(kind=kint), pointer :: is_rot(:) => null()
-    integer(kind=kint) :: elemopt361
-    logical            :: is_smoothing_active
-    real(kind=kreal)   :: FACTOR     (2)      !< factor of incrementation
+    integer(kind=kint) :: elemopt361=0
+    logical            :: is_smoothing_active=.false.
+    real(kind=kreal)   :: FACTOR     (2)=0.d0      !< factor of incrementation
     !< 1:time t  2: time t+dt
     !> for increment control
-    integer(kind=kint) :: NRstat_i(10)     !< statistics of newton iteration (integer)
-    real(kind=kreal)   :: NRstat_r(10)     !< statistics of newton iteration (real)
-    integer(kind=kint) :: AutoINC_stat     !< status of auto-increment control
-    integer(kind=kint) :: CutBack_stat     !< status of cutback control
+    integer(kind=kint) :: NRstat_i(10)=0     !< statistics of newton iteration (integer)
+    real(kind=kreal)   :: NRstat_r(10)=0.d0  !< statistics of newton iteration (real)
+    integer(kind=kint) :: AutoINC_stat=0     !< status of auto-increment control
+    integer(kind=kint) :: CutBack_stat=0     !< status of cutback control
 
-    real(kind=kreal), pointer :: GL          (:)           !< external force
-    real(kind=kreal), pointer :: GL0         (:)           !< external force
-    real(kind=kreal), pointer :: EFORCE      (:)           !< external force
-    real(kind=kreal), pointer :: QFORCE      (:)           !< equivalent nodal force
-    real(kind=kreal), pointer :: QFORCE_bak  (:)           !< equivalent nodal force at the beginning of curr step
-    real(kind=kreal), pointer :: DFORCE      (:)           !< force on dynamic analysis
+    real(kind=kreal), pointer :: GL          (:) => null()          !< external force
+    real(kind=kreal), pointer :: GL0         (:) => null()           !< external force
+    real(kind=kreal), pointer :: EFORCE      (:) => null()           !< external force
+    real(kind=kreal), pointer :: QFORCE      (:) => null()           !< equivalent nodal force
+    real(kind=kreal), pointer :: QFORCE_bak  (:) => null()           !< equivalent nodal force at the beginning of curr step
+    real(kind=kreal), pointer :: DFORCE      (:) => null()           !< force on dynamic analysis
     real(kind=kreal), pointer :: unode(:)      => null()   !< disp at the beginning of curr step
     real(kind=kreal), pointer :: unode_bak(:)  => null()   !< disp at the beginning of curr step
     real(kind=kreal), pointer :: dunode(:)     => null()   !< curr total disp
     real(kind=kreal), pointer :: ddunode(:)    => null()   !< =hecMESH%X, disp increment
-    logical :: has_finite_rotation_kinematics
-    logical :: finite_rotation_state_ready
+    logical :: has_finite_rotation_kinematics=.false.
+    logical :: finite_rotation_state_ready=.false.
     integer(kind=kint), pointer :: shell_node_mode(:) => null() !< 0:inactive, 1:finite-rotation shell node
     integer(kind=kint), pointer :: shell_rot_state(:) => null() !< 0:inactive, 1:initialized finite-rotation shell node
     real(kind=kreal), pointer :: shell_ref_triad(:) => null()   !< reference shell nodal triads, fixed after initialization
@@ -433,11 +433,11 @@ module m_fstr
 
     type( tElement ), pointer :: elements(:)   =>null()  !< elements information
     type( tMaterial ),pointer :: materials(:)  =>null()  !< material properties
-    integer                   :: n_contacts              !< number of contact conditions
+    integer                   :: n_contacts=0            !< number of contact conditions
     type( tContact ), pointer :: contacts(:)   =>null()  !< contact information
-    integer                   :: n_embeds               !< number of embed conditions
-    type( tContact ), pointer :: embeds(:)   =>null()  !< contact information
-    integer                   :: n_fix_mpc               !< number mpc conditions user defined
+    integer                   :: n_embeds=0              !< number of embed conditions
+    type( tContact ), pointer :: embeds(:)     =>null()  !< contact information
+    integer                   :: n_fix_mpc=0             !< number mpc conditions user defined
     real(kind=kreal), pointer :: mpc_const(:)  =>null()  !< bakeup of hecmwST_mpc%mpc_const
     type(tSection), pointer   :: sections(:)   =>null()  !< definition of section referred by elements(i)%sectionID
 
@@ -731,36 +731,98 @@ contains
     nullify( P%itmax )
     nullify( P%eps )
     nullify( P%global_local_ID)
+    nullify( P%contactparam )
+    nullify( P%contact_if )
+    nullify( P%ainc )
     nullify( P%timepoints )
+    nullify( P%cnvparam )
   end subroutine fstr_nullify_fstr_param
+
+  subroutine fstr_nullify_solid_physic_val( P )
+    implicit none
+    type( fstr_solid_physic_val ) :: P
+    nullify( P%STRESS )
+    nullify( P%STRAIN )
+    nullify( P%MISES )
+
+    nullify( P%PSTRESS )
+    nullify( P%PSTRAIN )
+    nullify( P%PSTRESS_VECT )
+    nullify( P%PSTRAIN_VECT )
+
+    nullify( P%ESTRESS )
+    nullify( P%ESTRAIN )
+    nullify( P%EMISES )
+    nullify( P%EPLSTRAIN )
+
+    nullify( P%EPSTRESS )
+    nullify( P%EPSTRAIN )
+    nullify( P%EPSTRESS_VECT )
+    nullify( P%EPSTRAIN_VECT )
+    nullify( P%ENQM )
+
+    nullify( P%LAYER )
+    nullify( P%PLUS )
+    nullify( P%MINUS )
+  end subroutine fstr_nullify_solid_physic_val
 
   subroutine fstr_nullify_fstr_solid( S )
     implicit none
     type( fstr_solid ) :: S
 
+    nullify( S%step_ctrl )
+    nullify( S%output_ctrl )
+
+    nullify( S%BOUNDARY_ngrp_GRPID )
     nullify( S%BOUNDARY_ngrp_ID )
     nullify( S%BOUNDARY_ngrp_type )
     nullify( S%BOUNDARY_ngrp_amp )
-    nullify( S%BOUNDARY_ngrp_val)
+    nullify( S%BOUNDARY_ngrp_val )
+    nullify( S%BOUNDARY_ngrp_istot )
     nullify( S%BOUNDARY_ngrp_rotID )
     nullify( S%BOUNDARY_ngrp_centerID )
+
+    nullify( S%VELOCITY_ngrp_GRPID )
+    nullify( S%VELOCITY_ngrp_ID )
+    nullify( S%VELOCITY_ngrp_type )
+    nullify( S%VELOCITY_ngrp_amp )
+    nullify( S%VELOCITY_ngrp_val )
+    nullify( S%VELOCITY_ngrp_rotID )
+    nullify( S%VELOCITY_ngrp_centerID )
+
+    nullify( S%ACCELERATION_ngrp_GRPID )
+    nullify( S%ACCELERATION_ngrp_ID )
+    nullify( S%ACCELERATION_ngrp_type )
+    nullify( S%ACCELERATION_ngrp_amp )
+    nullify( S%ACCELERATION_ngrp_val )
+
+    nullify( S%CLOAD_ngrp_GRPID )
     nullify( S%CLOAD_ngrp_ID )
     nullify( S%CLOAD_ngrp_DOF )
     nullify( S%CLOAD_ngrp_amp )
+    nullify( S%CLOAD_ngrp_val )
     nullify( S%CLOAD_ngrp_rotID )
     nullify( S%CLOAD_ngrp_centerID )
-    nullify( S%CLOAD_ngrp_val )
+
+    nullify( S%DLOAD_ngrp_GRPID )
     nullify( S%DLOAD_ngrp_ID )
     nullify( S%DLOAD_ngrp_LID )
     nullify( S%DLOAD_ngrp_amp )
     nullify( S%DLOAD_ngrp_params )
+
+    nullify( S%TEMP_ngrp_GRPID )
     nullify( S%TEMP_ngrp_ID )
     nullify( S%TEMP_ngrp_val )
+
+    nullify( S%SPRING_ngrp_GRPID )
     nullify( S%SPRING_ngrp_ID )
     nullify( S%SPRING_ngrp_DOF )
     nullify( S%SPRING_ngrp_amp )
     nullify( S%SPRING_ngrp_val )
     nullify( S%SPRING_incremental )
+
+    nullify( S%COUPLE_ngrp_ID )
+
     nullify( S%STRESS )
     nullify( S%STRAIN )
     nullify( S%MISES )
@@ -768,7 +830,6 @@ contains
     nullify( S%PSTRAIN )
     nullify( S%PSTRESS_VECT )
     nullify( S%PSTRAIN_VECT )
-    nullify( S%REACTION )
     nullify( S%ESTRESS )
     nullify( S%ESTRAIN )
     nullify( S%EMISES )
@@ -777,24 +838,69 @@ contains
     nullify( S%EPSTRAIN )
     nullify( S%EPSTRESS_VECT )
     nullify( S%EPSTRAIN_VECT )
+    nullify( S%TNSTRAIN )
+    nullify( S%TESTRAIN )
+    nullify( S%YIELD_RATIO )
     nullify( S%ENQM )
+    nullify( S%REACTION )
+
+    nullify( S%CONT_NFORCE )
+    nullify( S%CONT_FRIC )
+    nullify( S%CONT_RELVEL )
+    nullify( S%CONT_STATE )
+    nullify( S%CONT_SGRP_ID )
+    nullify( S%CONT_AREA )
+    nullify( S%CONT_NTRAC )
+    nullify( S%CONT_FTRAC )
+    nullify( S%EMBED_NFORCE )
+
+    nullify( S%SOLID )
+    nullify( S%SHELL )
+    nullify( S%BEAM )
+
+    nullify( S%is_rot )
+
     nullify( S%GL          )
     nullify( S%GL0         )
+    nullify( S%EFORCE      )
     nullify( S%QFORCE      )
+    nullify( S%QFORCE_bak  )
     nullify( S%DFORCE      )
-    nullify( S%VELOCITY_ngrp_GRPID )
-    nullify( S%VELOCITY_ngrp_ID )
-    nullify( S%VELOCITY_ngrp_type )
-    nullify( S%VELOCITY_ngrp_amp )
-    nullify( S%VELOCITY_ngrp_val )
-    nullify( S%VELOCITY_ngrp_rotID )
-    nullify( S%VELOCITY_ngrp_centerID )
-    nullify( S%ACCELERATION_ngrp_GRPID )
-    nullify( S%ACCELERATION_ngrp_ID )
-    nullify( S%ACCELERATION_ngrp_type )
-    nullify( S%ACCELERATION_ngrp_amp )
-    nullify( S%ACCELERATION_ngrp_val )
-    nullify( S%COUPLE_ngrp_ID )
+    nullify( S%unode       )
+    nullify( S%unode_bak   )
+    nullify( S%dunode      )
+    nullify( S%ddunode     )
+
+    nullify( S%shell_node_mode )
+    nullify( S%shell_rot_state )
+    nullify( S%shell_ref_triad )
+    nullify( S%shell_triad )
+    nullify( S%shell_triad_bak )
+    nullify( S%shell_dtriad )
+    nullify( S%shell_drill )
+    nullify( S%shell_drill_bak )
+    nullify( S%shell_ddrill )
+    nullify( S%temperature )
+    nullify( S%temp_bak )
+    nullify( S%last_temp )
+
+    nullify( S%elements )
+    nullify( S%materials )
+    nullify( S%contacts )
+    nullify( S%embeds )
+    nullify( S%mpc_const )
+    nullify( S%sections )
+
+    nullify( S%unode_bkup )
+    nullify( S%QFORCE_bkup )
+    nullify( S%DFORCE_bkup )
+    nullify( S%last_temp_bkup )
+    nullify( S%shell_triad_bkup )
+    nullify( S%shell_drill_bkup )
+    nullify( S%elements_bkup )
+    nullify( S%contacts_bkup )
+    nullify( S%embeds_bkup )
+
   end subroutine fstr_nullify_fstr_solid
 
   subroutine fstr_nullify_fstr_heat( H )
@@ -1104,6 +1210,33 @@ contains
     end do
     call fstr_sort_index( fstrPARAM%global_local_ID, hecMESH%nn_internal )
   end subroutine fstr_param_init
+
+  subroutine fstr_param_finalize( fstrPARAM )
+    implicit none
+    type(fstr_param) :: fstrPARAM
+    integer :: i
+    if(associated(fstrPARAM%dtime)) deallocate(fstrPARAM%dtime)
+    if(associated(fstrPARAM%etime)) deallocate(fstrPARAM%etime)
+    if(associated(fstrPARAM%dtmin)) deallocate(fstrPARAM%dtmin)
+    if(associated(fstrPARAM%delmax)) deallocate(fstrPARAM%delmax)
+    if(associated(fstrPARAM%itmax)) deallocate(fstrPARAM%itmax)
+    if(associated(fstrPARAM%eps)) deallocate(fstrPARAM%eps)
+    if(associated(fstrPARAM%global_local_ID)) deallocate(fstrPARAM%global_local_ID)
+
+    if(associated(fstrPARAM%contactparam)) deallocate(fstrPARAM%contactparam)
+    if(associated(fstrPARAM%contact_if)) deallocate(fstrPARAM%contact_if)
+
+    if(associated(fstrPARAM%ainc)) deallocate(fstrPARAM%ainc)
+    if(associated(fstrPARAM%timepoints)) then
+      do i=1, size(fstrPARAM%timepoints)
+        if(associated(fstrPARAM%timepoints(i)%points)) &
+          deallocate(fstrPARAM%timepoints(i)%points)
+      end do
+      deallocate(fstrPARAM%timepoints)
+    end if
+
+    if(associated(fstrPARAM%cnvparam)) deallocate(fstrPARAM%cnvparam)
+  end subroutine fstr_param_finalize
 
   logical function fstr_isBoundaryActive( fstrSOLID, nbc, cstep )
     type(fstr_solid)    :: fstrSOLID
