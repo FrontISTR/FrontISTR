@@ -153,20 +153,24 @@ contains
     integer(kind=kint) :: i, j, k
     if (bktdb%n_tot > 0) then
       if(associated(bktdb%member_all)) deallocate(bktdb%member_all)
+      nullify(bktdb%member_all)
       bktdb%n_tot = 0
     endif
     if (any(bktdb%ndiv == 0)) then
       bktdb%ndiv(:) = 0
       return
     endif
-    do k = 1, bktdb%ndiv(3)
-      do j = 1, bktdb%ndiv(2)
-        do i = 1, bktdb%ndiv(1)
-          call bucket_finalize(bktdb%buckets(i,j,k))
+    if(associated(bktdb%buckets)) then
+      do k = 1, bktdb%ndiv(3)
+        do j = 1, bktdb%ndiv(2)
+          do i = 1, bktdb%ndiv(1)
+            call bucket_finalize(bktdb%buckets(i,j,k))
+          enddo
         enddo
       enddo
-    enddo
-    deallocate(bktdb%buckets)
+      deallocate(bktdb%buckets)
+      nullify(bktdb%buckets)
+    endif
     bktdb%ndiv(:) = 0
   end subroutine bucketDB_finalize
 
