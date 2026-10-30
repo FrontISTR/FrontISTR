@@ -34,7 +34,7 @@ write_hecmw_ctrl () {
   ctrl_cnt=$1
   ctrl_res=$2
 cat <<EOL > hecmw_ctrl.dat
-!MESH, NAME=fstrMSH,TYPE=$MESHTYPE
+!MESH, NAME=fstrMSH,TYPE=$MESHTYPE$refine
 ${mesh}
 !CONTROL,NAME=fstrCNT
 ${ctrl_cnt}
@@ -308,6 +308,12 @@ for mesh_path in $(find $target -type f -name "*.msh"); do
     cp -r $ref_dir/istrain.dat $test_dir
   fi
   [ $mpi_num_process -gt 1 ] && MESHTYPE=HECMW-DIST || MESHTYPE=HECMW-ENTIRE
+  # refined by fistr1, after the partitioning
+  refine=""
+  if [ -e $ref_dir/refine.txt ]; then
+    refine=",REFINE=`cat $ref_dir/refine.txt`"
+    echo $refine
+  fi
   if [ -e $ref_dir/$cnt_eig ]; then
     cp -r $ref_dir/$cnt_eig $test_dir
     write_hecmw_ctrl $cnt_eig $eres

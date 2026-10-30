@@ -29,7 +29,8 @@ Labels describe execution modes, not build types. CMake registers only modes
 supported by `WITH_MPI` and `WITH_OPENMP`; every build supports `serial`.
 `with_mumps/*` and `with_mkl/*` are registered only when the corresponding
 solver is enabled. Non-MPI builds exercise sequential MUMPS, while MPI runs
-of `with_mkl/*` exercise Cluster PARDISO. Reconfigure after changing build options;
+of `with_mkl/*` exercise Cluster PARDISO. `with_refiner/*` is registered only
+when REVOCAP_Refiner is enabled (`WITH_REFINER`). Reconfigure after changing build options;
 CTest uses the generated test list rather than detecting libraries at run time.
 
 | label | OpenMP | MPI |

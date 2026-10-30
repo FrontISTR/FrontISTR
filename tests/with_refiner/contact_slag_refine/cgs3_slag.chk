@@ -1,0 +1,4 @@
+# the slave nodes of the refined mesh come into contact as in serial: three in the
+# first scan, and 27 at the most in the last step
+Contact change: Free2Cont= +3 .* ActiveNodes= +3$
+Contact change: Free2Cont= +6 .* ActiveNodes= +27$

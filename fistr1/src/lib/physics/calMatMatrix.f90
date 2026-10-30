@@ -121,6 +121,9 @@ contains
       call calUpdateElasticMooneyRivlinAniso( gauss%pMaterial, sectType, strain, stress, cdsys, hdflag=hdflag )
     elseif( gauss%pMaterial%mtype==USERHYPERELASTIC .or. gauss%pMaterial%mtype==USERELASTIC ) then ! user-defined
       call uElasticUpdate( gauss%pMaterial%variables(101:), strain, stress )
+    elseif( isElastoplastic( gauss%pMaterial%mtype ) ) then
+      call BackwardEuler( gauss%pMaterial, stress, gauss%plstrain, gauss%istatus(1), gauss%fstatus, &
+        gauss%plpotential, temp )
     elseif( isViscoelastic( gauss%pMaterial%mtype) ) then
       if( .not. present(dtime) ) stop "error in viscoelastic update!"
       call UpdateViscoelastic( gauss%pMaterial, sectType, strain, stress, gauss%fstatus, dtime, temp, tempn )
@@ -134,6 +137,21 @@ contains
     end if
 
   end subroutine StressUpdate
+
+  !> Commit the material history of a converged increment
+  subroutine MatlStateUpdate( gauss, tincr )
+    type( tGaussStatus ), intent(inout) :: gauss  !> status of qudrature point
+    real(kind=kreal), intent(in)        :: tincr  !> time increment
+
+    if( isElastoplastic( gauss%pMaterial%mtype ) ) then
+      call updateEPState( gauss )
+    elseif( gauss%pMaterial%mtype==NORTON ) then
+      if( tincr>0.d0 ) call updateViscoState( gauss )
+    elseif( isViscoelastic( gauss%pMaterial%mtype ) ) then
+      if( tincr>0.d0 ) call updateViscoElasticState( gauss )
+    endif
+
+  end subroutine MatlStateUpdate
 
   !> Transfer rank 4 constituive matrix to rank 2 form
   subroutine mat_c2d( cijkl, dij, itype )

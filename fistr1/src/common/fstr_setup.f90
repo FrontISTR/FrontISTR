@@ -1161,6 +1161,7 @@ contains
 
     call fstr_element_init( hecMESH, fstrSOLID, p%PARAM%solution_type )
     call fstr_check_shell_j2_inputs(hecMESH, fstrSOLID, fstrPARAM)
+    call fstr_check_up_inputs(hecMESH, fstrSOLID)
     call fstr_check_shell_gauss_output(hecMESH, fstrSOLID)
     if( p%PARAM%solution_type==kstSTATIC .or. p%PARAM%solution_type==kstDYNAMIC .or.   &
       p%PARAM%solution_type==kstEIGEN  .or. p%PARAM%solution_type==kstSTATICEIGEN )  &
@@ -1186,6 +1187,24 @@ contains
     rcode = fstr_ctrl_close( ctrl )
 
   end subroutine fstr_setup
+
+  subroutine fstr_check_up_inputs(hecMESH, fstrSOLID)
+    type(hecmwST_local_mesh), intent(in) :: hecMESH
+    type(fstr_solid), intent(in) :: fstrSOLID
+    integer(kind=kint) :: i, isect, mtype
+
+    do i = 1, hecMESH%n_elem
+      if( hecMESH%elem_type(i) /= 361 ) cycle
+      isect = hecMESH%section_ID(i)
+      if( fstrSOLID%sections(isect)%elemopt361 /= kel361UP ) cycle
+      if( .not.associated(fstrSOLID%elements(i)%gausses) ) cycle
+      mtype = fstrSOLID%elements(i)%gausses(1)%pMaterial%mtype
+      if( .not.isElastoplastic(mtype) .and. .not.isCreep(mtype) ) cycle
+      write(*,*) '###ERROR### : Elastoplastic and creep materials are not supported by FORM361=UP'
+      write(ILOG,*) '###ERROR### : Elastoplastic and creep materials are not supported by FORM361=UP'
+      call hecmw_abort(hecmw_comm_get_comm())
+    enddo
+  end subroutine fstr_check_up_inputs
 
   subroutine fstr_check_shell_gauss_output(hecMESH, fstrSOLID)
     use mMechGauss, only: fstr_shell_output_point_count

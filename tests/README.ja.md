@@ -31,7 +31,8 @@ ctest
 `WITH_OPENMP` に応じて実行可能なモードだけを登録し、`serial` は常に登録します。
 `with_mumps/*` と `with_mkl/*` は対応するソルバが有効な場合だけ登録します。
 非MPIビルドではシリアル版MUMPS、`with_mkl/*` のMPI実行ではCluster PARDISOを
-確認します。CTestは実行時にライブラリを検出せず、生成済みのテスト一覧を使うため、
+確認します。`with_refiner/*` はREVOCAP_Refinerが有効な場合（`WITH_REFINER`）
+だけ登録します。CTestは実行時にライブラリを検出せず、生成済みのテスト一覧を使うため、
 ビルド設定を変更した場合はCMakeを再実行してください。
 
 | label | OpenMP | MPI |
