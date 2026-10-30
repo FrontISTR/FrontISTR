@@ -163,9 +163,9 @@ module m_fstr
 
   !>  FSTR INNER CONTROL PARAMETERS  (fstrPARAM)
   type fstr_param
-    integer(kind=kint) :: solution_type=kstSTATIC    !< solution type number
-    integer(kind=kint) :: solver_method=ksmCG        !< solver method number
-    integer(kind=kint) :: nlsolver_method=knsmNEWTON !< solver method number for nonlinear equation
+    integer(kind=kint) :: solution_type=0            !< solution type number
+    integer(kind=kint) :: solver_method=0            !< solver method number
+    integer(kind=kint) :: nlsolver_method=0          !< solver method number for nonlinear equation
     logical            :: nlgeom=.false.             !< is geometrical nonlinearity considered
 
     !> STATIC !HEAT
@@ -188,8 +188,8 @@ module m_fstr
     integer(kind=kint) :: fg_neutral=kOFF   !< write by neutral (=INEUTRAL)
     integer(kind=kint) :: fg_irres=kNO      !< restart read     (=IRRES)
     integer(kind=kint) :: fg_iwres=kNO      !< restart write    (=IWRES)
-    integer(kind=kint) :: nrres=1           !< NRRES
-    integer(kind=kint) :: nprint=1          !< NPRINT
+    integer(kind=kint) :: nrres=0           !< NRRES
+    integer(kind=kint) :: nprint=0          !< NPRINT
 
     !> index table for global node ID sorting
     integer(kind=kint) :: n_node=0        !< hecMESH%n_node
@@ -204,12 +204,12 @@ module m_fstr
 
     !> for restart control
     integer( kind=kint ) :: restart_out_type=0   !< output type of restart file
-    integer( kind=kint ) :: restart_version=6    !< version of restart file
+    integer( kind=kint ) :: restart_version=0    !< version of restart file
 
     !> for contact analysis
-    integer( kind=kint ) :: contact_algo=kcaSLagrange !< contact analysis algorithm number(SLagrange or Alagrange)
-    integer( kind=kint ) :: augiter=2                 !< augmentation iteration for ALagrange algorithm
-    logical              :: fric_cone_follow=.true.   !< if the ALagrange friction cone follows the applied normal force
+    integer( kind=kint ) :: contact_algo=0            !< contact analysis algorithm number(SLagrange or Alagrange)
+    integer( kind=kint ) :: augiter=0                 !< augmentation iteration for ALagrange algorithm
+    logical              :: fric_cone_follow=.false.  !< if the ALagrange friction cone follows the applied normal force
     real( kind=kreal )   :: eps_fric_band=0.d0        !< hysteresis half-band of the stick/slip switch (0 = no band)
     type(tContactParam), pointer :: contactparam(:)=>null()  !< parameter sets for contact scan
     type(tContactInterference), pointer :: contact_if(:)=>null()  !< parameter sets for contact scan
@@ -251,8 +251,8 @@ module m_fstr
   end type fstr_solid_physic_val
 
   type fstr_solid
-    integer(kind=kint) :: file_type=kbcfFSTR  ! kbcfFSTR or kbcfNASTRAN
-    integer(kind=kint) :: StaticType=1        ! 1:Total, 2:Updated, 3:Infinitesimal
+    integer(kind=kint) :: file_type=0         ! kbcfFSTR or kbcfNASTRAN
+    integer(kind=kint) :: StaticType=0        ! 1:Total, 2:Updated, 3:Infinitesimal
     integer(kind=kint) :: nstep_tot=0
 
     type(step_info), pointer       :: step_ctrl(:)  =>null()   !< step information
@@ -271,7 +271,7 @@ module m_fstr
     integer(kind=kint), pointer :: BOUNDARY_ngrp_centerID  (:) =>null()
 
     !> VELOCITY
-    integer(kind=kint) :: VELOCITY_type=kbcInitial
+    integer(kind=kint) :: VELOCITY_type=0
     integer(kind=kint) :: VELOCITY_ngrp_tot=0                 !< Following velocity boundary condition
     integer(kind=kint), pointer :: VELOCITY_ngrp_GRPID  (:)  =>null()
     integer(kind=kint), pointer :: VELOCITY_ngrp_ID     (:)  =>null()
@@ -283,7 +283,7 @@ module m_fstr
     integer(kind=kint), pointer :: VELOCITY_ngrp_centerID (:) =>null()
 
     !> ACCELERATION
-    integer(kind=kint) :: ACCELERATION_type=kbcInitial
+    integer(kind=kint) :: ACCELERATION_type=0
     integer(kind=kint) :: ACCELERATION_ngrp_tot=0              !< Following accelerate boundary condition
     integer(kind=kint), pointer :: ACCELERATION_ngrp_GRPID  (:)  =>null()
     integer(kind=kint), pointer :: ACCELERATION_ngrp_ID     (:)  =>null()
@@ -316,7 +316,7 @@ module m_fstr
     integer(kind=kint) :: TEMP_irres=0
     integer(kind=kint) :: TEMP_tstep=0
     integer(kind=kint) :: TEMP_interval=0
-    integer(kind=kint) :: TEMP_rtype=1      ! type of reading result; 1: step-based; 2: time-based
+    integer(kind=kint) :: TEMP_rtype=0      ! type of reading result; 1: step-based; 2: time-based
     real(kind=kreal)   :: TEMP_FACTOR=0.d0
     integer(kind=kint), pointer :: TEMP_ngrp_GRPID     (:) =>null()
     integer(kind=kint), pointer :: TEMP_ngrp_ID        (:) =>null()
