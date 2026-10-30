@@ -34,7 +34,7 @@ write_hecmw_ctrl () {
   ctrl_cnt=$1
   ctrl_res=$2
 cat <<EOL > hecmw_ctrl.dat
-!MESH, NAME=fstrMSH,TYPE=$MESHTYPE
+!MESH, NAME=fstrMSH,TYPE=$MESHTYPE$refine
 ${mesh}
 !CONTROL,NAME=fstrCNT
 ${ctrl_cnt}
@@ -143,17 +143,34 @@ check_log () {
   fi
   while IFS= read -r pat; do
     case "$pat" in
+      # skip empty lines and comments; hence a check pattern cannot start with '#'
       ''|'#'*) continue;;
       'np1:'*)
         # the pattern applies to single-process runs only
         [ $mpi_num_process -ne 1 ] && continue
         pat=${pat#np1:};;
     esac
+    negate=
+    case "$pat" in
+      'no:'*)
+        # the pattern must not appear in the log
+        negate=1
+        pat=${pat#no:};;
+    esac
     if grep -E -q "$pat" fistr1.log; then
-      echo_success "    log: '$pat' found"
+      if [ -z "$negate" ]; then
+        echo_success "    log: '$pat' found"
+      else
+        echo_err     "    log: '$pat' found (must not appear)"
+        : $((errors++))
+      fi
     else
-      echo_err     "    log: '$pat' not found"
-      : $((errors++))
+      if [ -z "$negate" ]; then
+        echo_err     "    log: '$pat' not found"
+        : $((errors++))
+      else
+        echo_success "    log: '$pat' absent"
+      fi
     fi
   done < $chk
 }
@@ -291,6 +308,12 @@ for mesh_path in $(find $target -type f -name "*.msh"); do
     cp -r $ref_dir/istrain.dat $test_dir
   fi
   [ $mpi_num_process -gt 1 ] && MESHTYPE=HECMW-DIST || MESHTYPE=HECMW-ENTIRE
+  # refined by fistr1, after the partitioning
+  refine=""
+  if [ -e $ref_dir/refine.txt ]; then
+    refine=",REFINE=`cat $ref_dir/refine.txt`"
+    echo $refine
+  fi
   if [ -e $ref_dir/$cnt_eig ]; then
     cp -r $ref_dir/$cnt_eig $test_dir
     write_hecmw_ctrl $cnt_eig $eres

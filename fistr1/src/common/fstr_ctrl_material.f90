@@ -411,7 +411,6 @@ contains
     ipt=1
     s = 'ISOTROPIC,USER '
     if( fstr_ctrl_get_param_ex( ctrl, 'TYPE ',  s, 0, 'P',   ipt    ) /= 0 ) return
-    ipt = 1
 
     ! ISOTROPIC
     if( ipt==1 ) then
@@ -746,11 +745,12 @@ contains
     nlgeom = UPDATELAG   !default value
     if( fstr_ctrl_get_param_ex( ctrl, 'KIRCHHOFF ',  '# ',    0,   'E',   ipt )/= 0) return
     if( ipt/=0 ) nlgeom = TOTALLAG
+    if( fstr_ctrl_get_param_ex( ctrl, 'INFINITESIMAL ',  '# ',    0,   'E',   ipt )/= 0) return
+    if( ipt/=0 ) nlgeom = INFINITESIMAL
 
     ipt=1
     s = 'NORTON,USER '
     if( fstr_ctrl_get_param_ex( ctrl, 'TYPE ',  s, 0, 'P',   ipt    ) /= 0 ) return
-    ipt = 1
 
     ! NORTON
     if( ipt==1 ) then
@@ -892,7 +892,7 @@ contains
         end block
       endif
       if( fstr_ctrl_get_EXPANSION_COEFF==0 ) then
-        matval(M_EXAPNSION) = fval(1,1)
+        matval(M_EXPANSION) = fval(1,1)
         call init_table( mttable,depends, 1+depends, n, fval )
         call dict_add_key( dict, MC_THEMOEXP, mttable )
       endif

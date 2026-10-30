@@ -42,6 +42,7 @@ contains
     call sparse_matrix_hec_set_conv_ext(spMAT, hecMESH, hecMAT%NDOF)
     spMAT%iterlog = hecMAT%Iarray(21)
     spMAT%timelog = hecMAT%Iarray(22)
+    spMAT%loglevel = max(0, hecMAT%Iarray(24)) ! LOGLEVEL is -1 when not given
     call sparse_matrix_hec_set_prof(spMAT, hecMAT)
   end subroutine sparse_matrix_hec_init_prof
 

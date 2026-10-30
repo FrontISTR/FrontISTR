@@ -74,8 +74,10 @@ contains
     call sparse_matrix_hec_set_rhs(spMAT, hecMAT)
 
     t2=hecmw_wtime()
+    if (myrank==0 .and. spMAT%loglevel > 0) &
+       write(*,'(A)') ' [Cluster Pardiso]: Setup completed.'
     if (myrank==0 .and. spMAT%timelog > 0) &
-       write(*,'(A,f10.3)') ' [Cluster Pardiso]: Setup completed.            time(sec)=',t2-t1
+       write(*,'(A,f10.3)') ' [Cluster Pardiso]: Setup time(sec)=',t2-t1
 
     ! SOLVE
     call hecmw_clustermkl_wrapper(spMAT, phase_start, hecMAT%X, istat)

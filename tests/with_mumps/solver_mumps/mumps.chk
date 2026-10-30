@@ -1,0 +1,7 @@
+# log keyword roles for direct solvers (issue #873):
+# ITERLOG -> residual, TIMELOG -> stage times, LOGLEVEL>=1 -> stage completion messages
+Relative residual =
+\[MUMPS\]: Analysis and Factorization completed\.
+\[MUMPS\]: Solution completed\.
+setup time :
+solve time :

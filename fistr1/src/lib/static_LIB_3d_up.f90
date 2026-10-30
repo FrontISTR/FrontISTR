@@ -391,10 +391,6 @@ contains
 
       wg = getWeight( etype, lx )*det
 
-      ! Update strain and stress : plasticity/creep are treated as elastic in UP
-      if( isElastoplastic(gausses(lx)%pMaterial%mtype) .or. &
-        ( gausses(lx)%pMaterial%mtype == NORTON ) ) gausses(lx)%pMaterial%mtype = ELASTIC
-
       epsth = 0.0D0
 
       if( present( tt ) .and. present( t0 ) ) then
@@ -405,7 +401,7 @@ contains
         if( ( iter <= 1 ) .or. ( flag == TOTALLAG ) ) then
           ina(1) = ttc
           call fetch_TableData( MC_THEMOEXP, gausses(lx)%pMaterial%dict, outa, ierr, ina )
-          if( ierr ) outa(1) = gausses(lx)%pMaterial%variables(M_EXAPNSION)
+          if( ierr ) outa(1) = gausses(lx)%pMaterial%variables(M_EXPANSION)
           epsth(1:3) = outa(1)*( ttc-tt0 )
         end if
       else
@@ -630,7 +626,7 @@ contains
         if( ( iter <= 1 ) .or. ( flag == TOTALLAG ) ) then
           ina(1) = ttc
           call fetch_TableData( MC_THEMOEXP, gausses(lx)%pMaterial%dict, outa, ierr, ina )
-          if( ierr ) outa(1) = gausses(lx)%pMaterial%variables(M_EXAPNSION)
+          if( ierr ) outa(1) = gausses(lx)%pMaterial%variables(M_EXPANSION)
           epsth(1:3) = outa(1)*( ttc-tt0 )
         end if
       else

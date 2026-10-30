@@ -115,12 +115,12 @@ contains
       young = outa(1)
 
       call fetch_TableData( MC_THEMOEXP, gausses(1)%pMaterial%dict, outa(:), ierr, ina )
-      if( ierr ) outa(1) = gausses(1)%pMaterial%variables(M_EXAPNSION)
+      if( ierr ) outa(1) = gausses(1)%pMaterial%variables(M_EXPANSION)
       alp = outa(1)
 
       ina(1) = tt0
       call fetch_TableData( MC_THEMOEXP, gausses(1)%pMaterial%dict, outa(:), ierr, ina )
-      if( ierr ) outa(1) = gausses(1)%pMaterial%variables(M_EXAPNSION)
+      if( ierr ) outa(1) = gausses(1)%pMaterial%variables(M_EXPANSION)
       alp0 = outa(1)
 
       epsth=alp*(ttc-ref_temp)-alp0*(tt0-ref_temp)

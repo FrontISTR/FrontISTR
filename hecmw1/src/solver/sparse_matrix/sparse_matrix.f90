@@ -48,6 +48,7 @@ module m_sparse_matrix
     integer(kind=kint), pointer :: conv_ext(:) => null()
     integer(kind=kint) :: iterlog
     integer(kind=kint) :: timelog
+    integer(kind=kint) :: loglevel = 0 ! read at the library init call, before sparse_matrix_hec_init_prof sets it
     logical :: is_initialized = .false.
   end type sparse_matrix
 
@@ -262,6 +263,7 @@ contains
     spMAT%conv_ext => null()
     spMAT%iterlog = 0
     spMAT%timelog = 0
+    spMAT%loglevel = 0
   end subroutine sparse_matrix_clear
 
 end module m_sparse_matrix

@@ -232,11 +232,12 @@ contains
 
     real(kind=kreal)    :: distclr
     integer(kind=kint)  :: slave, id, etype
-    integer(kind=kint)  :: i, iSS, nactive, icat_prev, icat_curr
+    integer(kind=kint)  :: i, iSS, nactive, icat_prev, icat_curr, surf_key
     real(kind=kreal)    :: coord(3)
     real(kind=kreal)    :: nlforce
     logical             :: isin
     integer(kind=kint), allocatable :: contact_surf(:), states_prev(:)
+    integer(kind=kint), allocatable :: contact_prio(:), contact_prio_min(:)
     real(kind=kreal)    :: effective_near_dist, distclr_use
     !
     integer, pointer :: indexCand(:)
@@ -262,8 +263,10 @@ contains
     endif
 
     allocate(contact_surf(size(nodeID)))
+    allocate(contact_prio(size(nodeID)))
     allocate(states_prev(size(contact%slave)))
     contact_surf(:) = huge(0)
+    contact_prio(:) = huge(0)
     do i = 1, size(contact%slave)
       states_prev(i) = contact%states(i)%state
     enddo
@@ -288,7 +291,8 @@ contains
     !$omp& private(i,slave,id,nlforce,coord,iSS,idm,etype,isin, &
     !$omp&         bktID,nCand,indexCand,distclr_use,id_best,cstate_free,cstate_try,cstate_best) &
     !$omp& firstprivate(is_implicit,effective_near_dist) &
-    !$omp& shared(contact,ndforce,flag_ctAlgo,infoCTChange,currpos,currdisp,nodeID,elemID,distclr,contact_surf,is_init) &
+    !$omp& shared(contact,ndforce,flag_ctAlgo,infoCTChange,currpos,currdisp,nodeID,elemID,distclr,contact_surf,contact_prio, &
+    !$omp&        is_init) &
     !$omp& reduction(.or.:active) &
     !$omp& schedule(dynamic,1)
     do i= 1, size(contact%slave)
@@ -311,6 +315,7 @@ contains
             ! decides between NEAR and FREE with an up-to-date distance
             contact%states(i)%state = CONTACTNEAR
             contact_surf(contact%slave(i)) = elemID(contact%master(id)%eid)
+            contact_prio(contact%slave(i)) = 1
             if (CONTACT_LOG_LEVEL >= 1) then
               !$omp critical
               write(*,'(A,i10,A,i10,A,e12.3)') "Node",nodeID(slave), &
@@ -331,6 +336,7 @@ contains
         endif
         if( contact%algtype /= CONTACTFSLID ) then   ! small slide problem
           contact_surf(contact%slave(i)) = -elemID(contact%master(id)%eid)
+          contact_prio(contact%slave(i)) = 0
         else
           if( is_implicit ) then
             call track_contact_position( i, contact, currpos, currdisp, infoCTChange, nodeID, elemID, &
@@ -341,6 +347,7 @@ contains
           if( contact%states(i)%state /= CONTACTFREE ) then
             id = contact%states(i)%surface
             contact_surf(contact%slave(i)) = -elemID(contact%master(id)%eid)
+            contact_prio(contact%slave(i)) = 0
           endif
         endif
 
@@ -380,6 +387,7 @@ contains
               call cal_node_normal( id, iSS, contact%master, currpos, &
               contact%states(i)%lpos(1:2), contact%states(i)%direction(:) )
             contact_surf(contact%slave(i)) = elemID(contact%master(id)%eid)
+            contact_prio(contact%slave(i)) = 1
           end if
         else
           ! Lost projection -> free
@@ -442,6 +450,7 @@ contains
           call cal_node_normal( id, iSS, contact%master, currpos, contact%states(i)%lpos(1:2), &
           contact%states(i)%direction(:) )
         contact_surf(contact%slave(i)) = elemID(contact%master(id)%eid)
+        contact_prio(contact%slave(i)) = 1
         if (CONTACT_LOG_LEVEL >= 1) then
           !$omp critical
           if (contact%states(i)%state == CONTACTNEAR) then
@@ -462,16 +471,26 @@ contains
 
     if( contact%algtype == CONTACTTIED .and. .not. is_init ) then
       deallocate(contact_surf)
+      deallocate(contact_prio)
       deallocate(states_prev)
       return
     endif
 
+    ! continued contacts take precedence; the sign of contact_surf cannot tell them apart
+    ! because a refined mesh has negative element IDs
+    allocate(contact_prio_min(size(nodeID)))
+    contact_prio_min(:) = contact_prio(:)
+    call hecmw_contact_comm_allreduce_i(contact%comm, contact_prio_min, HECMW_MIN)
+    where( contact_prio(:) > contact_prio_min(:) ) contact_surf(:) = huge(0)
     call hecmw_contact_comm_allreduce_i(contact%comm, contact_surf, HECMW_MIN)
     nactive = 0
     do i = 1, size(contact%slave)
       if (.not. is_contact_free(contact%states(i)%state)) then             ! any slave in contact or near
         id = contact%states(i)%surface
-        if (abs(contact_surf(contact%slave(i))) /= elemID(contact%master(id)%eid)) then ! that is in contact with other surface
+        surf_key = elemID(contact%master(id)%eid)
+        if (contact_prio(contact%slave(i)) == 0) surf_key = -surf_key
+        if (contact_prio(contact%slave(i)) /= contact_prio_min(contact%slave(i)) .or. &
+          & contact_surf(contact%slave(i)) /= surf_key) then              ! that is in contact with other surface
           contact%states(i)%state = CONTACTFREE                           ! should be freed
           if (CONTACT_LOG_LEVEL >= 1) &
           &  write(*,'(A,i10,A,i10,A,i6,A,i6,A)') "Node",nodeID(contact%slave(i)), &
@@ -488,6 +507,7 @@ contains
     enddo
     active = (nactive > 0)
     deallocate(contact_surf)
+    deallocate(contact_prio, contact_prio_min)
     deallocate(states_prev)
   end subroutine scan_contact_state
 
@@ -616,7 +636,7 @@ contains
     do i = 1, size(embed%slave)
       if (embed%states(i)%state /= CONTACTFREE) then                    ! any slave in contact
         id = embed%states(i)%surface
-        if (abs(contact_surf(embed%slave(i))) /= elemID(embed%master(id)%eid)) then ! that is in contact with other surface
+        if (contact_surf(embed%slave(i)) /= elemID(embed%master(id)%eid)) then ! that is in contact with other surface
           embed%states(i)%state = CONTACTFREE                           ! should be freed
           if (CONTACT_LOG_LEVEL >= 1) write(*,'(A,i10,A,i10,A,i6,A,i6,A)') "Node",nodeID(embed%slave(i))," contact with element", &
           &  elemID(embed%master(id)%eid), " in rank",hecmw_comm_get_rank()," freed due to duplication"

@@ -18,7 +18,7 @@ module mMechGauss
     real(kind=kreal)          :: stress(6)              !< stress
     integer, pointer          :: istatus(:) =>null()    !< status variables (integer type)
     real(kind=kreal), pointer :: fstatus(:) => null()   !< status variables (double precision type)
-    real(kind=kreal)          :: plstrain               !< plastic strain
+    real(kind=kreal)          :: plstrain               !< converged eq. plastic strain (NORTON: eq. creep strain increment)
     real(kind=kreal)          :: strain_bak(6)          !< strain
     real(kind=kreal)          :: stress_bak(6)          !< stress
     real(kind=kreal)          :: nqm(12)                !< NQM
@@ -108,22 +108,24 @@ contains
         n = uElastoPlasticNumStatus( gauss%pMaterial%variables )
         if( n>0 ) allocate( gauss%fstatus(n) )
       elseif( isKinematicHarden( gauss%pMaterial%mtype ) ) then
-        allocate( gauss%fstatus(7+6) )  ! plastic strain, back stress
+        ! (1) trial eq. plastic strain, (2:7) trial back stress, (8:13) converged back stress
+        allocate( gauss%fstatus(7+6) )
       else
-        allocate( gauss%fstatus(2) )    ! plastic strain
+        allocate( gauss%fstatus(2) )    ! (1) trial eq. plastic strain, (2) unused
       endif
       gauss%istatus = 0
       gauss%fstatus = 0.d0
     else if( isViscoelastic(gauss%pMaterial%mtype) ) then
       n = fetch_TableRow( MC_VISCOELASTIC, gauss%pMaterial%dict )
       if( n>0 ) then
-        allocate( gauss%fstatus(12*n+6) )    ! visco stress components
+        ! per Prony term: (1:6) converged and (7:12) trial visco stress; last 6: converged deviatoric strain
+        allocate( gauss%fstatus(12*n+6) )
         gauss%fstatus = 0.d0
       else
         stop "Viscoelastic properties not defined"
       endif
     else if( gauss%pMaterial%mtype==NORTON ) then
-      allocate( gauss%fstatus(2) )        ! effective stress, effective viscoplastic strain
+      allocate( gauss%fstatus(2) )        ! (1) updated eq. stress, (2) converged eq. creep strain
       gauss%fstatus = 0.d0
       gauss%plstrain = 0.d0
     endif

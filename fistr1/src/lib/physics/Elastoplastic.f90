@@ -446,7 +446,7 @@ contains
       dc = db
       dd = da
       detinv = 1.d0/(da*dd-db*dc)
-      CA1 = r2G*(1.d0+sinphi/3.d0)+r2K*sinpsi
+      CA1 = r2G*(1.d0+sinpsi/3.d0)+r2K*sinpsi
       CA2 = (r4Gd3-r2K)*sinpsi
       CA3 = r2G*(1.d0-sinpsi/3.d0)-r2K*sinpsi
       Cdiag = K+r4Gd3
@@ -477,7 +477,7 @@ contains
             &                 +CA2*((r2K*(dd-db)-(db*r2Gd3+dd*r4Gd3))*sinphi-db*r2G))*detinv
         dpsdpe(m2,m3) = Coffd+(CA1*(dc-da)+CA2*(dd-db))*(-r2G+(r2K+r2Gd3)*sinphi)*detinv
         dpsdpe(m3,m1) = Coffd+CA3*((r2K*(-db+dd+da-dc)+(db-da)*r4Gd3+(dd-dc)*r2Gd3)*sinphi+(dd-dc)*r2G)*detinv
-        dpsdpe(m3,m2) = Coffd+CA3*((r2K*(-db+dd+da-dc)+(da-db)*r2Gd3+(dd-dc)*r4Gd3)*sinphi+(da-db)*r2G)*detinv
+        dpsdpe(m3,m2) = Coffd+CA3*((r2K*(-db+dd+da-dc)+(da-db)*r2Gd3+(dc-dd)*r4Gd3)*sinphi+(da-db)*r2G)*detinv
         dpsdpe(m3,m3) = Cdiag+CA3*(-db+dd+da-dc)*(-r2G+(r2K+r2Gd3)*sinphi)*detinv
       endif
     endif
@@ -677,6 +677,11 @@ contains
     if( present(hdflag) ) hdflag_in = hdflag
 
     ytype = getYieldFunction( matl%mtype )
+    ! The return mappings leave the trial state untouched when the trial stress is elastic.
+    if( ytype /= 3 ) then
+      fstat(1) = plstrain
+      if( isKinematicHarden( matl%mtype ) ) fstat(2:7) = fstat(8:13)
+    endif
     select case (ytype)
     case (0)
       call BackwardEuler_VM( matl, stress, plstrain, istat, fstat, plpotential, temp, hdflag_in )

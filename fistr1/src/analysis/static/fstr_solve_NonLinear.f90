@@ -54,7 +54,7 @@ contains
     ! direct solvers choose their factorization mode from this flag (default .true.),
     ! which nothing on the non-contact path would otherwise set; iterative solvers
     ! overwrite it from the solution method
-    hecMAT%symmetric = fstr_is_material_symmetric(fstrSOLID, hecMESH)
+    hecMAT%symmetric = fstr_is_tangent_symmetric(fstrSOLID, hecMESH)
 
     tincr = dtime
     if( fstrSOLID%step_ctrl(cstep)%solution == stepStatic ) tincr = 0.d0
@@ -233,10 +233,10 @@ contains
 
     ctAlgo = fstrPARAM%contact_algo
 
-    call fstr_init_Newton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, hecLagMAT, ndof, ctAlgo, conMAT)
-
-    ! ----- BEGIN lambda transaction: clear working, restore segment state from begin -----
+    ! ----- BEGIN lambda transaction: clear working before fstr_init_Newton reads the multipliers -----
     if( ctAlgo == kcaALagrange ) call fstr_begin_lambda_txn( fstrSOLID, cstep )
+
+    call fstr_init_Newton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, hecLagMAT, ndof, ctAlgo, conMAT)
 
     if( cstep == 1 .and. sub_step == restart_substep_num ) then
       call fstr_save_originalMatrixStructure(hecMAT)

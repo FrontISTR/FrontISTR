@@ -72,7 +72,6 @@ contains
     integer(kind=kint):: i98
     integer(kind=kint):: i97
     integer(kind=kint):: timelog
-    integer(kind=kint):: iterlog
     integer(kind=kint):: ordering
     integer(kind=kint):: loglevel
     integer(kind=kint):: ir
@@ -86,9 +85,8 @@ contains
     ir = 0
 
     timelog = hecMAT%IARRAY(22)
-    iterlog = hecMAT%IARRAY(21)
     ordering = hecMAT%IARRAY(41)
-    loglevel = max(timelog,iterlog)
+    loglevel = max(0, hecMAT%IARRAY(24)) ! LOGLEVEL is -1 when not given
 
     call HECMW_MAT_DUMP(hecMAT,hecMESH)
 

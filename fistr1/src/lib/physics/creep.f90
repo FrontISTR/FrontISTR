@@ -81,13 +81,13 @@ contains
     !
     dstri=dsqrt(1.5d0*(stri(1)*stri(1)+stri(2)*stri(2)+stri(3)*stri(3)+    &
       2.d0*(stri(4)*stri(4)+stri(5)*stri(5)+stri(6)*stri(6))) )
+    if( dstri<1.d-10 ) return
     !
     !     unit trial vector
     !
-    stri(:)=stri(:)/dstri
+    stri(:)=sqrt(1.5d0)*stri(:)/dstri
 
     eqvs = dstri
-    if( eqvs<1.d-10 ) eqvs=1.d-10
     f=aa*eqvs**xxn
     df=xxn*f/eqvs
     !
@@ -130,12 +130,13 @@ contains
     real(kind=kreal), intent(in)     :: temp      !> temperature
     integer(kind=kint), intent(in), optional :: hdflag  !> return only hyd and dev term if specified
 
-    integer :: i, hdflag_in
+    integer, parameter :: MAXITER = 50
+    integer :: i, iter, hdflag_in
     logical :: ierr
     real(kind=kreal) :: ina(1), outa(3)
     real(kind=kreal) :: xxn, aa
 
-    real(kind=kreal) :: e,un,G,dg,ddg,stri(6),p,dstri,f,df, eqvs
+    real(kind=kreal) :: e,un,G,dg,ddg,stri(6),p,dstri,f,df, eqvs, r, dglo, dghi
 
     hdflag_in = 0
     if( present(hdflag) ) hdflag_in = hdflag
@@ -182,20 +183,38 @@ contains
     !
     dstri=dsqrt(1.5d0*(stri(1)*stri(1)+stri(2)*stri(2)+stri(3)*stri(3)+    &
       2.d0*(stri(4)*stri(4)+stri(5)*stri(5)+stri(6)*stri(6))) )
+    if( dstri<1.d-10 ) then
+      plstrain = 0.d0
+      extval(1) = dstri
+      return
+    endif
     !
     !     determination of the consistency parameter
     !
+    !     the residual decreases from f(dstri) at dg=0 to -dghi at dg=dghi (zero stress),
+    !     so the root stays bracketed and a Newton step leaving the bracket is replaced by bisection
     dg=0.d0
-    do
-      if( matl%mtype==NORTON ) then
+    eqvs = dstri
+    if( matl%mtype==NORTON ) then
+      dglo = 0.d0
+      dghi = dstri/(3.d0*G)
+      do iter=1,MAXITER
         eqvs = dstri-3.d0*G*dg
         f=aa*eqvs**xxn
         df=xxn*f/eqvs
-        ddg = (f-dg)/(3.d0*G*df+1.d0)
+        r = f-dg
+        if( abs(r)<=1.d-12*max(f,dg) ) exit
+        if( r>0.d0 ) then
+          dglo = dg
+        else
+          dghi = dg
+        endif
+        ddg = r/(3.d0*G*df+1.d0)
+        if( dg+ddg<=dglo .or. dg+ddg>=dghi ) ddg = 0.5d0*(dglo+dghi)-dg
         dg = dg+ddg
-        if((ddg<dg*1.d-6).or.(ddg<1.d-12)) exit
-      endif
-    enddo
+      enddo
+      eqvs = dstri-3.d0*G*dg
+    endif
 
     stri(:) = stri(:)-3.d0*G*dg*stri(:)/dstri
     stress(1:3) = stri(1:3)-p

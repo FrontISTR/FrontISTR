@@ -776,7 +776,7 @@ contains
         if( ierr ) stop "Fails in fetching orthotropic expansion coefficient!"
       else
         call fetch_TableData( MC_THEMOEXP, gausses(LX)%pMaterial%dict, outa(:), ierr, ina )
-        if( ierr ) outa(1) = gausses(LX)%pMaterial%variables(M_EXAPNSION)
+        if( ierr ) outa(1) = gausses(LX)%pMaterial%variables(M_EXPANSION)
         alp = outa(1)
       end if
       ina(1) = TEMP0
@@ -785,7 +785,7 @@ contains
         if( ierr ) stop "Fails in fetching orthotropic expansion coefficient!"
       else
         call fetch_TableData( MC_THEMOEXP, gausses(LX)%pMaterial%dict, outa(:), ierr, ina )
-        if( ierr ) outa(1) = gausses(LX)%pMaterial%variables(M_EXAPNSION)
+        if( ierr ) outa(1) = gausses(LX)%pMaterial%variables(M_EXPANSION)
         alp0 = outa(1)
       end if
 

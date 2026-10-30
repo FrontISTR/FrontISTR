@@ -1,0 +1,7 @@
+# TIMELOG alone must not print the residual any more (issue #873);
+# the patterns match both [Pardiso] (single process) and [Cluster Pardiso] (MPI)
+Pardiso\]: Factorization completed\.
+Pardiso\]: Solution completed\.
+Pardiso\]: Factorization time\(sec\)=
+Pardiso\]: Solution time\(sec\)=
+no:### Relative residual

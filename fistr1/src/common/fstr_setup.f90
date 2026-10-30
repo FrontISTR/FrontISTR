@@ -80,7 +80,7 @@ contains
     integer(kind=kint) :: c_heat, c_fixtemp, c_cflux, c_dflux, c_sflux, c_film, c_sfilm, c_radiate, c_sradiate
     integer(kind=kint) :: c_eigen, c_contact, c_contactparam, c_embed, c_contact_if
     integer(kind=kint) :: c_dynamic, c_velocity, c_acceleration
-    integer(kind=kint) :: c_fload, c_eigenread
+    integer(kind=kint) :: c_fload, c_facc, c_eigenread
     integer(kind=kint) :: c_couple, c_material
     integer(kind=kint) :: c_mpc, c_weldline, c_initial
     integer(kind=kint) :: c_istep, c_localcoord, c_section
@@ -114,7 +114,7 @@ contains
     c_couple   = 0; c_material = 0; c_section =0
     c_mpc      = 0; c_weldline = 0; c_initial = 0
     c_istep    = 0; c_localcoord = 0
-    c_fload    = 0; c_eigenread = 0
+    c_fload    = 0; c_facc = 0; c_eigenread = 0
     c_elemopt  = 0;
     c_aincparam= 0; c_timepoints = 0; c_cnvparam = 0
 
@@ -273,6 +273,10 @@ contains
       else if( header_name == '!FLOAD' ) then
         c_fload = c_fload + 1
         call fstr_setup_FLOAD( ctrl , c_fload, P )
+      else if( header_name == '!FACCELERATION' ) then
+        ! acceleration input of the frequency response analysis
+        c_facc = c_facc + 1
+        call fstr_setup_FACCELERATION( ctrl, c_facc, P )
       else if( header_name == '!EIGENREAD' ) then
         c_eigenread = c_eigenread + 1
         call fstr_setup_eigenread( ctrl, c_eigenread, P )
@@ -429,7 +433,7 @@ contains
         fstrSOLID%materials(cid)%variables(M_YOUNGS)=ee
         fstrSOLID%materials(cid)%variables(M_POISSON)=pp
         fstrSOLID%materials(cid)%variables(M_DENSITY)=rho
-        fstrSOLID%materials(cid)%variables(M_EXAPNSION)=alpha
+        fstrSOLID%materials(cid)%variables(M_EXPANSION)=alpha
         fstrSOLID%materials(cid)%variables(M_ALPHA_OVER_MU)= alpha_over_mu
         fstrSOLID%materials(cid)%variables(M_BEAM_RADIUS)=beam_radius
         fstrSOLID%materials(cid)%variables(M_BEAM_ANGLE1)=beam_angle1
@@ -1157,6 +1161,7 @@ contains
 
     call fstr_element_init( hecMESH, fstrSOLID, p%PARAM%solution_type )
     call fstr_check_shell_j2_inputs(hecMESH, fstrSOLID, fstrPARAM)
+    call fstr_check_up_inputs(hecMESH, fstrSOLID)
     call fstr_check_shell_gauss_output(hecMESH, fstrSOLID)
     if( p%PARAM%solution_type==kstSTATIC .or. p%PARAM%solution_type==kstDYNAMIC .or.   &
       p%PARAM%solution_type==kstEIGEN  .or. p%PARAM%solution_type==kstSTATICEIGEN )  &
@@ -1182,6 +1187,24 @@ contains
     rcode = fstr_ctrl_close( ctrl )
 
   end subroutine fstr_setup
+
+  subroutine fstr_check_up_inputs(hecMESH, fstrSOLID)
+    type(hecmwST_local_mesh), intent(in) :: hecMESH
+    type(fstr_solid), intent(in) :: fstrSOLID
+    integer(kind=kint) :: i, isect, mtype
+
+    do i = 1, hecMESH%n_elem
+      if( hecMESH%elem_type(i) /= 361 ) cycle
+      isect = hecMESH%section_ID(i)
+      if( fstrSOLID%sections(isect)%elemopt361 /= kel361UP ) cycle
+      if( .not.associated(fstrSOLID%elements(i)%gausses) ) cycle
+      mtype = fstrSOLID%elements(i)%gausses(1)%pMaterial%mtype
+      if( .not.isElastoplastic(mtype) .and. .not.isCreep(mtype) ) cycle
+      write(*,*) '###ERROR### : Elastoplastic and creep materials are not supported by FORM361=UP'
+      write(ILOG,*) '###ERROR### : Elastoplastic and creep materials are not supported by FORM361=UP'
+      call hecmw_abort(hecmw_comm_get_comm())
+    enddo
+  end subroutine fstr_check_up_inputs
 
   subroutine fstr_check_shell_gauss_output(hecMESH, fstrSOLID)
     use mMechGauss, only: fstr_shell_output_point_count
@@ -1525,16 +1548,14 @@ contains
     type(hecmwST_local_mesh),target :: hecMESH
     type(fstr_solid)                :: fstrSOLID
 
-    integer :: i, isect, nodlocal(fstrSOLID%max_ncon), iiS, nn, con_stf
+    integer :: i, nodlocal(fstrSOLID%max_ncon), iiS, nn, con_stf
 
     if( fstrSOLID%max_ncon_stf > 20 ) fstrSOLID%max_ncon_stf = 20   
 
-    do i=1,hecMESH%n_elem
-      isect= hecMESH%section_ID(i)
-      if( hecMESH%elem_type(i) /= fe_tet4n ) cycle
-      if( fstrSOLID%sections(isect)%elemopt341 /= kel341SESNS ) cycle
+    do i=1,hecMESH%elem_type_index(hecMESH%n_elem_type)
+      if( hecMESH%elem_type(i) /= fe_nodesmooth_tet4n .and. hecMESH%elem_type(i) /= fe_edgesmooth_tet4n ) cycle
       iiS = hecMESH%elem_node_index(i-1)
-      nn = hecMESH%elem_node_index(i-1) - iiS
+      nn = hecMESH%elem_node_index(i) - iiS
       nodlocal(1:nn) = hecMESH%elem_node_item(iiS+1:iiS+nn)
       con_stf = Return_nn_comp_C3D4_SESNS(nn, nodlocal)
       if( con_stf > fstrSOLID%max_ncon_stf ) fstrSOLID%max_ncon_stf = con_stf
@@ -3142,6 +3163,113 @@ end function fstr_setup_INITIAL
   end subroutine
 
   !-----------------------------------------------------------------------------!
+  !> Read in !FACCELERATION                                                     !
+  !-----------------------------------------------------------------------------!
+  !> Data line: NODE_ID, DOF_idS, DOF_idE, Value (same as !ACCELERATION).
+  !> Value is the acceleration amplitude of DOF_idS..DOF_idE, stored as the real
+  !> part (LOAD CASE=1, default) or the imaginary part (LOAD CASE=2).
+  !> counter is not used; it is kept for the same interface as the other readers.
+  subroutine fstr_setup_FACCELERATION( ctrl, counter, P )
+    use hecmw_setup_util, only &
+      : hecmw_expand_integer_array &
+      , hecmw_expand_real_array
+    implicit none
+  !---- args
+    integer(kind=kint)    :: ctrl
+    integer(kind=kint)    :: counter
+    type(fstr_param_pack) :: P
+  !---- vals
+    integer(kind=kint)                 :: rcode
+    character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
+    integer(kind=kint), pointer        :: dof_ids(:)
+    integer(kind=kint), pointer        :: dof_ide(:)
+    real(kind=kreal), pointer          :: val_ptr(:)
+    integer(kind=kint)                 :: i, n, old_size, new_size
+    integer(kind=kint)                 :: loadcase
+  !---- body
+
+    !only the FrontISTR format is supported
+    if( P%SOLID%file_type /= kbcfFSTR) return
+
+    !read loadcase (real=1:default, img=2)
+    loadcase = kFLOADCASE_RE
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'LOAD CASE ', '# ', 0, 'I', loadcase)
+    if( loadcase /= kFLOADCASE_RE .and. loadcase /= kFLOADCASE_IM ) then
+      write(*,*)    'fstr control file error : !FACCELERATION : LOAD CASE must be 1 or 2'
+      write(ilog,*) 'fstr control file error : !FACCELERATION : LOAD CASE must be 1 or 2'
+      stop HECMW_EXIT_INPUT
+    end if
+
+    !append the data lines of this header to the entries read so far
+    n = fstr_ctrl_get_data_line_n( ctrl )
+    if( n == 0 ) return
+    old_size = P%FREQ%FACC_ngrp_tot
+    new_size = old_size + n
+
+    !the expanded part is zero, so the part not given by loadcase stays zero
+    P%FREQ%FACC_ngrp_tot = new_size
+    call hecmw_expand_integer_array( P%FREQ%FACC_ngrp_ID,    old_size, new_size )
+    call hecmw_expand_integer_array( P%FREQ%FACC_ngrp_type,  old_size, new_size )
+    call hecmw_expand_real_array   ( P%FREQ%FACC_ngrp_valre, old_size, new_size )
+    call hecmw_expand_real_array   ( P%FREQ%FACC_ngrp_valim, old_size, new_size )
+
+    !read the data lines into temporary arrays
+    allocate( grp_id_name(n) )
+    allocate( dof_ids(n) )
+    allocate( dof_ide(n) )
+    allocate( val_ptr(n) )
+    val_ptr = 0.0d0
+    rcode = fstr_ctrl_get_FACCELERATION( ctrl, grp_id_name, HECMW_NAME_LEN, dof_ids, dof_ide, val_ptr )
+    if( rcode /= 0 ) call fstr_ctrl_err_stop
+    !node ID or node group name -> node group ID
+    call node_grp_name_to_id_ex( P%MESH, '!FACCELERATION', n, grp_id_name, P%FREQ%FACC_ngrp_ID(old_size+1:) )
+
+    do i = 1, n
+      !check the range of the DOFs as !ACCELERATION does
+      if( (dof_ids(i) < 1).or.(6 < dof_ids(i)).or.(dof_ide(i) < dof_ids(i)).or.(6 < dof_ide(i)) ) then
+        write(*,*)    'fstr control file error : !FACCELERATION : range of dof_ids and dof_ide is from 1 to 6'
+        write(ilog,*) 'fstr control file error : !FACCELERATION : range of dof_ids and dof_ide is from 1 to 6'
+        stop HECMW_EXIT_INPUT
+      end if
+      !encode the DOF range as !ACCELERATION does
+      P%FREQ%FACC_ngrp_type(old_size+i) = 10 * dof_ids(i) + dof_ide(i)
+      !store the amplitude in the part selected by loadcase
+      if( loadcase == kFLOADCASE_RE ) then
+        P%FREQ%FACC_ngrp_valre(old_size+i) = val_ptr(i)
+      else
+        P%FREQ%FACC_ngrp_valim(old_size+i) = val_ptr(i)
+      end if
+    end do
+
+    deallocate( grp_id_name )
+    deallocate( dof_ids )
+    deallocate( dof_ide )
+    deallocate( val_ptr )
+    return
+
+    contains
+
+    !read all data lines in the format of NODE_ID, DOF_idS, DOF_idE, Value
+    function fstr_ctrl_get_FACCELERATION(ctrl, node_id, node_id_len, dof_ids, dof_ide, value)
+      integer(kind=kint)            :: ctrl
+      character(len=HECMW_NAME_LEN) :: node_id(:)
+      integer(kind=kint)            :: node_id_len
+      integer(kind=kint), pointer   :: dof_ids(:)
+      integer(kind=kint), pointer   :: dof_ide(:)
+      real(kind=kreal), pointer     :: value(:)
+      integer(kind=kint)            :: fstr_ctrl_get_FACCELERATION
+      character(len=HECMW_NAME_LEN) :: data_fmt, ss
+
+      !format: string of node_id_len characters, two integers and a real
+      write(ss,*) node_id_len
+      write(data_fmt, '(a,a,a)') 'S', trim(adjustl(ss)), 'IIr '
+
+      fstr_ctrl_get_FACCELERATION = fstr_ctrl_get_data_array_ex(ctrl, data_fmt, node_id, dof_ids, dof_ide, value)
+    end function
+
+  end subroutine
+
+  !-----------------------------------------------------------------------------!
   !> Read in !EIGENREAD                                                         !
   !-----------------------------------------------------------------------------!
   subroutine fstr_setup_eigenread( ctrl, counter, P )
@@ -4699,6 +4827,11 @@ end function fstr_setup_INITIAL
       if( P%FREQ%FLOAD_ngrp_TYPE(i) /= kFLOADTYPE_NODE ) cycle
       if( P%FREQ%FLOAD_ngrp_DOF(i) > 3 .and. n_rot_all(P%FREQ%FLOAD_ngrp_ID(i)) > 0 ) &
         call rotation_dof_err_stop( '!FLOAD' )
+    enddo
+    !the rotational DOFs of !FACCELERATION are also not allowed (the end DOF is mod(type,10))
+    do i = 1, P%FREQ%FACC_ngrp_tot
+      if( mod(P%FREQ%FACC_ngrp_type(i), 10) > 3 .and. n_rot_all(P%FREQ%FACC_ngrp_ID(i)) > 0 ) &
+        call rotation_dof_err_stop( '!FACCELERATION' )
     enddo
     do i = 1, hecMESH%mpc%n_mpc
       do j = hecMESH%mpc%mpc_index(i-1)+1, hecMESH%mpc%mpc_index(i)

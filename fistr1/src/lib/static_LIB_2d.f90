@@ -339,7 +339,7 @@ contains
     if(ISET==2) THICK=1.d0
     ! We suppose material properties doesn't varies inside element
     call calElasticMatrix( gausses(1)%pMaterial, ISET, D, 0.d0  )
-    ALP = gausses(1)%pMaterial%variables(M_EXAPNSION)
+    ALP = gausses(1)%pMaterial%variables(M_EXPANSION)
     pp = gausses(1)%pMaterial%variables(M_POISSON)
     !* LOOP OVER ALL INTEGRATION POINTS
     do LX=1,NumOfQuadPoints( ETYPE )
@@ -475,11 +475,11 @@ contains
       if( dabs(ttc-tt0) > 1.d-14 ) then
         ina(1) = ttc
         call fetch_TableData( MC_THEMOEXP, gausses(LX)%pMaterial%dict, outa(:), ierr, ina )
-        if( ierr ) outa(1) = gausses(LX)%pMaterial%variables(M_EXAPNSION)
+        if( ierr ) outa(1) = gausses(LX)%pMaterial%variables(M_EXPANSION)
         alp = outa(1)
         ina(1) = tt0
         call fetch_TableData( MC_THEMOEXP, gausses(LX)%pMaterial%dict, outa(:), ierr, ina )
-        if( ierr ) outa(1) = gausses(LX)%pMaterial%variables(M_EXAPNSION)
+        if( ierr ) outa(1) = gausses(LX)%pMaterial%variables(M_EXPANSION)
         alp0 = outa(1)
         EPSTH(1:2)=alp*(ttc-ref_temp)-alp0*(tt0-ref_temp)
       end if

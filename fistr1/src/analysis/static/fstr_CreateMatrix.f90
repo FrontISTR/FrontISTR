@@ -53,17 +53,18 @@ contains
     integer(kind=kint) :: ndof, itype, iS, iE, ic_type, nn, icel, iiS, i, j, in, jn
     integer(kind=kint) :: nodLOCAL(fstrSOLID%max_ncon)
     real(kind=kreal)   :: stiff_mat(fstrSOLID%max_ncon_stf*6, fstrSOLID%max_ncon_stf*6)
-    real(kind=kreal)   :: mass_mat(20*6, 20*6), damp_mat(20*6, 20*6)
-    real(kind=kreal)   :: mat(20*6, 20*6), lumped(20*6)
+    real(kind=kreal)   :: mass_mat(fstrSOLID%max_ncon_stf*6, fstrSOLID%max_ncon_stf*6)
+    real(kind=kreal)   :: damp_mat(fstrSOLID%max_ncon_stf*6, fstrSOLID%max_ncon_stf*6)
+    real(kind=kreal)   :: mat(fstrSOLID%max_ncon_stf*6, fstrSOLID%max_ncon_stf*6), lumped(fstrSOLID%max_ncon_stf*6)
     real(kind=kreal)   :: tt(fstrSOLID%max_ncon), ecoord(3,fstrSOLID%max_ncon)
     real(kind=kreal)   :: u(6,fstrSOLID%max_ncon), u_inc(6,fstrSOLID%max_ncon)
-    real(kind=kreal)   :: du(6*20), u_prev(6,fstrSOLID%max_ncon)
+    real(kind=kreal)   :: du(fstrSOLID%max_ncon_stf*6), u_prev(6,fstrSOLID%max_ncon)
     real(kind=kreal)   :: triad_tri(9,fstrSOLID%max_ncon)
     real(kind=kreal)   :: triad_cur(9,fstrSOLID%max_ncon)
     real(kind=kreal)   :: triad_ref(9,fstrSOLID%max_ncon)
     real(kind=kreal)   :: shell_drill(fstrSOLID%max_ncon)
-    real(kind=kreal)   :: vecA(20*6), vecB(20*6)
-    real(kind=kreal)   :: acc(20*6), vec(20*6), df(20*6)
+    real(kind=kreal)   :: vecA(fstrSOLID%max_ncon_stf*6), vecB(fstrSOLID%max_ncon_stf*6)
+    real(kind=kreal)   :: acc(fstrSOLID%max_ncon_stf*6), vec(fstrSOLID%max_ncon_stf*6), df(fstrSOLID%max_ncon_stf*6)
     real(kind=kreal)   :: a1, a2, a3, b1, b2, b3, thick
     type(tMaterial), pointer :: material
     logical            :: is_dynamic, use_lumped_mass
@@ -124,13 +125,6 @@ contains
             u_prev(i,j) = fstrSOLID%unode(ndof*(in-1)+i)
             u(i,j) = u_prev(i,j)+u_inc(i,j)
           enddo
-          if( is_dynamic ) then
-            do i = 1, ndof
-              du (ndof*(j-1)+i) = fstrSOLID%dunode(ndof*(in-1)+i)
-              vec(ndof*(j-1)+i) = fstrDYNAMIC%VEL(ndof*(in-1)+i,1)
-              acc(ndof*(j-1)+i) = fstrDYNAMIC%ACC(ndof*(in-1)+i,1)
-            enddo
-          endif
           if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres > 0 ) then
             tt(j) = fstrSOLID%temperature( nodLOCAL(j) )
           endif
@@ -188,6 +182,16 @@ contains
 
         ! ----- assemble system matrix (and the dynamic damping force)
         if( is_dynamic ) then
+          ! gathered with nn and nodLOCAL returned by calc_stiff_and_mass_elem, which compresses them for smoothed elements
+          do j = 1, nn
+            in = nodLOCAL(j)
+            do i = 1, ndof
+              du (ndof*(j-1)+i) = fstrSOLID%dunode(ndof*(in-1)+i)
+              vec(ndof*(j-1)+i) = fstrDYNAMIC%VEL(ndof*(in-1)+i,1)
+              acc(ndof*(j-1)+i) = fstrDYNAMIC%ACC(ndof*(in-1)+i,1)
+            enddo
+          enddo
+
           ! Newmark intermediate vectors
           do i = 1, nn*ndof
             vecA(i) = -a3*du(i) + a2*vec(i) + a1*acc(i)
@@ -248,6 +252,7 @@ contains
 
       if( hecmw_is_etype_link(ic_type) ) cycle
       if( hecmw_is_etype_patch(ic_type) ) cycle
+      if( hecmw_is_etype_smoothing(ic_type) ) cycle
 
       !$omp parallel default(none), &
         !$omp& private(icel,iiS,nn,i,j,row,in,nsize,nodLOCAL,ecoord,mass_mat,lumped,elem_velocity), &
@@ -428,24 +433,24 @@ contains
         stiff_mat(1:nn*ndof,1:nn*ndof), thick, 0, nddisp=u(1:ndof,1:nn), &
         element=fstrSOLID%elements(icel), ndtriad=triad_tri(1:9,1:nn), &
         ndreftriad=triad_ref(1:9,1:nn), &
-        ndcurtriad=triad_cur(1:9,1:nn), nddrill=shell_drill(1:nn))
+        ndcurtriad=triad_cur(1:9,1:nn), nddrill=shell_drill(1:nn), cdsys_ID=cdsys_ID, coords=coords)
 
     else if( ic_type == 761 ) then   ! for shell-solid mixed analysis
       if( material%nlgeom_flag == INFINITESIMAL ) then
         call STF_Shell_MITC(731, 3, 6, ecoord(1:3,1:3), fstrSOLID%elements(icel)%gausses(:), &
-          stiff_mat(1:nn*ndof,1:nn*ndof), thick, 2)
+          stiff_mat(1:nn*ndof,1:nn*ndof), thick, 2, cdsys_ID=cdsys_ID, coords=coords)
       else
         call STF_Shell_MITC33(731, 3, 6, ecoord(1:3,1:3), u(1:3,1:6), u_prev(1:3,1:6), &
           fstrSOLID%elements(icel)%gausses(:), stiff_mat(1:nn*ndof,1:nn*ndof), thick, 2, &
           fstrSOLID%elements(icel), triad_tri(1:9,1:3), triad_ref(1:9,1:3), &
-          triad_cur(1:9,1:3), shell_drill(1:3))
+          triad_cur(1:9,1:3), shell_drill(1:3), cdsys_ID=cdsys_ID, coords=coords)
       endif
 
     else if( ic_type == 781 ) then   ! for shell-solid mixed analysis
       call STF_Shell_MITC33(741, 4, 6, ecoord(1:3,1:4), u(1:3,1:8), u_prev(1:3,1:8), &
         fstrSOLID%elements(icel)%gausses(:), stiff_mat(1:nn*ndof,1:nn*ndof), thick, 1, &
         fstrSOLID%elements(icel), triad_tri(1:9,1:4), triad_ref(1:9,1:4), &
-        triad_cur(1:9,1:4), shell_drill(1:4))
+        triad_cur(1:9,1:4), shell_drill(1:4), cdsys_ID=cdsys_ID, coords=coords)
 
     elseif( ic_type==3414 ) then
       if( material%mtype /= INCOMP_NEWTONIAN ) call CreateMat_abort( ic_type, 3, material%mtype )
@@ -584,7 +589,7 @@ contains
 
     integer(kind=kint) :: i, j
     real(kind=kreal)   :: ray_m, ray_k, c1, c2
-    real(kind=kreal)   :: vecC(20*6), Kb(20*6)
+    real(kind=kreal)   :: vecC(nn*ndof), Kb(nn*ndof)
 
     if( material%is_elem_Rayleigh_damping ) then
       ray_m = material%variables(M_DAMPING_RM)

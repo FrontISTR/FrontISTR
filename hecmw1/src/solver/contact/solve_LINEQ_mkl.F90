@@ -101,11 +101,18 @@ contains
     endif
 
     t2=hecmw_wtime()
+    if ( hecmw_comm_get_rank() == 0 .and. spMAT%loglevel > 0) then
+      if( hecMESH%PETOT .GT. 1 ) then
+         write(*,'(A)') ' [Cluster Pardiso]: Setup completed.'
+      else
+         write(*,'(A)') ' [Pardiso]: Setup completed.'
+      end if
+    endif
     if ( hecmw_comm_get_rank() == 0 .and. spMAT%timelog > 0) then
       if( hecMESH%PETOT .GT. 1 ) then
-         write(*,'(A,f10.3)') ' [Cluster Pardiso]: Setup completed.            time(sec)=',t2-t1
+         write(*,'(A,f10.3)') ' [Cluster Pardiso]: Setup time(sec)=',t2-t1
       else
-         write(*,'(A,f10.3)') ' [Pardiso]: Setup completed.          time(sec)=',t2-t1
+         write(*,'(A,f10.3)') ' [Pardiso]: Setup time(sec)=',t2-t1
       end if
     endif
 

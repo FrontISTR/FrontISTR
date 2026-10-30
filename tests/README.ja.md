@@ -31,7 +31,8 @@ ctest
 `WITH_OPENMP` に応じて実行可能なモードだけを登録し、`serial` は常に登録します。
 `with_mumps/*` と `with_mkl/*` は対応するソルバが有効な場合だけ登録します。
 非MPIビルドではシリアル版MUMPS、`with_mkl/*` のMPI実行ではCluster PARDISOを
-確認します。CTestは実行時にライブラリを検出せず、生成済みのテスト一覧を使うため、
+確認します。`with_refiner/*` はREVOCAP_Refinerが有効な場合（`WITH_REFINER`）
+だけ登録します。CTestは実行時にライブラリを検出せず、生成済みのテスト一覧を使うため、
 ビルド設定を変更した場合はCMakeを再実行してください。
 
 | label | OpenMP | MPI |
@@ -189,7 +190,7 @@ OpenMP実行では2スレッドを使います。
 |:-------------|:---------------|:-------|
 | `element`  | 要素タイプ | `FQ341` `FQ342` `FQ351` `FQ352` `FQ361` `FQ362` |
 | `load`     | `!FLOAD`   | `FQL01` 実部、`FQL02` 虚部、`FQL03` 複数群・複数自由度の複素荷重、`FQL04` 面群への面荷重 |
-| `boundary` | `!BOUNDARY`| `FQB01` 片持ち、`FQB02` すべり支持を追加、`FQB03` 両端拘束 |
+| `boundary` | `!BOUNDARY`、`!FACCELERATION` | `FQB01` 片持ち、`FQB02` すべり支持を追加、`FQB03` 両端拘束、`FQB04` 片持ちの自由端に加速度入力、`FQB05` 片持ちの固定端に加速度入力（支持点加振） |
 | `modal`    | 減衰とモード範囲 | `FQM01` 質量比例減衰、`FQM02` 質量+剛性比例減衰、`FQM03` `!EIGENREAD` を2次モードから |
 | `output`   | `!OUTPUT_RES` | `FQO01` 節点ひずみと主値、`FQO02` 要素値 |
 

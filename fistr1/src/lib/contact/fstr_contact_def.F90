@@ -122,9 +122,6 @@ module mContactDef
     real(kind=kreal),   pointer     :: lam_work_t(:,:,:)=>null()    !< working lambda_t (2, node a, rank r) keyed by lam_work_id
     integer(kind=kint), pointer     :: lam_begin_fstate(:,:)=>null()!< begin per-node friction state, (node a, rank r)
     integer(kind=kint), pointer     :: lam_work_fstate(:,:)=>null() !< working per-node friction state, (node a, rank r)
-    ! segment state carried in the same transaction (cutback does not restore slave_surf)
-    integer(kind=kint)              :: state_begin = CONTACTFREE       !< committed segment state
-    integer(kind=kint)              :: state_prev_begin = CONTACTFREE  !< committed previous segment state
   end type tContactSurf
 
   !> Structure to includes all info needed by contact calculation
@@ -673,7 +670,6 @@ contains
     allocate( surf%lam_work_id (surf%n_intp), surf%lam_work_val (n,surf%n_intp) )
     surf%lam_begin_id(:) = 0; surf%lam_begin_val(:,:) = 0.0d0; surf%lam_begin_n = 0
     surf%lam_work_id (:) = 0; surf%lam_work_val (:,:) = 0.0d0; surf%lam_work_n  = 0
-    ! state_begin / state_prev_begin keep their type default (CONTACTFREE)
     ! tangential friction parallel arrays: (2, node a, rank r) / (node a, rank r)
     allocate( surf%lam_begin_t(2,n,surf%n_intp), surf%lam_work_t(2,n,surf%n_intp) )
     allocate( surf%lam_begin_fstate(n,surf%n_intp), surf%lam_work_fstate(n,surf%n_intp) )

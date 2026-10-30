@@ -121,6 +121,9 @@ contains
       call calUpdateElasticMooneyRivlinAniso( gauss%pMaterial, sectType, strain, stress, cdsys, hdflag=hdflag )
     elseif( gauss%pMaterial%mtype==USERHYPERELASTIC .or. gauss%pMaterial%mtype==USERELASTIC ) then ! user-defined
       call uElasticUpdate( gauss%pMaterial%variables(101:), strain, stress )
+    elseif( isElastoplastic( gauss%pMaterial%mtype ) ) then
+      call BackwardEuler( gauss%pMaterial, stress, gauss%plstrain, gauss%istatus(1), gauss%fstatus, &
+        gauss%plpotential, temp )
     elseif( isViscoelastic( gauss%pMaterial%mtype) ) then
       if( .not. present(dtime) ) stop "error in viscoelastic update!"
       call UpdateViscoelastic( gauss%pMaterial, sectType, strain, stress, gauss%fstatus, dtime, temp, tempn )
@@ -134,6 +137,21 @@ contains
     end if
 
   end subroutine StressUpdate
+
+  !> Commit the material history of a converged increment
+  subroutine MatlStateUpdate( gauss, tincr )
+    type( tGaussStatus ), intent(inout) :: gauss  !> status of qudrature point
+    real(kind=kreal), intent(in)        :: tincr  !> time increment
+
+    if( isElastoplastic( gauss%pMaterial%mtype ) ) then
+      call updateEPState( gauss )
+    elseif( gauss%pMaterial%mtype==NORTON ) then
+      if( tincr>0.d0 ) call updateViscoState( gauss )
+    elseif( isViscoelastic( gauss%pMaterial%mtype ) ) then
+      if( tincr>0.d0 ) call updateViscoElasticState( gauss )
+    endif
+
+  end subroutine MatlStateUpdate
 
   !> Transfer rank 4 constituive matrix to rank 2 form
   subroutine mat_c2d( cijkl, dij, itype )
@@ -218,7 +236,7 @@ contains
   subroutine MatlMatrix_Shell                        &
       (gauss, sectType, D,                    &
       e1_hat, e2_hat, e3_hat, cg1, cg2, cg3, &
-      alpha, n_layer)
+      alpha, n_layer, cdsys)
     !####################################################################
 
     type(tGaussStatus), intent(in)  :: gauss
@@ -227,6 +245,7 @@ contains
     real(kind = kreal), intent(in)  :: e1_hat(3), e2_hat(3), e3_hat(3)
     real(kind = kreal), intent(in)  :: cg1(3), cg2(3), cg3(3)
     real(kind = kreal), intent(out) :: alpha
+    real(kind = kreal), intent(in), optional :: cdsys(3, 3)
 
     !--------------------------------------------------------------------
 
@@ -243,7 +262,7 @@ contains
       call LinearElastic_Shell                     &
         (matl, sectType, c,                     &
         e1_hat, e2_hat, e3_hat, cg1, cg2, cg3, &
-        alpha, n_layer)
+        alpha, n_layer, cdsys)
 
       call mat_c2d_Shell(c, D, sectType)
     else

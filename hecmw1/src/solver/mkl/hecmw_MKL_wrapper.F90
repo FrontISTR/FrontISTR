@@ -60,6 +60,7 @@ contains
       iparm(18) = -1
       iparm(19) = -1
       msglvl = 0 ! print statistical information
+      if (spMAT%loglevel > 1) msglvl = 1
       INITIALIZED = .true.
     endif
 
@@ -92,8 +93,10 @@ contains
       endif
 
       t3=hecmw_wtime()
-      if (myrank==0 .and. (spMAT%iterlog > 0 .or. spMAT%timelog > 0)) &
-        write(*,'(A,f10.3)') ' [Pardiso]: Analysis completed.       time(sec)=',t3-t2
+      if (myrank==0 .and. spMAT%loglevel > 0) &
+        write(*,'(A)') ' [Pardiso]: Analysis completed.'
+      if (myrank==0 .and. spMAT%timelog > 0) &
+        write(*,'(A,f10.3)') ' [Pardiso]: Analysis time(sec)=',t3-t2
     endif
 
     ! FACTORIZATION
@@ -109,8 +112,10 @@ contains
       endif
 
       t4=hecmw_wtime()
-      if (myrank==0 .and. (spMAT%iterlog > 0 .or. spMAT%timelog > 0)) &
-        write(*,'(A,f10.3)') ' [Pardiso]: Factorization completed.  time(sec)=',t4-t3
+      if (myrank==0 .and. spMAT%loglevel > 0) &
+        write(*,'(A)') ' [Pardiso]: Factorization completed.'
+      if (myrank==0 .and. spMAT%timelog > 0) &
+        write(*,'(A,f10.3)') ' [Pardiso]: Factorization time(sec)=',t4-t3
     endif
 
     ! SOLUTION
@@ -124,8 +129,10 @@ contains
     endif
 
     t5=hecmw_wtime()
-    if (myrank==0 .and. (spMAT%iterlog > 0 .or. spMAT%timelog > 0)) &
-       write(*,'(A,f10.3)') ' [Pardiso]: Solution completed.       time(sec)=',t5-t4
+    if (myrank==0 .and. spMAT%loglevel > 0) &
+       write(*,'(A)') ' [Pardiso]: Solution completed.'
+    if (myrank==0 .and. spMAT%timelog > 0) &
+       write(*,'(A,f10.3)') ' [Pardiso]: Solution time(sec)=',t5-t4
 
 #else
     stop "MKL Pardiso not available"
