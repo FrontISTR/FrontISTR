@@ -33,18 +33,18 @@ module hecmw_result
   private :: get_elem_component
 
   type hecmwST_result_data
-    integer(kind=kint) :: ng_component
-    integer(kind=kint) :: nn_component
-    integer(kind=kint) :: ne_component
-    integer(kind=kint),pointer :: ng_dof(:)
-    integer(kind=kint),pointer :: nn_dof(:)
-    integer(kind=kint),pointer :: ne_dof(:)
-    character(len=HECMW_NAME_LEN),pointer :: global_label(:)
-    character(len=HECMW_NAME_LEN),pointer :: node_label(:)
-    character(len=HECMW_NAME_LEN),pointer :: elem_label(:)
-    real(kind=kreal),pointer :: global_val_item(:)
-    real(kind=kreal),pointer :: node_val_item(:)
-    real(kind=kreal),pointer :: elem_val_item(:)
+    integer(kind=kint) :: ng_component=0
+    integer(kind=kint) :: nn_component=0
+    integer(kind=kint) :: ne_component=0
+    integer(kind=kint),pointer :: ng_dof(:)=>null()
+    integer(kind=kint),pointer :: nn_dof(:)=>null()
+    integer(kind=kint),pointer :: ne_dof(:)=>null()
+    character(len=HECMW_NAME_LEN),pointer :: global_label(:)=>null()
+    character(len=HECMW_NAME_LEN),pointer :: node_label(:)=>null()
+    character(len=HECMW_NAME_LEN),pointer :: elem_label(:)=>null()
+    real(kind=kreal),pointer :: global_val_item(:)=>null()
+    real(kind=kreal),pointer :: node_val_item(:)=>null()
+    real(kind=kreal),pointer :: elem_val_item(:)=>null()
   end type hecmwST_result_data
 
   ! constants defined in hecmw_result_io.h
