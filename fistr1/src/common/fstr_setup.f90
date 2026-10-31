@@ -354,11 +354,6 @@ contains
     c_aincparam = 0
     c_timepoints = 0
     c_cnvparam = 0
-    fstrSOLID%elemopt361 = 0
-    fstrSOLID%AutoINC_stat = 0
-    fstrSOLID%CutBack_stat = 0
-    fstrSOLID%NRstat_i(:) = 0
-    fstrSOLID%NRstat_r(:) = 0.d0
     ictrl = 1
     do
       rcode = fstr_ctrl_get_c_h_name( ctrl, header_name, HECMW_NAME_LEN )
@@ -1254,6 +1249,12 @@ contains
     fstrSOLID%is_smoothing_active = .false.
     fstrSOLID%has_finite_rotation_kinematics = .false.
     fstrSOLID%finite_rotation_state_ready = .false.
+
+    fstrSOLID%elemopt361 = 0
+    fstrSOLID%AutoINC_stat = 0
+    fstrSOLID%CutBack_stat = 0
+    fstrSOLID%NRstat_i(:) = 0
+    fstrSOLID%NRstat_r(:) = 0.d0
 
   end subroutine fstr_solid_init
 
