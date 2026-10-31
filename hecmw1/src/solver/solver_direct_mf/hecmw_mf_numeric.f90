@@ -76,6 +76,8 @@ module hecmw_mf_numeric
     integer(kind=kint) :: ntc = 0                   !< tiles covering the fully summed positions
     integer(kind=8) :: cbsize = 0                   !< words of the contribution block
     integer(kind=8) :: pwords = 0                   !< stored panel words held on this rank
+    integer(kind=kint) :: rkfaces = 0               !< BLR rank reuse: the faces whose ranks of the last
+                                                    !< factorization brank (1) or brank and branku (2) hold
     integer(kind=kint), allocatable :: tbnd(:)      !< tile boundaries, tbnd(1:nt+1) from 0 to nrow
     integer(kind=kint), allocatable :: fsdof(:)     !< permuted DOF of the column at a position
     integer(kind=kint), allocatable :: frow(:)      !< permuted DOF of the row at a position
@@ -1622,7 +1624,8 @@ contains
     ! a front whose tile partition repeats the previous factorization, with every panel
     ! column stored (no delays), may read its previous ranks of my band tiles
     ruse_f = .false.
-    if (fct%blr .and. fct%blr_reuse .and. allocated(fct%sn(s)%brank) .and. allocated(fct%sn(s)%tbnd)) then
+    if (fct%blr .and. fct%blr_reuse .and. fct%sn(s)%rkfaces >= merge(2, 1, fct%lu) .and. &
+        allocated(fct%sn(s)%tbnd)) then
       if (fct%sn(s)%nt == g%nt .and. fct%sn(s)%ntc == g%ntc .and. fct%sn(s)%npiv == fct%sn(s)%ncol .and. &
           size(fct%sn(s)%tbnd) >= g%nt + 1) then
         ruse_f = all(fct%sn(s)%tbnd(1:g%nt+1) == g%tb(0:g%nt))
@@ -1809,6 +1812,7 @@ contains
       endif
       fct%sn(s)%dsub(1:ncol) = 0.0d0
       if (allocated(fct%sn(s)%dfin)) deallocate(fct%sn(s)%dfin)
+      fct%sn(s)%rkfaces = 0
       mm = 0
       do kk = sym%sptr(s), sym%sptr(s+1) - 1
         do ii = fct%cdofptr(kk), fct%cdofptr(kk+1) - 1
@@ -4532,6 +4536,7 @@ contains
         enddo
       enddo
       fct%sn(s)%pwords = off + offu
+      if (fct%blr) fct%sn(s)%rkfaces = merge(2, 1, fct%lu)
       ! the sequential accounting counts the U panel only with BLR, where its stored
       ! words differ from the L panel
       fct%factor_words_act = fct%factor_words_act + off
@@ -4889,12 +4894,13 @@ contains
     ! whose tile partition repeats the previous factorization, with every panel column
     ! stored (no delays), may read its previous ranks
     ruse = .false.
-    if (fct%blr .and. fct%blr_reuse .and. allocated(sn%brank) .and. allocated(sn%tbnd)) then
+    if (fct%blr .and. fct%blr_reuse .and. sn%rkfaces >= merge(2, 1, fct%lu) .and. allocated(sn%tbnd)) then
       if (sn%nt == wrk%g%nt .and. sn%ntc == wrk%g%ntc .and. sn%npiv == sn%ncol .and. &
           size(sn%tbnd) >= wrk%g%nt + 1) then
         ruse = all(sn%tbnd(1:wrk%g%nt+1) == wrk%g%tb(0:wrk%g%nt))
       endif
     endif
+    sn%rkfaces = 0
     sn%ncol = wrk%g%ncol
     sn%nt = wrk%g%nt
     sn%ntc = wrk%g%ntc
@@ -5206,6 +5212,7 @@ contains
         pwa = pwa + pwu
       endif
       sn%pwords = pwa
+      sn%rkfaces = merge(2, 1, fct%lu)
       !$omp critical (mf_stats)
       fct%factor_words_act = fct%factor_words_act + pwa
       fct%blr_words_fr = fct%blr_words_fr + pw
