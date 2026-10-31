@@ -427,6 +427,28 @@ contains
   end subroutine fstr_setup_SRADIATE
 
   !-----------------------------------------------------------------------------!
+  !> Read in !WELD_LINE                                                         !
+  !-----------------------------------------------------------------------------!
+  subroutine fstr_setup_WELD_LINE( ctrl, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    type(fstr_param_pack) :: P
+
+    type(hecmwST_local_mesh), pointer :: hecMESH
+    type(fstr_heat), pointer :: fstrHEAT
+
+    hecMESH => P%MESH
+    fstrHEAT => P%HEAT
+
+    fstrHEAT%WL_tot = fstrHEAT%WL_tot+1
+    if( fstr_ctrl_get_WELDLINE( ctrl, hecMESH, HECMW_NAME_LEN, fstrHEAT%weldline(fstrHEAT%WL_tot) )/=0 ) then
+      write(*,*) '### Error: Fail in read in Weld Line definition : ' , fstrHEAT%WL_tot
+      write(ILOG,*) '### Error: Fail in read in Weld Line definition : ', fstrHEAT%WL_tot
+      stop HECMW_EXIT_INPUT
+    endif
+  end subroutine fstr_setup_WELD_LINE
+
+  !-----------------------------------------------------------------------------!
   !> Append !FIXTEMP                                                            !
   !-----------------------------------------------------------------------------!
   subroutine fstr_heat_append_fixtemp( hecMESH, fstrPARAM, fstrHEAT, header_name, &
