@@ -102,6 +102,8 @@ OBJSF = \
 	fstr_solid_setup.@f90objfilepostfix@ \
 	fstr_heat_setup.@f90objfilepostfix@ \
 	fstr_freq_setup.@f90objfilepostfix@ \
+	fstr_eigen_setup.@f90objfilepostfix@ \
+	fstr_dynamic_setup.@f90objfilepostfix@ \
 	fstr_setup.@f90objfilepostfix@ \
 	fstr_rcap_io.@f90objfilepostfix@
 

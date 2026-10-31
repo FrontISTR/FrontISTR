@@ -2,8 +2,8 @@
 ! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
-!> \brief This module provides subroutines to append boundary conditions of
-!! heat analysis to fstr_heat, independently of the input file format.
+!> \brief This module provides subroutines to initialize fstr_heat and to append
+!! boundary conditions of heat analysis to it, independently of the input file format.
 !! header_name is the card name shown in error messages. A blank name of
 !! amplitude means that it is not given.
 module m_fstr_heat_setup
@@ -22,6 +22,24 @@ module m_fstr_heat_setup
   implicit none
 
 contains
+
+  !> Initial setting of heat analysis
+  subroutine fstr_heat_init( fstrHEAT )
+    implicit none
+    type(fstr_heat) :: fstrHEAT
+
+    fstrHEAT%STEPtot     = 0
+    fstrHEAT%MATERIALtot = 0
+    fstrHEAT%AMPLITUDEtot= 0
+    fstrHEAT%T_FIX_tot   = 0
+    fstrHEAT%Q_NOD_tot   = 0
+    fstrHEAT%Q_VOL_tot   = 0
+    fstrHEAT%Q_SUF_tot   = 0
+    fstrHEAT%R_SUF_tot   = 0
+    fstrHEAT%H_SUF_tot   = 0
+    fstrHEAT%WL_tot      = 0
+    fstrHEAT%beta        = -1.0d0
+  end subroutine fstr_heat_init
 
   !-----------------------------------------------------------------------------!
   !> Append !FIXTEMP                                                            !
