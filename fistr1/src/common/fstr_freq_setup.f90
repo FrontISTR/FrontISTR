@@ -2,8 +2,9 @@
 ! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
-!> \brief This module provides subroutines to append loads of frequency
-!! response analysis to fstr_freqanalysis, independently of the input file format.
+!> \brief This module provides subroutines to read the cards of frequency
+!! response analysis into fstr_freqanalysis. Loads are appended independently
+!! of the input file format.
 !! header_name is the card name shown in error messages. loadcase is
 !! kFLOADCASE_RE (real part) or kFLOADCASE_IM (imaginary part).
 module m_fstr_freq_setup
@@ -13,11 +14,193 @@ module m_fstr_freq_setup
     , hecmw_expand_integer_array &
     , hecmw_expand_real_array
   use fstr_setup_util, only &
-    : nodesurf_grp_name_to_id_ex &
+    : fstr_param_pack &
+    , fstr_ctrl_err_stop &
+    , nodesurf_grp_name_to_id_ex &
     , fstr_setup_util_err_stop
+  use fstr_ctrl_util_f
   implicit none
 
 contains
+
+  !-----------------------------------------------------------------------------!
+  !> Read in !FLOAD                                                             !
+  !-----------------------------------------------------------------------------!
+  subroutine fstr_setup_FLOAD( ctrl, counter, P )
+    implicit none
+  !---- args
+    integer(kind=kint)   :: ctrl
+    integer(kind=kint)   :: counter
+    type(fstr_param_pack) :: P
+  !---- vals
+    integer(kind=kint)                  :: rcode
+    character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
+    real(kind=kreal), pointer           :: val_ptr(:)
+    integer(kind=kint), pointer        :: id_ptr(:)
+    integer(kind=kint)                  :: n
+    integer(kind=kint)                  :: gid, loadcase
+  !---- body
+
+    if( P%SOLID%file_type /= kbcfFSTR) return
+
+    !read grpid
+    gid = 1
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'GRPID ',  '# ',  0, 'I', gid )
+    !read loadcase (real=1:default, img=2)
+    loadcase = kFLOADCASE_RE
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'LOAD CASE ', '# ', 0, 'I', loadcase)
+    !write(*,*) "loadcase=", loadcase
+    !pause
+
+    !read the num of dataline
+    n = fstr_ctrl_get_data_line_n( ctrl )
+    if( n == 0 ) return
+
+    !fill bc data
+    allocate( grp_id_name(n) )
+    allocate( id_ptr(n) )
+    allocate( val_ptr(n) )
+    id_ptr  = 0
+    val_ptr = 0.0d0
+    rcode = fstr_ctrl_get_FLOAD( ctrl, grp_id_name, HECMW_NAME_LEN, id_ptr, val_ptr)
+    if( rcode /= 0 ) call fstr_ctrl_err_stop
+    if(loadcase /= kFLOADCASE_RE .and. loadcase /= kFLOADCASE_IM) then
+      !error
+      write(*,*)    "Error this load set is not defined!"
+      write(ilog,*) "Error this load set is not defined!"
+      stop HECMW_EXIT_MODEL
+    end if
+    call fstr_freq_append_fload( P%MESH, P%FREQ, '!FLOAD', gid, loadcase, &
+      n, grp_id_name, id_ptr, val_ptr )
+
+    deallocate( grp_id_name )
+    deallocate( id_ptr )
+    deallocate( val_ptr )
+    nullify( grp_id_name )
+    nullify( id_ptr )
+    nullify( val_ptr )
+    return
+
+    contains
+
+    function fstr_ctrl_get_FLOAD(ctrl, node_id, node_id_len, dof_id, value)
+      integer(kind=kint)                    :: ctrl
+      character(len=HECMW_NAME_LEN)        :: node_id(:)  !Node group name
+      integer(kind=kint), pointer          :: dof_id(:)
+      integer(kind=kint)                    :: node_id_len
+      real(kind=kreal), pointer             :: value(:)
+      integer(kind=kint)                    :: fstr_ctrl_get_FLOAD !return value
+      character(len=HECMW_NAME_LEN)        :: data_fmt, ss
+
+      write(ss,*) node_id_len
+      write(data_fmt, '(a,a,a)') 'S', trim(adjustl(ss)), 'IR '
+
+      fstr_ctrl_get_FLOAD = fstr_ctrl_get_data_array_ex(ctrl, data_fmt, node_id, dof_id, value)
+    end function
+
+  end subroutine
+
+  !-----------------------------------------------------------------------------!
+  !> Read in !FACCELERATION                                                     !
+  !-----------------------------------------------------------------------------!
+  !> Data line: NODE_ID, DOF_idS, DOF_idE, Value (same as !ACCELERATION).
+  !> Value is the acceleration amplitude of DOF_idS..DOF_idE, stored as the real
+  !> part (LOAD CASE=1, default) or the imaginary part (LOAD CASE=2).
+  !> counter is not used; it is kept for the same interface as the other readers.
+  subroutine fstr_setup_FACCELERATION( ctrl, counter, P )
+    implicit none
+  !---- args
+    integer(kind=kint)    :: ctrl
+    integer(kind=kint)    :: counter
+    type(fstr_param_pack) :: P
+  !---- vals
+    integer(kind=kint)                 :: rcode
+    character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
+    integer(kind=kint), pointer        :: dof_ids(:)
+    integer(kind=kint), pointer        :: dof_ide(:)
+    real(kind=kreal), pointer          :: val_ptr(:)
+    integer(kind=kint)                 :: n
+    integer(kind=kint)                 :: loadcase
+  !---- body
+
+    !only the FrontISTR format is supported
+    if( P%SOLID%file_type /= kbcfFSTR) return
+
+    !read loadcase (real=1:default, img=2)
+    loadcase = kFLOADCASE_RE
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'LOAD CASE ', '# ', 0, 'I', loadcase)
+    if( loadcase /= kFLOADCASE_RE .and. loadcase /= kFLOADCASE_IM ) then
+      write(*,*)    'fstr control file error : !FACCELERATION : LOAD CASE must be 1 or 2'
+      write(ilog,*) 'fstr control file error : !FACCELERATION : LOAD CASE must be 1 or 2'
+      stop HECMW_EXIT_INPUT
+    end if
+
+    n = fstr_ctrl_get_data_line_n( ctrl )
+    if( n == 0 ) return
+
+    !read the data lines into temporary arrays
+    allocate( grp_id_name(n) )
+    allocate( dof_ids(n) )
+    allocate( dof_ide(n) )
+    allocate( val_ptr(n) )
+    val_ptr = 0.0d0
+    rcode = fstr_ctrl_get_FACCELERATION( ctrl, grp_id_name, HECMW_NAME_LEN, dof_ids, dof_ide, val_ptr )
+    if( rcode /= 0 ) call fstr_ctrl_err_stop
+    !append the data lines of this header to the entries read so far
+    call fstr_freq_append_facceleration( P%MESH, P%FREQ, '!FACCELERATION', loadcase, &
+      n, grp_id_name, dof_ids, dof_ide, val_ptr )
+
+    deallocate( grp_id_name )
+    deallocate( dof_ids )
+    deallocate( dof_ide )
+    deallocate( val_ptr )
+    return
+
+    contains
+
+    !read all data lines in the format of NODE_ID, DOF_idS, DOF_idE, Value
+    function fstr_ctrl_get_FACCELERATION(ctrl, node_id, node_id_len, dof_ids, dof_ide, value)
+      integer(kind=kint)            :: ctrl
+      character(len=HECMW_NAME_LEN) :: node_id(:)
+      integer(kind=kint)            :: node_id_len
+      integer(kind=kint), pointer   :: dof_ids(:)
+      integer(kind=kint), pointer   :: dof_ide(:)
+      real(kind=kreal), pointer     :: value(:)
+      integer(kind=kint)            :: fstr_ctrl_get_FACCELERATION
+      character(len=HECMW_NAME_LEN) :: data_fmt, ss
+
+      !format: string of node_id_len characters, two integers and a real
+      write(ss,*) node_id_len
+      write(data_fmt, '(a,a,a)') 'S', trim(adjustl(ss)), 'IIr '
+
+      fstr_ctrl_get_FACCELERATION = fstr_ctrl_get_data_array_ex(ctrl, data_fmt, node_id, dof_ids, dof_ide, value)
+    end function
+
+  end subroutine
+
+  !-----------------------------------------------------------------------------!
+  !> Read in !EIGENREAD                                                         !
+  !-----------------------------------------------------------------------------!
+  subroutine fstr_setup_eigenread( ctrl, counter, P )
+  !---- args
+    integer(kind=kint)    :: ctrl
+    integer(kind=kint)    :: counter
+    type(fstr_param_pack) :: P
+  !---- vals
+    integer(kind=kint)                :: filename_len
+    character(len=HECMW_NAME_LEN) :: datafmt, ss
+  !---- body
+
+    filename_len = HECMW_FILENAME_LEN
+    write(ss,*) filename_len
+    write(datafmt, '(a,a,a)') 'F', trim(adjustl(ss)), ' '
+
+    if( fstr_ctrl_get_data_ex( ctrl, 1, datafmt, P%FREQ%eigenlog_filename ) /= 0) return
+    if( fstr_ctrl_get_data_ex( ctrl, 2, 'ii ', P%FREQ%start_mode, P%FREQ%end_mode ) /= 0) return
+
+    return
+
+  end subroutine
 
   !-----------------------------------------------------------------------------!
   !> Append !FLOAD                                                              !

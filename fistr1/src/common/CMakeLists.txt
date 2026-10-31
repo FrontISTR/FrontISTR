@@ -21,6 +21,7 @@ target_sources(fistr PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/fstr_freq_setup.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_eigen_setup.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_dynamic_setup.f90
+  ${CMAKE_CURRENT_LIST_DIR}/fstr_param_setup.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_setup.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_rcap_io.F90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_element_activation.f90

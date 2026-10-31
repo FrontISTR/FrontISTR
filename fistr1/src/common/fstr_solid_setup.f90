@@ -3,9 +3,9 @@
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 !> \brief This module provides subroutines to initialize, allocate and finalize
-!! fstr_solid, to append boundary conditions of solid analysis to it, and to
-!! check and initialize the contact pairs already read into it, independently
-!! of the input file format.
+!! fstr_solid, and to read the cards of solid analysis into it. Boundary
+!! conditions are appended, and the contact pairs already read are checked and
+!! initialized, independently of the input file format.
 !! header_name is the card name shown in error messages. A blank name of
 !! amplitude or rotation center means that it is not given.
 module m_fstr_solid_setup
@@ -18,9 +18,15 @@ module m_fstr_solid_setup
     , hecmw_expand_integer_array &
     , hecmw_expand_real_array
   use fstr_setup_util, only &
-    : amp_name_to_id &
+    : fstr_param_pack &
+    , fstr_ctrl_err_stop &
+    , amp_name_to_id &
     , dload_grp_name_to_id_ex &
     , fstr_setup_util_err_stop
+  use fstr_ctrl_common
+  use fstr_ctrl_static
+  use fstr_ctrl_dynamic
+  use fstr_ctrl_util_f
   implicit none
 
 contains
@@ -903,6 +909,616 @@ contains
     end if
 
   end subroutine
+
+  !-----------------------------------------------------------------------------!
+  !> Read in !STEP                                                             !
+  !-----------------------------------------------------------------------------!
+
+  subroutine fstr_setup_STEP( ctrl, counter, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    integer(kind=kint) :: counter
+    type(fstr_param_pack) :: P
+    character(HECMW_NAME_LEN) :: amp
+    integer(kind=kint) :: amp_id
+
+    integer(kind=kint) :: rcode, iproc
+
+    amp = ' '
+    rcode = fstr_ctrl_get_STEP( ctrl, amp, iproc )
+    if( rcode /= 0 ) call fstr_ctrl_err_stop
+    call amp_name_to_id( P%MESH, '!STEP', amp, amp_id )
+    !    P%SOLID%NLSTATIC_ngrp_amp = amp_id;
+
+  end subroutine fstr_setup_STEP
+
+  !> Fix the convergence criteria of a step from !STEP and the !CONVERG_PARAM it refers to
+  subroutine fstr_setup_step_convergence( stepinfo, cpname, cnvparam, istep )
+    implicit none
+    type( step_info ), intent(inout)  :: stepinfo       !< step info
+    character(len=*), intent(in)      :: cpname         !< CONVERGPARAM of !STEP
+    type( tParamConverg ), intent(in) :: cnvparam(0:)   !< !CONVERG_PARAM read so far; 0 gives none
+    integer(kind=kint), intent(in)    :: istep          !< step number
+
+    integer(kind=kint) :: i, id
+
+    id = 0
+    if( len_trim(cpname) > 0 ) then
+      do i=1,ubound(cnvparam,1)
+        if( hecmw_streqr( cnvparam(i)%name, cpname ) ) then
+          id = i; exit
+        endif
+      enddo
+      if( id == 0 ) then
+        write(*,*) '### Error: CONVERG_PARAM referred to by STEP is not defined before it : ', trim(cpname)
+        write(ILOG,*) '### Error: CONVERG_PARAM referred to by STEP is not defined before it : ', trim(cpname)
+        stop HECMW_EXIT_INPUT
+      endif
+    endif
+
+    call setup_stepInfo_converg( stepinfo, cnvparam(id) )
+
+    if( .not. any( stepinfo%cnv_check(kcnvResidual:kcnvCorrection, kcnvTranslation:kcnvRotation, :) ) ) then
+      write(*,*) '### Error: RESIDUAL and CORRECTION are all SKIP in step : ', istep
+      write(ILOG,*) '### Error: RESIDUAL and CORRECTION are all SKIP in step : ', istep
+      stop HECMW_EXIT_INPUT
+    endif
+
+  end subroutine fstr_setup_step_convergence
+
+  !> Links step_ctrl(istep), whose step is already read, to !TIME_POINTS, !AUTOINC_PARAM and
+  !> !CONVERG_PARAM given by name, and keeps the !DYNAMIC time increment for a fixed increment.
+  subroutine fstr_setup_step_links( fstrPARAM, fstrSOLID, fstrDYNAMIC, istep, tp_name, ainc_name, cnv_name )
+    implicit none
+    type(fstr_param)               :: fstrPARAM
+    type(fstr_solid)               :: fstrSOLID
+    type(fstr_dynamic)             :: fstrDYNAMIC
+    integer(kind=kint), intent(in) :: istep          !< step number
+    character(len=*), intent(in)   :: tp_name        !< name of !TIME_POINTS
+    character(len=*), intent(in)   :: ainc_name      !< name of !AUTOINC_PARAM
+    character(len=*), intent(in)   :: cnv_name       !< name of !CONVERG_PARAM
+
+    integer(kind=kint) :: i
+
+    call fstr_setup_step_convergence( fstrSOLID%step_ctrl(istep), cnv_name, fstrPARAM%cnvparam, istep )
+    ! For DYNAMIC fixed-increment: keep the !DYNAMIC time increment while preserving !STEP duration.
+    ! fstr_ctrl_get_ISTEP unconditionally sets initdt=1/num_substep which is wrong for DYNAMIC.
+    ! Only override initdt/mindt/maxdt; keep elapsetime and num_substep as-is.
+    if( fstrPARAM%solution_type==kstDYNAMIC .and. &
+      & fstrSOLID%step_ctrl(istep)%inc_type == stepFixedInc ) then
+      fstrSOLID%step_ctrl(istep)%initdt      = fstrDYNAMIC%t_delta
+      fstrSOLID%step_ctrl(istep)%mindt       = fstrDYNAMIC%t_delta
+      fstrSOLID%step_ctrl(istep)%maxdt       = fstrDYNAMIC%t_delta
+    endif
+    if( associated(fstrPARAM%timepoints) ) then
+      do i=1,size(fstrPARAM%timepoints)
+        if( hecmw_streqr( fstrPARAM%timepoints(i)%name, tp_name ) ) then
+          fstrSOLID%step_ctrl(istep)%timepoint_id = i; exit
+        endif
+      enddo
+    endif
+    if( associated(fstrPARAM%ainc) ) then
+      do i=1,size(fstrPARAM%ainc)-1
+        if( hecmw_streqr( fstrPARAM%ainc(i)%name, ainc_name ) ) then
+          fstrSOLID%step_ctrl(istep)%AincParam_id = i; exit
+        endif
+      enddo
+    endif
+  end subroutine fstr_setup_step_links
+
+  !> Read in !WRITE after fstr_setup_alloc and store the output controls.
+  !> fg_result and fg_visual are set by the caller before fstr_setup_alloc.
+  subroutine fstr_setup_WRITE_store( ctrl, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    type(fstr_param_pack) :: P
+
+    type(fstr_solid), pointer :: fstrSOLID
+    type(t_output_ctrl) :: outctrl
+    integer(kind=kint) :: islog, result, visual, femap, c_output, ierror
+    character(len=HECMW_FILENAME_LEN) :: logfileNAME
+
+    fstrSOLID => P%SOLID
+    write( logfileNAME, '(i5,''.log'')' ) myrank
+
+    call fstr_ctrl_get_output( ctrl, outctrl, islog, result, visual, femap )
+    if( islog == 1 ) then
+      c_output=1
+      outctrl%filename = trim(logfileNAME)
+      outctrl%filenum = ILOG
+      call fstr_copy_outctrl(fstrSOLID%output_ctrl(c_output), outctrl)
+    endif
+    if( femap == 1 ) then
+      c_output=2
+      write( outctrl%filename, '(a,i0,a)') 'utable.',myrank,'.dat'
+      outctrl%filenum = IUTB
+      call fstr_copy_outctrl(fstrSOLID%output_ctrl(c_output), outctrl)
+      open( unit=outctrl%filenum, file=outctrl%filename, status='REPLACE', iostat=ierror )
+      if( ierror /= 0 ) then
+        write(*,*) 'Warning: cannot open output file: ', trim(outctrl%filename)
+      endif
+      fstrSOLID%output_ctrl(c_output)%outinfo%grp_id = 1
+    endif
+    if( result == 1 ) then
+      c_output=3
+      call fstr_copy_outctrl(fstrSOLID%output_ctrl(c_output), outctrl)
+    endif
+    if( visual == 1 ) then
+      c_output=4
+      call fstr_copy_outctrl(fstrSOLID%output_ctrl(c_output), outctrl)
+    endif
+  end subroutine fstr_setup_WRITE_store
+
+  !-----------------------------------------------------------------------------!
+  !> Read in !COUPLE                                                          !
+  !-----------------------------------------------------------------------------!
+
+  subroutine fstr_setup_COUPLE( ctrl, counter, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    integer(kind=kint) :: counter
+    type(fstr_param_pack) :: P
+    integer(kind=kint) :: rcode
+    character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
+    integer(kind=kint) :: n
+
+    if( P%SOLID%file_type /= kbcfFSTR ) return
+
+    n = fstr_ctrl_get_data_line_n( ctrl )
+    if( n == 0 ) return
+
+    allocate( grp_id_name(n))
+    rcode = fstr_ctrl_get_COUPLE( ctrl,           &
+      P%PARAM%fg_couple_type,       &
+      P%PARAM%fg_couple_first,      &
+      P%PARAM%fg_couple_window,     &
+      grp_id_name, HECMW_NAME_LEN  )
+    if( rcode /= 0 ) call fstr_ctrl_err_stop
+
+    call fstr_solid_append_couple( P%MESH, P%SOLID, P%PARAM, '!COUPLE', n, grp_id_name )
+
+    deallocate( grp_id_name )
+
+  end subroutine fstr_setup_COUPLE
+
+  !> Read in !ELEMENT_ACTIVATION
+  subroutine fstr_setup_ELEMENT_ACTIVATION( ctrl, counter, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    integer(kind=kint) :: counter
+    type(fstr_param_pack) :: P
+
+    integer(kind=kint) :: rcode
+    character(HECMW_NAME_LEN) :: amp
+    character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
+    integer(kind=kint) :: n
+    integer(kind=kint) :: gid, mode, measure, state
+    real(kind=kreal)   :: eps
+    real(kind=kreal), pointer :: thlow(:), thup(:)
+
+    gid = 1
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'GRPID ',  '# ',            0, 'I', gid  )
+
+    n = fstr_ctrl_get_data_line_n( ctrl )
+    if( n == 0 ) return
+
+    allocate( grp_id_name(n), thlow(n), thup(n) )
+    amp = ' '
+    eps = 1.d-3
+    rcode = fstr_ctrl_get_ELEMENT_ACTIVATION( ctrl, amp, eps, grp_id_name, mode, measure, state, thlow, thup )
+    if( rcode /= 0 ) call fstr_ctrl_err_stop
+
+    call fstr_solid_append_element_activation( P%MESH, P%SOLID, '!ELEMENT_ACTIVATION', gid, &
+      amp, eps, measure, state, n, grp_id_name, thlow, thup )
+
+    deallocate( grp_id_name )
+  end subroutine fstr_setup_ELEMENT_ACTIVATION
+
+  !-----------------------------------------------------------------------------!
+  !> Read in !STATIC(old)                                                           !
+  !-----------------------------------------------------------------------------!
+
+  subroutine fstr_setup_STATIC( ctrl, counter, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    integer(kind=kint) :: counter
+    type(fstr_param_pack) :: P
+    integer(kind=kint) :: rcode
+
+    integer :: nout, nout_monit,node_monit_1 ,elem_monit_1 ,intg_monit_1
+    integer :: ipt, idx_elpl, iout_list(6)
+    real(kind=kreal) :: sig_y0, h_dash
+    real(kind=kreal) :: DT, ETIME, EPS ! dummy
+    integer :: ITMAX ! dummy
+
+    if( counter > 1 ) then
+      write(*,*)
+    endif
+
+    ipt = 0
+    if( fstr_ctrl_get_param_ex( ctrl, 'TYPE ', 'INFINITESIMAL,NLGEOM,INFINITE ', 0, 'P', ipt  )/=0 )  &
+      return
+    if( ipt == 2 ) P%PARAM%nlgeom = .true.
+
+    ! for backward compatibility
+    if( ipt == 3 ) then
+      write(*,*) "Warning : !STATIC : parameter 'TYPE=INFINITE' is deprecated." &
+           & //  " Please use the replacement parameter 'TYPE=INFINITESIMAL'"
+    endif
+
+    rcode = fstr_ctrl_get_STATIC( ctrl, &
+      DT, ETIME, ITMAX, EPS, P%SOLID%restart_nout, &
+      idx_elpl, &
+      iout_list, &
+      sig_y0, h_dash, &
+      nout, nout_monit, node_monit_1, &
+      elem_monit_1, intg_monit_1 )
+
+    if( rcode /= 0 ) call fstr_ctrl_err_stop
+
+  end subroutine fstr_setup_STATIC
+
+  !-----------------------------------------------------------------------------!
+  !> Read in !BOUNDARY                                                    !
+  !-----------------------------------------------------------------------------!
+
+  subroutine fstr_setup_BOUNDARY( ctrl, counter, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    integer(kind=kint) :: counter
+    type(fstr_param_pack) :: P
+
+    integer(kind=kint) :: rcode
+    character(HECMW_NAME_LEN) :: amp, rotc_name(1)
+    character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
+    integer(kind=kint),pointer :: dof_ids (:)
+    integer(kind=kint),pointer :: dof_ide (:)
+    real(kind=kreal),pointer :: val_ptr(:)
+    integer(kind=kint) :: n
+
+    integer(kind=kint) :: gid, istot
+
+    gid = 1
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'GRPID ',  '# ',            0, 'I', gid  )
+
+    istot = 0
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'TOTAL ', '# ', 0, 'E', istot )
+    if( rcode /= 0 ) call fstr_ctrl_err_stop
+
+    ! get center of torque load
+    rotc_name = ' '
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'ROT_CENTER ', '# ', 0, 'S', rotc_name )
+    if( rcode /= 0 ) call fstr_ctrl_err_stop
+
+    ! ENTIRE -----------------------------------------------
+    P%SOLID%file_type = kbcfFSTR
+
+    n = fstr_ctrl_get_data_line_n( ctrl )
+    allocate( grp_id_name(n) )
+    allocate( dof_ids (n) )
+    allocate( dof_ide (n) )
+    allocate( val_ptr(n) )
+
+    amp = ' '
+    val_ptr = 0.0d0
+    if( n > 0 ) then
+      rcode = fstr_ctrl_get_BOUNDARY( ctrl, amp, grp_id_name, HECMW_NAME_LEN, dof_ids, dof_ide, val_ptr)
+      if( rcode /= 0 ) call fstr_ctrl_err_stop
+    endif
+    call fstr_solid_append_boundary( P%MESH, P%SOLID, '!BOUNDARY', gid, istot, rotc_name(1), &
+      amp, n, grp_id_name, dof_ids, dof_ide, val_ptr )
+
+    deallocate( grp_id_name )
+    deallocate( dof_ids )
+    deallocate( dof_ide )
+    deallocate( val_ptr )
+    nullify( grp_id_name )
+    nullify( dof_ids )
+    nullify( dof_ide )
+    nullify( val_ptr )
+
+  end subroutine fstr_setup_BOUNDARY
+
+  !-----------------------------------------------------------------------------!
+  !> Read in !CLOAD                                                           !
+  !-----------------------------------------------------------------------------!
+
+  subroutine fstr_setup_CLOAD( ctrl, counter, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    integer(kind=kint) :: counter
+    type(fstr_param_pack) :: P
+
+    integer(kind=kint) :: rcode
+    character(HECMW_NAME_LEN) :: amp, rotc_name(1)
+    character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
+    real(kind=kreal),pointer :: val_ptr(:)
+    integer(kind=kint),pointer :: id_ptr(:)
+    integer(kind=kint) :: n
+    integer(kind=kint) :: gid
+
+    if( P%SOLID%file_type /= kbcfFSTR ) return
+    gid = 1
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'GRPID ',  '# ',            0, 'I', gid  )
+    if( rcode /= 0 ) call fstr_ctrl_err_stop
+
+    ! get center of torque load
+    rotc_name = ' '
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'ROT_CENTER ', '# ', 0, 'S', rotc_name )
+    if( rcode /= 0 ) call fstr_ctrl_err_stop
+
+    n = fstr_ctrl_get_data_line_n( ctrl )
+    allocate( grp_id_name(n))
+    allocate( id_ptr(n) )
+    allocate( val_ptr(n) )
+    amp = ' '
+    id_ptr = 0
+    val_ptr = 0.0d0
+    if( n > 0 ) then
+      rcode = fstr_ctrl_get_CLOAD( ctrl, amp, grp_id_name, HECMW_NAME_LEN, id_ptr, val_ptr )
+      if( rcode /= 0 ) call fstr_ctrl_err_stop
+    endif
+    call fstr_solid_append_cload( P%MESH, P%SOLID, '!CLOAD', gid, rotc_name(1), &
+      amp, n, grp_id_name, id_ptr, val_ptr )
+
+    deallocate( grp_id_name )
+    deallocate( id_ptr )
+    deallocate( val_ptr )
+    nullify( grp_id_name )
+    nullify( id_ptr )
+    nullify( val_ptr )
+
+  end subroutine fstr_setup_CLOAD
+
+  !> Read in !DLOAD
+  subroutine fstr_setup_DLOAD( ctrl, counter, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    integer(kind=kint) :: counter
+    type(fstr_param_pack) :: P
+
+    integer(kind=kint) :: rcode
+    character(HECMW_NAME_LEN) :: amp
+    integer(kind=kint) :: follow
+    character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
+    real(kind=kreal),pointer :: new_params(:,:)
+    integer(kind=kint),pointer :: lid_ptr(:)
+    integer(kind=kint) :: n
+    integer(kind=kint) :: gid
+
+    if( P%SOLID%file_type /= kbcfFSTR ) return
+
+    gid = 1
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'GRPID ',  '# ',            0, 'I', gid  )
+
+    n = fstr_ctrl_get_data_line_n( ctrl )
+    if( n == 0 ) return
+
+    allocate( grp_id_name(n))
+    allocate( lid_ptr(n) )
+    allocate( new_params(0:6,n))
+    new_params = 0
+    amp = ' '
+    follow = P%SOLID%DLOAD_follow
+    if( .not. P%PARAM%nlgeom ) follow = 0
+    rcode = fstr_ctrl_get_DLOAD( ctrl, amp, follow, &
+      grp_id_name, HECMW_NAME_LEN,    &
+      lid_ptr, new_params )
+    if( rcode /= 0 ) call fstr_ctrl_err_stop
+    call fstr_solid_append_dload( P%MESH, P%SOLID, '!DLOAD', gid, follow, &
+      amp, n, grp_id_name, lid_ptr, new_params )
+    deallocate( grp_id_name )
+    deallocate( lid_ptr )
+    deallocate( new_params )
+    nullify( grp_id_name )
+    nullify( lid_ptr )
+    nullify( new_params )
+  end subroutine fstr_setup_DLOAD
+
+  !-----------------------------------------------------------------------------!
+  !> Read in !TEMPERATURE                                                  !
+  !-----------------------------------------------------------------------------!
+
+  subroutine fstr_setup_TEMPERATURE( ctrl, counter, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    integer(kind=kint) :: counter
+    type(fstr_param_pack) :: P
+
+    integer(kind=kint) :: rcode, gid
+    character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
+    real(kind=kreal),pointer :: val_ptr(:)
+    integer(kind=kint) :: n
+
+    if( P%SOLID%file_type /= kbcfFSTR ) return
+
+    gid = 1
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'GRPID ',  '# ',            0, 'I', gid  )
+
+    n = fstr_ctrl_get_data_line_n( ctrl )
+    allocate( grp_id_name(n))
+    allocate( val_ptr(n) )
+    val_ptr = 0.0d0
+
+    rcode = fstr_ctrl_get_TEMPERATURE( ctrl,      &
+      P%SOLID%TEMP_irres,           &
+      P%SOLID%TEMP_tstep,           &
+      P%SOLID%TEMP_interval,        &
+      P%SOLID%TEMP_rtype,           &
+      grp_id_name, HECMW_NAME_LEN,  &
+      val_ptr )
+    if( rcode /= 0 ) call fstr_ctrl_err_stop
+    if( P%SOLID%TEMP_irres == 0 ) then
+      call fstr_solid_append_temperature( P%MESH, P%SOLID, '!TEMPERATURE', gid, n, grp_id_name, val_ptr )
+    endif
+
+    deallocate( grp_id_name )
+    deallocate( val_ptr )
+    nullify( grp_id_name )
+    nullify( val_ptr )
+
+  end subroutine fstr_setup_TEMPERATURE
+
+  !-----------------------------------------------------------------------------!
+  !> Read in !SPRING                                                            !
+  !-----------------------------------------------------------------------------!
+
+  subroutine fstr_setup_SPRING( ctrl, counter, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    integer(kind=kint) :: counter
+    type(fstr_param_pack) :: P
+
+    integer(kind=kint) :: rcode, incremental
+    character(HECMW_NAME_LEN) :: amp
+    character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
+    real(kind=kreal),pointer :: val_ptr(:)
+    integer(kind=kint),pointer :: id_ptr(:)
+    integer(kind=kint) :: n
+    integer(kind=kint) :: gid
+
+    if( P%SOLID%file_type /= kbcfFSTR ) return
+    gid = 1
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'GRPID ',  '# ',            0, 'I', gid  )
+    n = fstr_ctrl_get_data_line_n( ctrl )
+    if( n == 0 ) return
+
+    allocate( grp_id_name(n))
+    allocate( id_ptr(n) )
+    allocate( val_ptr(n) )
+    amp = ' '
+    incremental = 0
+    id_ptr = 0
+    val_ptr = 0.0d0
+    rcode = fstr_ctrl_get_SPRING( ctrl, amp, grp_id_name, HECMW_NAME_LEN, id_ptr, val_ptr, incremental )
+    if( rcode /= 0 ) call fstr_ctrl_err_stop
+    call fstr_solid_append_spring( P%MESH, P%SOLID, '!SPRING', gid, incremental, &
+      amp, n, grp_id_name, id_ptr, val_ptr )
+
+    deallocate( grp_id_name )
+    deallocate( id_ptr )
+    deallocate( val_ptr )
+    nullify( grp_id_name )
+    nullify( id_ptr )
+    nullify( val_ptr )
+
+  end subroutine fstr_setup_SPRING
+
+  !-----------------------------------------------------------------------------!
+  !> Read in !VELOCITY                                                         !
+  !-----------------------------------------------------------------------------!
+
+  subroutine fstr_setup_VELOCITY( ctrl, counter, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    integer(kind=kint) :: counter
+    type(fstr_param_pack) :: P
+
+    integer(kind=kint) :: rcode
+    integer(kind=kint) :: vType
+    character(HECMW_NAME_LEN) :: amp, rotc_name(1)
+    character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
+    integer(kind=kint),pointer :: dof_ids (:)
+    integer(kind=kint),pointer :: dof_ide (:)
+    real(kind=kreal),pointer :: val_ptr(:)
+    integer(kind=kint) :: n
+    integer(kind=kint) :: gid
+
+    gid = 1
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'GRPID ',  '# ',  0, 'I', gid  )
+
+    ! get center of rotation ( same syntax as !BOUNDARY,ROT_CENTER= )
+    rotc_name = ' '
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'ROT_CENTER ', '# ', 0, 'S', rotc_name )
+    if( rcode /= 0 ) call fstr_ctrl_err_stop
+
+    n = fstr_ctrl_get_data_line_n( ctrl )
+    allocate( grp_id_name(n))
+    allocate( dof_ids (n))
+    allocate( dof_ide (n))
+    allocate( val_ptr(n) )
+
+    vType = kbcTransit
+    amp = ''
+    val_ptr = 0.0d0
+    if( n > 0 ) then
+      rcode = fstr_ctrl_get_VELOCITY( ctrl,  vType, amp,   &
+        grp_id_name, HECMW_NAME_LEN,  &
+        dof_ids, dof_ide, val_ptr )
+      if( rcode /= 0 ) call fstr_ctrl_err_stop
+    endif
+    call fstr_solid_append_velocity( P%MESH, P%SOLID, P%DYN, '!VELOCITY', gid, vType, rotc_name(1), &
+      amp, n, grp_id_name, dof_ids, dof_ide, val_ptr )
+
+    deallocate( grp_id_name )
+    deallocate( dof_ids )
+    deallocate( dof_ide )
+    deallocate( val_ptr )
+    nullify( grp_id_name )
+    nullify( dof_ids )
+    nullify( dof_ide )
+    nullify( val_ptr )
+
+  end subroutine fstr_setup_VELOCITY
+
+  !-----------------------------------------------------------------------------!
+  !> Read in !ACCELERATION                                                     !
+  !-----------------------------------------------------------------------------!
+
+  subroutine fstr_setup_ACCELERATION( ctrl, counter, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    integer(kind=kint) :: counter
+    type(fstr_param_pack) :: P
+
+    integer(kind=kint) :: rcode
+    integer(kind=kint) :: aType
+    character(HECMW_NAME_LEN) :: amp
+    character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
+    integer(kind=kint),pointer :: dof_ids (:)
+    integer(kind=kint),pointer :: dof_ide (:)
+    real(kind=kreal),pointer :: val_ptr(:)
+    integer(kind=kint) :: n
+    integer(kind=kint) :: gid
+
+    gid = 1
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'GRPID ',  '# ',  0, 'I', gid  )
+
+    n = fstr_ctrl_get_data_line_n( ctrl )
+    if( n == 0 ) return
+
+    allocate( grp_id_name(n))
+    allocate( dof_ids (n))
+    allocate( dof_ide (n))
+    allocate( val_ptr(n))
+
+    amp = ' '
+    val_ptr = 0.0d0
+    rcode = fstr_ctrl_get_ACCELERATION( ctrl,  aType, amp,   &
+      grp_id_name, HECMW_NAME_LEN,  &
+      dof_ids, dof_ide,  val_ptr)
+    if( rcode /= 0 ) call fstr_ctrl_err_stop
+    call fstr_solid_append_acceleration( P%MESH, P%SOLID, P%DYN, '!ACCELERATION', gid, aType, &
+      amp, n, grp_id_name, dof_ids, dof_ide, val_ptr )
+
+    deallocate( grp_id_name )
+    deallocate( dof_ids )
+    deallocate( dof_ide )
+    deallocate( val_ptr )
+    nullify( grp_id_name )
+    nullify( dof_ids )
+    nullify( dof_ide )
+    nullify( val_ptr )
+  end subroutine fstr_setup_ACCELERATION
+
+  subroutine fstr_setup_solid_nastran( ctrl, hecMESH, fstrSOLID )
+    implicit none
+    integer(kind=kint) :: ctrl
+    type (hecmwST_local_mesh) :: hecMESH
+    type (fstr_solid        ) :: fstrSOLID
+    write(ILOG,*) '### Error : In !BOUNDARY, TYPE=NASTRAN is not supported.'
+    call fstr_abort( HECMW_EXIT_MODEL )
+  end subroutine fstr_setup_solid_nastran
 
   !-----------------------------------------------------------------------------!
   !> Append !BOUNDARY                                                           !

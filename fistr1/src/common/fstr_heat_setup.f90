@@ -2,23 +2,31 @@
 ! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
-!> \brief This module provides subroutines to initialize fstr_heat and to append
-!! boundary conditions of heat analysis to it, independently of the input file format.
+!> \brief This module provides subroutines to initialize fstr_heat and to read
+!! the cards of heat analysis into it. Boundary conditions are appended
+!! independently of the input file format.
 !! header_name is the card name shown in error messages. A blank name of
 !! amplitude means that it is not given.
 module m_fstr_heat_setup
   use m_fstr
   use hecmw_setup_util, only &
-    : get_grp_member &
+    : hecmw_streqr &
+    , get_grp_member &
     , get_grp_member_n &
     , hecmw_expand_integer_array &
     , hecmw_expand_real_array &
     , hecmw_expand_integer_array2 &
     , hecmw_expand_real_array2
   use fstr_setup_util, only &
-    : amp_name_to_id &
+    : fstr_param_pack &
+    , fstr_ctrl_err_stop &
+    , reallocate_integer &
+    , reallocate_real &
+    , amp_name_to_id &
     , get_local_member_index &
     , get_sorted_local_member_index
+  use fstr_ctrl_heat
+  use fstr_ctrl_util_f
   implicit none
 
 contains
@@ -40,6 +48,383 @@ contains
     fstrHEAT%WL_tot      = 0
     fstrHEAT%beta        = -1.0d0
   end subroutine fstr_heat_init
+
+  !-----------------------------------------------------------------------------!
+  !> Read in !HEAT                                                             !
+  !-----------------------------------------------------------------------------!
+
+  subroutine fstr_setup_HEAT( ctrl, counter, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    integer(kind=kint) :: counter
+    type(fstr_param_pack) :: P
+
+    integer(kind=kint) :: rcode
+    integer(kind=kint) :: n
+    character(len=HECMW_NAME_LEN) :: mName
+    integer(kind=kint) :: i
+
+    n = fstr_ctrl_get_data_line_n( ctrl )
+
+    if( n == 0 ) return
+
+    call reallocate_real( P%PARAM%dtime, n)
+    call reallocate_real( P%PARAM%etime, n)
+    call reallocate_real( P%PARAM%dtmin, n)
+    call reallocate_real( P%PARAM%delmax,n)
+    call reallocate_integer( P%PARAM%itmax, n)
+    call reallocate_real( P%PARAM%eps,   n)
+    P%PARAM%analysis_n = n
+
+    P%PARAM%dtime = 0
+    P%PARAM%etime = 0
+    P%PARAM%dtmin = 0
+    P%PARAM%delmax = 0
+    P%PARAM%itmax = 20
+    P%PARAM%eps = 1.0e-6
+    P%PARAM%timepoint_id = 0
+
+    rcode = fstr_ctrl_get_HEAT(   ctrl,        &
+      P%PARAM%dtime,     &
+      P%PARAM%etime,     &
+      P%PARAM%dtmin,     &
+      P%PARAM%delmax,    &
+      P%PARAM%itmax,     &
+      P%PARAM%eps,       &
+      mName,             &
+      P%HEAT%beta)
+    if( rcode /= 0 ) then
+      call fstr_ctrl_err_stop
+    end if
+
+    if( associated(P%PARAM%timepoints) ) then
+      do i=1,size(P%PARAM%timepoints)
+        if( hecmw_streqr( P%PARAM%timepoints(i)%name, mName ) ) then
+          P%PARAM%timepoint_id = i; exit
+        endif
+      enddo
+    endif
+
+    call reallocate_real( P%HEAT%STEP_DLTIME, n)
+    call reallocate_real( P%HEAT%STEP_EETIME, n)
+    call reallocate_real( P%HEAT%STEP_DELMIN, n)
+    call reallocate_real( P%HEAT%STEP_DELMAX, n)
+    P%HEAT%STEPtot = n
+
+    P%HEAT%STEP_DLTIME = P%PARAM%dtime
+    P%HEAT%STEP_EETIME = P%PARAM%etime
+    P%HEAT%STEP_DELMIN = P%PARAM%dtmin
+    P%HEAT%STEP_DELMAX = P%PARAM%delmax
+    P%HEAT%timepoint_id = P%PARAM%timepoint_id
+
+  end subroutine fstr_setup_HEAT
+
+  !-----------------------------------------------------------------------------!
+  !> Read in !FIXTEMP                                                          !
+  !-----------------------------------------------------------------------------!
+
+  subroutine fstr_setup_FIXTEMP( ctrl, counter, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    integer(kind=kint) :: counter
+    type(fstr_param_pack),target :: P
+
+    integer(kind=kint) :: rcode
+    character(HECMW_NAME_LEN) :: amp
+    character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
+    real(kind=kreal),pointer :: value(:)
+    integer(kind=kint) :: n
+    ! ------------------------------------------------
+
+    n = fstr_ctrl_get_data_line_n( ctrl )
+    if( n == 0 ) return
+
+    allocate( grp_id_name(n))
+    allocate( value(n))
+
+    amp = ' '
+    rcode = fstr_ctrl_get_FIXTEMP( ctrl, amp, &
+      grp_id_name, HECMW_NAME_LEN, value )
+    if( rcode /= 0 ) call fstr_ctrl_err_stop
+
+    call fstr_heat_append_fixtemp( P%MESH, P%PARAM, P%HEAT, '!FIXTEMP', amp, n, grp_id_name, value )
+
+    deallocate( grp_id_name )
+    deallocate( value )
+  end subroutine fstr_setup_FIXTEMP
+
+  !-----------------------------------------------------------------------------!
+  !> Read in !CFLUX                                                            !
+  !-----------------------------------------------------------------------------!
+
+  subroutine fstr_setup_CFLUX( ctrl, counter, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    integer(kind=kint) :: counter
+    type(fstr_param_pack) :: P
+
+    integer(kind=kint) :: rcode
+    character(HECMW_NAME_LEN) :: amp
+    character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
+    real(kind=kreal),pointer :: value(:)
+    integer(kind=kint) :: n
+    ! ------------------------------------------------
+
+    n = fstr_ctrl_get_data_line_n( ctrl )
+    if( n == 0 ) return
+
+    allocate( grp_id_name(n))
+    allocate( value(n))
+
+    amp = ' '
+    rcode = fstr_ctrl_get_CFLUX( ctrl, amp, &
+      grp_id_name, HECMW_NAME_LEN, value )
+    if( rcode /= 0 ) call fstr_ctrl_err_stop
+
+    call fstr_heat_append_cflux( P%MESH, P%HEAT, '!CFLUX', amp, n, grp_id_name, value )
+
+    deallocate( grp_id_name )
+    deallocate( value )
+  end subroutine fstr_setup_CFLUX
+
+  !-----------------------------------------------------------------------------!
+  !> Read in !DFLUX                                                            !
+  !-----------------------------------------------------------------------------!
+
+
+  subroutine fstr_setup_DFLUX( ctrl, counter, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    integer(kind=kint) :: counter
+    type(fstr_param_pack) :: P
+
+    integer(kind=kint) :: rcode
+    character(HECMW_NAME_LEN) :: amp
+    character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
+    integer(kind=kint),pointer :: load_type(:)
+    real(kind=kreal),pointer :: value(:)
+    integer(kind=kint) :: n
+    ! ------------------------------------------------
+
+    n = fstr_ctrl_get_data_line_n( ctrl )
+    if( n == 0 ) return
+
+    allocate( grp_id_name(n))
+    allocate( load_type(n))
+    allocate( value(n))
+
+    amp = ' '
+    rcode = fstr_ctrl_get_DFLUX( ctrl, amp, &
+      grp_id_name, HECMW_NAME_LEN, load_type, value )
+    if( rcode /= 0 ) call fstr_ctrl_err_stop
+
+    call fstr_heat_append_dflux( P%MESH, P%HEAT, '!DFLUX', amp, n, grp_id_name, load_type, value )
+
+    deallocate( grp_id_name )
+    deallocate( load_type )
+    deallocate( value )
+  end subroutine fstr_setup_DFLUX
+
+  !-----------------------------------------------------------------------------!
+  !> Read in !SFLUX                                                            !
+  !-----------------------------------------------------------------------------!
+
+
+  subroutine fstr_setup_SFLUX( ctrl, counter, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    integer(kind=kint) :: counter
+    type(fstr_param_pack) :: P
+
+    integer(kind=kint) :: rcode
+    character(HECMW_NAME_LEN) :: amp
+    character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
+    real(kind=kreal),pointer :: value(:)
+    integer(kind=kint) :: n
+    ! ------------------------------------------------
+
+    n = fstr_ctrl_get_data_line_n( ctrl )
+    if( n == 0 ) return
+
+    allocate( grp_id_name(n))
+    allocate( value(n))
+
+    amp = ' '
+    rcode = fstr_ctrl_get_SFLUX( ctrl, amp, &
+      grp_id_name, HECMW_NAME_LEN, value )
+    if( rcode /= 0 ) call fstr_ctrl_err_stop
+
+    call fstr_heat_append_sflux( P%MESH, P%HEAT, '!SFLUX', amp, n, grp_id_name, value )
+
+    deallocate( grp_id_name )
+    deallocate( value )
+  end subroutine fstr_setup_SFLUX
+
+  !-----------------------------------------------------------------------------!
+  !> Read in !FILM                                                             !
+  !-----------------------------------------------------------------------------!
+
+
+  subroutine fstr_setup_FILM( ctrl, counter, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    integer(kind=kint) :: counter
+    type(fstr_param_pack) :: P
+
+    integer(kind=kint) :: rcode
+    character(HECMW_NAME_LEN) :: amp1, amp2
+    character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
+    integer(kind=kint),pointer :: load_type(:)
+    real(kind=kreal),pointer :: value(:)
+    real(kind=kreal),pointer :: shink(:)
+    integer(kind=kint) :: n
+    ! ------------------------------------------------
+
+    n = fstr_ctrl_get_data_line_n( ctrl )
+    if( n == 0 ) return
+
+    allocate( grp_id_name(n))
+    allocate( load_type(n))
+    allocate( value(n))
+    allocate( shink(n))
+
+    amp1 = ' '
+    amp2 = ' '
+
+    rcode = fstr_ctrl_get_FILM( ctrl, amp1, amp2, &
+      grp_id_name, HECMW_NAME_LEN, load_type, value, shink )
+    if( rcode /= 0 ) call fstr_ctrl_err_stop
+
+    call fstr_heat_append_film( P%MESH, P%HEAT, '!FILM', amp1, amp2, &
+      n, grp_id_name, load_type, value, shink )
+
+    deallocate( grp_id_name )
+    deallocate( load_type )
+    deallocate( value )
+    deallocate( shink )
+  end subroutine fstr_setup_FILM
+
+  !-----------------------------------------------------------------------------!
+  !> Read in !SFILM                                                            !
+  !-----------------------------------------------------------------------------!
+
+
+  subroutine fstr_setup_SFILM( ctrl, counter, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    integer(kind=kint) :: counter
+    type(fstr_param_pack) :: P
+
+    integer(kind=kint) :: rcode
+    character(HECMW_NAME_LEN) :: amp1, amp2
+    character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
+    real(kind=kreal),pointer :: value(:)
+    real(kind=kreal),pointer :: shink(:)
+    integer(kind=kint) :: n
+    ! ------------------------------------------------
+
+    n = fstr_ctrl_get_data_line_n( ctrl )
+    if( n == 0 ) return
+
+    allocate( grp_id_name(n))
+    allocate( value(n))
+    allocate( shink(n))
+
+    amp1 = ' '
+    amp2 = ' '
+    rcode = fstr_ctrl_get_SFILM( ctrl, amp1, amp2, &
+      grp_id_name, HECMW_NAME_LEN, value, shink )
+    if( rcode /= 0 ) call fstr_ctrl_err_stop
+
+    call fstr_heat_append_sfilm( P%MESH, P%HEAT, '!SFILM', amp1, amp2, &
+      n, grp_id_name, value, shink )
+
+    deallocate( grp_id_name )
+    deallocate( value )
+    deallocate( shink )
+  end subroutine fstr_setup_SFILM
+
+  !-----------------------------------------------------------------------------!
+  !> Read in !RADIATE                                                          !
+  !-----------------------------------------------------------------------------!
+
+
+  subroutine fstr_setup_RADIATE( ctrl, counter, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    integer(kind=kint) :: counter
+    type(fstr_param_pack) :: P
+
+    integer(kind=kint) :: rcode
+    character(HECMW_NAME_LEN) :: amp1, amp2
+    character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
+    integer(kind=kint),pointer :: load_type(:)
+    real(kind=kreal),pointer :: value(:)
+    real(kind=kreal),pointer :: shink(:)
+    integer(kind=kint) :: n
+    ! ------------------------------------------------
+
+    n = fstr_ctrl_get_data_line_n( ctrl )
+    if( n == 0 ) return
+
+    allocate( grp_id_name(n))
+    allocate( load_type(n))
+    allocate( value(n))
+    allocate( shink(n))
+
+    amp1 = ' '
+    amp2 = ' '
+    rcode = fstr_ctrl_get_RADIATE( ctrl, amp1, amp2, &
+      grp_id_name, HECMW_NAME_LEN, load_type, value, shink )
+    if( rcode /= 0 ) call fstr_ctrl_err_stop
+
+    call fstr_heat_append_radiate( P%MESH, P%HEAT, '!RADIATE', amp1, amp2, &
+      n, grp_id_name, load_type, value, shink )
+
+    deallocate( grp_id_name )
+    deallocate( load_type )
+    deallocate( value )
+    deallocate( shink )
+  end subroutine fstr_setup_RADIATE
+
+  !-----------------------------------------------------------------------------!
+  !> Read in !SRADIATE                                                         !
+  !-----------------------------------------------------------------------------!
+
+
+  subroutine fstr_setup_SRADIATE( ctrl, counter, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    integer(kind=kint) :: counter
+    type(fstr_param_pack) :: P
+
+    integer(kind=kint) :: rcode
+    character(HECMW_NAME_LEN) :: amp1, amp2
+    character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
+    real(kind=kreal),pointer :: value(:)
+    real(kind=kreal),pointer :: shink(:)
+    integer(kind=kint) :: n
+    ! ------------------------------------------------
+
+    n = fstr_ctrl_get_data_line_n( ctrl )
+    if( n == 0 ) return
+
+    allocate( grp_id_name(n))
+    allocate( value(n))
+    allocate( shink(n))
+
+    amp1 = ' '
+    amp2 = ' '
+    rcode = fstr_ctrl_get_SRADIATE( ctrl, amp1, amp2, grp_id_name, HECMW_NAME_LEN, value, shink )
+    if( rcode /= 0 ) call fstr_ctrl_err_stop
+
+    call fstr_heat_append_sradiate( P%MESH, P%HEAT, '!SRADIATE', amp1, amp2, &
+      n, grp_id_name, value, shink )
+
+    deallocate( grp_id_name )
+    deallocate( value )
+    deallocate( shink )
+  end subroutine fstr_setup_SRADIATE
 
   !-----------------------------------------------------------------------------!
   !> Append !FIXTEMP                                                            !

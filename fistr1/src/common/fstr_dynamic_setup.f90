@@ -3,9 +3,15 @@
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 !> \brief This module provides subroutines to initialize, allocate and finalize
-!! fstr_dynamic.
+!! fstr_dynamic, and to read !DYNAMIC into it.
 module m_fstr_dynamic_setup
   use m_fstr
+  use hecmw_setup_util, only &
+    : node_grp_name_to_id_ex
+  use fstr_setup_util, only &
+    : fstr_param_pack &
+    , fstr_ctrl_err_stop
+  use fstr_ctrl_dynamic
   implicit none
 
 contains
@@ -170,5 +176,64 @@ contains
     end if
 
   end subroutine
+
+  !-----------------------------------------------------------------------------!
+  !> Read in !DYNAMIC                                                          !
+  !-----------------------------------------------------------------------------!
+
+  subroutine fstr_setup_DYNAMIC( ctrl, counter, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    integer(kind=kint) :: counter
+    type(fstr_param_pack) :: P
+    integer(kind=kint) :: rcode
+    character(HECMW_NAME_LEN) :: grp_id_name(1)
+    integer(kind=kint) :: grp_id(1)
+
+    rcode = fstr_ctrl_get_DYNAMIC( ctrl, &
+      P%PARAM%nlgeom,  &
+      P%DYN%idx_eqa, &
+      P%DYN%idx_resp,&
+      P%DYN%n_step,  &
+      P%DYN%t_start, &
+      P%DYN%t_end,   &
+      P%DYN%t_delta, &
+      P%DYN%gamma,   &
+      P%DYN%beta,    &
+      P%DYN%idx_mas, &
+      P%DYN%idx_dmp, &
+      P%DYN%ray_m,   &
+      P%DYN%ray_k,   &
+      P%DYN%nout,    &
+      grp_id_name(1), HECMW_NAME_LEN,  &
+      P%DYN%nout_monit,  &
+      P%DYN%iout_list )
+
+    if( rcode /= 0) call fstr_ctrl_err_stop
+
+    if( P%DYN%idx_mas /= kMassLumped .and. P%DYN%idx_mas /= kMassConsistent ) then
+      write(*,*) '### Error: !DYNAMIC mass matrix type must be 1 (lumped) or 2 (consistent)'
+      write(ILOG,*) '### Error: !DYNAMIC mass matrix type must be 1 (lumped) or 2 (consistent)'
+      call flush(6)
+      call flush(ILOG)
+      call fstr_ctrl_err_stop
+    endif
+    if( P%DYN%idx_mas == kMassConsistent .and. &
+        (P%DYN%idx_eqa /= 1 .or. P%DYN%idx_resp /= 1) ) then
+      write(*,*) '### Error: consistent mass matrix is available only for implicit transient analysis'
+      write(ILOG,*) '### Error: consistent mass matrix is available only for implicit transient analysis'
+      call flush(6)
+      call flush(ILOG)
+      call fstr_ctrl_err_stop
+    endif
+
+    if (P%DYN%idx_resp == 1) then
+      call node_grp_name_to_id_ex( P%MESH, '!DYNAMIC', 1, grp_id_name, grp_id)
+      P%DYN%ngrp_monit = grp_id(1)
+    else
+      read(grp_id_name,*) P%DYN%ngrp_monit
+    endif
+
+  end subroutine fstr_setup_DYNAMIC
 
 end module m_fstr_dynamic_setup
