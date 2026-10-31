@@ -150,8 +150,10 @@ contains
       if(fstrPARAM%fg_visual==1 .and. (mod(total_step, fstrPARAM%fg_iwres)==0 .or. outflag)) then
         call heat_output_visual(hecMESH, fstrRESULT, fstrHEAT, fstrSOLID, total_step, total_time)
       end if
-      if(fstrHEAT%restart_nout > 0 .and. ( mod(total_step, fstrHEAT%restart_nout) == 0 .or. outflag )) then
-        call heat_output_restart(hecMESH, fstrHEAT, ISTEP, total_step, next_time)
+      if(fstrHEAT%restart_nout > 0) then
+        if(mod(total_step, fstrHEAT%restart_nout) == 0 .or. outflag ) then
+          call heat_output_restart(hecMESH, fstrHEAT, ISTEP, total_step, next_time)
+        end if
       end if
       total_step = total_step + 1
       current_time = next_time
