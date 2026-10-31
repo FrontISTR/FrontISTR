@@ -1194,8 +1194,9 @@ contains
   !> release the parent, and continue with the parent in the same task when this was its last
   !> unfinished child. The dependences are counted explicitly (left) because the
   !> depend(iterator(...)) form does not order the tasks with gfortran 13, and the climb stays
-  !> within one task so that no reference outlives its scope. The work space of the executing
-  !> thread is safe to use because the task holds no task scheduling point.
+  !> within one task so that no reference outlives its scope. A small front may use the work
+  !> space of the executing thread because its tasks are undeferred (if(par) false), so the
+  !> thread does not leave the front for another task; a large front takes its own.
   subroutine mf_super_task(hecMAT, sym, fct, wrks, left, s, zero, gierr)
     implicit none
     type(hecmwST_matrix), intent(in) :: hecMAT
@@ -1259,15 +1260,17 @@ contains
   !> upper fronts in ascending order. hecMAT may hold the matrix partially: a rank reads
   !> the rows of the own columns of its supernodes only, each block paired with its
   !> transposed partner, so a matrix reduced to those pairs (with the index arrays kept
-  !> full length) factors bitwise like the replicated one. The assembly, the factorization and the storage
-  !> of an upper front are distributed over its rank set by contribution row tiles (1D row
-  !> distribution), the fully summed part staying with the master (the owner), which keeps
-  !> the pivot sequence identical to the sequential factorization. MPI calls stay on the
-  !> master thread outside the parallel regions because hecmw initializes MPI without a
-  !> threading level. Sends are isend and are consumed within the phase of their front, so
-  !> a rank blocked in a receive has already issued every send an earlier front needs,
-  !> which makes the ascending walk deadlock free. Tags encode 16*supernode+kind, relying
-  !> on a tag space larger than the MPI minimum of 32767, as every mainstream MPI provides.
+  !> full length) factors bitwise like the replicated one. The assembly, the factorization
+  !> and the storage of an upper front are distributed over its rank set, the fully summed
+  !> tiles block cyclic on the 2D process grid of the front and the contribution row tiles
+  !> over the rank set; the master (the owner) decides every acceptance and runs the
+  !> pivoting kernel on the gathered panels, which keeps the pivot sequence identical to the
+  !> sequential factorization. MPI calls stay on the master thread outside the parallel
+  !> regions because hecmw initializes MPI without a threading level. Sends are isend and
+  !> are consumed within the phase of their front, so a rank blocked in a receive has
+  !> already issued every send an earlier front needs, which makes the ascending walk
+  !> deadlock free. Tags encode 16*supernode+kind, relying on a tag space larger than the
+  !> MPI minimum of 32767, as every mainstream MPI provides.
   subroutine hecmw_mf_numeric_factor_mpi(hecMAT, sym, map, fct, ierr)
     implicit none
     type(hecmwST_matrix), intent(in) :: hecMAT
@@ -3165,9 +3168,9 @@ contains
     !> pair engine of a distributed exchange of the fully summed positions x0 < y0: the
     !> element pairs of a symmetric exchange (kindx 1 LDLt, 2 LU) or a row exchange
     !> (kindx 3, LU). A pair held whole by one rank is swapped in place (every exchange
-    !> within a panel); the pairs split between two ranks (an exchange crossing tile
-    !> columns) are routed through the master, which collects the split elements,
-    !> exchanges them and returns them
+    !> within one tile column); the pairs split between two ranks (an exchange crossing
+    !> tile columns, as the delays and the root final panel make) are routed through the
+    !> master, which collects the split elements, exchanges them and returns them
     subroutine dswap(kindx, x0, y0)
       integer(kind=kint), intent(in) :: kindx, x0, y0
       integer(kind=kint) :: npr, p2, o1, o2, nsp, i0, r0, cnt, ib
@@ -6253,15 +6256,15 @@ contains
   end subroutine mf_fwd_task
 
   !> x = A^-1 b on the supernodes distributed by map; b and x are the replicated global
-  !> vectors in the original DOF numbering. The solves of the upper fronts follow the 1D
-  !> row distribution of the factorization: the master runs the fully summed sweeps, every
-  !> tile owner applies its stored rows, and the forward contributions travel as row
-  !> slices to the ranks holding the parent rows. In the backward substitution the running
-  !> right hand side of a tile column travels along the tile owners in ascending order (a
-  !> token chain), so the reduction keeps the sequential fold order and the solution stays
-  !> bitwise identical to the sequential solve. The solved pivot values of the owned
-  !> supernodes are summed over the ranks at the end, which is exact and order independent
-  !> because every DOF is eliminated on exactly one rank.
+  !> vectors in the original DOF numbering. The solves of the upper fronts follow the tile
+  !> distribution of the factorization: every tile owner applies its stored tiles to the
+  !> running segments passed along the owners, the master collects the finished segments,
+  !> and the forward contributions travel as row slices to the ranks holding the parent
+  !> rows. In the backward substitution the running right hand side of a tile column travels
+  !> along the tile owners in ascending order (a token chain), so the reduction keeps the
+  !> sequential fold order and the solution stays bitwise identical to the sequential solve.
+  !> The solved pivot values of the owned supernodes are summed over the ranks at the end,
+  !> which is exact and order independent because every DOF is eliminated on exactly one rank.
   subroutine hecmw_mf_numeric_solve_mpi(sym, map, fct, b, x)
     implicit none
     type(hecmwST_mf_symbolic), intent(in) :: sym
