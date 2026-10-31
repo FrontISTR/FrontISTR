@@ -9,6 +9,19 @@ module fstr_setup_util
   use hecmw
   use fstr_ctrl_util_f
 
+  !> Package of all data needs to initialize
+  type fstr_param_pack
+    type(hecmwST_local_mesh), pointer :: MESH
+    type(hecmwST_matrix), pointer     :: MAT
+    type(fstr_param), pointer         :: PARAM
+    type(fstr_solid), pointer         :: SOLID
+    type(fstr_heat), pointer          :: HEAT
+    type(fstr_eigen), pointer           :: EIGEN
+    type(fstr_dynamic), pointer       :: DYN
+    type(fstr_couple), pointer        :: CPL
+    type(fstr_freqanalysis), pointer  :: FREQ
+  end type fstr_param_pack
+
 contains
   !------------------------------------------------------------------------------
 
