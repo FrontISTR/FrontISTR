@@ -13,7 +13,8 @@ fstr_get_prop.o : fstr_get_prop.f90
 fstr_heat_setup.o : fstr_heat_setup.f90 ../../include/fstr_ctrl_util_f.mod fstr_setup_util.o fstr_ctrl_heat.o
 fstr_param_setup.o : fstr_param_setup.f90 ../../include/fstr_ctrl_util_f.mod fstr_setup_util.o fstr_ctrl_common.o fstr_ctrl_static.o
 fstr_rcap_io.o : fstr_rcap_io.F90
-fstr_setup.o : fstr_setup.f90 ../../include/fstr_ctrl_util_f.mod fstr_get_prop.o fstr_ctrl_material.o fstr_ctrl_dynamic.o fstr_ctrl_eigen.o fstr_ctrl_heat.o fstr_ctrl_static.o fstr_ctrl_common.o fstr_setup_util.o fstr_solid_setup.o fstr_heat_setup.o fstr_freq_setup.o fstr_eigen_setup.o fstr_dynamic_setup.o fstr_param_setup.o
+fstr_setup.o : fstr_setup.f90 ../../include/fstr_ctrl_util_f.mod fstr_get_prop.o fstr_ctrl_material.o fstr_ctrl_dynamic.o fstr_ctrl_eigen.o fstr_ctrl_heat.o fstr_ctrl_static.o fstr_ctrl_common.o fstr_setup_util.o fstr_solid_setup.o fstr_heat_setup.o fstr_freq_setup.o fstr_eigen_setup.o fstr_dynamic_setup.o fstr_param_setup.o fstr_setup_finish.o
+fstr_setup_finish.o : fstr_setup_finish.f90 fstr_get_prop.o fstr_setup_util.o fstr_solid_setup.o
 fstr_setup_util.o : fstr_setup_util.f90 ../../include/fstr_ctrl_util_f.mod 
 fstr_solid_setup.o : fstr_solid_setup.f90 ../../include/fstr_ctrl_util_f.mod fstr_setup_util.o fstr_ctrl_common.o fstr_ctrl_static.o fstr_ctrl_dynamic.o fstr_ctrl_material.o
 hecmw2fstr_mesh_conv.o : hecmw2fstr_mesh_conv.f90 
