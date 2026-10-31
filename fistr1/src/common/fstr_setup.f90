@@ -58,7 +58,7 @@ contains
     double precision, parameter :: dpi = 3.14159265358979323846D0
 
     integer(kind=kint) :: version, result, visual, femap
-    integer(kind=kint) :: rcode, n, i, cid, nout, ierror
+    integer(kind=kint) :: rcode, n, cid, nout, ierror
     character(len=HECMW_NAME_LEN) :: header_name
     type(t_output_ctrl) :: outctrl
 
@@ -316,18 +316,13 @@ contains
     call fstr_setup_alloc( P, c_contact, c_embed, c_weldline, c_initial, c_istep, c_localcoord, &
       c_aincparam, c_cnvparam, c_timepoints, c_contactparam, c_contact_if, c_material )
 
-    ! !DENSITY, !PLASTIC and the others checked by cid before the first !MATERIAL go to the material of the last section
-    cid = 0
-    do i=1,hecMESH%section%n_sect
-      if( hecMESH%section%sect_type(i) /= 4 ) cid = hecMESH%section%sect_mat_ID_item(i)
-    enddo
-
     ! -----
     rcode = fstr_ctrl_rewind( ctrl )
 
     c_istep    = 0
     c_heat     = 0
     c_material = 0
+    cid = 0
     c_output = 0
     c_contact  = 0
     c_contactparam  = 0
@@ -397,66 +392,51 @@ contains
         call fstr_setup_MATERIAL( ctrl, c_material, cache, cid, P )
 
       else if( header_name == '!ELASTIC' ) then
-        if( c_material >0 ) then
-          call fstr_setup_ELASTIC( ctrl, cid, P )
-        endif
+        if( cid == 0 ) call material_card_err_stop( header_name )
+        call fstr_setup_ELASTIC( ctrl, cid, P )
       else if( header_name == '!PLASTIC' ) then
-        if( cid >0 ) then
-          call fstr_setup_PLASTIC( ctrl, cid, P )
-        endif
+        if( cid == 0 ) call material_card_err_stop( header_name )
+        call fstr_setup_PLASTIC( ctrl, cid, P )
       else if( header_name == '!HYPERELASTIC' ) then
-        if( cid >0 ) then
-          call fstr_setup_HYPERELASTIC( ctrl, cid, P )
-        endif
+        if( cid == 0 ) call material_card_err_stop( header_name )
+        call fstr_setup_HYPERELASTIC( ctrl, cid, P )
       else if( header_name == '!VISCOELASTIC' ) then
-        if( cid >0 ) then
-          call fstr_setup_VISCOELASTIC( ctrl, cid, P )
-        endif
+        if( cid == 0 ) call material_card_err_stop( header_name )
+        call fstr_setup_VISCOELASTIC( ctrl, cid, P )
       else if( header_name == '!TRS' ) then
-        if( cid >0 ) then
-          call fstr_setup_TRS( ctrl, cid, P )
-        endif
+        if( cid == 0 ) call material_card_err_stop( header_name )
+        call fstr_setup_TRS( ctrl, cid, P )
       else if( header_name == '!CREEP' ) then
-        if( cid >0 ) then
-          call fstr_setup_CREEP( ctrl, cid, P )
-        endif
+        if( cid == 0 ) call material_card_err_stop( header_name )
+        call fstr_setup_CREEP( ctrl, cid, P )
       else if( header_name == '!DENSITY' ) then
-        if( cid >0 ) then
-          call fstr_setup_DENSITY( ctrl, cid, P )
-        endif
+        if( cid == 0 ) call material_card_err_stop( header_name )
+        call fstr_setup_DENSITY( ctrl, cid, P )
       else if( header_name == '!EXPANSION_COEF' .or. header_name == '!EXPANSION_COEFF' .or. &
           header_name == '!EXPANSION') then
-        if( cid >0 ) then
-          call fstr_setup_EXPANSION_COEFF( ctrl, cid, P )
-        endif
+        if( cid == 0 ) call material_card_err_stop( header_name )
+        call fstr_setup_EXPANSION_COEFF( ctrl, cid, P )
       else if( header_name == '!DAMPING') then
-        if( cid >0 ) then
-          call fstr_setup_DAMPING( ctrl, cid, P )
-        endif
+        if( cid == 0 ) call material_card_err_stop( header_name )
+        call fstr_setup_DAMPING( ctrl, cid, P )
       else if( header_name == '!FLUID' ) then
-        if( c_material >0 ) then
-          call fstr_setup_FLUID( ctrl, cid, P )
-        endif
+        if( cid == 0 ) call material_card_err_stop( header_name )
+        call fstr_setup_FLUID( ctrl, cid, P )
       else if( header_name == '!SPRING_D' ) then
-        if( c_material >0 ) then
-          call fstr_setup_SPRING_D( ctrl, cid, P )
-        endif
+        if( cid == 0 ) call material_card_err_stop( header_name )
+        call fstr_setup_SPRING_D( ctrl, cid, P )
       else if( header_name == '!SPRING_A' ) then
-        if( c_material >0 ) then
-          call fstr_setup_SPRING_A( ctrl, cid, P )
-        endif
+        if( cid == 0 ) call material_card_err_stop( header_name )
+        call fstr_setup_SPRING_A( ctrl, cid, P )
       else if( header_name == '!DASHPOT_D' ) then
-        if( c_material >0 ) then
-          call fstr_setup_DASHPOT_D( ctrl, cid, P )
-        endif
+        if( cid == 0 ) call material_card_err_stop( header_name )
+        call fstr_setup_DASHPOT_D( ctrl, cid, P )
       else if( header_name == '!DASHPOT_A' ) then
-        if( c_material >0 ) then
-          call fstr_setup_DASHPOT_A( ctrl, cid, P )
-        endif
+        if( cid == 0 ) call material_card_err_stop( header_name )
+        call fstr_setup_DASHPOT_A( ctrl, cid, P )
       else if( header_name == '!USER_MATERIAL' ) then
-        if( cid >0 ) then
-          call fstr_setup_USER_MATERIAL( ctrl, cid, P )
-        endif
+        if( cid == 0 ) call material_card_err_stop( header_name )
+        call fstr_setup_USER_MATERIAL( ctrl, cid, P )
 
 
         ! == Following output control ==
@@ -519,5 +499,13 @@ contains
     rcode = fstr_ctrl_close( ctrl )
 
   end subroutine fstr_setup
+
+  subroutine material_card_err_stop( header_name )
+    implicit none
+    character(len=*) :: header_name
+
+    call fstr_setup_util_err_stop( '### Error: '//trim(header_name)// &
+      ' : given before the first !MATERIAL; put it after !MATERIAL, NAME=<material name>' )
+  end subroutine material_card_err_stop
 
 end module m_fstr_setup
