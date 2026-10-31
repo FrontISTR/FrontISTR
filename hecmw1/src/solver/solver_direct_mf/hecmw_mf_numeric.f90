@@ -81,6 +81,8 @@ module hecmw_mf_numeric
     integer(kind=kint), allocatable :: frow(:)      !< permuted DOF of the row at a position
     integer(kind=kint), allocatable :: ptype(:)     !< pivot type at a position (see hecmw_mf_kernel)
     real(kind=kreal), allocatable :: dsub(:)        !< off-diagonal entry of a 2x2 pivot at its first position
+    real(kind=kreal), allocatable :: dfin(:)        !< distributed root front, on the master: the diagonal of D
+                                                    !< at the root final panel positions ncol-size(dfin)+1:ncol
     integer(kind=8), allocatable :: bptr(:)         !< BLR: word offset of panel tile (i,k) in lval at
                                                     !< mf_bidx(nt,k,i), bptr(ntile+1) the total words
     integer(kind=kint), allocatable :: brank(:)     !< BLR: rank of a panel tile, -1 = full rank
@@ -1806,6 +1808,7 @@ contains
         fct%sn(s)%ptype(1:ncol) = 0
       endif
       fct%sn(s)%dsub(1:ncol) = 0.0d0
+      if (allocated(fct%sn(s)%dfin)) deallocate(fct%sn(s)%dfin)
       mm = 0
       do kk = sym%sptr(s), sym%sptr(s+1) - 1
         do ii = fct%cdofptr(kk), fct%cdofptr(kk+1) - 1
@@ -2191,7 +2194,7 @@ contains
     !> the tile column protocol of the distributed fully summed factorization; a root
     !> front (no contribution rows) closes with the sequential final panel on the master
     subroutine factor_dist()
-      integer(kind=kint) :: kk, iw2, mm, t2, h2, w2
+      integer(kind=kint) :: kk, iw2, mm, t2, h2, w2, npd
       integer(kind=8) :: bb
 
       wme = 0
@@ -2270,10 +2273,11 @@ contains
         call postcol(kk)
         if (nfs <= g%tb(kk)) exit
       enddo
+      npd = npiv
       if (isroot .and. gierr == 0 .and. npiv < ncol) call root_final()
       if (.not. fct%lu) then
         if (ismaster) fct%sn(s)%frow(1:ncol) = fct%sn(s)%fsdof(1:ncol)
-        if (gierr == 0) call inertia_dist()
+        if (gierr == 0) call inertia_dist(npd)
       endif
       fct%sn(s)%npiv = npiv
     end subroutine factor_dist
@@ -4169,26 +4173,35 @@ contains
     end subroutine bside
 
     !> inertia of the eliminated pivots, each diagonal tile owner counting its columns
+    !> among the first npd0 positions and the master the root final panel beyond them
     !> (the ranges partition 1..npiv, so the reduced totals match the sequential count)
-    subroutine inertia_dist()
-      integer(kind=kint) :: kk2, x2
+    subroutine inertia_dist(npd0)
+      integer(kind=kint), intent(in) :: npd0
+      integer(kind=kint) :: kk2, x2, x3
       real(kind=kreal) :: d11, d21, d22, det
 
-      do kk2 = 1, g%ntc
-        if (fso(kk2, kk2) /= me) cycle
-        x2 = g%tb(kk2-1) + 1
-        do while (x2 <= min(g%tb(kk2), npiv))
+      do kk2 = 1, g%ntc + 1
+        if (kk2 <= g%ntc) then
+          if (fso(kk2, kk2) /= me) cycle
+          x2 = g%tb(kk2-1) + 1
+          x3 = min(g%tb(kk2), npd0)
+        else
+          if (.not. ismaster) cycle
+          x2 = npd0 + 1
+          x3 = npiv
+        endif
+        do while (x2 <= x3)
           if (fct%sn(s)%ptype(x2) == 1) then
-            if (fsv(fsx(x2, x2)) > 0.0d0) then
+            if (dpiv(x2, npd0) > 0.0d0) then
               npos_f = npos_f + 1
             else
               nneg_f = nneg_f + 1
             endif
             x2 = x2 + 1
           else
-            d11 = fsv(fsx(x2, x2))
+            d11 = dpiv(x2, npd0)
             d21 = fct%sn(s)%dsub(x2)
-            d22 = fsv(fsx(x2+1, x2+1))
+            d22 = dpiv(x2+1, npd0)
             det = d11*d22 - d21*d21
             if (det < 0.0d0) then
               npos_f = npos_f + 1
@@ -4203,6 +4216,19 @@ contains
         enddo
       enddo
     end subroutine inertia_dist
+
+    !> the diagonal entry of D at position x0 for inertia_dist: from dfin beyond npd0, else
+    !> from my diagonal tile
+    function dpiv(x0, npd0) result(d)
+      integer(kind=kint), intent(in) :: x0, npd0
+      real(kind=kreal) :: d
+
+      if (x0 > npd0) then
+        d = fct%sn(s)%dfin(x0 - npd0)
+      else
+        d = fsv(fsx(x0, x0))
+      endif
+    end function dpiv
 
     !> elements of the columns pa..ncol of the fully summed square held by rank r0 (a
     !> root final panel walk: per column the lower rows from the diagonal down, then the
@@ -4295,10 +4321,11 @@ contains
     !> sequential final panel (any column may serve as partner): the trailing square is
     !> gathered from the tile owners, the exchanges travel through the pair engine and
     !> the factored columns are scattered back; a failure raises the front error on
-    !> every rank uniformly
+    !> every rank uniformly. A 2x2 pivot may cross a tile boundary here, so the master
+    !> keeps the diagonal of D (dfin) for the inertia and the forward solve of such pivots
     subroutine root_final()
       real(kind=kreal), allocatable :: rw(:)
-      integer(kind=kint) :: ic2, q2, mm, ib, r0, cnt, m0
+      integer(kind=kint) :: ic2, q2, mm, ib, r0, cnt, m0, jj2
 
       pa = npiv + 1
       pb = ncol
@@ -4338,6 +4365,12 @@ contains
         ctli(1) = 6
         if (info /= 0) ctli(2) = fct%sn(s)%fsdof(pa + info - 1)
         call ctl_send_i(ctli, 8)
+        if (info == 0 .and. .not. fct%lu) then
+          allocate(fct%sn(s)%dfin(w))
+          do jj2 = 1, w
+            fct%sn(s)%dfin(jj2) = pv(int(jj2-1, 8)*m0 + jj2)
+          enddo
+        endif
         if (info == 0) then
           mm = merge(2, 1, fct%lu)*w + w
           ib = mf_pool_slot(pool)
@@ -6766,6 +6799,17 @@ contains
           call hecmw_recv_r(v(fct%sn(s0)%tbnd(i2)+1:), fct%sn(s0)%tbnd(i2+1) - fct%sn(s0)%tbnd(i2), &
             fwd_lh(i2), 16*s0+7, map%comm, stat)
         enddo
+        ! the 2x2 pivots of the root final panel across a tile boundary, which the
+        ! diagonal tile owners leave out
+        if (allocated(fct%sn(s0)%dfin)) then
+          ofs = ncol - size(fct%sn(s0)%dfin)
+          do i2 = 1, kend - 1
+            d2 = fct%sn(s0)%tbnd(i2+1)
+            if (d2 <= ofs) cycle
+            if (fct%sn(s0)%ptype(d2) == 2) call hecmw_mf_kernel_dsolve2(fct%sn(s0)%dfin(d2-ofs), &
+              fct%sn(s0)%dsub(d2), fct%sn(s0)%dfin(d2-ofs+1), v(d2))
+          enddo
+        endif
         do d2 = 1, npv
           z(fct%sn(s0)%frow(d2)) = v(d2)
         enddo
@@ -7310,7 +7354,7 @@ contains
     integer(kind=kint), allocatable :: tw(:), rowoff(:)
     integer(kind=kint) :: nown, nrow_nodes, ncol0, ndel, d0, d1, d, c, i, j, k, l, a, r, rr
     integer(kind=kint) :: cnown, cndel, hk, hi
-    integer(kind=8) :: okk, oik
+    integer(kind=8) :: okk, oik, olast
 
     allocate(tw(sn%nt))
     call mf_stored_grid(sn, g, tw)
@@ -7390,8 +7434,17 @@ contains
           call hecmw_mf_kernel_gemv(hi, rr, hi, sn%lval(oik), t, v(g%tb(i-1)+1))
         endif
       enddo
-      if (.not. fct%lu) call hecmw_mf_kernel_dsolve(tw(k), hk, sn%lval(okk), sn%ptype(g%tb(k-1)+1:), &
-        sn%dsub(g%tb(k-1)+1:), v(g%tb(k-1)+1))
+      if (.not. fct%lu) then
+        call hecmw_mf_kernel_dsolve(tw(k), hk, sn%lval(okk), sn%ptype(g%tb(k-1)+1:), &
+          sn%dsub(g%tb(k-1)+1:), v(g%tb(k-1)+1))
+        ! a 2x2 pivot across the boundary with the previous tile, solved once the sweep of
+        ! this tile has used its second row
+        if (k > 1) then
+          j = g%tb(k-1)
+          if (sn%ptype(j) == 2) call hecmw_mf_kernel_dsolve2(sn%lval(olast), sn%dsub(j), sn%lval(okk), v(j))
+        endif
+        olast = okk + int(hk - 1, 8)*(hk + 1)
+      endif
     enddo
     if (allocated(t)) deallocate(t)
 

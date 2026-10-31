@@ -28,6 +28,7 @@ module hecmw_mf_kernel
   public :: hecmw_mf_kernel_trsv
   public :: hecmw_mf_kernel_trsv_t
   public :: hecmw_mf_kernel_dsolve
+  public :: hecmw_mf_kernel_dsolve2
   public :: hecmw_mf_kernel_gemv
   public :: hecmw_mf_kernel_gemv_t
   public :: hecmw_mf_kernel_lu
@@ -431,7 +432,9 @@ contains
     enddo
   end subroutine hecmw_mf_kernel_trsv_t
 
-  !> x <- D^-1 x with the block diagonal D of the factored tile l(n,n).
+  !> x <- D^-1 x with the block diagonal D of the factored tile l(n,n). A 2x2 pivot whose
+  !> second column lies beyond the tile (ptype(n) = 2) is left to the caller: the final panel
+  !> of a root front may place a 2x2 pivot across a tile boundary.
   subroutine hecmw_mf_kernel_dsolve(n, ldl, l, ptype, dsub, x)
     implicit none
     integer(kind=kint), intent(in) :: n, ldl
@@ -440,23 +443,29 @@ contains
     real(kind=kreal), intent(in) :: dsub(n)
     real(kind=kreal), intent(inout) :: x(n)
     integer(kind=kint) :: j
-    real(kind=kreal) :: d11, d21, d22, det, x1, x2
 
     do j = 1, n
       if (ptype(j) == 1) then
         x(j) = x(j) / l(j,j)
-      else if (ptype(j) == 2) then
-        d11 = l(j,j)
-        d21 = dsub(j)
-        d22 = l(j+1,j+1)
-        det = d11*d22 - d21*d21
-        x1 = x(j)
-        x2 = x(j+1)
-        x(j) = (d22*x1 - d21*x2) / det
-        x(j+1) = (d11*x2 - d21*x1) / det
+      else if (ptype(j) == 2 .and. j < n) then
+        call hecmw_mf_kernel_dsolve2(l(j,j), dsub(j), l(j+1,j+1), x(j))
       endif
     enddo
   end subroutine hecmw_mf_kernel_dsolve
+
+  !> x(2) <- D^-1 x(2) with the 2x2 pivot D = [d11 d21; d21 d22].
+  subroutine hecmw_mf_kernel_dsolve2(d11, d21, d22, x)
+    implicit none
+    real(kind=kreal), intent(in) :: d11, d21, d22
+    real(kind=kreal), intent(inout) :: x(2)
+    real(kind=kreal) :: det, x1, x2
+
+    det = d11*d22 - d21*d21
+    x1 = x(1)
+    x2 = x(2)
+    x(1) = (d22*x1 - d21*x2) / det
+    x(2) = (d11*x2 - d21*x1) / det
+  end subroutine hecmw_mf_kernel_dsolve2
 
   !> y(m) <- y - a(m,n) * x(n)
   subroutine hecmw_mf_kernel_gemv(m, n, lda, a, x, y)
