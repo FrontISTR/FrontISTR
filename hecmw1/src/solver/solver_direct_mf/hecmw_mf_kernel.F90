@@ -808,7 +808,7 @@ contains
   !> Truncated rank revealing QR of a(m,n) with the truncation |R(k,k)| <= eps |R(1,1)|:
   !> on success the leading rank columns of a hold U and v(n,rank) holds V with a ~ U V^T.
   !> rank is -1, with a destroyed, when the low rank form would not take fewer than m*n words
-  !> (the caller keeps its full rank copy) or without LAPACK.
+  !> (the caller keeps its full rank copy), when a holds a NaN or an Inf, or without LAPACK.
   !> The column pivoted Householder QR stops right at the truncation or at the word bound, so
   !> the cost is O(m*n*rank) where dgeqp3 pays the full decomposition. The pivot column is
   !> selected by downdated norms with the dgeqp3 recomputation guard, but the truncation is
@@ -874,6 +874,12 @@ contains
       vn1(j) = dnrm2(m, a(1,j), 1)
       vn2(j) = vn1(j)
     enddo
+    ! the rank test below reads a NaN or an Inf as a negligible column, which would drop it
+    ! from the factor; such a tile stays full rank
+    if (.not. all(vn1(1:n) <= huge(1.0d0))) then
+      deallocate(jpvt, tau, vn1, vn2, wk)
+      return
+    endif
     r11 = 0.0d0
     r = 0
     do k = 1, rlim + 1
