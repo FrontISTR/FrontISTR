@@ -6,7 +6,7 @@
 !! response analysis to fstr_freqanalysis, independently of the input file format.
 !! header_name is the card name shown in error messages. loadcase is
 !! kFLOADCASE_RE (real part) or kFLOADCASE_IM (imaginary part).
-module fstr_setup_freq
+module m_fstr_freq_setup
   use m_fstr
   use hecmw_setup_util, only &
     : node_grp_name_to_id_ex &
@@ -118,4 +118,4 @@ contains
 
   end subroutine fstr_freq_append_facceleration
 
-end module fstr_setup_freq
+end module m_fstr_freq_setup

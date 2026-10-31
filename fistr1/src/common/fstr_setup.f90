@@ -12,9 +12,9 @@ module m_fstr_setup
     , surf_grp_name_to_id_ex &
     , hecmw_streqr
   use fstr_setup_util
-  use fstr_setup_solid
-  use m_fstr_setup_heat
-  use fstr_setup_freq
+  use m_fstr_solid_setup
+  use m_fstr_heat_setup
+  use m_fstr_freq_setup
   use fstr_ctrl_common
   use fstr_ctrl_static
   use fstr_ctrl_heat

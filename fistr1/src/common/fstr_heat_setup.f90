@@ -6,7 +6,7 @@
 !! heat analysis to fstr_heat, independently of the input file format.
 !! header_name is the card name shown in error messages. A blank name of
 !! amplitude means that it is not given.
-module m_fstr_setup_heat
+module m_fstr_heat_setup
   use m_fstr
   use hecmw_setup_util, only &
     : get_grp_member &
@@ -545,4 +545,4 @@ contains
 
   end subroutine fstr_heat_append_sradiate
 
-end module m_fstr_setup_heat
+end module m_fstr_heat_setup
