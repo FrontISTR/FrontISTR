@@ -7,7 +7,7 @@
 !! pairs already read into it, independently of the input file format.
 !! header_name is the card name shown in error messages. A blank name of
 !! amplitude or rotation center means that it is not given.
-module fstr_setup_solid
+module m_fstr_solid_setup
   use m_fstr
   use hecmw_setup_util, only &
     : node_grp_name_to_id_ex &
@@ -697,4 +697,4 @@ contains
 
   end subroutine fstr_solid_init_embeds
 
-end module fstr_setup_solid
+end module m_fstr_solid_setup
