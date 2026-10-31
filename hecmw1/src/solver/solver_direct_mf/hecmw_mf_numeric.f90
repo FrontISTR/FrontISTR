@@ -3070,7 +3070,7 @@ contains
 
     !> the panel permutation applied to the front values through the pair engine on
     !> every rank, the master permuting the position metadata alongside (the exchanges
-    !> of the sequential permute_rows / permute_front)
+    !> of the sequential permute_rows / permute_front; the kernel permuted the blocks)
     subroutine perm_dance_apply()
       integer(kind=kint) :: jj2, t2, q2
 
@@ -3084,14 +3084,18 @@ contains
         enddo
         if (.not. fct%lu) then
           call dswap(1, pa+jj2-1, pa+t2-1)
-          if (ismaster) then
-            q2 = fct%sn(s)%fsdof(pa+jj2-1)
-            fct%sn(s)%fsdof(pa+jj2-1) = fct%sn(s)%fsdof(pa+t2-1)
-            fct%sn(s)%fsdof(pa+t2-1) = q2
-          endif
         else
           call dswap(2, pa+jj2-1, pa+t2-1)
-          if (ismaster) call swap_meta(pa+jj2-1, pa+t2-1)
+        endif
+        if (ismaster) then
+          q2 = fct%sn(s)%fsdof(pa+jj2-1)
+          fct%sn(s)%fsdof(pa+jj2-1) = fct%sn(s)%fsdof(pa+t2-1)
+          fct%sn(s)%fsdof(pa+t2-1) = q2
+          if (fct%lu) then
+            q2 = fct%sn(s)%frow(pa+jj2-1)
+            fct%sn(s)%frow(pa+jj2-1) = fct%sn(s)%frow(pa+t2-1)
+            fct%sn(s)%frow(pa+t2-1) = q2
+          endif
         endif
         itmp(t2) = itmp(jj2)
         itmp(jj2) = perm(jj2)
@@ -3108,9 +3112,6 @@ contains
             q2 = fct%sn(s)%frow(pa+jj2-1)
             fct%sn(s)%frow(pa+jj2-1) = fct%sn(s)%frow(pa+t2-1)
             fct%sn(s)%frow(pa+t2-1) = q2
-            q2 = blkr(pa+jj2-1)
-            blkr(pa+jj2-1) = blkr(pa+t2-1)
-            blkr(pa+t2-1) = q2
           endif
           itmp(t2) = itmp(jj2)
           itmp(jj2) = permr(jj2)
@@ -6060,7 +6061,8 @@ contains
     end subroutine update_pos
 
     !> apply the panel permutations to the positions pa..pa+w-1 of the front: permc as
-    !> symmetric exchanges, then the rows from that order to permr
+    !> symmetric exchanges, then the rows from that order to permr (the kernel permuted the
+    !> panel and the blocks, not the front)
     subroutine permute_front(pa, w)
       integer(kind=kint), intent(in) :: pa, w
       integer(kind=kint) :: jj, t, q
@@ -6074,7 +6076,12 @@ contains
           if (itmp(t) == permc(jj)) exit
         enddo
         call mf_swap_lu(g, fval, fvalu, pa+jj-1, pa+t-1)
-        call swap_pos(pa+jj-1, pa+t-1)
+        q = sn%fsdof(pa+jj-1)
+        sn%fsdof(pa+jj-1) = sn%fsdof(pa+t-1)
+        sn%fsdof(pa+t-1) = q
+        q = sn%frow(pa+jj-1)
+        sn%frow(pa+jj-1) = sn%frow(pa+t-1)
+        sn%frow(pa+t-1) = q
         itmp(t) = itmp(jj)
         itmp(jj) = permc(jj)
       enddo
@@ -6088,9 +6095,6 @@ contains
         q = sn%frow(pa+jj-1)
         sn%frow(pa+jj-1) = sn%frow(pa+t-1)
         sn%frow(pa+t-1) = q
-        q = blkr(pa+jj-1)
-        blkr(pa+jj-1) = blkr(pa+t-1)
-        blkr(pa+t-1) = q
         itmp(t) = itmp(jj)
         itmp(jj) = permr(jj)
       enddo
