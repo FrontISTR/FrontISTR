@@ -601,11 +601,12 @@ contains
 
   !> LU of the panel a(m,n), b(m,n) with threshold partial pivoting among its n rows: column p
   !> takes the row of largest magnitude among the rows of the same block (blkr against blk(p)),
-  !> else among the other panel rows, when it reaches u times the largest magnitude of the whole
-  !> column. Rows are exchanged, columns are not. Columns without an acceptable pivot are moved
-  !> with their rows to the end of the panel (allow_delay) or stop the factorization (info =
-  !> column). On return the first npiv columns are factored, permc(j) and permr(j) are the
-  !> original column and row at position j, and blk, blkr are permuted alike.
+  !> else among the other panel rows, when it is above zero and reaches u times the largest
+  !> magnitude of the whole column. Rows are exchanged, columns are not. Columns without an
+  !> acceptable pivot are moved with their rows to the end of the panel (allow_delay) or stop
+  !> the factorization (info = column). On return the first npiv columns are factored, permc(j)
+  !> and permr(j) are the original column and row at position j, and blk, blkr are permuted
+  !> alike.
   subroutine hecmw_mf_kernel_panel_lu_piv(m, n, lda, a, ldb, b, blk, blkr, u, zero, allow_delay, &
       npiv, permc, permr, nswap, info)
     implicit none
@@ -635,7 +636,7 @@ contains
       r = 0
       if (lam > zero) then
         do pass = 1, 2
-          best = 0.0d0
+          best = zero
           do i = p, nrem
             same = (blkr(i) == blk(p))
             if (same .neqv. (pass == 1)) cycle
