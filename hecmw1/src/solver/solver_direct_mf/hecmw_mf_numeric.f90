@@ -4537,10 +4537,7 @@ contains
       enddo
       fct%sn(s)%pwords = off + offu
       if (fct%blr) fct%sn(s)%rkfaces = merge(2, 1, fct%lu)
-      ! the sequential accounting counts the U panel only with BLR, where its stored
-      ! words differ from the L panel
-      fct%factor_words_act = fct%factor_words_act + off
-      if (fct%lu .and. fct%blr) fct%factor_words_act = fct%factor_words_act + offu
+      fct%factor_words_act = fct%factor_words_act + off + offu
       if (fct%blr) then
         fct%blr_words_fr = fct%blr_words_fr + merge(2, 1, fct%lu)*pw0
       endif
