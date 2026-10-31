@@ -15,6 +15,7 @@ module m_fstr_param_setup
     , append_new_amplitude
   use fstr_ctrl_common
   use fstr_ctrl_static
+  use mContactParam
   use m_utilities
   use fstr_ctrl_util_f
   implicit none
@@ -477,5 +478,118 @@ end function fstr_setup_INITIAL
     if( rcode /= 0 ) call fstr_ctrl_err_stop
 
   end subroutine fstr_setup_OUTPUT_SSTYPE
+
+  !-----------------------------------------------------------------------------!
+  !> Read in !AUTOINC_PARAM                                                     !
+  !-----------------------------------------------------------------------------!
+  subroutine fstr_setup_AUTOINC_PARAM( ctrl, c_aincparam, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    integer(kind=kint) :: c_aincparam
+    type(fstr_param_pack) :: P
+
+    type(fstr_param), pointer :: fstrPARAM
+
+    fstrPARAM => P%PARAM
+
+    if( fstr_get_AUTOINC( ctrl, fstrPARAM%ainc(c_aincparam) ) /=0 ) then
+      write(*,*) '### Error: Fail in read in AUTOINC_PARAM definition : ' , c_aincparam
+      write(ILOG,*) '### Error: Fail in read in AUTOINC_PARAM definition : ', c_aincparam
+      stop HECMW_EXIT_INPUT
+    endif
+  end subroutine fstr_setup_AUTOINC_PARAM
+
+  !-----------------------------------------------------------------------------!
+  !> Read in !CONVERG_PARAM                                                     !
+  !-----------------------------------------------------------------------------!
+  subroutine fstr_setup_CONVERG_PARAM( ctrl, c_cnvparam, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    integer(kind=kint) :: c_cnvparam
+    type(fstr_param_pack) :: P
+
+    type(fstr_param), pointer :: fstrPARAM
+
+    fstrPARAM => P%PARAM
+
+    if( fstr_ctrl_get_CONVERGPARAM( ctrl, fstrPARAM%cnvparam(c_cnvparam) ) /=0 ) then
+      write(*,*) '### Error: Fail in read in CONVERG_PARAM definition : ' , c_cnvparam
+      write(ILOG,*) '### Error: Fail in read in CONVERG_PARAM definition : ', c_cnvparam
+      stop HECMW_EXIT_INPUT
+    endif
+  end subroutine fstr_setup_CONVERG_PARAM
+
+  !-----------------------------------------------------------------------------!
+  !> Read in !TIME_POINTS                                                       !
+  !-----------------------------------------------------------------------------!
+  subroutine fstr_setup_TIME_POINTS( ctrl, c_timepoints, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    integer(kind=kint) :: c_timepoints
+    type(fstr_param_pack) :: P
+
+    type(fstr_param), pointer :: fstrPARAM
+
+    fstrPARAM => P%PARAM
+
+    if( fstr_ctrl_get_TIMEPOINTS( ctrl, fstrPARAM%timepoints(c_timepoints) )/=0 ) then
+      write(*,*) '### Error: Fail in read in TIME_POINTS definition : ' , c_timepoints
+      write(ILOG,*) '### Error: Fail in read in TIME_POINTS definition : ', c_timepoints
+      stop HECMW_EXIT_INPUT
+    endif
+  end subroutine fstr_setup_TIME_POINTS
+
+  !-----------------------------------------------------------------------------!
+  !> Read in !CONTACT_PARAM                                                     !
+  !-----------------------------------------------------------------------------!
+  subroutine fstr_setup_CONTACT_PARAM( ctrl, c_contactparam, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    integer(kind=kint) :: c_contactparam
+    type(fstr_param_pack) :: P
+
+    type(fstr_param), pointer :: fstrPARAM
+
+    fstrPARAM => P%PARAM
+
+    if( fstr_ctrl_get_CONTACTPARAM( ctrl, fstrPARAM%contactparam(c_contactparam) ) /=0 ) then
+      write(*,*) '### Error: Fail in read in CONTACT_PARAM definition : ' , c_contactparam
+      write(ILOG,*) '### Error: Fail in read in CONTACT_PARAM definition : ', c_contactparam
+      stop HECMW_EXIT_INPUT
+    endif
+  end subroutine fstr_setup_CONTACT_PARAM
+
+  !-----------------------------------------------------------------------------!
+  !> Read in !CONTACT_INTERFERENCE                                              !
+  !-----------------------------------------------------------------------------!
+  !> c_contact_if is the number of the pairs already read, and the pairs of this card are added to it.
+  subroutine fstr_setup_CONTACT_INTERFERENCE( ctrl, c_contact_if, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    integer(kind=kint) :: c_contact_if
+    type(fstr_param_pack) :: P
+
+    type(fstr_param), pointer :: fstrPARAM
+    type(fstr_solid), pointer :: fstrSOLID
+    integer(kind=kint) :: n, i
+
+    fstrPARAM => P%PARAM
+    fstrSOLID => P%SOLID
+
+    n = fstr_ctrl_get_data_line_n( ctrl )
+    if( fstr_ctrl_get_CONTACT_IF( ctrl, n, fstrPARAM%contact_if(c_contact_if+1:c_contact_if+n) ) /= 0 ) then
+      write(*,*) '### Error: Fail in read in CONTACT_INTERFERENCE definition : ' , c_contact_if
+      write(ILOG,*) '### Error: Fail in read in CONTACT_INTERFERENCE definition : ', c_contact_if
+      stop HECMW_EXIT_INPUT
+    endif
+    do i=1, n
+      if( check_apply_Contact_IF(fstrPARAM%contact_if(c_contact_if+i), fstrSOLID%contacts) /= 0) then
+        write(*,*) '### Error:(INTERFERENCE) Inconsistence of contact_pair in CONTACTS: ' , i+c_contact_if
+        write(ILOG,*) '### Error:(INTERFERENCE)  Inconsistence of contact_pair in CONTACTS: ', i+c_contact_if
+        stop HECMW_EXIT_MODEL
+      end if
+    end do
+    c_contact_if = c_contact_if + n
+  end subroutine fstr_setup_CONTACT_INTERFERENCE
 
 end module m_fstr_param_setup

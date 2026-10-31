@@ -26,6 +26,7 @@ module m_fstr_solid_setup
   use fstr_ctrl_common
   use fstr_ctrl_static
   use fstr_ctrl_dynamic
+  use fstr_ctrl_material
   use fstr_ctrl_util_f
   implicit none
 
@@ -1519,6 +1520,653 @@ contains
     write(ILOG,*) '### Error : In !BOUNDARY, TYPE=NASTRAN is not supported.'
     call fstr_abort( HECMW_EXIT_MODEL )
   end subroutine fstr_setup_solid_nastran
+
+  !-----------------------------------------------------------------------------!
+  !> Read in !CONTACT                                                           !
+  !-----------------------------------------------------------------------------!
+  !> c_contact is the number of the pairs already read, and the pairs of this card are added to it.
+  subroutine fstr_setup_CONTACT( ctrl, c_contact, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    integer(kind=kint) :: c_contact
+    type(fstr_param_pack) :: P
+
+    type(fstr_param), pointer :: fstrPARAM
+    type(fstr_solid), pointer :: fstrSOLID
+    integer(kind=kint) :: n, k
+    real(kind=kreal) :: ee, pp, rho, alpha
+    character(len=HECMW_FILENAME_LEN) :: mName
+
+    fstrPARAM => P%PARAM
+    fstrSOLID => P%SOLID
+
+    n = fstr_ctrl_get_data_line_n( ctrl )
+    if( .not. fstr_ctrl_get_CONTACT( ctrl, n, fstrSOLID%contacts(c_contact+1:c_contact+n)   &
+        ,ee, pp, rho, alpha, mName, k ) ) then
+      write(*,*) '### Error: Fail in read in contact condition : ', c_contact
+      write(ILOG,*) '### Error: Fail in read in contact condition : ', c_contact
+      stop HECMW_EXIT_INPUT
+    endif
+    ! initialize contact condition (cdotp and mut are now obsolete - penalty is in tContact)
+    if( rho>0.d0 ) cgn = rho
+    if( alpha>0.d0 ) cgt = alpha
+    call fstr_solid_init_contacts( P%MESH, fstrSOLID, fstrPARAM, c_contact, n, mName, k )
+    c_contact = c_contact+n
+  end subroutine fstr_setup_CONTACT
+
+  !-----------------------------------------------------------------------------!
+  !> Read in !EMBED                                                             !
+  !-----------------------------------------------------------------------------!
+  !> c_embed is the number of the pairs already read, and the pairs of this card are added to it.
+  subroutine fstr_setup_EMBED( ctrl, c_embed, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    integer(kind=kint) :: c_embed
+    type(fstr_param_pack) :: P
+
+    type(fstr_param), pointer :: fstrPARAM
+    type(fstr_solid), pointer :: fstrSOLID
+    integer(kind=kint) :: n, k
+    character(len=HECMW_FILENAME_LEN) :: mName
+
+    fstrPARAM => P%PARAM
+    fstrSOLID => P%SOLID
+
+    n = fstr_ctrl_get_data_line_n( ctrl )
+    if( .not. fstr_ctrl_get_EMBED( ctrl, n, fstrSOLID%embeds(c_embed+1:c_embed+n), mName, k ) ) then
+      write(*,*) '### Error: Fail in read in embed condition : ', c_embed
+      write(ILOG,*) '### Error: Fail in read in embed condition : ', c_embed
+      stop HECMW_EXIT_INPUT
+    endif
+    call fstr_solid_init_embeds( P%MESH, fstrSOLID, fstrPARAM, c_embed, n, mName, k )
+    c_embed = c_embed+n
+  end subroutine fstr_setup_EMBED
+
+  !-----------------------------------------------------------------------------!
+  !> Read in !ISTEP                                                             !
+  !-----------------------------------------------------------------------------!
+  subroutine fstr_setup_ISTEP( ctrl, c_istep, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    integer(kind=kint) :: c_istep
+    type(fstr_param_pack) :: P
+
+    type(hecmwST_local_mesh), pointer :: hecMESH
+    type(fstr_param), pointer :: fstrPARAM
+    type(fstr_solid), pointer :: fstrSOLID
+    integer(kind=kint) :: i
+    character(len=HECMW_FILENAME_LEN) :: mName, mName2, mName3
+
+    hecMESH => P%MESH
+    fstrPARAM => P%PARAM
+    fstrSOLID => P%SOLID
+
+    if( .not. fstr_ctrl_get_ISTEP( ctrl, hecMESH, fstrSOLID%step_ctrl(c_istep), mName, mName2, mName3 ) ) then
+      write(*,*) '### Error: Fail in read in step definition : ' , c_istep
+      write(ILOG,*) '### Error: Fail in read in step definition : ', c_istep
+      stop HECMW_EXIT_INPUT
+    endif
+    call fstr_setup_step_convergence( fstrSOLID%step_ctrl(c_istep), mName3, fstrPARAM%cnvparam, c_istep )
+    if( associated(fstrPARAM%timepoints) ) then
+      do i=1,size(fstrPARAM%timepoints)
+        if( hecmw_streqr( fstrPARAM%timepoints(i)%name, mName ) ) then
+          fstrSOLID%step_ctrl(c_istep)%timepoint_id = i; exit
+        endif
+      enddo
+    endif
+    if( associated(fstrPARAM%ainc) ) then
+      do i=1,size(fstrPARAM%ainc)
+        if( hecmw_streqr( fstrPARAM%ainc(i)%name, mName2 ) ) then
+          fstrSOLID%step_ctrl(c_istep)%AincParam_id = i; exit
+        endif
+      enddo
+    endif
+  end subroutine fstr_setup_ISTEP
+
+  !-----------------------------------------------------------------------------!
+  !> Read in !STEP                                                              !
+  !-----------------------------------------------------------------------------!
+  !> Read in !STEP of !VERSION 1 or later after fstr_setup_alloc and store the step.
+  subroutine fstr_setup_STEP_store( ctrl, c_istep, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    integer(kind=kint) :: c_istep
+    type(fstr_param_pack) :: P
+
+    type(hecmwST_local_mesh), pointer :: hecMESH
+    type(fstr_param), pointer :: fstrPARAM
+    type(fstr_solid), pointer :: fstrSOLID
+    type(fstr_dynamic), pointer :: fstrDYNAMIC
+    character(len=HECMW_FILENAME_LEN) :: mName, mName2, mName3
+
+    hecMESH => P%MESH
+    fstrPARAM => P%PARAM
+    fstrSOLID => P%SOLID
+    fstrDYNAMIC => P%DYN
+
+    if( .not. fstr_ctrl_get_ISTEP( ctrl, hecMESH, fstrSOLID%step_ctrl(c_istep), mName, mName2, mName3 ) ) then
+      write(*,*) '### Error: Fail in read in step definition : ' , c_istep
+      write(ILOG,*) '### Error: Fail in read in step definition : ', c_istep
+      stop HECMW_EXIT_INPUT
+    endif
+    call fstr_setup_step_links( fstrPARAM, fstrSOLID, fstrDYNAMIC, c_istep, mName, mName2, mName3 )
+  end subroutine fstr_setup_STEP_store
+
+  !-----------------------------------------------------------------------------!
+  !> Read in !SECTION                                                           !
+  !-----------------------------------------------------------------------------!
+  subroutine fstr_setup_SECTION( ctrl, c_section, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    integer(kind=kint) :: c_section
+    type(fstr_param_pack) :: P
+
+    type(hecmwST_local_mesh), pointer :: hecMESH
+    type(fstr_solid), pointer :: fstrSOLID
+
+    hecMESH => P%MESH
+    fstrSOLID => P%SOLID
+
+    if( fstr_ctrl_get_SECTION( ctrl, hecMESH, fstrSOLID%sections )/=0 ) then
+      write(*,*) '### Error: Fail in read in SECTION definition : ' , c_section
+      write(ILOG,*) '### Error: Fail in read in SECTION definition : ', c_section
+      stop HECMW_EXIT_INPUT
+    endif
+  end subroutine fstr_setup_SECTION
+
+  !-----------------------------------------------------------------------------!
+  !> Read in !ELEMOPT                                                           !
+  !-----------------------------------------------------------------------------!
+  subroutine fstr_setup_ELEMOPT( ctrl, c_elemopt, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    integer(kind=kint) :: c_elemopt
+    type(fstr_param_pack) :: P
+
+    type(fstr_solid), pointer :: fstrSOLID
+
+    fstrSOLID => P%SOLID
+
+    if( fstr_ctrl_get_ELEMOPT( ctrl, fstrSOLID%elemopt361 )/=0 ) then
+      write(*,*) '### Error: Fail in read in ELEMOPT definition : ' , c_elemopt
+      write(ILOG,*) '### Error: Fail in read in ELEMOPT definition : ', c_elemopt
+      stop HECMW_EXIT_INPUT
+    endif
+  end subroutine fstr_setup_ELEMOPT
+
+  !-----------------------------------------------------------------------------!
+  !> Read in !MATERIAL                                                          !
+  !-----------------------------------------------------------------------------!
+  !> cid is set to the material of this card, and cache to the material expected next.
+  subroutine fstr_setup_MATERIAL( ctrl, c_material, cache, cid, P )
+    use mMaterial
+    implicit none
+    integer(kind=kint) :: ctrl
+    integer(kind=kint) :: c_material
+    integer(kind=kint) :: cache
+    integer(kind=kint) :: cid
+    type(fstr_param_pack) :: P
+
+    type(hecmwST_local_mesh), pointer :: hecMESH
+    type(fstr_solid), pointer :: fstrSOLID
+    integer(kind=kint) :: i
+    character(len=HECMW_FILENAME_LEN) :: mName
+
+    hecMESH => P%MESH
+    fstrSOLID => P%SOLID
+
+    if( fstr_ctrl_get_MATERIAL( ctrl, mName )/=0 ) then
+      write(*,*) '### Error: Fail in read in material definition : ' , c_material
+      write(ILOG,*) '### Error: Fail in read in material definition : ', c_material
+      stop HECMW_EXIT_INPUT
+    endif
+    cid = 0
+    if(cache < hecMESH%material%n_mat) then
+      if(hecmw_streqr( hecMESH%material%mat_name(cache), mName ))then
+        cid = cache
+        cache = cache + 1
+      endif
+    endif
+    if(cid == 0)then
+      do i=1,hecMESH%material%n_mat
+        if( hecmw_streqr( hecMESH%material%mat_name(i), mName ) ) then
+          cid = i
+          cache = i + 1
+          exit
+        endif
+      enddo
+    endif
+    if(cid == 0)then
+      write(*,*) '### Error: Fail in read in material definition : ' , c_material
+      write(ILOG,*) '### Error: Fail in read in material definition : ', c_material
+      stop HECMW_EXIT_INPUT
+    endif
+    fstrSOLID%materials(cid)%name = hecMESH%material%mat_name(cid)
+    if(c_material>hecMESH%material%n_mat) call initMaterial( fstrSOLID%materials(cid) )
+  end subroutine fstr_setup_MATERIAL
+
+  !-----------------------------------------------------------------------------!
+  !> Read in !ELASTIC                                                           !
+  !-----------------------------------------------------------------------------!
+  subroutine fstr_setup_ELASTIC( ctrl, cid, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    integer(kind=kint) :: cid
+    type(fstr_param_pack) :: P
+
+    type(fstr_solid), pointer :: fstrSOLID
+
+    fstrSOLID => P%SOLID
+
+    if( fstr_ctrl_get_ELASTICITY( ctrl,                                        &
+        fstrSOLID%materials(cid)%mtype,       &
+        fstrSOLID%materials(cid)%nlgeom_flag, &
+        fstrSOLID%materials(cid)%variables,   &
+        fstrSOLID%materials(cid)%dict)/=0 ) then
+      write(*,*) '### Error: Fail in read in elasticity definition : ' , cid
+      write(ILOG,*) '### Error: Fail in read in elasticity definition : ', cid
+      stop HECMW_EXIT_INPUT
+    endif
+  end subroutine fstr_setup_ELASTIC
+
+  !-----------------------------------------------------------------------------!
+  !> Read in !PLASTIC                                                           !
+  !-----------------------------------------------------------------------------!
+  subroutine fstr_setup_PLASTIC( ctrl, cid, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    integer(kind=kint) :: cid
+    type(fstr_param_pack) :: P
+
+    type(fstr_solid), pointer :: fstrSOLID
+
+    fstrSOLID => P%SOLID
+
+    if( fstr_ctrl_get_PLASTICITY( ctrl,                                        &
+        fstrSOLID%materials(cid)%mtype,       &
+        fstrSOLID%materials(cid)%nlgeom_flag, &
+        fstrSOLID%materials(cid)%variables,   &
+        fstrSOLID%materials(cid)%dict)/=0 ) then
+      write(*,*) '### Error: Fail in read in plasticity definition : ' , cid
+      write(ILOG,*) '### Error: Fail in read in plasticity definition : ', cid
+      stop HECMW_EXIT_INPUT
+    endif
+  end subroutine fstr_setup_PLASTIC
+
+  !-----------------------------------------------------------------------------!
+  !> Read in !HYPERELASTIC                                                      !
+  !-----------------------------------------------------------------------------!
+  subroutine fstr_setup_HYPERELASTIC( ctrl, cid, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    integer(kind=kint) :: cid
+    type(fstr_param_pack) :: P
+
+    type(fstr_solid), pointer :: fstrSOLID
+
+    fstrSOLID => P%SOLID
+
+    if( fstr_ctrl_get_HYPERELASTIC( ctrl,                                        &
+        fstrSOLID%materials(cid)%mtype,       &
+        fstrSOLID%materials(cid)%nlgeom_flag, &
+        fstrSOLID%materials(cid)%variables )/=0 ) then
+      write(*,*) '### Error: Fail in read in elasticity definition : ' , cid
+      write(ILOG,*) '### Error: Fail in read in elasticity definition : ', cid
+      stop HECMW_EXIT_INPUT
+    endif
+  end subroutine fstr_setup_HYPERELASTIC
+
+  !-----------------------------------------------------------------------------!
+  !> Read in !VISCOELASTIC                                                      !
+  !-----------------------------------------------------------------------------!
+  subroutine fstr_setup_VISCOELASTIC( ctrl, cid, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    integer(kind=kint) :: cid
+    type(fstr_param_pack) :: P
+
+    type(fstr_solid), pointer :: fstrSOLID
+
+    fstrSOLID => P%SOLID
+
+    if( fstr_ctrl_get_VISCOELASTICITY( ctrl,                                        &
+        fstrSOLID%materials(cid)%mtype,       &
+        fstrSOLID%materials(cid)%nlgeom_flag, &
+        fstrSOLID%materials(cid)%dict)/=0 ) then
+      write(*,*) '### Error: Fail in read in plasticity definition : ' , cid
+      write(ILOG,*) '### Error: Fail in read in plasticity definition : ', cid
+      stop HECMW_EXIT_INPUT
+    endif
+  end subroutine fstr_setup_VISCOELASTIC
+
+  !-----------------------------------------------------------------------------!
+  !> Read in !TRS                                                               !
+  !-----------------------------------------------------------------------------!
+  subroutine fstr_setup_TRS( ctrl, cid, P )
+    use mMaterial
+    implicit none
+    integer(kind=kint) :: ctrl
+    integer(kind=kint) :: cid
+    type(fstr_param_pack) :: P
+
+    type(fstr_solid), pointer :: fstrSOLID
+
+    fstrSOLID => P%SOLID
+
+    if( fstrSOLID%materials(cid)%mtype/=VISCOELASTIC ) then
+      write(*,*) '### WARNING: TRS can only be defined for viscoelastic material! It is ignored! '
+      write(ILOG,*) '### WARNING: TRS can only be defined for viscoelastic material! It is ignored! '
+    else
+      if( fstr_ctrl_get_TRS( ctrl, fstrSOLID%materials(cid)%mtype, fstrSOLID%materials(cid)%variables)/=0 ) then
+        write(*,*) '### Error: Fail in read in TRS definition : ' , cid
+        write(ILOG,*) '### Error: Fail in read in TRS definition : ', cid
+        stop HECMW_EXIT_INPUT
+      endif
+    endif
+  end subroutine fstr_setup_TRS
+
+  !-----------------------------------------------------------------------------!
+  !> Read in !CREEP                                                             !
+  !-----------------------------------------------------------------------------!
+  subroutine fstr_setup_CREEP( ctrl, cid, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    integer(kind=kint) :: cid
+    type(fstr_param_pack) :: P
+
+    type(fstr_solid), pointer :: fstrSOLID
+
+    fstrSOLID => P%SOLID
+
+    if( fstr_ctrl_get_VISCOPLASTICITY( ctrl,                                        &
+        fstrSOLID%materials(cid)%mtype,       &
+        fstrSOLID%materials(cid)%nlgeom_flag, &
+        fstrSOLID%materials(cid)%dict)/=0 ) then
+      write(*,*) '### Error: Fail in read in plasticity definition : ' , cid
+      write(ILOG,*) '### Error: Fail in read in plasticity definition : ', cid
+      stop HECMW_EXIT_INPUT
+    endif
+  end subroutine fstr_setup_CREEP
+
+  !-----------------------------------------------------------------------------!
+  !> Read in !DENSITY                                                           !
+  !-----------------------------------------------------------------------------!
+  subroutine fstr_setup_DENSITY( ctrl, cid, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    integer(kind=kint) :: cid
+    type(fstr_param_pack) :: P
+
+    type(fstr_solid), pointer :: fstrSOLID
+
+    fstrSOLID => P%SOLID
+
+    if( fstr_ctrl_get_DENSITY( ctrl, fstrSOLID%materials(cid)%variables )/=0 ) then
+      write(*,*) '### Error: Fail in read in density definition : ' , cid
+      write(ILOG,*) '### Error: Fail in read in density definition : ', cid
+      stop HECMW_EXIT_INPUT
+    endif
+  end subroutine fstr_setup_DENSITY
+
+  !-----------------------------------------------------------------------------!
+  !> Read in !EXPANSION_COEF                                                    !
+  !-----------------------------------------------------------------------------!
+  subroutine fstr_setup_EXPANSION_COEFF( ctrl, cid, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    integer(kind=kint) :: cid
+    type(fstr_param_pack) :: P
+
+    type(fstr_solid), pointer :: fstrSOLID
+
+    fstrSOLID => P%SOLID
+
+    if( fstr_ctrl_get_EXPANSION_COEFF( ctrl, fstrSOLID%materials(cid)%variables, &
+        fstrSOLID%materials(cid)%dict)/=0 )  then
+      write(*,*) '### Error: Fail in read in expansion coefficient definition : ' , cid
+      write(ILOG,*) '### Error: Fail in read in expansion coefficient definition : ', cid
+      stop HECMW_EXIT_INPUT
+    endif
+  end subroutine fstr_setup_EXPANSION_COEFF
+
+  !-----------------------------------------------------------------------------!
+  !> Read in !DAMPING                                                           !
+  !-----------------------------------------------------------------------------!
+  subroutine fstr_setup_DAMPING( ctrl, cid, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    integer(kind=kint) :: cid
+    type(fstr_param_pack) :: P
+
+    type(fstr_solid), pointer :: fstrSOLID
+
+    fstrSOLID => P%SOLID
+
+    if( fstr_ctrl_get_RAYLEIGH_DAMPING( ctrl, fstrSOLID%materials(cid)%variables, &
+        fstrSOLID%materials(cid)%is_elem_Rayleigh_damping)/=0 )  then
+      write(*,*) '### Error: Fail in read in damping definition : ' , cid
+      write(ILOG,*) '### Error: Fail in read in damping definition : ', cid
+      stop HECMW_EXIT_INPUT
+    endif
+  end subroutine fstr_setup_DAMPING
+
+  !-----------------------------------------------------------------------------!
+  !> Read in !FLUID                                                             !
+  !-----------------------------------------------------------------------------!
+  subroutine fstr_setup_FLUID( ctrl, cid, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    integer(kind=kint) :: cid
+    type(fstr_param_pack) :: P
+
+    type(fstr_solid), pointer :: fstrSOLID
+
+    fstrSOLID => P%SOLID
+
+    if( fstr_ctrl_get_FLUID( ctrl,                                 &
+        fstrSOLID%materials(cid)%mtype,       &
+        fstrSOLID%materials(cid)%nlgeom_flag, &
+        fstrSOLID%materials(cid)%variables,   &
+        fstrSOLID%materials(cid)%dict)/=0 ) then
+      write(*,*) '### Error: Fail in read in fluid definition : ' , cid
+      write(ILOG,*) '### Error: Fail in read in fluid definition : ', cid
+      stop HECMW_EXIT_INPUT
+    endif
+  end subroutine fstr_setup_FLUID
+
+  !-----------------------------------------------------------------------------!
+  !> Read in !SPRING_D                                                          !
+  !-----------------------------------------------------------------------------!
+  subroutine fstr_setup_SPRING_D( ctrl, cid, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    integer(kind=kint) :: cid
+    type(fstr_param_pack) :: P
+
+    type(fstr_solid), pointer :: fstrSOLID
+
+    fstrSOLID => P%SOLID
+
+    if( fstr_ctrl_get_SPRING_D( ctrl,                                        &
+        fstrSOLID%materials(cid)%mtype,       &
+        fstrSOLID%materials(cid)%nlgeom_flag, &
+        fstrSOLID%materials(cid)%variables_i,  &
+        fstrSOLID%materials(cid)%dict)/=0 ) then
+      write(*,*) '### Error: Fail in read in spring_d definition : ' , cid
+      write(ILOG,*) '### Error: Fail in read in spring_d definition : ', cid
+      stop HECMW_EXIT_INPUT
+    endif
+  end subroutine fstr_setup_SPRING_D
+
+  !-----------------------------------------------------------------------------!
+  !> Read in !SPRING_A                                                          !
+  !-----------------------------------------------------------------------------!
+  subroutine fstr_setup_SPRING_A( ctrl, cid, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    integer(kind=kint) :: cid
+    type(fstr_param_pack) :: P
+
+    type(fstr_solid), pointer :: fstrSOLID
+
+    fstrSOLID => P%SOLID
+
+    if( fstr_ctrl_get_SPRING_A( ctrl,                                        &
+        fstrSOLID%materials(cid)%mtype,       &
+        fstrSOLID%materials(cid)%nlgeom_flag, &
+        fstrSOLID%materials(cid)%variables_i,  &
+        fstrSOLID%materials(cid)%dict)/=0 ) then
+      write(*,*) '### Error: Fail in read in spring_a definition : ' , cid
+      write(ILOG,*) '### Error: Fail in read in spring_a definition : ', cid
+      stop HECMW_EXIT_INPUT
+    endif
+  end subroutine fstr_setup_SPRING_A
+
+  !-----------------------------------------------------------------------------!
+  !> Read in !DASHPOT_D                                                         !
+  !-----------------------------------------------------------------------------!
+  subroutine fstr_setup_DASHPOT_D( ctrl, cid, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    integer(kind=kint) :: cid
+    type(fstr_param_pack) :: P
+
+    type(fstr_solid), pointer :: fstrSOLID
+
+    fstrSOLID => P%SOLID
+
+    if( fstr_ctrl_get_DASHPOT_D( ctrl,                                        &
+        fstrSOLID%materials(cid)%mtype,       &
+        fstrSOLID%materials(cid)%nlgeom_flag, &
+        fstrSOLID%materials(cid)%variables_i,  &
+        fstrSOLID%materials(cid)%dict)/=0 ) then
+      write(*,*) '### Error: Fail in read in spring_d definition : ' , cid
+      write(ILOG,*) '### Error: Fail in read in spring_d definition : ', cid
+      stop HECMW_EXIT_INPUT
+    endif
+  end subroutine fstr_setup_DASHPOT_D
+
+  !-----------------------------------------------------------------------------!
+  !> Read in !DASHPOT_A                                                         !
+  !-----------------------------------------------------------------------------!
+  subroutine fstr_setup_DASHPOT_A( ctrl, cid, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    integer(kind=kint) :: cid
+    type(fstr_param_pack) :: P
+
+    type(fstr_solid), pointer :: fstrSOLID
+
+    fstrSOLID => P%SOLID
+
+    if( fstr_ctrl_get_DASHPOT_A( ctrl,                                        &
+        fstrSOLID%materials(cid)%mtype,       &
+        fstrSOLID%materials(cid)%nlgeom_flag, &
+        fstrSOLID%materials(cid)%variables_i,  &
+        fstrSOLID%materials(cid)%dict)/=0 ) then
+      write(*,*) '### Error: Fail in read in spring_a definition : ' , cid
+      write(ILOG,*) '### Error: Fail in read in spring_a definition : ', cid
+      stop HECMW_EXIT_INPUT
+    endif
+  end subroutine fstr_setup_DASHPOT_A
+
+  !-----------------------------------------------------------------------------!
+  !> Read in !USER_MATERIAL                                                     !
+  !-----------------------------------------------------------------------------!
+  subroutine fstr_setup_USER_MATERIAL( ctrl, cid, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    integer(kind=kint) :: cid
+    type(fstr_param_pack) :: P
+
+    type(fstr_solid), pointer :: fstrSOLID
+
+    fstrSOLID => P%SOLID
+
+    if( fstr_ctrl_get_USERMATERIAL( ctrl, fstrSOLID%materials(cid)%mtype,   &
+        fstrSOLID%materials(cid)%nlgeom_flag, fstrSOLID%materials(cid)%nfstatus, &
+        fstrSOLID%materials(cid)%variables(101:) )/=0 ) then
+      write(*,*) '### Error: Fail in read in user defined material : ' , cid
+      write(ILOG,*) '### Error: Fail in read in user defined material : ', cid
+      stop HECMW_EXIT_INPUT
+    endif
+  end subroutine fstr_setup_USER_MATERIAL
+
+  !-----------------------------------------------------------------------------!
+  !> Read in !OUTPUT_RES                                                        !
+  !-----------------------------------------------------------------------------!
+  subroutine fstr_setup_OUTPUT_RES( ctrl, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    type(fstr_param_pack) :: P
+
+    type(hecmwST_local_mesh), pointer :: hecMESH
+    type(fstr_solid), pointer :: fstrSOLID
+    integer(kind=kint) :: c_output, i
+
+    hecMESH => P%MESH
+    fstrSOLID => P%SOLID
+
+    c_output=3
+    if( .not. fstr_ctrl_get_outitem( ctrl, hecMESH, fstrSOLID%output_ctrl(c_output)%outinfo ) ) then
+      write(*,*) '### Error: Fail in read in node output definition : ' , c_output
+      write(ILOG,*) '### Error: Fail in read in node output definition : ', c_output
+      stop HECMW_EXIT_INPUT
+    endif
+    if( fstrSOLID%output_ctrl(c_output)%outinfo%grp_id_name /= 'ALL' ) then
+      c_output=2
+      do i=1,hecMESH%node_group%n_grp
+        if( fstrSOLID%output_ctrl(c_output)%outinfo%grp_id_name == hecMESH%node_group%grp_name(i) ) then
+          fstrSOLID%output_ctrl(c_output)%outinfo%grp_id = i; exit
+        endif
+      enddo
+    endif
+  end subroutine fstr_setup_OUTPUT_RES
+
+  !-----------------------------------------------------------------------------!
+  !> Read in !OUTPUT_VIS                                                        !
+  !-----------------------------------------------------------------------------!
+  subroutine fstr_setup_OUTPUT_VIS( ctrl, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    type(fstr_param_pack) :: P
+
+    type(hecmwST_local_mesh), pointer :: hecMESH
+    type(fstr_solid), pointer :: fstrSOLID
+    integer(kind=kint) :: c_output, i
+
+    hecMESH => P%MESH
+    fstrSOLID => P%SOLID
+
+    c_output=4
+    if( .not. fstr_ctrl_get_outitem( ctrl, hecMESH, fstrSOLID%output_ctrl(c_output)%outinfo ) ) then
+      write(*,*) '### Error: Fail in read in element output definition : ' , c_output
+      write(ILOG,*) '### Error: Fail in read in element output definition : ', c_output
+      stop HECMW_EXIT_INPUT
+    endif
+    if( fstrSOLID%output_ctrl(c_output)%outinfo%grp_id_name /= 'ALL' ) then
+      c_output=2
+      do i=1,hecMESH%node_group%n_grp
+        if( fstrSOLID%output_ctrl(c_output)%outinfo%grp_id_name == hecMESH%node_group%grp_name(i) ) then
+          fstrSOLID%output_ctrl(c_output)%outinfo%grp_id = i; exit
+        endif
+      enddo
+    endif
+  end subroutine fstr_setup_OUTPUT_VIS
+
+  !-----------------------------------------------------------------------------!
+  !> Read in !ULOAD                                                             !
+  !-----------------------------------------------------------------------------!
+  subroutine fstr_setup_ULOAD( ctrl )
+    implicit none
+    integer(kind=kint) :: ctrl
+
+    if( fstr_ctrl_get_USERLOAD( ctrl )/=0 ) then
+      write(*,*) '### Error: Fail in read in ULOAD definition : '
+      write(ILOG,*) '### Error: Fail in read in ULOAD definition : '
+      stop HECMW_EXIT_INPUT
+    endif
+  end subroutine fstr_setup_ULOAD
 
   !-----------------------------------------------------------------------------!
   !> Append !BOUNDARY                                                           !
