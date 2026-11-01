@@ -454,7 +454,7 @@ contains
             else if( fstrSOLID%sections(isect)%elemopt361 == kel361UP ) then
               !> temporary
               !call TLOAD_C3                                                          &
-              !  ( ic_type, nn, xx(1:nn), yy(1:nn), zz(1:nn), tt(1:nn), tt0(1:nn), reftemp, &
+              !  ( ic_type, nn, xx(1:nn), yy(1:nn), zz(1:nn), tt(1:nn), tt0(1:nn), fstrPARAM%ref_temp, &
               !  fstrSOLID%elements(icel)%gausses, vect(1:nn*ndof), cdsys_ID, coords )
               stop "FROM361=UP: TLOAD is not supported"
             endif

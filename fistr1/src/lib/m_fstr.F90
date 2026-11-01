@@ -124,10 +124,6 @@ module m_fstr
   integer(kind=kint), parameter :: INEU = 54 ! neutral file (heat)
   integer(kind=kint), parameter :: IRESOUT = 100 ! ~110, keeping for result output file
 
-  !> SOLVER CONTROL
-!  integer(kind=kint) :: svIarray(100)
-!  real(kind=kreal)   :: svRarray(100)
-
   !> OUTPUT STRESS/STRAIN TYPE
   integer(kind=kint), parameter :: kOPSS_SOLUTION = 1
   integer(kind=kint), parameter :: kOPSS_MATERIAL = 2
