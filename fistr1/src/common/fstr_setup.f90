@@ -57,8 +57,8 @@ contains
     integer, parameter :: MAXOUTFILE = 10
     double precision, parameter :: dpi = 3.14159265358979323846D0
 
-    integer(kind=kint) :: version, result, visual, femap
-    integer(kind=kint) :: rcode, n, cid, nout, ierror
+    integer(kind=kint) :: result, visual, femap
+    integer(kind=kint) :: rcode, n, nout, ierror
     character(len=HECMW_NAME_LEN) :: header_name
     type(t_output_ctrl) :: outctrl
 
@@ -74,7 +74,6 @@ contains
     integer(kind=kint) :: c_istep, c_localcoord, c_section
     integer(kind=kint) :: c_elemopt, c_aincparam, c_timepoints, c_cnvparam
     integer(kind=kint) :: c_output, islog
-    integer(kind=kint) :: cache = 1
 
     ! packaging
     P%MESH   => hecMESH
@@ -112,11 +111,10 @@ contains
       stop HECMW_EXIT_INPUT
     end if
 
-    version =0
     do
       rcode = fstr_ctrl_get_c_h_name( ctrl, header_name, HECMW_NAME_LEN )
       if(     header_name == '!VERSION' ) then
-        rcode = fstr_ctrl_get_data_ex( ctrl, 1, 'i ', version )
+        rcode = fstr_ctrl_get_data_ex( ctrl, 1, 'i ', P%STATE%version )
       else if(     header_name == '!SOLUTION' ) then
         c_solution = c_solution + 1
         call fstr_setup_SOLUTION( ctrl, c_solution, P )
@@ -129,7 +127,7 @@ contains
       else if( header_name == '!ISTEP' ) then
         c_istep = c_istep + 1
       else if( header_name == '!STEP' ) then
-        if( version==0 ) then
+        if( P%STATE%version==0 ) then
           c_step = c_step + 1
           call fstr_setup_STEP( ctrl, c_step, P )
         else
@@ -322,7 +320,6 @@ contains
     c_istep    = 0
     c_heat     = 0
     c_material = 0
-    cid = 0
     c_output = 0
     c_contact  = 0
     c_contactparam  = 0
@@ -359,7 +356,7 @@ contains
       else if( header_name == '!ISTEP'  ) then
         c_istep = c_istep+1
         call fstr_setup_ISTEP( ctrl, c_istep, P )
-      else if( header_name == '!STEP' .and. version>=1 ) then
+      else if( header_name == '!STEP' .and. P%STATE%version>=1 ) then
         c_istep = c_istep+1
         call fstr_setup_STEP_store( ctrl, c_istep, P )
 
@@ -389,54 +386,39 @@ contains
         !== following material properties ==
       else if( header_name == '!MATERIAL' ) then
         c_material = c_material+1
-        call fstr_setup_MATERIAL( ctrl, c_material, cache, cid, P )
+        call fstr_setup_MATERIAL( ctrl, c_material, P )
 
       else if( header_name == '!ELASTIC' ) then
-        if( cid == 0 ) call material_card_err_stop( header_name )
-        call fstr_setup_ELASTIC( ctrl, cid, P )
+        call fstr_setup_ELASTIC( ctrl, P )
       else if( header_name == '!PLASTIC' ) then
-        if( cid == 0 ) call material_card_err_stop( header_name )
-        call fstr_setup_PLASTIC( ctrl, cid, P )
+        call fstr_setup_PLASTIC( ctrl, P )
       else if( header_name == '!HYPERELASTIC' ) then
-        if( cid == 0 ) call material_card_err_stop( header_name )
-        call fstr_setup_HYPERELASTIC( ctrl, cid, P )
+        call fstr_setup_HYPERELASTIC( ctrl, P )
       else if( header_name == '!VISCOELASTIC' ) then
-        if( cid == 0 ) call material_card_err_stop( header_name )
-        call fstr_setup_VISCOELASTIC( ctrl, cid, P )
+        call fstr_setup_VISCOELASTIC( ctrl, P )
       else if( header_name == '!TRS' ) then
-        if( cid == 0 ) call material_card_err_stop( header_name )
-        call fstr_setup_TRS( ctrl, cid, P )
+        call fstr_setup_TRS( ctrl, P )
       else if( header_name == '!CREEP' ) then
-        if( cid == 0 ) call material_card_err_stop( header_name )
-        call fstr_setup_CREEP( ctrl, cid, P )
+        call fstr_setup_CREEP( ctrl, P )
       else if( header_name == '!DENSITY' ) then
-        if( cid == 0 ) call material_card_err_stop( header_name )
-        call fstr_setup_DENSITY( ctrl, cid, P )
+        call fstr_setup_DENSITY( ctrl, P )
       else if( header_name == '!EXPANSION_COEF' .or. header_name == '!EXPANSION_COEFF' .or. &
           header_name == '!EXPANSION') then
-        if( cid == 0 ) call material_card_err_stop( header_name )
-        call fstr_setup_EXPANSION_COEFF( ctrl, cid, P )
+        call fstr_setup_EXPANSION_COEFF( ctrl, P )
       else if( header_name == '!DAMPING') then
-        if( cid == 0 ) call material_card_err_stop( header_name )
-        call fstr_setup_DAMPING( ctrl, cid, P )
+        call fstr_setup_DAMPING( ctrl, P )
       else if( header_name == '!FLUID' ) then
-        if( cid == 0 ) call material_card_err_stop( header_name )
-        call fstr_setup_FLUID( ctrl, cid, P )
+        call fstr_setup_FLUID( ctrl, P )
       else if( header_name == '!SPRING_D' ) then
-        if( cid == 0 ) call material_card_err_stop( header_name )
-        call fstr_setup_SPRING_D( ctrl, cid, P )
+        call fstr_setup_SPRING_D( ctrl, P )
       else if( header_name == '!SPRING_A' ) then
-        if( cid == 0 ) call material_card_err_stop( header_name )
-        call fstr_setup_SPRING_A( ctrl, cid, P )
+        call fstr_setup_SPRING_A( ctrl, P )
       else if( header_name == '!DASHPOT_D' ) then
-        if( cid == 0 ) call material_card_err_stop( header_name )
-        call fstr_setup_DASHPOT_D( ctrl, cid, P )
+        call fstr_setup_DASHPOT_D( ctrl, P )
       else if( header_name == '!DASHPOT_A' ) then
-        if( cid == 0 ) call material_card_err_stop( header_name )
-        call fstr_setup_DASHPOT_A( ctrl, cid, P )
+        call fstr_setup_DASHPOT_A( ctrl, P )
       else if( header_name == '!USER_MATERIAL' ) then
-        if( cid == 0 ) call material_card_err_stop( header_name )
-        call fstr_setup_USER_MATERIAL( ctrl, cid, P )
+        call fstr_setup_USER_MATERIAL( ctrl, P )
 
 
         ! == Following output control ==
@@ -511,13 +493,5 @@ contains
     if(associated(C%accel)) deallocate(C%accel)
     if(associated(C%index)) deallocate(C%index)
   end subroutine fstr_couple_finalize
-
-  subroutine material_card_err_stop( header_name )
-    implicit none
-    character(len=*) :: header_name
-
-    call fstr_setup_util_err_stop( '### Error: '//trim(header_name)// &
-      ' : given before the first !MATERIAL; put it after !MATERIAL, NAME=<material name>' )
-  end subroutine material_card_err_stop
 
 end module m_fstr_setup
