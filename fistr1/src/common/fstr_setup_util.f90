@@ -9,8 +9,17 @@ module fstr_setup_util
   use hecmw
   use fstr_ctrl_util_f
 
-  !> State of reading the cards, carried from one card to the next
+  !> Places of a card in its sequence, from first to last. A card counted one by one has one place (first == last).
+  !> A card counted by the data lines has one place per data line, and none without a data line (last == first - 1).
+  !> The cards stored in the same array share a sequence, so the places of such a card are its indices in the array.
+  type fstr_card_slot
+    integer(kind=kint) :: first = 0
+    integer(kind=kint) :: last = 0
+  end type fstr_card_slot
+
+  !> State of reading the cards: the places of the card being read, and what is carried from one card to the next
   type fstr_card_state
+    type(fstr_card_slot) :: slot       !< places of the card being read, set before its reader is called
     integer(kind=kint) :: version = 0  !< !VERSION
     integer(kind=kint) :: cid = 0      !< material of the last !MATERIAL, 0 before the first one
     integer(kind=kint) :: cache = 1    !< material expected at the next !MATERIAL
@@ -29,6 +38,39 @@ module fstr_setup_util
     type(fstr_freqanalysis), pointer  :: FREQ
     type(fstr_card_state)             :: STATE
   end type fstr_param_pack
+
+  integer(kind=kint), parameter :: FSTR_CARD_MAX = 100  !< rows and sequences of a card table
+
+  !> Reader of a card, called at the header of the card with the places of the card in P%STATE%slot
+  abstract interface
+    subroutine fstr_card_reader( ctrl, P )
+      import :: kint, fstr_param_pack
+      integer(kind=kint) :: ctrl
+      type(fstr_param_pack) :: P
+    end subroutine fstr_card_reader
+  end interface
+
+  !> A row of the card table: the readers of a card in the first and the second reading of the control file,
+  !> and the sequence it is counted in
+  type fstr_card
+    character(len=HECMW_NAME_LEN) :: name = ''         !< card name without the '!' of the header
+    integer(kind=kint) :: version_min = -huge(0_kint)  !< the row is used when !VERSION is
+    integer(kind=kint) :: version_max = huge(0_kint)   !< from version_min to version_max
+    procedure(fstr_card_reader), pointer, nopass :: first => null()
+    procedure(fstr_card_reader), pointer, nopass :: second => null()
+    logical :: by_line = .false.                       !< counted by the data lines
+    integer(kind=kint) :: seq = 0                      !< index of the sequence in the table
+  end type fstr_card
+
+  !> Table of the cards of the control file, not changed after the cards are added. Each card is counted in a sequence.
+  !> The cards stored in the same array share a sequence named when they are added,
+  !> and the other cards have a sequence of their own, named after the card.
+  type fstr_card_table
+    integer(kind=kint) :: n_card = 0
+    type(fstr_card) :: card(FSTR_CARD_MAX)
+    integer(kind=kint) :: n_seq = 0
+    character(len=HECMW_NAME_LEN) :: seq_name(FSTR_CARD_MAX) = ''
+  end type fstr_card_table
 
 contains
   !------------------------------------------------------------------------------
@@ -53,6 +95,139 @@ contains
     write(imsg,*) msg
     call fstr_abort( HECMW_EXIT_INPUT )
   end subroutine fstr_setup_util_err_stop
+
+  !> Adds a card to the table T, read by first in the first reading and by second in the second reading.
+  !> The card is counted in the sequence named seq, or named after the card by default.
+  !> The row is used when !VERSION is from version_min to version_max, which is any !VERSION by default.
+  subroutine fstr_card_add( T, name, first, second, by_line, seq, version_min, version_max )
+    implicit none
+    type(fstr_card_table) :: T
+    character(len=*), intent(in) :: name
+    procedure(fstr_card_reader), optional :: first, second
+    logical, intent(in), optional :: by_line
+    character(len=*), intent(in), optional :: seq
+    integer(kind=kint), intent(in), optional :: version_min, version_max
+
+    type(fstr_card) :: card
+    character(len=HECMW_NAME_LEN) :: seq_name
+
+    card%name = name
+    if( present(first) ) card%first => first
+    if( present(second) ) card%second => second
+    if( present(by_line) ) card%by_line = by_line
+    if( present(version_min) ) card%version_min = version_min
+    if( present(version_max) ) card%version_max = version_max
+    seq_name = name
+    if( present(seq) ) seq_name = seq
+    card%seq = fstr_card_seq( T, seq_name )
+    if( card%seq == 0 ) then
+      if( T%n_seq == size(T%seq_name) ) call fstr_setup_util_err_stop( '### Error: the card table is full' )
+      T%n_seq = T%n_seq + 1
+      T%seq_name(T%n_seq) = seq_name
+      card%seq = T%n_seq
+    endif
+    call fstr_card_append( T, card )
+  end subroutine fstr_card_add
+
+  !> Adds alias to the table T as another name of the card name
+  subroutine fstr_card_alias( T, alias, name )
+    implicit none
+    type(fstr_card_table) :: T
+    character(len=*), intent(in) :: alias, name
+
+    type(fstr_card) :: card
+
+    card = T%card( fstr_card_index( T, name ) )
+    card%name = alias
+    call fstr_card_append( T, card )
+  end subroutine fstr_card_alias
+
+  !> Appends card to the table T. Stops if the table has a row of the same name for !VERSION in the range of card.
+  subroutine fstr_card_append( T, card )
+    implicit none
+    type(fstr_card_table) :: T
+    type(fstr_card), intent(in) :: card
+
+    integer(kind=kint) :: i
+
+    do i = 1, T%n_card
+      if( T%card(i)%name == card%name .and. T%card(i)%version_min <= card%version_max .and. &
+          card%version_min <= T%card(i)%version_max ) &
+        call fstr_setup_util_err_stop( '### Error: '//trim(card%name)//' : added twice to the card table' )
+    enddo
+    if( T%n_card == size(T%card) ) call fstr_setup_util_err_stop( '### Error: the card table is full' )
+    T%n_card = T%n_card + 1
+    T%card(T%n_card) = card
+  end subroutine fstr_card_append
+
+  !> Index of the first row of the card name in the table T. Stops if the card is not in it.
+  integer(kind=kint) function fstr_card_index( T, name )
+    implicit none
+    type(fstr_card_table), intent(in) :: T
+    character(len=*), intent(in) :: name
+
+    integer(kind=kint) :: i
+
+    fstr_card_index = 0
+    do i = 1, T%n_card
+      if( T%card(i)%name == name ) then
+        fstr_card_index = i
+        return
+      endif
+    enddo
+    call fstr_setup_util_err_stop( '### Error: '//trim(name)//' : not in the card table' )
+  end function fstr_card_index
+
+  !> Index of the row of the card name for !VERSION version in the table T, or 0 if there is none
+  integer(kind=kint) function fstr_card_find( T, name, version )
+    implicit none
+    type(fstr_card_table), intent(in) :: T
+    character(len=*), intent(in) :: name
+    integer(kind=kint), intent(in) :: version
+
+    integer(kind=kint) :: i
+
+    fstr_card_find = 0
+    do i = 1, T%n_card
+      if( T%card(i)%name == name .and. T%card(i)%version_min <= version .and. &
+          version <= T%card(i)%version_max ) then
+        fstr_card_find = i
+        return
+      endif
+    enddo
+  end function fstr_card_find
+
+  !> Index of the sequence named seq in the table T, or 0 if there is none
+  integer(kind=kint) function fstr_card_seq( T, seq )
+    implicit none
+    type(fstr_card_table), intent(in) :: T
+    character(len=*), intent(in) :: seq
+
+    integer(kind=kint) :: i
+
+    fstr_card_seq = 0
+    do i = 1, T%n_seq
+      if( T%seq_name(i) == seq ) then
+        fstr_card_seq = i
+        return
+      endif
+    enddo
+  end function fstr_card_seq
+
+  !> Total of the sequence named seq, from the totals of the sequences of the table T.
+  !> Stops if the sequence is not in T.
+  integer(kind=kint) function fstr_card_total( T, total, seq )
+    implicit none
+    type(fstr_card_table), intent(in) :: T
+    integer(kind=kint), intent(in) :: total(:)
+    character(len=*), intent(in) :: seq
+
+    integer(kind=kint) :: i
+
+    i = fstr_card_seq( T, seq )
+    if( i == 0 ) call fstr_setup_util_err_stop( '### Error: '//trim(seq)//' : not in the card table' )
+    fstr_card_total = total(i)
+  end function fstr_card_total
 
   subroutine append_node_grp_from_surf_grp( hecMESH, sgrp_id, ngrp_id )
     use hecmw_setup_util, only : append_new_group

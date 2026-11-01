@@ -19,6 +19,7 @@ module m_fstr_solid_setup
     , hecmw_expand_real_array
   use fstr_setup_util, only &
     : fstr_param_pack &
+    , fstr_card_slot &
     , fstr_ctrl_err_stop &
     , amp_name_to_id &
     , dload_grp_name_to_id_ex &
@@ -915,10 +916,9 @@ contains
   !> Read in !STEP                                                             !
   !-----------------------------------------------------------------------------!
 
-  subroutine fstr_setup_STEP( ctrl, counter, P )
+  subroutine fstr_setup_STEP( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: counter
     type(fstr_param_pack) :: P
     character(HECMW_NAME_LEN) :: amp
     integer(kind=kint) :: amp_id
@@ -1007,8 +1007,22 @@ contains
     endif
   end subroutine fstr_setup_step_links
 
-  !> Read in !WRITE after fstr_setup_alloc and store the output controls.
-  !> fg_result and fg_visual are set by the caller before fstr_setup_alloc.
+  !> Read in !WRITE before fstr_setup_prepare and set fg_result and fg_visual.
+  subroutine fstr_setup_WRITE_flags( ctrl, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    type(fstr_param_pack) :: P
+
+    type(t_output_ctrl) :: outctrl
+    integer(kind=kint) :: islog, result, visual, femap
+
+    call fstr_ctrl_get_output( ctrl, outctrl, islog, result, visual, femap )
+    if( visual==1 ) P%PARAM%fg_visual= 1
+    if( result==1 ) P%PARAM%fg_result = 1
+  end subroutine fstr_setup_WRITE_flags
+
+  !> Read in !WRITE after fstr_setup_prepare and store the output controls.
+  !> fg_result and fg_visual are set by fstr_setup_WRITE_flags before fstr_setup_prepare.
   subroutine fstr_setup_WRITE_store( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
@@ -1054,10 +1068,9 @@ contains
   !> Read in !COUPLE                                                          !
   !-----------------------------------------------------------------------------!
 
-  subroutine fstr_setup_COUPLE( ctrl, counter, P )
+  subroutine fstr_setup_COUPLE( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: counter
     type(fstr_param_pack) :: P
     integer(kind=kint) :: rcode
     character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
@@ -1083,10 +1096,9 @@ contains
   end subroutine fstr_setup_COUPLE
 
   !> Read in !ELEMENT_ACTIVATION
-  subroutine fstr_setup_ELEMENT_ACTIVATION( ctrl, counter, P )
+  subroutine fstr_setup_ELEMENT_ACTIVATION( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: counter
     type(fstr_param_pack) :: P
 
     integer(kind=kint) :: rcode
@@ -1119,10 +1131,9 @@ contains
   !> Read in !STATIC(old)                                                           !
   !-----------------------------------------------------------------------------!
 
-  subroutine fstr_setup_STATIC( ctrl, counter, P )
+  subroutine fstr_setup_STATIC( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: counter
     type(fstr_param_pack) :: P
     integer(kind=kint) :: rcode
 
@@ -1131,8 +1142,10 @@ contains
     real(kind=kreal) :: sig_y0, h_dash
     real(kind=kreal) :: DT, ETIME, EPS ! dummy
     integer :: ITMAX ! dummy
+    type(fstr_card_slot) :: slot
 
-    if( counter > 1 ) then
+    slot = P%STATE%slot
+    if( slot%first > 1 ) then
       write(*,*)
     endif
 
@@ -1163,10 +1176,9 @@ contains
   !> Read in !BOUNDARY                                                    !
   !-----------------------------------------------------------------------------!
 
-  subroutine fstr_setup_BOUNDARY( ctrl, counter, P )
+  subroutine fstr_setup_BOUNDARY( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: counter
     type(fstr_param_pack) :: P
 
     integer(kind=kint) :: rcode
@@ -1224,10 +1236,9 @@ contains
   !> Read in !CLOAD                                                           !
   !-----------------------------------------------------------------------------!
 
-  subroutine fstr_setup_CLOAD( ctrl, counter, P )
+  subroutine fstr_setup_CLOAD( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: counter
     type(fstr_param_pack) :: P
 
     integer(kind=kint) :: rcode
@@ -1272,10 +1283,9 @@ contains
   end subroutine fstr_setup_CLOAD
 
   !> Read in !DLOAD
-  subroutine fstr_setup_DLOAD( ctrl, counter, P )
+  subroutine fstr_setup_DLOAD( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: counter
     type(fstr_param_pack) :: P
 
     integer(kind=kint) :: rcode
@@ -1320,10 +1330,9 @@ contains
   !> Read in !TEMPERATURE                                                  !
   !-----------------------------------------------------------------------------!
 
-  subroutine fstr_setup_TEMPERATURE( ctrl, counter, P )
+  subroutine fstr_setup_TEMPERATURE( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: counter
     type(fstr_param_pack) :: P
 
     integer(kind=kint) :: rcode, gid
@@ -1364,10 +1373,9 @@ contains
   !> Read in !SPRING                                                            !
   !-----------------------------------------------------------------------------!
 
-  subroutine fstr_setup_SPRING( ctrl, counter, P )
+  subroutine fstr_setup_SPRING( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: counter
     type(fstr_param_pack) :: P
 
     integer(kind=kint) :: rcode, incremental
@@ -1409,10 +1417,9 @@ contains
   !> Read in !VELOCITY                                                         !
   !-----------------------------------------------------------------------------!
 
-  subroutine fstr_setup_VELOCITY( ctrl, counter, P )
+  subroutine fstr_setup_VELOCITY( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: counter
     type(fstr_param_pack) :: P
 
     integer(kind=kint) :: rcode
@@ -1466,10 +1473,9 @@ contains
   !> Read in !ACCELERATION                                                     !
   !-----------------------------------------------------------------------------!
 
-  subroutine fstr_setup_ACCELERATION( ctrl, counter, P )
+  subroutine fstr_setup_ACCELERATION( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: counter
     type(fstr_param_pack) :: P
 
     integer(kind=kint) :: rcode
@@ -1626,7 +1632,7 @@ contains
   !-----------------------------------------------------------------------------!
   !> Read in !STEP                                                              !
   !-----------------------------------------------------------------------------!
-  !> Read in !STEP of !VERSION 1 or later after fstr_setup_alloc and store the step.
+  !> Read in !STEP of !VERSION 1 or later after fstr_setup_prepare and store the step.
   subroutine fstr_setup_STEP_store( ctrl, c_istep, P )
     implicit none
     integer(kind=kint) :: ctrl

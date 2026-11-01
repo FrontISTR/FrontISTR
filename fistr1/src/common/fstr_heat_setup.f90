@@ -123,11 +123,10 @@ contains
   !> Read in !FIXTEMP                                                          !
   !-----------------------------------------------------------------------------!
 
-  subroutine fstr_setup_FIXTEMP( ctrl, counter, P )
+  subroutine fstr_setup_FIXTEMP( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: counter
-    type(fstr_param_pack),target :: P
+    type(fstr_param_pack) :: P
 
     integer(kind=kint) :: rcode
     character(HECMW_NAME_LEN) :: amp
@@ -157,10 +156,9 @@ contains
   !> Read in !CFLUX                                                            !
   !-----------------------------------------------------------------------------!
 
-  subroutine fstr_setup_CFLUX( ctrl, counter, P )
+  subroutine fstr_setup_CFLUX( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: counter
     type(fstr_param_pack) :: P
 
     integer(kind=kint) :: rcode
@@ -192,10 +190,9 @@ contains
   !-----------------------------------------------------------------------------!
 
 
-  subroutine fstr_setup_DFLUX( ctrl, counter, P )
+  subroutine fstr_setup_DFLUX( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: counter
     type(fstr_param_pack) :: P
 
     integer(kind=kint) :: rcode
@@ -230,10 +227,9 @@ contains
   !-----------------------------------------------------------------------------!
 
 
-  subroutine fstr_setup_SFLUX( ctrl, counter, P )
+  subroutine fstr_setup_SFLUX( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: counter
     type(fstr_param_pack) :: P
 
     integer(kind=kint) :: rcode
@@ -265,10 +261,9 @@ contains
   !-----------------------------------------------------------------------------!
 
 
-  subroutine fstr_setup_FILM( ctrl, counter, P )
+  subroutine fstr_setup_FILM( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: counter
     type(fstr_param_pack) :: P
 
     integer(kind=kint) :: rcode
@@ -309,10 +304,9 @@ contains
   !-----------------------------------------------------------------------------!
 
 
-  subroutine fstr_setup_SFILM( ctrl, counter, P )
+  subroutine fstr_setup_SFILM( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: counter
     type(fstr_param_pack) :: P
 
     integer(kind=kint) :: rcode
@@ -349,10 +343,9 @@ contains
   !-----------------------------------------------------------------------------!
 
 
-  subroutine fstr_setup_RADIATE( ctrl, counter, P )
+  subroutine fstr_setup_RADIATE( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: counter
     type(fstr_param_pack) :: P
 
     integer(kind=kint) :: rcode
@@ -392,10 +385,9 @@ contains
   !-----------------------------------------------------------------------------!
 
 
-  subroutine fstr_setup_SRADIATE( ctrl, counter, P )
+  subroutine fstr_setup_SRADIATE( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: counter
     type(fstr_param_pack) :: P
 
     integer(kind=kint) :: rcode

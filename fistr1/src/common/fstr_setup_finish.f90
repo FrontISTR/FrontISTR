@@ -2,10 +2,9 @@
 ! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
-!> \brief This module provides subroutines to process the data read from the
-!! cards, independently of the input file format: the allocation after the
-!! cards are counted (fstr_setup_alloc) and the processing after all the cards
-!! are read (fstr_setup_finish).
+!> \brief This module provides subroutines to process the data read from the cards,
+!! independently of the input file format: the allocation and the preparation after the cards are counted
+!! (fstr_setup_prepare) and the processing after all the cards are read (fstr_setup_finish).
 module m_fstr_setup_finish
   use m_fstr
   use fstr_setup_util, only &
@@ -21,20 +20,34 @@ module m_fstr_setup_finish
   use m_static_get_prop
   implicit none
 
+  !> Counts of the input for fstr_setup_prepare, independent of the input file format.
+  !> A reader of an input file format sets them from what it counts in the file.
+  type fstr_setup_counts
+    integer(kind=kint) :: contact_pairs = 0
+    integer(kind=kint) :: embed_pairs = 0
+    integer(kind=kint) :: contact_interferences = 0
+    integer(kind=kint) :: contact_params = 0
+    integer(kind=kint) :: weld_lines = 0
+    integer(kind=kint) :: initial_conditions = 0
+    integer(kind=kint) :: steps = 0
+    integer(kind=kint) :: local_coords = 0
+    integer(kind=kint) :: autoinc_params = 0
+    integer(kind=kint) :: converg_params = 0
+    integer(kind=kint) :: time_points = 0
+    integer(kind=kint) :: materials = 0       !< materials defined in the input; the mesh can define more
+  end type fstr_setup_counts
+
 contains
 
-  !> Allocation after the cards are counted: the arrays sized by the counts, the materials
-  !> and sections from the mesh, and the output controls. The section defaults depend on
-  !> the analysis type, and fstr_convert_rotation_dof rewrites the boundary conditions,
+  !> Allocation and preparation after the cards are counted: the arrays sized by counts,
+  !> the materials and sections from the mesh, and the output controls.
+  !> The section defaults depend on the analysis type, and fstr_convert_rotation_dof rewrites the boundary conditions,
   !> so this is called after the analysis type and all the boundary conditions are read.
-  subroutine fstr_setup_alloc( P, c_contact, c_embed, c_weldline, c_initial, c_istep, c_localcoord, &
-      c_aincparam, c_cnvparam, c_timepoints, c_contactparam, c_contact_if, c_material )
+  subroutine fstr_setup_prepare( P, counts )
     use mMaterial
     implicit none
     type(fstr_param_pack) :: P
-    integer(kind=kint), intent(in) :: c_contact, c_embed, c_weldline, c_initial, c_istep, c_localcoord
-    integer(kind=kint), intent(in) :: c_aincparam, c_cnvparam, c_timepoints, c_contactparam, c_contact_if
-    integer(kind=kint), intent(in) :: c_material
+    type(fstr_setup_counts), intent(in) :: counts
 
     type(hecmwST_local_mesh), pointer :: hecMESH
     type(fstr_param), pointer :: fstrPARAM
@@ -56,20 +69,20 @@ contains
     fstrDYNAMIC => P%DYN
     write( logfileNAME, '(i5,''.log'')' ) myrank
 
-    fstrSOLID%n_contacts = c_contact
-    if( c_contact>0 ) then
-      allocate( fstrSOLID%contacts( c_contact ) )
+    fstrSOLID%n_contacts = counts%contact_pairs
+    if( counts%contact_pairs>0 ) then
+      allocate( fstrSOLID%contacts( counts%contact_pairs ) )
       ! convert SURF_SURF contact to NODE_SURF contact
       call fstr_convert_contact_type( P%MESH )
     endif
     call fstr_convert_rotation_dof( P )
-    fstrSOLID%n_embeds = c_embed
-    if( c_embed>0 )  allocate( fstrSOLID%embeds( c_embed ) )
-    if( c_weldline>0 ) allocate( fstrHEAT%weldline( c_weldline ) )
-    if( c_initial>0 ) allocate( g_InitialCnd( c_initial ) )
-    if( c_istep>0 ) then
-      allocate( fstrSOLID%step_ctrl( c_istep ) )
-      do i=1, c_istep
+    fstrSOLID%n_embeds = counts%embed_pairs
+    if( counts%embed_pairs>0 )  allocate( fstrSOLID%embeds( counts%embed_pairs ) )
+    if( counts%weld_lines>0 ) allocate( fstrHEAT%weldline( counts%weld_lines ) )
+    if( counts%initial_conditions>0 ) allocate( g_InitialCnd( counts%initial_conditions ) )
+    if( counts%steps>0 ) then
+      allocate( fstrSOLID%step_ctrl( counts%steps ) )
+      do i=1, counts%steps
         call init_stepInfo( fstrSOLID%step_ctrl(i) )
         if( p%PARAM%solution_type==kstDYNAMIC ) then
           fstrSOLID%step_ctrl(i)%num_substep = fstrDYNAMIC%n_step
@@ -80,23 +93,23 @@ contains
         endif
       end do
     endif
-    if( c_localcoord>0 ) allocate( g_LocalCoordSys(c_localcoord) )
-    allocate( fstrPARAM%ainc(0:c_aincparam) )
-    do i=0,c_aincparam
+    if( counts%local_coords>0 ) allocate( g_LocalCoordSys(counts%local_coords) )
+    allocate( fstrPARAM%ainc(0:counts%autoinc_params) )
+    do i=0,counts%autoinc_params
       call init_AincParam( fstrPARAM%ainc(i) )
     end do
-    allocate( fstrPARAM%cnvparam(0:c_cnvparam) )
-    do i=0,c_cnvparam
+    allocate( fstrPARAM%cnvparam(0:counts%converg_params) )
+    do i=0,counts%converg_params
       call init_ConvergParam( fstrPARAM%cnvparam(i) )
     end do
-    if( c_timepoints>0 ) allocate( fstrPARAM%timepoints(c_timepoints) )
-    allocate( fstrPARAM%contactparam(0:c_contactparam) )
-    do i=0,c_contactparam
+    if( counts%time_points>0 ) allocate( fstrPARAM%timepoints(counts%time_points) )
+    allocate( fstrPARAM%contactparam(0:counts%contact_params) )
+    do i=0,counts%contact_params
       call init_ContactParam( fstrPARAM%contactparam(i) )
     end do
-    if( c_contact_if>0 )then
-      allocate( fstrPARAM%contact_if( c_contact_if ) )
-      do i=1,c_contact_if
+    if( counts%contact_interferences>0 )then
+      allocate( fstrPARAM%contact_if( counts%contact_interferences ) )
+      do i=1,counts%contact_interferences
         call init_Contact_IF( fstrPARAM%contact_if(i) )
       end do
     end if
@@ -113,7 +126,7 @@ contains
       endif
     enddo
 
-    n = c_material
+    n = counts%materials
     if( hecMESH%material%n_mat>n ) n= hecMESH%material%n_mat
     if( n==0 ) stop "material property not defined!"
     allocate( fstrSOLID%materials( n ) )
@@ -185,7 +198,7 @@ contains
     call fstr_init_outctrl(fstrSOLID%output_ctrl(2))
     call fstr_init_outctrl(fstrSOLID%output_ctrl(3))
     call fstr_init_outctrl(fstrSOLID%output_ctrl(4))
-  end subroutine fstr_setup_alloc
+  end subroutine fstr_setup_prepare
 
   !> Processing after all the cards are read: the temperature arrays, the default step,
   !> the element initialization and the checks, and the result arrays (fstr_setup_post).

@@ -2,15 +2,15 @@
 ! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
-!> \brief This module provides subroutines to read the cards that go into
-!! fstr_param, and the cards that go into no structure (the variables of
-!! m_fstr and the amplitudes of the mesh).
+!> \brief This module provides subroutines to read the cards that go into fstr_param, and the cards that go into no
+!! structure (the variables of m_fstr, the amplitudes of the mesh and the state of reading the cards).
 module m_fstr_param_setup
   use m_fstr
   use hecmw_setup_util, only &
     : node_grp_name_to_id_ex
   use fstr_setup_util, only &
     : fstr_param_pack &
+    , fstr_card_slot &
     , fstr_ctrl_err_stop &
     , append_new_amplitude
   use fstr_ctrl_common
@@ -23,13 +23,27 @@ module m_fstr_param_setup
 contains
 
   !-----------------------------------------------------------------------------!
+  !> Read in !VERSION                                                          !
+  !-----------------------------------------------------------------------------!
+
+  subroutine fstr_setup_VERSION( ctrl, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    type(fstr_param_pack) :: P
+
+    integer(kind=kint) :: rcode
+
+    rcode = fstr_ctrl_get_data_ex( ctrl, 1, 'i ', P%STATE%version )
+
+  end subroutine fstr_setup_VERSION
+
+  !-----------------------------------------------------------------------------!
   !> Read in !SOLUTION                                                         !
   !-----------------------------------------------------------------------------!
 
-  subroutine fstr_setup_SOLUTION( ctrl, counter, P )
+  subroutine fstr_setup_SOLUTION( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: counter
     type(fstr_param_pack) :: P
 
     integer(kind=kint) :: rcode
@@ -43,10 +57,9 @@ contains
   !> Read in !NONLINEAR_SOLVER                                                         !
   !-----------------------------------------------------------------------------!
 
-  subroutine fstr_setup_NONLINEAR_SOLVER( ctrl, counter, P )
+  subroutine fstr_setup_NONLINEAR_SOLVER( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: counter
     type(fstr_param_pack) :: P
 
     integer(kind=kint) :: rcode
@@ -60,15 +73,16 @@ contains
   !> Read in !SOLVER                                                           !
   !-----------------------------------------------------------------------------!
 
-  subroutine fstr_setup_SOLVER( ctrl, counter, P )
+  subroutine fstr_setup_SOLVER( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: counter
-    type(fstr_param_pack),target :: P
+    type(fstr_param_pack) :: P
 
     integer(kind=kint) :: rcode
+    type(fstr_card_slot) :: slot
 
-    if( counter >= 2 ) then
+    slot = P%STATE%slot
+    if( slot%first > 1 ) then
       write(ILOG,*) '### Error : !SOLVER exists twice in FSTR control file.'
       stop HECMW_EXIT_INPUT
     endif
@@ -317,10 +331,9 @@ contains
   !-----------------------------------------------------------------------------!
   !> Read in !ECHO                                                            !
   !-----------------------------------------------------------------------------!
-  subroutine fstr_setup_ECHO( ctrl, counter, P )
+  subroutine fstr_setup_ECHO( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: counter
     type(fstr_param_pack) :: P
 
     integer(kind=kint) :: rcode
@@ -334,18 +347,20 @@ contains
   !-----------------------------------------------------------------------------!
   !> Read in !RESTART                                                         !
   !-----------------------------------------------------------------------------!
-  subroutine fstr_setup_RESTART( ctrl, nout, version )
+  subroutine fstr_setup_RESTART( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: nout
-    integer(kind=kint) :: version
+    type(fstr_param_pack) :: P
 
-    integer(kind=kint) :: rcode
+    integer(kind=kint) :: rcode, nout
     nout = 0
     rcode = fstr_ctrl_get_param_ex( ctrl, 'FREQUENCY ', '# ', 0, 'I', nout )
     if( rcode /= 0 ) call fstr_ctrl_err_stop
-    rcode = fstr_ctrl_get_param_ex( ctrl, 'VERSION ', '# ', 0, 'I', version )
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'VERSION ', '# ', 0, 'I', P%PARAM%restart_version )
     if( rcode /= 0 ) call fstr_ctrl_err_stop
+    P%SOLID%restart_nout= nout
+    P%DYN%restart_nout= nout
+    P%HEAT%restart_nout= nout
 
   end subroutine fstr_setup_RESTART
 
@@ -379,10 +394,9 @@ contains
   !> Read in !REFTEMP                                                          !
   !-----------------------------------------------------------------------------!
 
-  subroutine fstr_setup_REFTEMP( ctrl, counter, P )
+  subroutine fstr_setup_REFTEMP( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: counter
     type(fstr_param_pack) :: P
 
     integer(kind=kint) :: rcode
@@ -396,11 +410,10 @@ contains
   !> Read in !MPC                                                              !
   !-----------------------------------------------------------------------------!
 
-  subroutine fstr_setup_MPC( ctrl, counter, P )
+  subroutine fstr_setup_MPC( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: counter
-    type(fstr_param_pack), target :: P
+    type(fstr_param_pack) :: P
 
     integer(kind=kint) :: rcode
     !        integer(kind=kint) :: type
@@ -448,7 +461,6 @@ contains
   subroutine fstr_setup_CONTACTALGO( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    !        integer(kind=kint) :: counter
     type(fstr_param_pack) :: P
 
     integer(kind=kint) :: rcode
