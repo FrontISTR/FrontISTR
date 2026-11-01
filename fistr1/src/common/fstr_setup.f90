@@ -4598,6 +4598,14 @@ end function fstr_setup_INITIAL
 
     if( rcode /= 0) call fstr_ctrl_err_stop
 
+    if( P%DYN%idx_eqa /= 1 .and. P%DYN%idx_eqa /= 11 ) then
+      write(*,*) '### Error: !DYNAMIC time integration type must be 1 (Newmark-beta) or 11 (explicit)'
+      write(ILOG,*) '### Error: !DYNAMIC time integration type must be 1 (Newmark-beta) or 11 (explicit)'
+      call flush(6)
+      call flush(ILOG)
+      call fstr_ctrl_err_stop
+    endif
+
     if( P%DYN%idx_mas /= kMassLumped .and. P%DYN%idx_mas /= kMassConsistent ) then
       write(*,*) '### Error: !DYNAMIC mass matrix type must be 1 (lumped) or 2 (consistent)'
       write(ILOG,*) '### Error: !DYNAMIC mass matrix type must be 1 (lumped) or 2 (consistent)'
@@ -4606,7 +4614,7 @@ end function fstr_setup_INITIAL
       call fstr_ctrl_err_stop
     endif
     if( P%DYN%idx_mas == kMassConsistent .and. &
-        (P%DYN%idx_eqa /= 1 .or. P%DYN%idx_resp /= 1) ) then
+        (P%DYN%idx_eqa == 11 .or. P%DYN%idx_resp /= 1) ) then
       write(*,*) '### Error: consistent mass matrix is available only for implicit transient analysis'
       write(ILOG,*) '### Error: consistent mass matrix is available only for implicit transient analysis'
       call flush(6)

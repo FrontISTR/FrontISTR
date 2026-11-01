@@ -189,7 +189,7 @@ contains
 
     !restart
     if(fstrDYNAMIC%restart_nout < 0 ) then
-      if( fstrDYNAMIC%idx_eqa == 1 ) then
+      if( fstrDYNAMIC%idx_eqa /= 11 ) then
         call fstr_read_restart_dyna_nl(restart_step_num,restart_substep_num,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM,&
           infoCTChange%contactNode_previous,restart_step_count)
       elseif(fstrDYNAMIC%idx_eqa == 11) then
@@ -204,7 +204,7 @@ contains
 
     if(fstrDYNAMIC%idx_resp == 1) then   ! time history analysis
 
-      if(fstrDYNAMIC%idx_eqa == 1) then     ! implicit dynamic analysis
+      if(fstrDYNAMIC%idx_eqa /= 11) then     ! implicit dynamic analysis
         call FSTR_SOLVE_NLGEOM_DYNAMIC_IMPLICIT_CONTACTSLAG(hecMESH,hecMAT,fstrSOLID,fstrEIG   &
           ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
           ,fstrCPL,hecLagMAT,restart_step_num,restart_substep_num,infoCTChange   &
