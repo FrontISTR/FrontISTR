@@ -53,16 +53,16 @@ module hecmw_util
   !C +---------------+
   !C===
   type hecmwST_section
-    integer(kind=kint)         :: n_sect
-    integer(kind=kint),pointer :: sect_type(:)
-    integer(kind=kint),pointer :: sect_opt(:)
-    integer(kind=kint),pointer :: sect_mat_ID_index(:)
-    integer(kind=kint),pointer :: sect_mat_ID_item(:)
-    integer(kind=kint),pointer :: sect_I_index(:)
-    integer(kind=kint),pointer :: sect_I_item(:)
-    integer(kind=kint),pointer :: sect_R_index(:)
-    real(kind=kreal),pointer   :: sect_R_item(:)
-    integer(kind=kint),pointer :: sect_orien_ID(:) => null()
+    integer(kind=kint)         :: n_sect=0
+    integer(kind=kint),pointer :: sect_type(:)=>null()
+    integer(kind=kint),pointer :: sect_opt(:)=>null()
+    integer(kind=kint),pointer :: sect_mat_ID_index(:)=>null()
+    integer(kind=kint),pointer :: sect_mat_ID_item(:)=>null()
+    integer(kind=kint),pointer :: sect_I_index(:)=>null()
+    integer(kind=kint),pointer :: sect_I_item(:)=>null()
+    integer(kind=kint),pointer :: sect_R_index(:)=>null()
+    real(kind=kreal),pointer   :: sect_R_item(:)=>null()
+    integer(kind=kint),pointer :: sect_orien_ID(:)=>null()
   end type hecmwST_section
 
   !C      for hecmwST_section%sect_type
@@ -85,16 +85,16 @@ module hecmw_util
   !C +----------------+
   !C===
   type hecmwST_material
-    integer(kind=kint)         :: n_mat
-    integer(kind=kint)         :: n_mat_item
-    integer(kind=kint)         :: n_mat_subitem
-    integer(kind=kint)         :: n_mat_table
-    character(HECMW_NAME_LEN),pointer :: mat_name(:)
-    integer(kind=kint),pointer :: mat_item_index(:)
-    integer(kind=kint),pointer :: mat_subitem_index(:)
-    integer(kind=kint),pointer :: mat_table_index(:)
-    real(kind=kreal),pointer   :: mat_val(:)
-    real(kind=kreal),pointer   :: mat_temp(:)
+    integer(kind=kint)         :: n_mat=0
+    integer(kind=kint)         :: n_mat_item=0
+    integer(kind=kint)         :: n_mat_subitem=0
+    integer(kind=kint)         :: n_mat_table=0
+    character(HECMW_NAME_LEN),pointer :: mat_name(:)=>null()
+    integer(kind=kint),pointer :: mat_item_index(:)=>null()
+    integer(kind=kint),pointer :: mat_subitem_index(:)=>null()
+    integer(kind=kint),pointer :: mat_table_index(:)=>null()
+    real(kind=kreal),pointer   :: mat_val(:)=>null()
+    real(kind=kreal),pointer   :: mat_temp(:)=>null()
   end type hecmwST_material
   !C===
 
@@ -104,12 +104,12 @@ module hecmw_util
   !C +-----------+
   !C===
   type hecmwST_mpc
-    integer(kind=kint)         :: n_mpc
-    integer(kind=kint),pointer :: mpc_index(:)
-    integer(kind=kint),pointer :: mpc_item(:)
-    integer(kind=kint),pointer :: mpc_dof(:)
-    real(kind=kreal),pointer   :: mpc_val(:)
-    real(kind=kreal),pointer   :: mpc_const(:)
+    integer(kind=kint)         :: n_mpc=0
+    integer(kind=kint),pointer :: mpc_index(:)=>null()
+    integer(kind=kint),pointer :: mpc_item(:)=>null()
+    integer(kind=kint),pointer :: mpc_dof(:)=>null()
+    real(kind=kreal),pointer   :: mpc_val(:)=>null()
+    real(kind=kreal),pointer   :: mpc_const(:)=>null()
   end type hecmwST_mpc
   !C===
 
@@ -119,14 +119,14 @@ module hecmw_util
   !C +-----------+
   !C===
   type hecmwST_amplitude
-    integer(kind=kint)         :: n_amp
-    character(len=HECMW_NAME_LEN),pointer :: amp_name(:)
-    integer(kind=kint),pointer :: amp_type_definition(:)
-    integer(kind=kint),pointer :: amp_type_time(:)
-    integer(kind=kint),pointer :: amp_type_value(:)
-    integer(kind=kint),pointer :: amp_index(:)
-    real(kind=kreal),pointer   :: amp_val(:)
-    real(kind=kreal),pointer   :: amp_table(:)
+    integer(kind=kint)         :: n_amp=0
+    character(len=HECMW_NAME_LEN),pointer :: amp_name(:)=>null()
+    integer(kind=kint),pointer :: amp_type_definition(:)=>null()
+    integer(kind=kint),pointer :: amp_type_time(:)=>null()
+    integer(kind=kint),pointer :: amp_type_value(:)=>null()
+    integer(kind=kint),pointer :: amp_index(:)=>null()
+    real(kind=kreal),pointer   :: amp_val(:)=>null()
+    real(kind=kreal),pointer   :: amp_table(:)=>null()
   end type hecmwST_amplitude
 
   !C      for hecmwST_amplitude%amp_type_definition
@@ -145,16 +145,16 @@ module hecmw_util
   !C +-----------+
   !C===
   type hecmwST_node_grp
-    integer(kind=kint)         :: n_grp
-    integer(kind=kint)         :: n_bc
-    character(HECMW_NAME_LEN),pointer :: grp_name(:)
-    integer(kind=kint),pointer :: grp_index(:)
-    integer(kind=kint),pointer :: grp_item(:)
-    integer(kind=kint),pointer :: bc_grp_ID(:)
-    integer(kind=kint),pointer :: bc_grp_type(:)
-    integer(kind=kint),pointer :: bc_grp_index(:)
-    integer(kind=kint),pointer :: bc_grp_dof(:)
-    real(kind=kreal),pointer   :: bc_grp_val(:)
+    integer(kind=kint)         :: n_grp=0
+    integer(kind=kint)         :: n_bc=0
+    character(HECMW_NAME_LEN),pointer :: grp_name(:)=>null()
+    integer(kind=kint),pointer :: grp_index(:)=>null()
+    integer(kind=kint),pointer :: grp_item(:)=>null()
+    integer(kind=kint),pointer :: bc_grp_ID(:)=>null()
+    integer(kind=kint),pointer :: bc_grp_type(:)=>null()
+    integer(kind=kint),pointer :: bc_grp_index(:)=>null()
+    integer(kind=kint),pointer :: bc_grp_dof(:)=>null()
+    real(kind=kreal),pointer   :: bc_grp_val(:)=>null()
   end type hecmwST_node_grp
 
   !C      for hecmwST_node_grp%bc_grp_type
@@ -168,15 +168,15 @@ module hecmw_util
   !C +-----------+
   !C===
   type hecmwST_elem_grp
-    integer(kind=kint)         :: n_grp
-    integer(kind=kint)         :: n_bc
-    character(HECMW_NAME_LEN),pointer :: grp_name(:)
-    integer(kind=kint),pointer :: grp_index(:)
-    integer(kind=kint),pointer :: grp_item(:)
-    integer(kind=kint),pointer :: bc_grp_ID(:)
-    integer(kind=kint),pointer :: bc_grp_type(:)
-    integer(kind=kint),pointer :: bc_grp_index(:)
-    real(kind=kreal),pointer   :: bc_grp_val(:)
+    integer(kind=kint)         :: n_grp=0
+    integer(kind=kint)         :: n_bc=0
+    character(HECMW_NAME_LEN),pointer :: grp_name(:)=>null()
+    integer(kind=kint),pointer :: grp_index(:)=>null()
+    integer(kind=kint),pointer :: grp_item(:)=>null()
+    integer(kind=kint),pointer :: bc_grp_ID(:)=>null()
+    integer(kind=kint),pointer :: bc_grp_type(:)=>null()
+    integer(kind=kint),pointer :: bc_grp_index(:)=>null()
+    real(kind=kreal),pointer   :: bc_grp_val(:)=>null()
   end type hecmwST_elem_grp
 
   !C      for hecmwST_elem_grp%bc_grp_type
@@ -190,15 +190,15 @@ module hecmw_util
   !C +-----------+
   !C===
   type hecmwST_surf_grp
-    integer(kind=kint)         :: n_grp
-    integer(kind=kint)         :: n_bc
-    character(HECMW_NAME_LEN),pointer:: grp_name(:)
-    integer(kind=kint),pointer :: grp_index(:)
-    integer(kind=kint),pointer :: grp_item(:)
-    integer(kind=kint),pointer :: bc_grp_ID(:)
-    integer(kind=kint),pointer :: bc_grp_type(:)
-    integer(kind=kint),pointer :: bc_grp_index(:)
-    real(kind=kreal),pointer   :: bc_grp_val(:)
+    integer(kind=kint)         :: n_grp=0
+    integer(kind=kint)         :: n_bc=0
+    character(HECMW_NAME_LEN),pointer:: grp_name(:)=>null()
+    integer(kind=kint),pointer :: grp_index(:)=>null()
+    integer(kind=kint),pointer :: grp_item(:)=>null()
+    integer(kind=kint),pointer :: bc_grp_ID(:)=>null()
+    integer(kind=kint),pointer :: bc_grp_type(:)=>null()
+    integer(kind=kint),pointer :: bc_grp_index(:)=>null()
+    real(kind=kreal),pointer   :: bc_grp_val(:)=>null()
   end type hecmwST_surf_grp
 
   !C      for hecmwST_surf_grp%bc_grp_type
@@ -212,12 +212,12 @@ module hecmw_util
   !C +---------+
   !C===
   type hecmwST_contact_pair
-    integer(kind=kint)         :: n_pair
-    character(HECMW_NAME_LEN),pointer:: name(:)
-    integer(kind=kint),pointer :: type(:)
-    integer(kind=kint),pointer :: slave_grp_id(:)
-    integer(kind=kint),pointer :: master_grp_id(:)
-    integer(kind=kint),pointer :: slave_orisgrp_id(:)
+    integer(kind=kint)         :: n_pair=0
+    character(HECMW_NAME_LEN),pointer:: name(:)=>null()
+    integer(kind=kint),pointer :: type(:)=>null()
+    integer(kind=kint),pointer :: slave_grp_id(:)=>null()
+    integer(kind=kint),pointer :: master_grp_id(:)=>null()
+    integer(kind=kint),pointer :: slave_orisgrp_id(:)=>null()
   end type hecmwST_contact_pair
 
   !C      for hecmwST_contact_pair%type
@@ -232,9 +232,9 @@ module hecmw_util
   !C +----------------+
   !C===
   type hecmwST_refine_origin
-    integer(kind=kint),pointer :: index(:)
-    integer(kind=kint),pointer :: item_index(:)
-    integer(kind=kint),pointer :: item_item(:)
+    integer(kind=kint),pointer :: index(:)=>null()
+    integer(kind=kint),pointer :: item_index(:)=>null()
+    integer(kind=kint),pointer :: item_item(:)=>null()
   end type hecmwST_refine_origin
   !C===
 
@@ -248,136 +248,136 @@ module hecmw_util
     !C
     !C-- FILES, GENERAL
     !C
-    character(HECMW_FILENAME_LEN)         :: gridfile
-    character(HECMW_FILENAME_LEN),pointer :: files(:)
-    character(HECMW_HEADER_LEN)           :: header
-    integer(kind=kint) :: hecmw_flag_adapt
-    integer(kind=kint) :: hecmw_flag_initcon
-    integer(kind=kint) :: hecmw_n_file
-    integer(kind=kint) :: hecmw_flag_parttype
-    integer(kind=kint) :: hecmw_flag_partdepth
-    integer(kind=kint) :: hecmw_flag_version
-    integer(kind=kint) :: hecmw_flag_partcontact
-    real(kind=kreal)   :: zero_temp
+    character(HECMW_FILENAME_LEN)         :: gridfile=achar(0)
+    character(HECMW_FILENAME_LEN),pointer :: files(:)=>null()
+    character(HECMW_HEADER_LEN)           :: header=achar(0)
+    integer(kind=kint) :: hecmw_flag_adapt=0
+    integer(kind=kint) :: hecmw_flag_initcon=0
+    integer(kind=kint) :: hecmw_n_file=0
+    integer(kind=kint) :: hecmw_flag_parttype=0
+    integer(kind=kint) :: hecmw_flag_partdepth=0
+    integer(kind=kint) :: hecmw_flag_version=0
+    integer(kind=kint) :: hecmw_flag_partcontact=0
+    real(kind=kreal)   :: zero_temp=0.0d0
 
     !C
     !C-- NODE
-    integer(kind=kint)         :: n_node
-    integer(kind=kint)         :: n_node_gross
+    integer(kind=kint)         :: n_node=0
+    integer(kind=kint)         :: n_node_gross=0
     !         For parallel contact with hanging slave nodes
-    integer(kind=kint)         :: nn_middle
-    integer(kind=kint)         :: nn_internal
-    integer(kind=kint)         :: n_dof
-    integer(kind=kint)         :: n_dof_grp
-    integer(kind=kint)         :: n_dof_tot
-    real(kind=kreal),pointer   :: node(:)
-    integer(kind=kint),pointer :: node_ID(:)
-    integer(kind=kint),pointer :: global_node_ID(:)
-    integer(kind=kint),pointer :: node_val_index(:)
-    real(kind=kreal),pointer   :: node_val_item(:)
-    integer(kind=kint),pointer :: node_dof_index(:)
-    integer(kind=kint),pointer :: node_dof_item(:)
-    integer(kind=kint),pointer :: node_init_val_index(:)
-    real(kind=kreal),pointer   :: node_init_val_item(:)
-    integer(kind=kint),pointer :: node_internal_list(:)
+    integer(kind=kint)         :: nn_middle=0
+    integer(kind=kint)         :: nn_internal=0
+    integer(kind=kint)         :: n_dof=0
+    integer(kind=kint)         :: n_dof_grp=0
+    integer(kind=kint)         :: n_dof_tot=0
+    real(kind=kreal),pointer   :: node(:)=>null()
+    integer(kind=kint),pointer :: node_ID(:)=>null()
+    integer(kind=kint),pointer :: global_node_ID(:)=>null()
+    integer(kind=kint),pointer :: node_val_index(:)=>null()
+    real(kind=kreal),pointer   :: node_val_item(:)=>null()
+    integer(kind=kint),pointer :: node_dof_index(:)=>null()
+    integer(kind=kint),pointer :: node_dof_item(:)=>null()
+    integer(kind=kint),pointer :: node_init_val_index(:)=>null()
+    real(kind=kreal),pointer   :: node_init_val_item(:)=>null()
+    integer(kind=kint),pointer :: node_internal_list(:)=>null()
     !C
     !C-- ELEMENT
     !C
-    integer(kind=kint)         :: n_elem
-    integer(kind=kint)         :: n_elem_gross
-    integer(kind=kint)         :: ne_internal
-    integer(kind=kint)         :: n_elem_type
-    integer(kind=kint)         :: n_elem_mat_ID
-    integer(kind=kint),pointer :: elem_type_index(:)
-    integer(kind=kint),pointer :: elem_type_item(:)
-    integer(kind=kint),pointer :: elem_type(:)
-    integer(kind=kint),pointer :: section_ID(:)
-    integer(kind=kint),pointer :: elem_mat_ID_index(:)
-    integer(kind=kint),pointer :: elem_mat_ID_item(:)
-    integer(kind=kint),pointer :: elem_node_index(:)
-    integer(kind=kint),pointer :: elem_node_item(:)
-    integer(kind=kint),pointer :: elem_ID(:)
-    integer(kind=kint),pointer :: global_elem_ID(:)
-    integer(kind=kint),pointer :: elem_internal_list(:)
-    integer(kind=kint),pointer :: elem_mat_int_index(:)
-    real(kind=kreal),pointer   :: elem_mat_int_val(:)
-    integer(kind=kint),pointer :: elem_val_index(:)
-    real(kind=kreal),pointer   :: elem_val_item(:)
+    integer(kind=kint)         :: n_elem=0
+    integer(kind=kint)         :: n_elem_gross=0
+    integer(kind=kint)         :: ne_internal=0
+    integer(kind=kint)         :: n_elem_type=0
+    integer(kind=kint)         :: n_elem_mat_ID=0
+    integer(kind=kint),pointer :: elem_type_index(:)=>null()
+    integer(kind=kint),pointer :: elem_type_item(:)=>null()
+    integer(kind=kint),pointer :: elem_type(:)=>null()
+    integer(kind=kint),pointer :: section_ID(:)=>null()
+    integer(kind=kint),pointer :: elem_mat_ID_index(:)=>null()
+    integer(kind=kint),pointer :: elem_mat_ID_item(:)=>null()
+    integer(kind=kint),pointer :: elem_node_index(:)=>null()
+    integer(kind=kint),pointer :: elem_node_item(:)=>null()
+    integer(kind=kint),pointer :: elem_ID(:)=>null()
+    integer(kind=kint),pointer :: global_elem_ID(:)=>null()
+    integer(kind=kint),pointer :: elem_internal_list(:)=>null()
+    integer(kind=kint),pointer :: elem_mat_int_index(:)=>null()
+    real(kind=kreal),pointer   :: elem_mat_int_val(:)=>null()
+    integer(kind=kint),pointer :: elem_val_index(:)=>null()
+    real(kind=kreal),pointer   :: elem_val_item(:)=>null()
     !integer(kind=kint)         :: is_33shell
     !integer(kind=kint)         :: is_33beam
     !integer(kind=kint)         :: is_heat
     !C
     !C-- COMMUNICATION
     !C
-    integer(kind=kint)         :: zero
-    integer(kind=kint)         :: MPI_COMM
-    integer(kind=kint)         :: PETOT
-    integer(kind=kint)         :: PEsmpTOT
-    integer(kind=kint)         :: my_rank
-    integer(kind=kint)         :: errnof
-    integer(kind=kint)         :: n_subdomain
-    integer(kind=kint)         :: n_neighbor_pe
-    integer(kind=kint),pointer :: neighbor_pe(:)
-    integer(kind=kint),pointer :: import_index(:)
-    integer(kind=kint),pointer :: import_item(:)
-    integer(kind=kint),pointer :: export_index(:)
-    integer(kind=kint),pointer :: export_item(:)
-    integer(kind=kint),pointer :: shared_index(:)
-    integer(kind=kint),pointer :: shared_item(:)
+    integer(kind=kint)         :: zero=0
+    integer(kind=kint)         :: MPI_COMM=0
+    integer(kind=kint)         :: PETOT=0
+    integer(kind=kint)         :: PEsmpTOT=0
+    integer(kind=kint)         :: my_rank=0
+    integer(kind=kint)         :: errnof=0
+    integer(kind=kint)         :: n_subdomain=0
+    integer(kind=kint)         :: n_neighbor_pe=0
+    integer(kind=kint),pointer :: neighbor_pe(:)=>null()
+    integer(kind=kint),pointer :: import_index(:)=>null()
+    integer(kind=kint),pointer :: import_item(:)=>null()
+    integer(kind=kint),pointer :: export_index(:)=>null()
+    integer(kind=kint),pointer :: export_item(:)=>null()
+    integer(kind=kint),pointer :: shared_index(:)=>null()
+    integer(kind=kint),pointer :: shared_item(:)=>null()
 
     !C
     !C-- ADAPTATION
     !C
-    integer(kind=kint)         :: coarse_grid_level
-    integer(kind=kint)         :: n_adapt
-    integer(kind=kint),pointer :: when_i_was_refined_node(:)
-    integer(kind=kint),pointer :: when_i_was_refined_elem(:)
-    integer(kind=kint),pointer :: adapt_parent_type(:)
-    integer(kind=kint),pointer :: adapt_type (:)
-    integer(kind=kint),pointer :: adapt_level(:)
-    integer(kind=kint),pointer :: adapt_parent(:)
-    integer(kind=kint),pointer :: adapt_children_index(:)
-    integer(kind=kint),pointer :: adapt_children_item(:)
+    integer(kind=kint)         :: coarse_grid_level=0
+    integer(kind=kint)         :: n_adapt=0
+    integer(kind=kint),pointer :: when_i_was_refined_node(:)=>null()
+    integer(kind=kint),pointer :: when_i_was_refined_elem(:)=>null()
+    integer(kind=kint),pointer :: adapt_parent_type(:)=>null()
+    integer(kind=kint),pointer :: adapt_type(:)=>null()
+    integer(kind=kint),pointer :: adapt_level(:)=>null()
+    integer(kind=kint),pointer :: adapt_parent(:)=>null()
+    integer(kind=kint),pointer :: adapt_children_index(:)=>null()
+    integer(kind=kint),pointer :: adapt_children_item(:)=>null()
 
-    integer(kind=kint) :: nn_array, ne_array, nx_array
-    integer(kind=kint) :: n_adapt_edge, n_adapt_edge_global
-    integer(kind=kint) :: n_adapt_act_node, n_adapt_act_edge
-    integer(kind=kint) :: n_adapt_act_elem, n_adapt_act_elem_cur
-    integer(kind=kint) :: n_adapt_elem_341, n_adapt_elem_351
-    integer(kind=kint) :: n_adapt_elem_341_cur, n_adapt_elem_351_cur
-    integer(kind=kint) :: n_adapt_act_elem_341, n_adapt_act_elem_351
+    integer(kind=kint) :: nn_array=0, ne_array=0, nx_array=0
+    integer(kind=kint) :: n_adapt_edge=0, n_adapt_edge_global=0
+    integer(kind=kint) :: n_adapt_act_node=0, n_adapt_act_edge=0
+    integer(kind=kint) :: n_adapt_act_elem=0, n_adapt_act_elem_cur=0
+    integer(kind=kint) :: n_adapt_elem_341=0, n_adapt_elem_351=0
+    integer(kind=kint) :: n_adapt_elem_341_cur=0, n_adapt_elem_351_cur=0
+    integer(kind=kint) :: n_adapt_act_elem_341=0, n_adapt_act_elem_351=0
 
-    integer(kind=kint) :: n_adapt_node_cur, nn_adapt_internal_cur
-    integer(kind=kint) :: n_adapt_node_old, nn_adapt_internal_old
-    integer(kind=kint) :: n_adapt_elem_cur, n_adapt_elem_old
+    integer(kind=kint) :: n_adapt_node_cur=0, nn_adapt_internal_cur=0
+    integer(kind=kint) :: n_adapt_node_old=0, nn_adapt_internal_old=0
+    integer(kind=kint) :: n_adapt_elem_cur=0, n_adapt_elem_old=0
 
-    integer(kind=kint), pointer :: adapt_edge_node(:), adapt_mid_edge (:)
-    integer(kind=kint), pointer :: adapt_iemb     (:), adapt_edge_home(:)
-    integer(kind=kint), pointer :: adapt_act_edge (:)
+    integer(kind=kint), pointer :: adapt_edge_node(:)=>null(), adapt_mid_edge (:)=>null()
+    integer(kind=kint), pointer :: adapt_iemb     (:)=>null(), adapt_edge_home(:)=>null()
+    integer(kind=kint), pointer :: adapt_act_edge (:)=>null()
 
     integer(kind=kint), pointer ::                                           &
-      &           adapt_import_edge_index(:), adapt_import_edge_item (:),&
-      &           adapt_export_edge_index(:), adapt_export_edge_item (:),&
-      &           adapt_import_elem_index(:), adapt_import_elem_item (:),&
-      &           adapt_export_elem_index(:), adapt_export_elem_item (:),&
-      &           adapt_import_new_index (:), adapt_import_new_item  (:),&
-      &           adapt_export_new_index (:), adapt_export_new_item  (:)
-    integer(kind=kint), pointer :: rev_neighbor_pe(:)
-    integer(kind=kint), pointer :: adapt_act_elem_341(:)
-    integer(kind=kint), pointer :: adapt_act_elem_351(:)
-    integer(kind=kint), pointer :: adapt_OLDtoNEW_node(:), adapt_NEWtoOLD_node(:)
-    integer(kind=kint), pointer :: adapt_OLDtoNEW_elem(:), adapt_NEWtoOLD_elem(:)
-    integer(kind=kint), pointer :: adapt_IWK(:), adapt_children_local(:)
+      &           adapt_import_edge_index(:)=>null(), adapt_import_edge_item(:)=>null(),&
+      &           adapt_export_edge_index(:)=>null(), adapt_export_edge_item(:)=>null(),&
+      &           adapt_import_elem_index(:)=>null(), adapt_import_elem_item(:)=>null(),&
+      &           adapt_export_elem_index(:)=>null(), adapt_export_elem_item(:)=>null(),&
+      &           adapt_import_new_index (:)=>null(), adapt_import_new_item (:)=>null(),&
+      &           adapt_export_new_index (:)=>null(), adapt_export_new_item (:)=>null()
+    integer(kind=kint), pointer :: rev_neighbor_pe(:)=>null()
+    integer(kind=kint), pointer :: adapt_act_elem_341(:)=>null()
+    integer(kind=kint), pointer :: adapt_act_elem_351(:)=>null()
+    integer(kind=kint), pointer :: adapt_OLDtoNEW_node(:)=>null(), adapt_NEWtoOLD_node(:)=>null()
+    integer(kind=kint), pointer :: adapt_OLDtoNEW_elem(:)=>null(), adapt_NEWtoOLD_elem(:)=>null()
+    integer(kind=kint), pointer :: adapt_IWK(:)=>null(), adapt_children_local(:)=>null()
 
     !C
     !C-- REFINEMENT
     !C
-    integer(kind=kint)         :: n_refine
-    integer(kind=kint),pointer :: node_old2new(:)
-    integer(kind=kint),pointer :: node_new2old(:)
-    integer(kind=kint),pointer :: elem_old2new(:)
-    integer(kind=kint),pointer :: elem_new2old(:)
-    integer(kind=kint),pointer :: n_node_refine_hist(:)
+    integer(kind=kint)         :: n_refine=0
+    integer(kind=kint),pointer :: node_old2new(:)=>null()
+    integer(kind=kint),pointer :: node_new2old(:)=>null()
+    integer(kind=kint),pointer :: elem_old2new(:)=>null()
+    integer(kind=kint),pointer :: elem_new2old(:)=>null()
+    integer(kind=kint),pointer :: n_node_refine_hist(:)=>null()
 
     !C
     !C-- ETC.
@@ -463,16 +463,16 @@ module hecmw_util
   end type hecmwST_matrix_lagrange
 
   type hecmwST_matrix
-    integer(kind=kint) ::  N, NP, NPL, NPU, NPA, NDOF
-    real(kind=kreal), pointer :: D(:), B(:), X(:)
-    real(kind=kreal), pointer :: AL(:), AU(:)
-    real(kind=kreal), pointer :: A(:)
-    integer(kind=kint), pointer :: indexL(:), indexU(:)
-    integer(kind=kint), pointer :: indexA(:)
-    integer(kind=kint), pointer ::  itemL(:),  itemU(:)
-    integer(kind=kint), pointer ::  itemA(:)
-    integer(kind=kint ), dimension(100) :: Iarray
-    real   (kind=kreal), dimension(100) :: Rarray
+    integer(kind=kint) ::  N=0, NP=0, NPL=0, NPU=0, NPA=0, NDOF=0
+    real(kind=kreal), pointer :: D(:)=>null(), B(:)=>null(), X(:)=>null()
+    real(kind=kreal), pointer :: AL(:)=>null(), AU(:)=>null()
+    real(kind=kreal), pointer :: A(:)=>null()
+    integer(kind=kint), pointer :: indexL(:)=>null(), indexU(:)=>null()
+    integer(kind=kint), pointer :: indexA(:)=>null()
+    integer(kind=kint), pointer ::  itemL(:)=>null(),  itemU(:)=>null()
+    integer(kind=kint), pointer ::  itemA(:)=>null()
+    integer(kind=kint ), dimension(100) :: Iarray=0
+    real   (kind=kreal), dimension(100) :: Rarray=0.0d0
     logical :: symmetric = .true.
   end type hecmwST_matrix
 contains
@@ -694,6 +694,7 @@ contains
     nullify( P%sect_I_item )
     nullify( P%sect_R_index )
     nullify( P%sect_R_item )
+    nullify( P%sect_orien_ID )
   end subroutine hecmw_nullify_section
 
   subroutine hecmw_nullify_material( P )
@@ -785,8 +786,8 @@ contains
     nullify( P%name )
     nullify( P%type )
     nullify( P%slave_grp_id )
-    nullify( P%slave_orisgrp_id )
     nullify( P%master_grp_id )
+    nullify( P%slave_orisgrp_id )
   end subroutine hecmw_nullify_contact_pair
 
   subroutine hecmw_nullify_refine_origin( P )

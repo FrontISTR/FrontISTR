@@ -23,16 +23,6 @@ contains
     integer(kind=kint) :: ig1, iS0, iE0, ik, in, inod, nid
     integer(kind=kint) :: nids(20)
 
-
-    !C +-------------------------------+
-    !C | GLOBAL PARAMETERS             |
-    !C +-------------------------------+
-
-    write(ILOG,*) 'global parameters  ***********'
-    write(ILOG,*)
-    write(ILOG,*) 'REF_TEMP ', REF_TEMP
-    write(ILOG,*)
-
     !C +-------------------------------+
     !C | fstrPARAM                     |
     !C +-------------------------------+

@@ -373,7 +373,7 @@ contains
   !---------------------------------------------------------------------*
   subroutine UPDATE_C3_SESNS                     &
       (etype, nn, nodlocal, ecoord, u, ddu, cdsys_ID, coords, qf, &
-      gausses, time, tincr, TT, T0, TN)
+      gausses, time, tincr, TT, T0, TN, reftemp)
     !---------------------------------------------------------------------*
 
     use m_fstr
@@ -398,6 +398,7 @@ contains
     real(kind=kreal), intent(in)      :: TT(nn)   !< current temperature
     real(kind=kreal), intent(in)      :: T0(nn)   !< reference temperature
     real(kind=kreal), intent(in)      :: TN(nn)   !< reference temperature
+    real(kind=kreal), intent(in)      :: reftemp  !< reference temperature
 
     ! LCOAL VARIAVLES
     integer(kind=kint) :: flag
@@ -456,7 +457,7 @@ contains
       tt0 = 0.5d0*(T0(1)+T0(2))
       ttn = 0.5d0*(TN(1)+TN(2))
     end if
-    call Cal_Thermal_expansion_C3( tt0, ttc, gausses(1)%pMaterial, coordsys, matlaniso, EPSTH )
+    call Cal_Thermal_expansion_C3( tt0, ttc, reftemp, gausses(1)%pMaterial, coordsys, matlaniso, EPSTH )
 
     ! Update strain
     ! Small strain

@@ -932,7 +932,7 @@ contains
   !####################################################################
   subroutine TLOAD_Beam_641 &
       (etype, nn, ndof, xx, yy, zz, tt, t0, &
-      gausses, section, vect)
+      gausses, section, reftemp, vect)
     !####################################################################
 
     use hecmw
@@ -949,6 +949,7 @@ contains
     real(kind = kreal), intent(in)   :: section(:)
     real(kind = kreal), intent(in)   :: xx(nn), yy(nn), zz(nn)
     real(kind = kreal), intent(in)   :: tt(nn), t0(nn)
+    real(kind = kreal), intent(in)   :: reftemp
     real(kind = kreal), intent(out)  :: vect(nn*ndof)
 
     !--------------------------------------------------------------------
@@ -1042,11 +1043,11 @@ contains
 
     !--------------------------------------------------------------------
 
-    vect( 1) = -a*ee*( alp*( tempc-REF_TEMP )-alp0*( temp0-REF_TEMP ) )
+    vect( 1) = -a*ee*( alp*( tempc-reftemp )-alp0*( temp0-reftemp ) )
     vect( 2) =  0.0D0
     vect( 3) =  0.0D0
 
-    vect( 4) =  a*ee*( alp*( tempc-REF_TEMP )-alp0*( temp0-REF_TEMP ) )
+    vect( 4) =  a*ee*( alp*( tempc-reftemp )-alp0*( temp0-reftemp ) )
     vect( 5) =  0.0D0
     vect( 6) =  0.0D0
 
@@ -1079,7 +1080,7 @@ contains
   !####################################################################
   subroutine NodalStress_Beam_641 &
       (etype, nn, ecoord, gausses, section, edisp, &
-      ndstrain, ndstress, tt, t0, ntemp)
+      ndstrain, ndstress, tt, t0, reftemp, ntemp)
     !####################################################################
 
     use m_fstr
@@ -1096,6 +1097,7 @@ contains
     real(kind = kreal), intent(out)   :: ndstrain(nn, 6)
     real(kind = kreal), intent(out)   :: ndstress(nn, 6)
     real(kind=kreal), intent(in), optional :: tt(nn), t0(nn)
+    real(kind=kreal), intent(in)      :: reftemp
     integer(kind = kint), intent(in)  :: ntemp
 
     !--------------------------------------------------------------------
@@ -1284,7 +1286,7 @@ contains
 
         t_hat(1, 1) &
           = t_hat(1, 1) &
-          -ee*( alp*( tempc-REF_TEMP )-alp0*( temp0-REF_TEMP ) )
+          -ee*( alp*( tempc-reftemp )-alp0*( temp0-reftemp ) )
 
       end if
 
@@ -1335,7 +1337,7 @@ contains
 
         t_hat(1, 1) &
           = t_hat(1, 1) &
-          -ee*( alp*( tempc-REF_TEMP )-alp0*( temp0-REF_TEMP ) )
+          -ee*( alp*( tempc-reftemp )-alp0*( temp0-reftemp ) )
 
       end if
 
@@ -1370,7 +1372,7 @@ contains
 
         t_hat(1, 1)                                             &
           = t_hat(1, 1)                                           &
-          -ee*( alp*( tempc-REF_TEMP )-alp0*( temp0-REF_TEMP ) )
+          -ee*( alp*( tempc-reftemp )-alp0*( temp0-reftemp ) )
 
       end if
 

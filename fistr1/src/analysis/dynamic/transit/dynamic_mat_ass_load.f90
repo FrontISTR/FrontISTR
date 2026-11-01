@@ -404,7 +404,7 @@ contains
             yy(j)=hecMESH%node(3*nodLOCAL(j)-1)
             zz(j)=hecMESH%node(3*nodLOCAL(j)  )
             tt(j)=temp( nodLOCAL(j) )
-            tt0(j)=ref_temp
+            tt0(j)=fstrPARAM%ref_temp
             !C** create iwk array ***
             do i=1,ndof
               iwk(ndof*(j-1)+i)=ndof*(nodLOCAL(j)-1)+i
@@ -437,24 +437,24 @@ contains
           elseif( ic_type == 361 ) then
             if( fstrSOLID%sections(isect)%elemopt361 == kel361FI ) then
               call TLOAD_C3                                                          &
-                ( ic_type, nn, xx(1:nn), yy(1:nn), zz(1:nn), tt(1:nn), tt0(1:nn),       &
+                ( ic_type, nn, xx(1:nn), yy(1:nn), zz(1:nn), tt(1:nn), tt0(1:nn), fstrPARAM%ref_temp, &
                 fstrSOLID%elements(icel)%gausses, vect(1:nn*ndof), cdsys_ID, coords )
             else if( fstrSOLID%sections(isect)%elemopt361 == kel361BBAR ) then
               call TLOAD_C3D8Bbar                                                          &
-                ( ic_type, nn, xx(1:nn), yy(1:nn), zz(1:nn), tt(1:nn), tt0(1:nn),       &
+                ( ic_type, nn, xx(1:nn), yy(1:nn), zz(1:nn), tt(1:nn), tt0(1:nn), fstrPARAM%ref_temp, &
                 fstrSOLID%elements(icel)%gausses, vect(1:nn*ndof), cdsys_ID, coords )
             else if( fstrSOLID%sections(isect)%elemopt361 == kel361IC ) then
               call TLOAD_C3D8IC                                                            &
-                ( ic_type, nn, xx(1:nn), yy(1:nn), zz(1:nn), tt(1:nn), tt0(1:nn),       &
+                ( ic_type, nn, xx(1:nn), yy(1:nn), zz(1:nn), tt(1:nn), tt0(1:nn), fstrPARAM%ref_temp, &
                 fstrSOLID%elements(icel)%gausses, vect(1:nn*ndof), cdsys_ID, coords )
             else if( fstrSOLID%sections(isect)%elemopt361 == kel361FBAR ) then
               call TLOAD_C3D8Fbar                                                            &
-                ( ic_type, nn, xx(1:nn), yy(1:nn), zz(1:nn), tt(1:nn), tt0(1:nn),       &
+                ( ic_type, nn, xx(1:nn), yy(1:nn), zz(1:nn), tt(1:nn), tt0(1:nn), fstrPARAM%ref_temp, &
                 fstrSOLID%elements(icel)%gausses, vect(1:nn*ndof), cdsys_ID, coords )
             else if( fstrSOLID%sections(isect)%elemopt361 == kel361UP ) then
               !> temporary
               !call TLOAD_C3                                                          &
-              !  ( ic_type, nn, xx(1:nn), yy(1:nn), zz(1:nn), tt(1:nn), tt0(1:nn),       &
+              !  ( ic_type, nn, xx(1:nn), yy(1:nn), zz(1:nn), tt(1:nn), tt0(1:nn), reftemp, &
               !  fstrSOLID%elements(icel)%gausses, vect(1:nn*ndof), cdsys_ID, coords )
               stop "FROM361=UP: TLOAD is not supported"
             endif
@@ -462,7 +462,7 @@ contains
           elseif (ic_type == 341 .or. ic_type == 351 .or.                       &
               ic_type == 342 .or. ic_type == 352 .or. ic_type == 362 ) then
             call TLOAD_C3                                                                &
-              ( ic_type, nn, xx(1:nn), yy(1:nn), zz(1:nn), tt(1:nn), tt0(1:nn),       &
+              ( ic_type, nn, xx(1:nn), yy(1:nn), zz(1:nn), tt(1:nn), tt0(1:nn), fstrPARAM%ref_temp, &
               fstrSOLID%elements(icel)%gausses, vect(1:nn*ndof), cdsys_ID, coords )
 
           elseif ( ic_type == 741 .or. ic_type == 743 .or. ic_type == 731 .or.            &

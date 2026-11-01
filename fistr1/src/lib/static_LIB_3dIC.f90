@@ -221,7 +221,7 @@ contains
   !---------------------------------------------------------------------*
   subroutine UPDATE_C3D8IC                                   &
       (etype,nn,ecoord, u, du, ddu, cdsys_ID, coords, &
-      qf, gausses, iter, time, tincr, aux, ddaux, TT, T0, TN )
+      qf, gausses, iter, time, tincr, aux, ddaux, TT, T0, TN, reftemp )
     !---------------------------------------------------------------------*
 
     use m_fstr
@@ -250,6 +250,7 @@ contains
     real(kind=kreal), intent(in)      :: TT(nn)        !< current temperature
     real(kind=kreal), intent(in)      :: T0(nn)        !< reference temperature
     real(kind=kreal), intent(in)      :: TN(nn)        !< reference temperature
+    real(kind=kreal), intent(in)      :: reftemp       !< reference temperature
 
     ! LOCAL VARIABLES
     integer(kind=kint) :: flag
@@ -507,7 +508,7 @@ contains
       ttc = dot_product(TT, spfunc)
       tt0 = dot_product(T0, spfunc)
       ttn = dot_product(TN, spfunc)
-      call Cal_Thermal_expansion_C3( tt0, ttc, gausses(LX)%pMaterial, coordsys, matlaniso, EPSTH )
+      call Cal_Thermal_expansion_C3( tt0, ttc, reftemp, gausses(LX)%pMaterial, coordsys, matlaniso, EPSTH )
 
       ! -- Derivative of shape function of incompatible mode --
       !     [ -2*a   0,   0   ]
@@ -682,7 +683,7 @@ contains
   !>  This subroutine calculates thermal loading
   !----------------------------------------------------------------------*
   subroutine TLOAD_C3D8IC &
-      (etype, nn, xx, yy, zz, tt, t0, &
+      (etype, nn, xx, yy, zz, tt, t0, reftemp, &
       gausses, VECT, cdsys_ID, coords)
     !----------------------------------------------------------------------*
 
@@ -697,7 +698,7 @@ contains
     integer(kind=kint), intent(in)    :: etype                   !< element type, not used here
     integer(kind=kint), intent(in)    :: nn                      !< number of element nodes
     real(kind=kreal), intent(in)      :: xx(nn), yy(nn), zz(nn)  !< nodes coordinate of element
-    real(kind=kreal), intent(in)      :: tt(nn), t0(nn)          !< current and ref temperature
+    real(kind=kreal), intent(in)      :: tt(nn), t0(nn), reftemp !< current and ref temperature
     type(tGaussStatus), intent(inout) :: gausses(:)              !< info about qudrature points
     real(kind=kreal), intent(out)     :: VECT(nn*ndof)           !< load vector
     integer(kind=kint), intent(in)    :: cdsys_ID
@@ -820,14 +821,14 @@ contains
       !**
       if( matlaniso ) then
         do j = 1, 3
-          EPSTH(j) = ALPO(j)*(TEMPC-ref_temp)-alpo0(j)*(TEMP0-ref_temp)
+          EPSTH(j) = ALPO(j)*(TEMPC-reftemp)-alpo0(j)*(TEMP0-reftemp)
         end do
         EPSTH(4:6) = 0.0D0
         call transformation(coordsys, tm)
         EPSTH(:) = matmul( EPSTH(:), tm  ) ! to global coord
         EPSTH(4:6) = EPSTH(4:6)*2.0D0
       else
-        THERMAL_EPS = ALP*(TEMPC-ref_temp)-alp0*(TEMP0-ref_temp)
+        THERMAL_EPS = ALP*(TEMPC-reftemp)-alp0*(TEMP0-reftemp)
         EPSTH(1:3) = THERMAL_EPS
         EPSTH(4:6) = 0.0D0
       end if

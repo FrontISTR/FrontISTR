@@ -29,6 +29,7 @@ module m_fstr_setup
   !> Package of all data needs to initialize
   type fstr_param_pack
     type(hecmwST_local_mesh), pointer :: MESH
+    type(hecmwST_matrix), pointer     :: MAT
     type(fstr_param), pointer         :: PARAM
     type(fstr_solid), pointer         :: SOLID
     type(fstr_heat), pointer          :: HEAT
@@ -43,11 +44,12 @@ contains
   !=============================================================================!
   !> Read in and initialize control data                                        !
   !=============================================================================!
-  subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
+  subroutine fstr_setup( cntl_filename, hecMESH, hecMAT, fstrPARAM,  &
       fstrSOLID, fstrEIG, fstrHEAT, fstrDYNAMIC, fstrCPL, fstrFREQ )
     use mMaterial
     character(len=HECMW_FILENAME_LEN) :: cntl_filename, input_filename
     type(hecmwST_local_mesh),target :: hecMESH
+    type(hecmwST_matrix),target :: hecMAT
     type(fstr_param),target   :: fstrPARAM
     type(fstr_solid),target   :: fstrSOLID
     type(fstr_eigen),target     :: fstrEIG
@@ -94,6 +96,7 @@ contains
 
     ! packaging
     P%MESH   => hecMESH
+    P%MAT    => hecMAT
     P%PARAM  => fstrPARAM
     P%SOLID  => fstrSOLID
     P%EIGEN  => fstrEIG
@@ -1087,7 +1090,7 @@ contains
         call flush(idbg)
         call hecmw_abort( hecmw_comm_get_comm())
       end if
-      fstrSOLID%temperature = REF_TEMP
+      fstrSOLID%temperature = fstrPARAM%ref_temp
       allocate ( fstrSOLID%last_temp( hecMESH%n_node )      ,stat=ierror )
       if( ierror /= 0 ) then
         write(idbg,*) 'stop due to allocation error <FSTR_SOLID, LAST_TEMP>'
@@ -1652,9 +1655,52 @@ contains
     call hecmw_allreduce_I1(hecMESH,fstrSOLID%maxn_gauss,HECMW_MAX)
   end subroutine
 
+  recursive subroutine fstr_solid_physic_val_finalize( phys )
+    use m_fstr
+    implicit none
+    type(fstr_solid_physic_val) :: phys
+    integer :: i
+
+    if(associated(phys%STRESS)) deallocate(phys%STRESS)
+    if(associated(phys%STRAIN)) deallocate(phys%STRAIN)
+    if(associated(phys%MISES)) deallocate(phys%MISES)
+
+    if(associated(phys%PSTRESS)) deallocate(phys%PSTRESS)
+    if(associated(phys%PSTRAIN)) deallocate(phys%PSTRAIN)
+    if(associated(phys%PSTRESS_VECT)) deallocate(phys%PSTRESS_VECT)
+    if(associated(phys%PSTRAIN_VECT)) deallocate(phys%PSTRAIN_VECT)
+
+    if(associated(phys%ESTRESS)) deallocate(phys%ESTRESS)
+    if(associated(phys%ESTRAIN)) deallocate(phys%ESTRAIN)
+    if(associated(phys%EMISES)) deallocate(phys%EMISES)
+    if(associated(phys%EPLSTRAIN)) deallocate(phys%EPLSTRAIN)
+
+    if(associated(phys%EPSTRESS)) deallocate(phys%EPSTRESS)
+    if(associated(phys%EPSTRAIN)) deallocate(phys%EPSTRAIN)
+    if(associated(phys%EPSTRESS_VECT)) deallocate(phys%EPSTRESS_VECT)
+    if(associated(phys%EPSTRAIN_VECT)) deallocate(phys%EPSTRAIN_VECT)
+    if(associated(phys%ENQM)) deallocate(phys%ENQM)
+
+    if(associated(phys%LAYER)) then
+      do i=1, size(phys%LAYER)
+        call fstr_solid_physic_val_finalize(phys%LAYER(i))
+      end do
+      deallocate(phys%LAYER)
+    end if
+    if(associated(phys%PLUS)) then
+      call fstr_solid_physic_val_finalize(phys%PLUS)
+      deallocate(phys%PLUS)
+    end if
+    if(associated(phys%MINUS)) then
+      call fstr_solid_physic_val_finalize(phys%MINUS)
+      deallocate(phys%MINUS)
+    end if
+  end subroutine
+
   !> Finalizer of fstr_solid
   subroutine fstr_solid_finalize( fstrSOLID )
     use mMechGauss, only: fstr_finalize_shell_layer_gausses
+    implicit none
     type(fstr_solid) :: fstrSOLID
     integer :: i, j, ierror
     if( associated(fstrSOLID%materials) ) then
@@ -1929,6 +1975,20 @@ contains
        end if
     endif
 
+    if(associated(fstrSOLID%VELOCITY_ngrp_GRPID)) deallocate(fstrSOLID%VELOCITY_ngrp_GRPID)
+    if(associated(fstrSOLID%VELOCITY_ngrp_ID)) deallocate(fstrSOLID%VELOCITY_ngrp_ID)
+    if(associated(fstrSOLID%VELOCITY_ngrp_type)) deallocate(fstrSOLID%VELOCITY_ngrp_type)
+    if(associated(fstrSOLID%VELOCITY_ngrp_amp)) deallocate(fstrSOLID%VELOCITY_ngrp_amp)
+    if(associated(fstrSOLID%VELOCITY_ngrp_val)) deallocate(fstrSOLID%VELOCITY_ngrp_val)
+    if(associated(fstrSOLID%VELOCITY_ngrp_rotID)) deallocate(fstrSOLID%VELOCITY_ngrp_rotID)
+    if(associated(fstrSOLID%VELOCITY_ngrp_centerID)) deallocate(fstrSOLID%VELOCITY_ngrp_centerID)
+
+    if(associated(fstrSOLID%ACCELERATION_ngrp_GRPID)) deallocate(fstrSOLID%ACCELERATION_ngrp_GRPID)
+    if(associated(fstrSOLID%ACCELERATION_ngrp_ID)) deallocate(fstrSOLID%ACCELERATION_ngrp_ID)
+    if(associated(fstrSOLID%ACCELERATION_ngrp_type)) deallocate(fstrSOLID%ACCELERATION_ngrp_type)
+    if(associated(fstrSOLID%ACCELERATION_ngrp_amp)) deallocate(fstrSOLID%ACCELERATION_ngrp_amp)
+    if(associated(fstrSOLID%ACCELERATION_ngrp_val)) deallocate(fstrSOLID%ACCELERATION_ngrp_val)
+
     ! Allocated in in fstr_setup_CLOAD
     if( associated(fstrSOLID%CLOAD_ngrp_GRPID) ) then
        deallocate(fstrSOLID%CLOAD_ngrp_GRPID, stat=ierror)
@@ -1986,6 +2046,118 @@ contains
           call hecmw_abort( hecmw_comm_get_comm())
        end if
     endif
+
+    if(associated(fstrSOLID%DLOAD_ngrp_GRPID)) deallocate(fstrSOLID%DLOAD_ngrp_GRPID)
+    if(associated(fstrSOLID%DLOAD_ngrp_ID)) deallocate(fstrSOLID%DLOAD_ngrp_ID)
+    if(associated(fstrSOLID%DLOAD_ngrp_LID)) deallocate(fstrSOLID%DLOAD_ngrp_LID)
+    if(associated(fstrSOLID%DLOAD_ngrp_amp)) deallocate(fstrSOLID%DLOAD_ngrp_amp)
+    if(associated(fstrSOLID%DLOAD_ngrp_params)) deallocate(fstrSOLID%DLOAD_ngrp_params)
+
+    if(associated(fstrSOLID%TEMP_ngrp_GRPID)) deallocate(fstrSOLID%TEMP_ngrp_GRPID)
+    if(associated(fstrSOLID%TEMP_ngrp_ID)) deallocate(fstrSOLID%TEMP_ngrp_ID)
+    if(associated(fstrSOLID%TEMP_ngrp_val)) deallocate(fstrSOLID%TEMP_ngrp_val)
+
+    if(associated(fstrSOLID%SPRING_ngrp_GRPID)) deallocate(fstrSOLID%SPRING_ngrp_GRPID)
+    if(associated(fstrSOLID%SPRING_ngrp_ID)) deallocate(fstrSOLID%SPRING_ngrp_ID)
+    if(associated(fstrSOLID%SPRING_ngrp_DOF)) deallocate(fstrSOLID%SPRING_ngrp_DOF)
+    if(associated(fstrSOLID%SPRING_ngrp_amp)) deallocate(fstrSOLID%SPRING_ngrp_amp)
+    if(associated(fstrSOLID%SPRING_ngrp_val)) deallocate(fstrSOLID%SPRING_ngrp_val)
+    if(associated(fstrSOLID%SPRING_incremental)) deallocate(fstrSOLID%SPRING_incremental)
+
+    if(associated(fstrSOLID%COUPLE_ngrp_ID)) deallocate(fstrSOLID%COUPLE_ngrp_ID)
+
+!    if(associated(fstrSOLID%STRESS)) deallocate(fstrSOLID%STRESS)
+!    if(associated(fstrSOLID%STRAIN)) deallocate(fstrSOLID%STRAIN)
+!    if(associated(fstrSOLID%MISES)) deallocate(fstrSOLID%MISES)
+!    if(associated(fstrSOLID%PSTRESS)) deallocate(fstrSOLID%PSTRESS)
+!    if(associated(fstrSOLID%PSTRAIN)) deallocate(fstrSOLID%PSTRAIN)
+!    if(associated(fstrSOLID%PSTRESS_VECT)) deallocate(fstrSOLID%PSTRESS_VECT)
+!    if(associated(fstrSOLID%PSTRAIN_VECT)) deallocate(fstrSOLID%PSTRAIN_VECT)
+
+!    if(associated(fstrSOLID%ESTRESS)) deallocate(fstrSOLID%ESTRESS)
+!    if(associated(fstrSOLID%ESTRAIN)) deallocate(fstrSOLID%ESTRAIN)
+!    if(associated(fstrSOLID%EMISES)) deallocate(fstrSOLID%EMISES)
+!    if(associated(fstrSOLID%EPLSTRAIN)) deallocate(fstrSOLID%EPLSTRAIN)
+
+!    if(associated(fstrSOLID%EPSTRESS)) deallocate(fstrSOLID%EPLSTRAIN)
+!    if(associated(fstrSOLID%EPSTRAIN)) deallocate(fstrSOLID%EPLSTRAIN)
+!    if(associated(fstrSOLID%EPSTRESS_VECT)) deallocate(fstrSOLID%EPLSTRAIN)
+!    if(associated(fstrSOLID%EPSTRAIN_VECT)) deallocate(fstrSOLID%EPLSTRAIN)
+
+    if(associated(fstrSOLID%TNSTRAIN)) deallocate(fstrSOLID%TNSTRAIN)
+    if(associated(fstrSOLID%TESTRAIN)) deallocate(fstrSOLID%TESTRAIN)
+
+    if(associated(fstrSOLID%YIELD_RATIO)) deallocate(fstrSOLID%YIELD_RATIO)
+
+!    if(associated(fstrSOLID%ENQM)) deallocate(fstrSOLID%ENQM)
+    if(associated(fstrSOLID%REACTION)) deallocate(fstrSOLID%REACTION)
+
+    if(associated(fstrSOLID%CONT_NFORCE)) deallocate(fstrSOLID%CONT_NFORCE)
+    if(associated(fstrSOLID%CONT_FRIC)) deallocate(fstrSOLID%CONT_FRIC)
+    if(associated(fstrSOLID%CONT_RELVEL)) deallocate(fstrSOLID%CONT_RELVEL)
+    if(associated(fstrSOLID%CONT_STATE)) deallocate(fstrSOLID%CONT_STATE)
+    if(associated(fstrSOLID%CONT_SGRP_ID)) deallocate(fstrSOLID%CONT_SGRP_ID)
+    if(associated(fstrSOLID%CONT_AREA)) deallocate(fstrSOLID%CONT_AREA)
+    if(associated(fstrSOLID%CONT_NTRAC)) deallocate(fstrSOLID%CONT_NTRAC)
+    if(associated(fstrSOLID%CONT_FTRAC)) deallocate(fstrSOLID%CONT_FTRAC)
+    if(associated(fstrSOLID%EMBED_NFORCE)) deallocate(fstrSOLID%EMBED_NFORCE)
+
+    if(associated(fstrSOLID%SOLID)) call fstr_solid_physic_val_finalize(fstrSOLID%SOLID)
+    if(associated(fstrSOLID%SHELL)) call fstr_solid_physic_val_finalize(fstrSOLID%SHELL)
+    if(associated(fstrSOLID%BEAM)) call fstr_solid_physic_val_finalize(fstrSOLID%BEAM)
+
+    if(associated(fstrSOLID%is_rot)) deallocate(fstrSOLID%is_rot)
+    if(associated(fstrSOLID%GL0)) deallocate(fstrSOLID%GL0)
+    if(associated(fstrSOLID%QFORCE_bak)) deallocate(fstrSOLID%QFORCE_bak)
+
+    if(associated(fstrSOLID%contacts)) then
+!      do i=1, size(fstrSOLID%contacts)
+!        call fstr_contact_finalize(fstrSOLID%contacts(i))
+!      end do
+      deallocate(fstrSOLID%contacts)
+    end if
+    if(associated(fstrSOLID%embeds)) then
+!      do i=1, size(fstrSOLID%embeds)
+!        call fstr_contact_finalize(fstrSOLID%embeds(i))
+!      end do
+      deallocate(fstrSOLID%embeds)
+    end if
+    if(associated(fstrSOLID%unode_bkup)) deallocate(fstrSOLID%unode_bkup)
+    if(associated(fstrSOLID%QFORCE_bkup)) deallocate(fstrSOLID%QFORCE_bkup)
+    if(associated(fstrSOLID%DFORCE_bkup)) deallocate(fstrSOLID%DFORCE_bkup)
+    if(associated(fstrSOLID%last_temp_bkup)) deallocate(fstrSOLID%last_temp_bkup)
+    if(associated(fstrSOLID%shell_triad_bkup)) deallocate(fstrSOLID%shell_triad_bkup)
+    if(associated(fstrSOLID%shell_drill_bkup)) deallocate(fstrSOLID%shell_drill_bkup)
+    if(associated(fstrSOLID%elements_bkup)) then
+      do i=1,size(fstrSOLID%elements_bkup)
+        if( associated(fstrSOLID%elements_bkup(i)%gausses) ) then
+          do j=1,size(fstrSOLID%elements_bkup(i)%gausses)
+            call fstr_finalize_gauss(fstrSOLID%elements_bkup(i)%gausses(j))
+          enddo
+          deallocate( fstrSOLID%elements_bkup(i)%gausses )
+        endif
+        call fstr_finalize_shell_layer_gausses( fstrSOLID%elements_bkup(i) )
+        if(associated(fstrSOLID%elements_bkup(i)%equiForces) ) then
+          deallocate(fstrSOLID%elements_bkup(i)%equiForces)
+        endif
+        if( associated(fstrSOLID%elements_bkup(i)%aux) ) then
+          deallocate(fstrSOLID%elements_bkup(i)%aux)
+        endif
+      enddo
+      deallocate(fstrSOLID%elements_bkup)
+    end if
+    if(associated(fstrSOLID%contacts_bkup)) then
+!      do i=1, size(fstrSOLID%contacts_bkup)
+!        call fstr_contact_finalize(fstrSOLID%contacts_bkup(i))
+!      end do
+      deallocate(fstrSOLID%contacts_bkup)
+    end if
+    if(associated(fstrSOLID%embeds_bkup)) then
+!      do i=1, size(fstrSOLID%embeds_bkup)
+!        call fstr_contact_finalize(fstrSOLID%embeds_bkup(i))
+!      end do
+      deallocate(fstrSOLID%embeds_bkup)
+    end if
 
   end subroutine
 
@@ -2373,19 +2545,21 @@ contains
     !   solver_ropt=> svRarray(41:50)
 
     rcode = fstr_ctrl_get_SOLVER( ctrl,                      &
-      svIarray(2), svIarray(3), svIarray(4), svIarray(21), svIarray(22), svIarray(23),&
-      svIarray(1), svIarray(5), svIarray(6), svIarray(60), svIarray(7), &
-      svIarray(31), svIarray(32), svIarray(33), svIarray(34), svIarray(13), svIarray(14), svIarray(8),&
-      svIarray(35), svIarray(41:50), svIarray(15), &
-      svRarray(1), svRarray(2), svRarray(3),                &
-      svRarray(4), svRarray(5), svRarray(41:50), svIarray(24), &
-      svIarray(36), svIarray(37), svIarray(16) )
+      p%MAT%Iarray(2), p%MAT%Iarray(3), p%MAT%Iarray(4), &
+      p%MAT%Iarray(21), p%MAT%Iarray(22), p%MAT%Iarray(23), &
+      p%MAT%Iarray(1), p%MAT%Iarray(5), p%MAT%Iarray(6), p%MAT%Iarray(60), p%MAT%Iarray(7), &
+      p%MAT%Iarray(31), p%MAT%Iarray(32), p%MAT%Iarray(33), p%MAT%Iarray(34), &
+      p%MAT%Iarray(13), p%MAT%Iarray(14), p%MAT%Iarray(8), &
+      p%MAT%Iarray(35), p%MAT%Iarray(41:50), p%MAT%Iarray(15), &
+      p%MAT%Rarray(1), p%MAT%Rarray(2), p%MAT%Rarray(3), &
+      p%MAT%Rarray(4), p%MAT%Rarray(5), p%MAT%Rarray(41:50), p%MAT%Iarray(24), &
+      p%MAT%Iarray(36), p%MAT%Iarray(37), p%MAT%Iarray(16) )
     if( rcode /= 0 ) call fstr_ctrl_err_stop
 
-    if( svIarray(2) <= 100 ) then
-      svIarray(99) = 1  ! indirect method
+    if( p%MAT%Iarray(2) <= 100 ) then
+      p%MAT%Iarray(99) = 1  ! indirect method
     else
-      svIarray(99) = svIarray(2)-99 !2  ! direct method
+      p%MAT%Iarray(99) = p%MAT%Iarray(2)-99 !2  ! direct method
     end if
 
   end subroutine fstr_setup_SOLVER
@@ -4674,7 +4848,7 @@ end function fstr_setup_INITIAL
     !        endif
 
     !   penalty => svRarray(11)
-    rcode = fstr_ctrl_get_MPC( ctrl, svRarray(11))
+    rcode = fstr_ctrl_get_MPC( ctrl, p%MAT%Rarray(11))
     if( rcode /= 0) call fstr_ctrl_err_stop
   end subroutine fstr_setup_MPC
 

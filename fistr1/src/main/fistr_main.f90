@@ -127,9 +127,6 @@ contains
     call fstr_nullify_fstr_couple ( fstrCPL     )
     call fstr_init_file
 
-    ! -------  pointer setting ----------
-    REF_TEMP => fstrPARAM%ref_temp
-
     ! ------- initial value setting -------------
     call fstr_mat_init  ( hecMAT   )
     call fstr_param_init( fstrPARAM, hecMESH )
@@ -247,13 +244,13 @@ contains
 
     ! loading boundary conditions etc. from fstr control file or nastran mesh file
     ! and setup parameters ...
-    svRarray(:) = hecMAT%Rarray(:)
-    svIarray(:) = hecMAT%Iarray(:)
+!    svRarray(:) = hecMAT%Rarray(:)
+!    svIarray(:) = hecMAT%Iarray(:)
 
-    call fstr_setup( cntfileNAME, hecMESH, fstrPARAM, fstrSOLID, fstrEIG, fstrHEAT, fstrDYNAMIC, fstrCPL, fstrFREQ )
+    call fstr_setup( cntfileNAME, hecMESH, hecMAT, fstrPARAM, fstrSOLID, fstrEIG, fstrHEAT, fstrDYNAMIC, fstrCPL, fstrFREQ )
 
-    hecMAT%Rarray(:) = svRarray(:)
-    hecMAT%Iarray(:) = svIarray(:)
+!    hecMAT%Rarray(:) = svRarray(:)
+!    hecMAT%Iarray(:) = svIarray(:)
 
     call fstr_input_precheck( hecMESH, hecMAT, fstrSOLID, fstrPARAM )
 
