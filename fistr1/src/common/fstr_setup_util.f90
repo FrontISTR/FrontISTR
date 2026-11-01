@@ -9,6 +9,13 @@ module fstr_setup_util
   use hecmw
   use fstr_ctrl_util_f
 
+  !> State of reading the cards, carried from one card to the next
+  type fstr_card_state
+    integer(kind=kint) :: version = 0  !< !VERSION
+    integer(kind=kint) :: cid = 0      !< material of the last !MATERIAL, 0 before the first one
+    integer(kind=kint) :: cache = 1    !< material expected at the next !MATERIAL
+  end type fstr_card_state
+
   !> Package of all data needs to initialize
   type fstr_param_pack
     type(hecmwST_local_mesh), pointer :: MESH
@@ -20,6 +27,7 @@ module fstr_setup_util
     type(fstr_dynamic), pointer       :: DYN
     type(fstr_couple), pointer        :: CPL
     type(fstr_freqanalysis), pointer  :: FREQ
+    type(fstr_card_state)             :: STATE
   end type fstr_param_pack
 
 contains

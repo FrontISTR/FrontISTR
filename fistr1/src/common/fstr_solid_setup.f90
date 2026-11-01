@@ -1697,23 +1697,22 @@ contains
   !-----------------------------------------------------------------------------!
   !> Read in !MATERIAL                                                          !
   !-----------------------------------------------------------------------------!
-  !> cid is set to the material of this card, and cache to the material expected next.
-  subroutine fstr_setup_MATERIAL( ctrl, c_material, cache, cid, P )
+  !> P%STATE%cid is set to the material of this card, and P%STATE%cache to the material expected next.
+  subroutine fstr_setup_MATERIAL( ctrl, c_material, P )
     use mMaterial
     implicit none
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: c_material
-    integer(kind=kint) :: cache
-    integer(kind=kint) :: cid
     type(fstr_param_pack) :: P
 
     type(hecmwST_local_mesh), pointer :: hecMESH
     type(fstr_solid), pointer :: fstrSOLID
-    integer(kind=kint) :: i
+    integer(kind=kint) :: i, cid, cache
     character(len=HECMW_FILENAME_LEN) :: mName
 
     hecMESH => P%MESH
     fstrSOLID => P%SOLID
+    cache = P%STATE%cache
 
     if( fstr_ctrl_get_MATERIAL( ctrl, mName )/=0 ) then
       write(*,*) '### Error: Fail in read in material definition : ' , c_material
@@ -1743,19 +1742,39 @@ contains
     endif
     fstrSOLID%materials(cid)%name = hecMESH%material%mat_name(cid)
     if(c_material>hecMESH%material%n_mat) call initMaterial( fstrSOLID%materials(cid) )
+    P%STATE%cid = cid
+    P%STATE%cache = cache
   end subroutine fstr_setup_MATERIAL
+
+  !> Material of the last !MATERIAL, for a material card. Stops at a material card given before the first !MATERIAL.
+  integer(kind=kint) function fstr_setup_current_material( ctrl, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    type(fstr_param_pack) :: P
+
+    integer(kind=kint) :: rcode
+    character(len=HECMW_NAME_LEN) :: header_name
+
+    if( P%STATE%cid == 0 ) then
+      rcode = fstr_ctrl_get_c_h_name( ctrl, header_name, HECMW_NAME_LEN )
+      call fstr_setup_util_err_stop( '### Error: '//trim(header_name)// &
+        ' : given before the first !MATERIAL; put it after !MATERIAL, NAME=<material name>' )
+    endif
+    fstr_setup_current_material = P%STATE%cid
+  end function fstr_setup_current_material
 
   !-----------------------------------------------------------------------------!
   !> Read in !ELASTIC                                                           !
   !-----------------------------------------------------------------------------!
-  subroutine fstr_setup_ELASTIC( ctrl, cid, P )
+  subroutine fstr_setup_ELASTIC( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: cid
     type(fstr_param_pack) :: P
 
     type(fstr_solid), pointer :: fstrSOLID
+    integer(kind=kint) :: cid
 
+    cid = fstr_setup_current_material( ctrl, P )
     fstrSOLID => P%SOLID
 
     if( fstr_ctrl_get_ELASTICITY( ctrl,                                        &
@@ -1772,14 +1791,15 @@ contains
   !-----------------------------------------------------------------------------!
   !> Read in !PLASTIC                                                           !
   !-----------------------------------------------------------------------------!
-  subroutine fstr_setup_PLASTIC( ctrl, cid, P )
+  subroutine fstr_setup_PLASTIC( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: cid
     type(fstr_param_pack) :: P
 
     type(fstr_solid), pointer :: fstrSOLID
+    integer(kind=kint) :: cid
 
+    cid = fstr_setup_current_material( ctrl, P )
     fstrSOLID => P%SOLID
 
     if( fstr_ctrl_get_PLASTICITY( ctrl,                                        &
@@ -1797,14 +1817,15 @@ contains
   !-----------------------------------------------------------------------------!
   !> Read in !HYPERELASTIC                                                      !
   !-----------------------------------------------------------------------------!
-  subroutine fstr_setup_HYPERELASTIC( ctrl, cid, P )
+  subroutine fstr_setup_HYPERELASTIC( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: cid
     type(fstr_param_pack) :: P
 
     type(fstr_solid), pointer :: fstrSOLID
+    integer(kind=kint) :: cid
 
+    cid = fstr_setup_current_material( ctrl, P )
     fstrSOLID => P%SOLID
 
     if( fstr_ctrl_get_HYPERELASTIC( ctrl,                                        &
@@ -1820,14 +1841,15 @@ contains
   !-----------------------------------------------------------------------------!
   !> Read in !VISCOELASTIC                                                      !
   !-----------------------------------------------------------------------------!
-  subroutine fstr_setup_VISCOELASTIC( ctrl, cid, P )
+  subroutine fstr_setup_VISCOELASTIC( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: cid
     type(fstr_param_pack) :: P
 
     type(fstr_solid), pointer :: fstrSOLID
+    integer(kind=kint) :: cid
 
+    cid = fstr_setup_current_material( ctrl, P )
     fstrSOLID => P%SOLID
 
     if( fstr_ctrl_get_VISCOELASTICITY( ctrl,                                        &
@@ -1843,15 +1865,16 @@ contains
   !-----------------------------------------------------------------------------!
   !> Read in !TRS                                                               !
   !-----------------------------------------------------------------------------!
-  subroutine fstr_setup_TRS( ctrl, cid, P )
+  subroutine fstr_setup_TRS( ctrl, P )
     use mMaterial
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: cid
     type(fstr_param_pack) :: P
 
     type(fstr_solid), pointer :: fstrSOLID
+    integer(kind=kint) :: cid
 
+    cid = fstr_setup_current_material( ctrl, P )
     fstrSOLID => P%SOLID
 
     if( fstrSOLID%materials(cid)%mtype/=VISCOELASTIC ) then
@@ -1869,14 +1892,15 @@ contains
   !-----------------------------------------------------------------------------!
   !> Read in !CREEP                                                             !
   !-----------------------------------------------------------------------------!
-  subroutine fstr_setup_CREEP( ctrl, cid, P )
+  subroutine fstr_setup_CREEP( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: cid
     type(fstr_param_pack) :: P
 
     type(fstr_solid), pointer :: fstrSOLID
+    integer(kind=kint) :: cid
 
+    cid = fstr_setup_current_material( ctrl, P )
     fstrSOLID => P%SOLID
 
     if( fstr_ctrl_get_VISCOPLASTICITY( ctrl,                                        &
@@ -1892,14 +1916,15 @@ contains
   !-----------------------------------------------------------------------------!
   !> Read in !DENSITY                                                           !
   !-----------------------------------------------------------------------------!
-  subroutine fstr_setup_DENSITY( ctrl, cid, P )
+  subroutine fstr_setup_DENSITY( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: cid
     type(fstr_param_pack) :: P
 
     type(fstr_solid), pointer :: fstrSOLID
+    integer(kind=kint) :: cid
 
+    cid = fstr_setup_current_material( ctrl, P )
     fstrSOLID => P%SOLID
 
     if( fstr_ctrl_get_DENSITY( ctrl, fstrSOLID%materials(cid)%variables )/=0 ) then
@@ -1912,14 +1937,15 @@ contains
   !-----------------------------------------------------------------------------!
   !> Read in !EXPANSION_COEF                                                    !
   !-----------------------------------------------------------------------------!
-  subroutine fstr_setup_EXPANSION_COEFF( ctrl, cid, P )
+  subroutine fstr_setup_EXPANSION_COEFF( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: cid
     type(fstr_param_pack) :: P
 
     type(fstr_solid), pointer :: fstrSOLID
+    integer(kind=kint) :: cid
 
+    cid = fstr_setup_current_material( ctrl, P )
     fstrSOLID => P%SOLID
 
     if( fstr_ctrl_get_EXPANSION_COEFF( ctrl, fstrSOLID%materials(cid)%variables, &
@@ -1933,14 +1959,15 @@ contains
   !-----------------------------------------------------------------------------!
   !> Read in !DAMPING                                                           !
   !-----------------------------------------------------------------------------!
-  subroutine fstr_setup_DAMPING( ctrl, cid, P )
+  subroutine fstr_setup_DAMPING( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: cid
     type(fstr_param_pack) :: P
 
     type(fstr_solid), pointer :: fstrSOLID
+    integer(kind=kint) :: cid
 
+    cid = fstr_setup_current_material( ctrl, P )
     fstrSOLID => P%SOLID
 
     if( fstr_ctrl_get_RAYLEIGH_DAMPING( ctrl, fstrSOLID%materials(cid)%variables, &
@@ -1954,14 +1981,15 @@ contains
   !-----------------------------------------------------------------------------!
   !> Read in !FLUID                                                             !
   !-----------------------------------------------------------------------------!
-  subroutine fstr_setup_FLUID( ctrl, cid, P )
+  subroutine fstr_setup_FLUID( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: cid
     type(fstr_param_pack) :: P
 
     type(fstr_solid), pointer :: fstrSOLID
+    integer(kind=kint) :: cid
 
+    cid = fstr_setup_current_material( ctrl, P )
     fstrSOLID => P%SOLID
 
     if( fstr_ctrl_get_FLUID( ctrl,                                 &
@@ -1978,14 +2006,15 @@ contains
   !-----------------------------------------------------------------------------!
   !> Read in !SPRING_D                                                          !
   !-----------------------------------------------------------------------------!
-  subroutine fstr_setup_SPRING_D( ctrl, cid, P )
+  subroutine fstr_setup_SPRING_D( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: cid
     type(fstr_param_pack) :: P
 
     type(fstr_solid), pointer :: fstrSOLID
+    integer(kind=kint) :: cid
 
+    cid = fstr_setup_current_material( ctrl, P )
     fstrSOLID => P%SOLID
 
     if( fstr_ctrl_get_SPRING_D( ctrl,                                        &
@@ -2002,14 +2031,15 @@ contains
   !-----------------------------------------------------------------------------!
   !> Read in !SPRING_A                                                          !
   !-----------------------------------------------------------------------------!
-  subroutine fstr_setup_SPRING_A( ctrl, cid, P )
+  subroutine fstr_setup_SPRING_A( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: cid
     type(fstr_param_pack) :: P
 
     type(fstr_solid), pointer :: fstrSOLID
+    integer(kind=kint) :: cid
 
+    cid = fstr_setup_current_material( ctrl, P )
     fstrSOLID => P%SOLID
 
     if( fstr_ctrl_get_SPRING_A( ctrl,                                        &
@@ -2026,14 +2056,15 @@ contains
   !-----------------------------------------------------------------------------!
   !> Read in !DASHPOT_D                                                         !
   !-----------------------------------------------------------------------------!
-  subroutine fstr_setup_DASHPOT_D( ctrl, cid, P )
+  subroutine fstr_setup_DASHPOT_D( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: cid
     type(fstr_param_pack) :: P
 
     type(fstr_solid), pointer :: fstrSOLID
+    integer(kind=kint) :: cid
 
+    cid = fstr_setup_current_material( ctrl, P )
     fstrSOLID => P%SOLID
 
     if( fstr_ctrl_get_DASHPOT_D( ctrl,                                        &
@@ -2050,14 +2081,15 @@ contains
   !-----------------------------------------------------------------------------!
   !> Read in !DASHPOT_A                                                         !
   !-----------------------------------------------------------------------------!
-  subroutine fstr_setup_DASHPOT_A( ctrl, cid, P )
+  subroutine fstr_setup_DASHPOT_A( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: cid
     type(fstr_param_pack) :: P
 
     type(fstr_solid), pointer :: fstrSOLID
+    integer(kind=kint) :: cid
 
+    cid = fstr_setup_current_material( ctrl, P )
     fstrSOLID => P%SOLID
 
     if( fstr_ctrl_get_DASHPOT_A( ctrl,                                        &
@@ -2074,14 +2106,15 @@ contains
   !-----------------------------------------------------------------------------!
   !> Read in !USER_MATERIAL                                                     !
   !-----------------------------------------------------------------------------!
-  subroutine fstr_setup_USER_MATERIAL( ctrl, cid, P )
+  subroutine fstr_setup_USER_MATERIAL( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: cid
     type(fstr_param_pack) :: P
 
     type(fstr_solid), pointer :: fstrSOLID
+    integer(kind=kint) :: cid
 
+    cid = fstr_setup_current_material( ctrl, P )
     fstrSOLID => P%SOLID
 
     if( fstr_ctrl_get_USERMATERIAL( ctrl, fstrSOLID%materials(cid)%mtype,   &
