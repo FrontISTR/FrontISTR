@@ -20,7 +20,7 @@ module m_fstr_setup_finish
   use m_static_get_prop
   implicit none
 
-  !> Counts of the input for fstr_setup_prepare, independent of the input file format.
+  !> Counts of the input for fstr_setup_prepare and fstr_setup_finish, independent of the input file format.
   !> A reader of an input file format sets them from what it counts in the file.
   type fstr_setup_counts
     integer(kind=kint) :: contact_pairs = 0
@@ -202,10 +202,10 @@ contains
 
   !> Processing after all the cards are read: the temperature arrays, the default step,
   !> the element initialization and the checks, and the result arrays (fstr_setup_post).
-  subroutine fstr_setup_finish( P, c_material )
+  subroutine fstr_setup_finish( P, counts )
     implicit none
     type(fstr_param_pack) :: P
-    integer(kind=kint), intent(in) :: c_material
+    type(fstr_setup_counts), intent(in) :: counts
 
     type(hecmwST_local_mesh), pointer :: hecMESH
     type(fstr_param), pointer :: fstrPARAM
@@ -220,7 +220,7 @@ contains
 
     ! ----- material type judgement. in case of infinitive analysis, nlgeom_flag=0
     if( .not. P%PARAM%nlgeom ) then
-      do i=1, c_material
+      do i=1, counts%materials
         fstrSOLID%materials(i)%nlgeom_flag = 0
       enddo
     endif

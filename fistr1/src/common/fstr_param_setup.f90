@@ -144,7 +144,23 @@ contains
   !> Read in !ORIENTATION
   !* ----------------------------------------------------------------------------------------------- *!
 
-  integer function fstr_setup_ORIENTATION( ctrl, hecMESH, coordsys )
+  subroutine fstr_setup_ORIENTATION( ctrl, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    type(fstr_param_pack) :: P
+
+    type(fstr_card_slot) :: slot
+
+    slot = P%STATE%slot
+    if( fstr_get_ORIENTATION( ctrl, P%MESH, g_LocalCoordSys(slot%first) )/=0 ) then
+      write(*,*) '### Error: Fail in read in ORIENTATION definition : ', slot%first
+      write(ILOG,*) '### Error: Fail in read in ORIENTATION definition : ', slot%first
+      stop HECMW_EXIT_INPUT
+    endif
+  end subroutine fstr_setup_ORIENTATION
+
+  !> Reads !ORIENTATION into coordsys. Returns 0, or -1 for an error.
+  integer function fstr_get_ORIENTATION( ctrl, hecMESH, coordsys )
     use hecmw_setup_util, only: node_global_to_local
     implicit none
     integer(kind=kint)         :: ctrl
@@ -157,7 +173,7 @@ contains
     character(len=HECMW_NAME_LEN) :: data_fmt
     real(kind=kreal) :: fdum, xyza(3), xyzb(3), xyzc(3), ff1(3), ff2(3), ff3(3)
 
-    fstr_setup_ORIENTATION = -1
+    fstr_get_ORIENTATION = -1
 
     nid = 1
     coordsys%sys_type = 10
@@ -209,7 +225,7 @@ contains
           write(IDBG,*) "!ORIENTATION, DEFINITION=LOCAL_NODES needs three local node numbers (1-10)!"
           return
         endif
-        fstr_setup_ORIENTATION = 0
+        fstr_get_ORIENTATION = 0
         return
       endif
       if( coordsys%node_ID(3) == 0 ) then
@@ -229,10 +245,27 @@ contains
       endif
     endif
 
-    fstr_setup_ORIENTATION = 0
-  end function fstr_setup_ORIENTATION
+    fstr_get_ORIENTATION = 0
+  end function fstr_get_ORIENTATION
 
-  integer(kind=kint) function fstr_setup_INITIAL( ctrl, cond, hecMESH )
+  !> Read in !INITIAL_CONDITION
+  subroutine fstr_setup_INITIAL_CONDITION( ctrl, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    type(fstr_param_pack) :: P
+
+    type(fstr_card_slot) :: slot
+
+    slot = P%STATE%slot
+    if( fstr_get_INITIAL_CONDITION( ctrl, g_InitialCnd(slot%first), P%MESH )/=0 ) then
+       write(*,*) '### Error: Fail in read in INITIAL CONDITION definition : ' ,slot%first
+       write(ILOG,*) '### Error: Fail in read in INITIAL CONDITION definition : ', slot%first
+       stop HECMW_EXIT_INPUT
+    endif
+  end subroutine fstr_setup_INITIAL_CONDITION
+
+  !> Reads !INITIAL_CONDITION into cond. Returns 0, or nonzero for an error.
+  integer(kind=kint) function fstr_get_INITIAL_CONDITION( ctrl, cond, hecMESH )
     implicit none
     integer(kind=kint)        :: ctrl
     type( tInitialCondition ) :: cond
@@ -243,7 +276,7 @@ contains
     character(len=HECMW_NAME_LEN) :: data_fmt, ss
     integer :: i,j,n, iS, iE, gid, nid, rcode
 
-    fstr_setup_INITIAL = -1
+    fstr_get_INITIAL_CONDITION = -1
 
     ss = 'TEMPERATURE,VELOCITY,ACCELERATION '
     rcode = fstr_ctrl_get_param_ex( ctrl, 'TYPE ', ss, 1, 'P', nid )
@@ -273,15 +306,15 @@ contains
     write(ss,*)  HECMW_NAME_LEN
     if( nid==1 ) then
       write(data_fmt,'(a,a,a)') 'S',trim(adjustl(ss)),'R '
-      fstr_setup_INITIAL = &
+      fstr_get_INITIAL_CONDITION = &
             fstr_ctrl_get_data_array_ex( ctrl, data_fmt, grp_id_name, temp )
     else
         write(data_fmt,'(a,a,a)') 'S',trim(adjustl(ss)),'IR '
-        fstr_setup_INITIAL = &
+        fstr_get_INITIAL_CONDITION = &
             fstr_ctrl_get_data_array_ex( ctrl, data_fmt, grp_id_name, dof, temp )
     endif
 
-    if( fstr_setup_INITIAL /= 0 ) then
+    if( fstr_get_INITIAL_CONDITION /= 0 ) then
         if( associated(grp_id) )    deallocate( grp_id )
         if( associated(temp) )    deallocate( temp )
         if( associated(dof) )       deallocate( dof )
@@ -305,7 +338,7 @@ contains
     if( associated(temp) )      deallocate( temp )
     if( associated(dof) )       deallocate( dof )
     if( associated(grp_id_name) )    deallocate( grp_id_name )
-  end function fstr_setup_INITIAL
+  end function fstr_get_INITIAL_CONDITION
 
   !-----------------------------------------------------------------------------!
   !> Read in !WRITE                                                          !
@@ -494,19 +527,20 @@ contains
   !-----------------------------------------------------------------------------!
   !> Read in !AUTOINC_PARAM                                                     !
   !-----------------------------------------------------------------------------!
-  subroutine fstr_setup_AUTOINC_PARAM( ctrl, c_aincparam, P )
+  subroutine fstr_setup_AUTOINC_PARAM( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: c_aincparam
     type(fstr_param_pack) :: P
 
     type(fstr_param), pointer :: fstrPARAM
+    type(fstr_card_slot) :: slot
 
+    slot = P%STATE%slot
     fstrPARAM => P%PARAM
 
-    if( fstr_get_AUTOINC( ctrl, fstrPARAM%ainc(c_aincparam) ) /=0 ) then
-      write(*,*) '### Error: Fail in read in AUTOINC_PARAM definition : ' , c_aincparam
-      write(ILOG,*) '### Error: Fail in read in AUTOINC_PARAM definition : ', c_aincparam
+    if( fstr_get_AUTOINC( ctrl, fstrPARAM%ainc(slot%first) ) /=0 ) then
+      write(*,*) '### Error: Fail in read in AUTOINC_PARAM definition : ' , slot%first
+      write(ILOG,*) '### Error: Fail in read in AUTOINC_PARAM definition : ', slot%first
       stop HECMW_EXIT_INPUT
     endif
   end subroutine fstr_setup_AUTOINC_PARAM
@@ -514,19 +548,20 @@ contains
   !-----------------------------------------------------------------------------!
   !> Read in !CONVERG_PARAM                                                     !
   !-----------------------------------------------------------------------------!
-  subroutine fstr_setup_CONVERG_PARAM( ctrl, c_cnvparam, P )
+  subroutine fstr_setup_CONVERG_PARAM( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: c_cnvparam
     type(fstr_param_pack) :: P
 
     type(fstr_param), pointer :: fstrPARAM
+    type(fstr_card_slot) :: slot
 
+    slot = P%STATE%slot
     fstrPARAM => P%PARAM
 
-    if( fstr_ctrl_get_CONVERGPARAM( ctrl, fstrPARAM%cnvparam(c_cnvparam) ) /=0 ) then
-      write(*,*) '### Error: Fail in read in CONVERG_PARAM definition : ' , c_cnvparam
-      write(ILOG,*) '### Error: Fail in read in CONVERG_PARAM definition : ', c_cnvparam
+    if( fstr_ctrl_get_CONVERGPARAM( ctrl, fstrPARAM%cnvparam(slot%first) ) /=0 ) then
+      write(*,*) '### Error: Fail in read in CONVERG_PARAM definition : ' , slot%first
+      write(ILOG,*) '### Error: Fail in read in CONVERG_PARAM definition : ', slot%first
       stop HECMW_EXIT_INPUT
     endif
   end subroutine fstr_setup_CONVERG_PARAM
@@ -534,19 +569,20 @@ contains
   !-----------------------------------------------------------------------------!
   !> Read in !TIME_POINTS                                                       !
   !-----------------------------------------------------------------------------!
-  subroutine fstr_setup_TIME_POINTS( ctrl, c_timepoints, P )
+  subroutine fstr_setup_TIME_POINTS( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: c_timepoints
     type(fstr_param_pack) :: P
 
     type(fstr_param), pointer :: fstrPARAM
+    type(fstr_card_slot) :: slot
 
+    slot = P%STATE%slot
     fstrPARAM => P%PARAM
 
-    if( fstr_ctrl_get_TIMEPOINTS( ctrl, fstrPARAM%timepoints(c_timepoints) )/=0 ) then
-      write(*,*) '### Error: Fail in read in TIME_POINTS definition : ' , c_timepoints
-      write(ILOG,*) '### Error: Fail in read in TIME_POINTS definition : ', c_timepoints
+    if( fstr_ctrl_get_TIMEPOINTS( ctrl, fstrPARAM%timepoints(slot%first) )/=0 ) then
+      write(*,*) '### Error: Fail in read in TIME_POINTS definition : ' , slot%first
+      write(ILOG,*) '### Error: Fail in read in TIME_POINTS definition : ', slot%first
       stop HECMW_EXIT_INPUT
     endif
   end subroutine fstr_setup_TIME_POINTS
@@ -554,19 +590,20 @@ contains
   !-----------------------------------------------------------------------------!
   !> Read in !CONTACT_PARAM                                                     !
   !-----------------------------------------------------------------------------!
-  subroutine fstr_setup_CONTACT_PARAM( ctrl, c_contactparam, P )
+  subroutine fstr_setup_CONTACT_PARAM( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: c_contactparam
     type(fstr_param_pack) :: P
 
     type(fstr_param), pointer :: fstrPARAM
+    type(fstr_card_slot) :: slot
 
+    slot = P%STATE%slot
     fstrPARAM => P%PARAM
 
-    if( fstr_ctrl_get_CONTACTPARAM( ctrl, fstrPARAM%contactparam(c_contactparam) ) /=0 ) then
-      write(*,*) '### Error: Fail in read in CONTACT_PARAM definition : ' , c_contactparam
-      write(ILOG,*) '### Error: Fail in read in CONTACT_PARAM definition : ', c_contactparam
+    if( fstr_ctrl_get_CONTACTPARAM( ctrl, fstrPARAM%contactparam(slot%first) ) /=0 ) then
+      write(*,*) '### Error: Fail in read in CONTACT_PARAM definition : ' , slot%first
+      write(ILOG,*) '### Error: Fail in read in CONTACT_PARAM definition : ', slot%first
       stop HECMW_EXIT_INPUT
     endif
   end subroutine fstr_setup_CONTACT_PARAM
@@ -574,22 +611,23 @@ contains
   !-----------------------------------------------------------------------------!
   !> Read in !CONTACT_INTERFERENCE                                              !
   !-----------------------------------------------------------------------------!
-  !> c_contact_if is the number of the pairs already read, and the pairs of this card are added to it.
-  subroutine fstr_setup_CONTACT_INTERFERENCE( ctrl, c_contact_if, P )
+  subroutine fstr_setup_CONTACT_INTERFERENCE( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: c_contact_if
     type(fstr_param_pack) :: P
 
     type(fstr_param), pointer :: fstrPARAM
     type(fstr_solid), pointer :: fstrSOLID
-    integer(kind=kint) :: n, i
+    integer(kind=kint) :: c_contact_if, n, i
+    type(fstr_card_slot) :: slot
 
+    slot = P%STATE%slot
     fstrPARAM => P%PARAM
     fstrSOLID => P%SOLID
 
     n = fstr_ctrl_get_data_line_n( ctrl )
-    if( fstr_ctrl_get_CONTACT_IF( ctrl, n, fstrPARAM%contact_if(c_contact_if+1:c_contact_if+n) ) /= 0 ) then
+    c_contact_if = slot%first - 1
+    if( fstr_ctrl_get_CONTACT_IF( ctrl, n, fstrPARAM%contact_if(slot%first:slot%last) ) /= 0 ) then
       write(*,*) '### Error: Fail in read in CONTACT_INTERFERENCE definition : ' , c_contact_if
       write(ILOG,*) '### Error: Fail in read in CONTACT_INTERFERENCE definition : ', c_contact_if
       stop HECMW_EXIT_INPUT
@@ -601,7 +639,6 @@ contains
         stop HECMW_EXIT_MODEL
       end if
     end do
-    c_contact_if = c_contact_if + n
   end subroutine fstr_setup_CONTACT_INTERFERENCE
 
 end module m_fstr_param_setup
