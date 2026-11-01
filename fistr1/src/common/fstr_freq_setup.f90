@@ -26,11 +26,10 @@ contains
   !-----------------------------------------------------------------------------!
   !> Read in !FLOAD                                                             !
   !-----------------------------------------------------------------------------!
-  subroutine fstr_setup_FLOAD( ctrl, counter, P )
+  subroutine fstr_setup_FLOAD( ctrl, P )
     implicit none
   !---- args
     integer(kind=kint)   :: ctrl
-    integer(kind=kint)   :: counter
     type(fstr_param_pack) :: P
   !---- vals
     integer(kind=kint)                  :: rcode
@@ -106,12 +105,10 @@ contains
   !> Data line: NODE_ID, DOF_idS, DOF_idE, Value (same as !ACCELERATION).
   !> Value is the acceleration amplitude of DOF_idS..DOF_idE, stored as the real
   !> part (LOAD CASE=1, default) or the imaginary part (LOAD CASE=2).
-  !> counter is not used; it is kept for the same interface as the other readers.
-  subroutine fstr_setup_FACCELERATION( ctrl, counter, P )
+  subroutine fstr_setup_FACCELERATION( ctrl, P )
     implicit none
   !---- args
     integer(kind=kint)    :: ctrl
-    integer(kind=kint)    :: counter
     type(fstr_param_pack) :: P
   !---- vals
     integer(kind=kint)                 :: rcode
@@ -181,10 +178,9 @@ contains
   !-----------------------------------------------------------------------------!
   !> Read in !EIGENREAD                                                         !
   !-----------------------------------------------------------------------------!
-  subroutine fstr_setup_eigenread( ctrl, counter, P )
+  subroutine fstr_setup_eigenread( ctrl, P )
   !---- args
     integer(kind=kint)    :: ctrl
-    integer(kind=kint)    :: counter
     type(fstr_param_pack) :: P
   !---- vals
     integer(kind=kint)                :: filename_len

@@ -181,10 +181,9 @@ contains
   !> Read in !DYNAMIC                                                          !
   !-----------------------------------------------------------------------------!
 
-  subroutine fstr_setup_DYNAMIC( ctrl, counter, P )
+  subroutine fstr_setup_DYNAMIC( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: counter
     type(fstr_param_pack) :: P
     integer(kind=kint) :: rcode
     character(HECMW_NAME_LEN) :: grp_id_name(1)

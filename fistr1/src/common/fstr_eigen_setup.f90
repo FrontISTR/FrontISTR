@@ -32,10 +32,9 @@ contains
   !> Read in !EIGEN                                                            !
   !-----------------------------------------------------------------------------!
 
-  subroutine fstr_setup_EIGEN( ctrl, counter, P )
+  subroutine fstr_setup_EIGEN( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: counter
     type(fstr_param_pack) :: P
 
     integer(kind=kint) :: rcode
