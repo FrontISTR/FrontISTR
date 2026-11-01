@@ -1530,24 +1530,25 @@ contains
   !-----------------------------------------------------------------------------!
   !> Read in !CONTACT                                                           !
   !-----------------------------------------------------------------------------!
-  !> c_contact is the number of the pairs already read, and the pairs of this card are added to it.
-  subroutine fstr_setup_CONTACT( ctrl, c_contact, P )
+  subroutine fstr_setup_CONTACT( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: c_contact
     type(fstr_param_pack) :: P
 
     type(fstr_param), pointer :: fstrPARAM
     type(fstr_solid), pointer :: fstrSOLID
-    integer(kind=kint) :: n, k
+    integer(kind=kint) :: c_contact, n, k
     real(kind=kreal) :: ee, pp, rho, alpha
     character(len=HECMW_FILENAME_LEN) :: mName
+    type(fstr_card_slot) :: slot
 
+    slot = P%STATE%slot
     fstrPARAM => P%PARAM
     fstrSOLID => P%SOLID
 
     n = fstr_ctrl_get_data_line_n( ctrl )
-    if( .not. fstr_ctrl_get_CONTACT( ctrl, n, fstrSOLID%contacts(c_contact+1:c_contact+n)   &
+    c_contact = slot%first - 1
+    if( .not. fstr_ctrl_get_CONTACT( ctrl, n, fstrSOLID%contacts(slot%first:slot%last)   &
         ,ee, pp, rho, alpha, P%PARAM%contact_algo, mName, k ) ) then
       write(*,*) '### Error: Fail in read in contact condition : ', c_contact
       write(ILOG,*) '### Error: Fail in read in contact condition : ', c_contact
@@ -1557,44 +1558,42 @@ contains
     if( rho>0.d0 ) cgn = rho
     if( alpha>0.d0 ) cgt = alpha
     call fstr_solid_init_contacts( P%MESH, fstrSOLID, fstrPARAM, c_contact, n, mName, k )
-    c_contact = c_contact+n
   end subroutine fstr_setup_CONTACT
 
   !-----------------------------------------------------------------------------!
   !> Read in !EMBED                                                             !
   !-----------------------------------------------------------------------------!
-  !> c_embed is the number of the pairs already read, and the pairs of this card are added to it.
-  subroutine fstr_setup_EMBED( ctrl, c_embed, P )
+  subroutine fstr_setup_EMBED( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: c_embed
     type(fstr_param_pack) :: P
 
     type(fstr_param), pointer :: fstrPARAM
     type(fstr_solid), pointer :: fstrSOLID
-    integer(kind=kint) :: n, k
+    integer(kind=kint) :: c_embed, n, k
     character(len=HECMW_FILENAME_LEN) :: mName
+    type(fstr_card_slot) :: slot
 
+    slot = P%STATE%slot
     fstrPARAM => P%PARAM
     fstrSOLID => P%SOLID
 
     n = fstr_ctrl_get_data_line_n( ctrl )
-    if( .not. fstr_ctrl_get_EMBED( ctrl, n, fstrSOLID%embeds(c_embed+1:c_embed+n), mName, k ) ) then
+    c_embed = slot%first - 1
+    if( .not. fstr_ctrl_get_EMBED( ctrl, n, fstrSOLID%embeds(slot%first:slot%last), mName, k ) ) then
       write(*,*) '### Error: Fail in read in embed condition : ', c_embed
       write(ILOG,*) '### Error: Fail in read in embed condition : ', c_embed
       stop HECMW_EXIT_INPUT
     endif
     call fstr_solid_init_embeds( P%MESH, fstrSOLID, fstrPARAM, c_embed, n, mName, k )
-    c_embed = c_embed+n
   end subroutine fstr_setup_EMBED
 
   !-----------------------------------------------------------------------------!
   !> Read in !ISTEP                                                             !
   !-----------------------------------------------------------------------------!
-  subroutine fstr_setup_ISTEP( ctrl, c_istep, P )
+  subroutine fstr_setup_ISTEP( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: c_istep
     type(fstr_param_pack) :: P
 
     type(hecmwST_local_mesh), pointer :: hecMESH
@@ -1602,28 +1601,30 @@ contains
     type(fstr_solid), pointer :: fstrSOLID
     integer(kind=kint) :: i
     character(len=HECMW_FILENAME_LEN) :: mName, mName2, mName3
+    type(fstr_card_slot) :: slot
 
+    slot = P%STATE%slot
     hecMESH => P%MESH
     fstrPARAM => P%PARAM
     fstrSOLID => P%SOLID
 
-    if( .not. fstr_ctrl_get_ISTEP( ctrl, hecMESH, fstrSOLID%step_ctrl(c_istep), mName, mName2, mName3 ) ) then
-      write(*,*) '### Error: Fail in read in step definition : ' , c_istep
-      write(ILOG,*) '### Error: Fail in read in step definition : ', c_istep
+    if( .not. fstr_ctrl_get_ISTEP( ctrl, hecMESH, fstrSOLID%step_ctrl(slot%first), mName, mName2, mName3 ) ) then
+      write(*,*) '### Error: Fail in read in step definition : ' , slot%first
+      write(ILOG,*) '### Error: Fail in read in step definition : ', slot%first
       stop HECMW_EXIT_INPUT
     endif
-    call fstr_setup_step_convergence( fstrSOLID%step_ctrl(c_istep), mName3, fstrPARAM%cnvparam, c_istep )
+    call fstr_setup_step_convergence( fstrSOLID%step_ctrl(slot%first), mName3, fstrPARAM%cnvparam, slot%first )
     if( associated(fstrPARAM%timepoints) ) then
       do i=1,size(fstrPARAM%timepoints)
         if( hecmw_streqr( fstrPARAM%timepoints(i)%name, mName ) ) then
-          fstrSOLID%step_ctrl(c_istep)%timepoint_id = i; exit
+          fstrSOLID%step_ctrl(slot%first)%timepoint_id = i; exit
         endif
       enddo
     endif
     if( associated(fstrPARAM%ainc) ) then
       do i=1,size(fstrPARAM%ainc)
         if( hecmw_streqr( fstrPARAM%ainc(i)%name, mName2 ) ) then
-          fstrSOLID%step_ctrl(c_istep)%AincParam_id = i; exit
+          fstrSOLID%step_ctrl(slot%first)%AincParam_id = i; exit
         endif
       enddo
     endif
@@ -1633,10 +1634,9 @@ contains
   !> Read in !STEP                                                              !
   !-----------------------------------------------------------------------------!
   !> Read in !STEP of !VERSION 1 or later after fstr_setup_prepare and store the step.
-  subroutine fstr_setup_STEP_store( ctrl, c_istep, P )
+  subroutine fstr_setup_STEP_store( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: c_istep
     type(fstr_param_pack) :: P
 
     type(hecmwST_local_mesh), pointer :: hecMESH
@@ -1644,38 +1644,41 @@ contains
     type(fstr_solid), pointer :: fstrSOLID
     type(fstr_dynamic), pointer :: fstrDYNAMIC
     character(len=HECMW_FILENAME_LEN) :: mName, mName2, mName3
+    type(fstr_card_slot) :: slot
 
+    slot = P%STATE%slot
     hecMESH => P%MESH
     fstrPARAM => P%PARAM
     fstrSOLID => P%SOLID
     fstrDYNAMIC => P%DYN
 
-    if( .not. fstr_ctrl_get_ISTEP( ctrl, hecMESH, fstrSOLID%step_ctrl(c_istep), mName, mName2, mName3 ) ) then
-      write(*,*) '### Error: Fail in read in step definition : ' , c_istep
-      write(ILOG,*) '### Error: Fail in read in step definition : ', c_istep
+    if( .not. fstr_ctrl_get_ISTEP( ctrl, hecMESH, fstrSOLID%step_ctrl(slot%first), mName, mName2, mName3 ) ) then
+      write(*,*) '### Error: Fail in read in step definition : ' , slot%first
+      write(ILOG,*) '### Error: Fail in read in step definition : ', slot%first
       stop HECMW_EXIT_INPUT
     endif
-    call fstr_setup_step_links( fstrPARAM, fstrSOLID, fstrDYNAMIC, c_istep, mName, mName2, mName3 )
+    call fstr_setup_step_links( fstrPARAM, fstrSOLID, fstrDYNAMIC, slot%first, mName, mName2, mName3 )
   end subroutine fstr_setup_STEP_store
 
   !-----------------------------------------------------------------------------!
   !> Read in !SECTION                                                           !
   !-----------------------------------------------------------------------------!
-  subroutine fstr_setup_SECTION( ctrl, c_section, P )
+  subroutine fstr_setup_SECTION( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: c_section
     type(fstr_param_pack) :: P
 
     type(hecmwST_local_mesh), pointer :: hecMESH
     type(fstr_solid), pointer :: fstrSOLID
+    type(fstr_card_slot) :: slot
 
+    slot = P%STATE%slot
     hecMESH => P%MESH
     fstrSOLID => P%SOLID
 
     if( fstr_ctrl_get_SECTION( ctrl, hecMESH, fstrSOLID%sections )/=0 ) then
-      write(*,*) '### Error: Fail in read in SECTION definition : ' , c_section
-      write(ILOG,*) '### Error: Fail in read in SECTION definition : ', c_section
+      write(*,*) '### Error: Fail in read in SECTION definition : ' , slot%first
+      write(ILOG,*) '### Error: Fail in read in SECTION definition : ', slot%first
       stop HECMW_EXIT_INPUT
     endif
   end subroutine fstr_setup_SECTION
@@ -1683,19 +1686,20 @@ contains
   !-----------------------------------------------------------------------------!
   !> Read in !ELEMOPT                                                           !
   !-----------------------------------------------------------------------------!
-  subroutine fstr_setup_ELEMOPT( ctrl, c_elemopt, P )
+  subroutine fstr_setup_ELEMOPT( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: c_elemopt
     type(fstr_param_pack) :: P
 
     type(fstr_solid), pointer :: fstrSOLID
+    type(fstr_card_slot) :: slot
 
+    slot = P%STATE%slot
     fstrSOLID => P%SOLID
 
     if( fstr_ctrl_get_ELEMOPT( ctrl, fstrSOLID%elemopt361 )/=0 ) then
-      write(*,*) '### Error: Fail in read in ELEMOPT definition : ' , c_elemopt
-      write(ILOG,*) '### Error: Fail in read in ELEMOPT definition : ', c_elemopt
+      write(*,*) '### Error: Fail in read in ELEMOPT definition : ' , slot%first
+      write(ILOG,*) '### Error: Fail in read in ELEMOPT definition : ', slot%first
       stop HECMW_EXIT_INPUT
     endif
   end subroutine fstr_setup_ELEMOPT
@@ -1704,25 +1708,26 @@ contains
   !> Read in !MATERIAL                                                          !
   !-----------------------------------------------------------------------------!
   !> P%STATE%cid is set to the material of this card, and P%STATE%cache to the material expected next.
-  subroutine fstr_setup_MATERIAL( ctrl, c_material, P )
+  subroutine fstr_setup_MATERIAL( ctrl, P )
     use mMaterial
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: c_material
     type(fstr_param_pack) :: P
 
     type(hecmwST_local_mesh), pointer :: hecMESH
     type(fstr_solid), pointer :: fstrSOLID
     integer(kind=kint) :: i, cid, cache
     character(len=HECMW_FILENAME_LEN) :: mName
+    type(fstr_card_slot) :: slot
 
+    slot = P%STATE%slot
     hecMESH => P%MESH
     fstrSOLID => P%SOLID
     cache = P%STATE%cache
 
     if( fstr_ctrl_get_MATERIAL( ctrl, mName )/=0 ) then
-      write(*,*) '### Error: Fail in read in material definition : ' , c_material
-      write(ILOG,*) '### Error: Fail in read in material definition : ', c_material
+      write(*,*) '### Error: Fail in read in material definition : ' , slot%first
+      write(ILOG,*) '### Error: Fail in read in material definition : ', slot%first
       stop HECMW_EXIT_INPUT
     endif
     cid = 0
@@ -1742,12 +1747,12 @@ contains
       enddo
     endif
     if(cid == 0)then
-      write(*,*) '### Error: Fail in read in material definition : ' , c_material
-      write(ILOG,*) '### Error: Fail in read in material definition : ', c_material
+      write(*,*) '### Error: Fail in read in material definition : ' , slot%first
+      write(ILOG,*) '### Error: Fail in read in material definition : ', slot%first
       stop HECMW_EXIT_INPUT
     endif
     fstrSOLID%materials(cid)%name = hecMESH%material%mat_name(cid)
-    if(c_material>hecMESH%material%n_mat) call initMaterial( fstrSOLID%materials(cid) )
+    if(slot%first>hecMESH%material%n_mat) call initMaterial( fstrSOLID%materials(cid) )
     P%STATE%cid = cid
     P%STATE%cache = cache
   end subroutine fstr_setup_MATERIAL
@@ -2197,9 +2202,10 @@ contains
   !-----------------------------------------------------------------------------!
   !> Read in !ULOAD                                                             !
   !-----------------------------------------------------------------------------!
-  subroutine fstr_setup_ULOAD( ctrl )
+  subroutine fstr_setup_ULOAD( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
+    type(fstr_param_pack) :: P
 
     if( fstr_ctrl_get_USERLOAD( ctrl )/=0 ) then
       write(*,*) '### Error: Fail in read in ULOAD definition : '

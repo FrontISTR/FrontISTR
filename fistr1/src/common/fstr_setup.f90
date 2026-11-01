@@ -40,7 +40,7 @@ contains
   !=============================================================================!
   subroutine fstr_setup( cntl_filename, hecMESH, hecMAT, fstrPARAM,  &
       fstrSOLID, fstrEIG, fstrHEAT, fstrDYNAMIC, fstrCPL, fstrFREQ )
-    character(len=HECMW_FILENAME_LEN) :: cntl_filename, input_filename
+    character(len=HECMW_FILENAME_LEN) :: cntl_filename
     type(hecmwST_local_mesh),target :: hecMESH
     type(hecmwST_matrix),target :: hecMAT
     type(fstr_param),target   :: fstrPARAM
@@ -51,23 +51,11 @@ contains
     type(fstr_couple),target  :: fstrCPL
     type(fstr_freqanalysis), target :: fstrFREQ
 
-    integer(kind=kint) :: ctrl, ctrl_list(20), ictrl
+    integer(kind=kint) :: ctrl, rcode
     type(fstr_param_pack) :: P
     type(fstr_card_table) :: T
     integer(kind=kint) :: total(FSTR_CARD_MAX)
     type(fstr_setup_counts) :: counts
-
-    integer, parameter :: MAXOUTFILE = 10
-    double precision, parameter :: dpi = 3.14159265358979323846D0
-
-    integer(kind=kint) :: rcode, ierror
-    character(len=HECMW_NAME_LEN) :: header_name
-
-    ! counters
-    integer(kind=kint) :: c_heat, c_contact, c_contactparam, c_embed, c_contact_if
-    integer(kind=kint) :: c_material, c_initial
-    integer(kind=kint) :: c_istep, c_localcoord, c_section
-    integer(kind=kint) :: c_elemopt, c_aincparam, c_timepoints, c_cnvparam
 
     ! packaging
     P%MESH   => hecMESH
@@ -84,8 +72,6 @@ contains
 
     call fstr_setup_cards( T )
 
-    ctrl_list = 0
-    ictrl = 1
     ctrl  = fstr_ctrl_open( cntl_filename )
     if( ctrl < 0 ) then
       write(*,*) '### Error: Cannot open FSTR control file : ', cntl_filename
@@ -101,167 +87,9 @@ contains
 
     ! -----
     rcode = fstr_ctrl_rewind( ctrl )
+    call fstr_setup_read_cards( ctrl, T, 2, total, P )
 
-    c_istep    = 0
-    c_heat     = 0
-    c_material = 0
-    c_contact  = 0
-    c_contactparam  = 0
-    c_contact_if  = 0
-    c_embed = 0
-    c_initial = 0
-    c_localcoord = 0
-    c_section = 0
-    fstrHEAT%WL_tot = 0
-    c_elemopt = 0
-    c_aincparam = 0
-    c_timepoints = 0
-    c_cnvparam = 0
-    ictrl = 1
-    do
-      rcode = fstr_ctrl_get_c_h_name( ctrl, header_name, HECMW_NAME_LEN )
-
-      if( header_name == '!ORIENTATION' ) then
-        c_localcoord = c_localcoord + 1
-        if( fstr_setup_ORIENTATION( ctrl, hecMESH, c_localcoord, g_LocalCoordSys(c_localcoord) )/=0 ) then
-          write(*,*) '### Error: Fail in read in ORIENTATION definition : ', c_localcoord
-          write(ILOG,*) '### Error: Fail in read in ORIENTATION definition : ', c_localcoord
-          stop HECMW_EXIT_INPUT
-        endif
-
-        ! ----- CONTACT condition setting
-      elseif( header_name == '!CONTACT' ) then
-        call fstr_setup_CONTACT( ctrl, c_contact, P )
-
-        ! ----- EMBED condition setting
-      elseif( header_name == '!EMBED' ) then
-        call fstr_setup_EMBED( ctrl, c_embed, P )
-
-      else if( header_name == '!ISTEP'  ) then
-        c_istep = c_istep+1
-        call fstr_setup_ISTEP( ctrl, c_istep, P )
-      else if( header_name == '!STEP' .and. P%STATE%version>=1 ) then
-        c_istep = c_istep+1
-        call fstr_setup_STEP_store( ctrl, c_istep, P )
-
-      else if( header_name == '!HEAT'  ) then
-        c_heat = c_heat + 1
-        call fstr_setup_HEAT( ctrl, c_heat, P )
-
-      else if( header_name == '!WELD_LINE'  ) then
-        call fstr_setup_WELD_LINE( ctrl, P )
-
-      else if( header_name == '!INITIAL_CONDITION' .or. header_name == '!INITIAL CONDITION' ) then
-        c_initial = c_initial+1
-        if( fstr_setup_INITIAL( ctrl, g_InitialCnd(c_initial), P%MESH )/=0 ) then
-           write(*,*) '### Error: Fail in read in INITIAL CONDITION definition : ' ,c_initial
-           write(ILOG,*) '### Error: Fail in read in INITIAL CONDITION definition : ', c_initial
-           stop HECMW_EXIT_INPUT
-        endif
-
-      else if( header_name == '!SECTION'  ) then
-        c_section = c_section+1
-        call fstr_setup_SECTION( ctrl, c_section, P )
-
-      else if( header_name == '!ELEMOPT'  ) then
-        c_elemopt = c_elemopt+1
-        call fstr_setup_ELEMOPT( ctrl, c_elemopt, P )
-
-        !== following material properties ==
-      else if( header_name == '!MATERIAL' ) then
-        c_material = c_material+1
-        call fstr_setup_MATERIAL( ctrl, c_material, P )
-
-      else if( header_name == '!ELASTIC' ) then
-        call fstr_setup_ELASTIC( ctrl, P )
-      else if( header_name == '!PLASTIC' ) then
-        call fstr_setup_PLASTIC( ctrl, P )
-      else if( header_name == '!HYPERELASTIC' ) then
-        call fstr_setup_HYPERELASTIC( ctrl, P )
-      else if( header_name == '!VISCOELASTIC' ) then
-        call fstr_setup_VISCOELASTIC( ctrl, P )
-      else if( header_name == '!TRS' ) then
-        call fstr_setup_TRS( ctrl, P )
-      else if( header_name == '!CREEP' ) then
-        call fstr_setup_CREEP( ctrl, P )
-      else if( header_name == '!DENSITY' ) then
-        call fstr_setup_DENSITY( ctrl, P )
-      else if( header_name == '!EXPANSION_COEF' .or. header_name == '!EXPANSION_COEFF' .or. &
-          header_name == '!EXPANSION') then
-        call fstr_setup_EXPANSION_COEFF( ctrl, P )
-      else if( header_name == '!DAMPING') then
-        call fstr_setup_DAMPING( ctrl, P )
-      else if( header_name == '!FLUID' ) then
-        call fstr_setup_FLUID( ctrl, P )
-      else if( header_name == '!SPRING_D' ) then
-        call fstr_setup_SPRING_D( ctrl, P )
-      else if( header_name == '!SPRING_A' ) then
-        call fstr_setup_SPRING_A( ctrl, P )
-      else if( header_name == '!DASHPOT_D' ) then
-        call fstr_setup_DASHPOT_D( ctrl, P )
-      else if( header_name == '!DASHPOT_A' ) then
-        call fstr_setup_DASHPOT_A( ctrl, P )
-      else if( header_name == '!USER_MATERIAL' ) then
-        call fstr_setup_USER_MATERIAL( ctrl, P )
-
-
-        ! == Following output control ==
-      else if( header_name == '!WRITE' ) then
-        call fstr_setup_WRITE_store( ctrl, P )
-
-      else if( header_name == '!OUTPUT_RES' ) then
-        call fstr_setup_OUTPUT_RES( ctrl, P )
-      else if( header_name == '!OUTPUT_VIS' ) then
-        call fstr_setup_OUTPUT_VIS( ctrl, P )
-      else if( header_name == '!AUTOINC_PARAM' ) then
-        c_aincparam = c_aincparam + 1
-        call fstr_setup_AUTOINC_PARAM( ctrl, c_aincparam, P )
-      else if( header_name == '!CONVERG_PARAM' ) then
-        c_cnvparam = c_cnvparam + 1
-        call fstr_setup_CONVERG_PARAM( ctrl, c_cnvparam, P )
-      else if( header_name == '!TIME_POINTS'  ) then
-        c_timepoints = c_timepoints + 1
-        call fstr_setup_TIME_POINTS( ctrl, c_timepoints, P )
-      else if( header_name == '!CONTACT_PARAM' ) then
-        c_contactparam = c_contactparam + 1
-        call fstr_setup_CONTACT_PARAM( ctrl, c_contactparam, P )
-      else if( header_name == '!CONTACT_INTERFERENCE' ) then
-        call fstr_setup_CONTACT_INTERFERENCE( ctrl, c_contact_if, P )
-      else if( header_name == '!ULOAD' ) then
-        call fstr_setup_ULOAD( ctrl )
-
-      else if( header_name == '!INCLUDE' ) then
-        ctrl_list(ictrl) = ctrl
-        input_filename   = ""
-        ierror = fstr_ctrl_get_param_ex( ctrl, 'INPUT ', '# ', 0, 'F', input_filename )
-        ctrl   = fstr_ctrl_open( input_filename )
-        if( ctrl < 0 ) then
-          write(*,*) '### Error: Cannot open FSTR control file : ', input_filename
-          write(ILOG,*) '### Error: Cannot open FSTR control file : ', input_filename
-          stop HECMW_EXIT_INPUT
-        end if
-        ictrl = ictrl + 1
-        cycle
-
-      else if( header_name == '!END' ) then
-        exit
-      endif
-
-      ! next
-      if( fstr_ctrl_seek_next_header(ctrl) == 0 )then
-        if( ictrl == 1 )then
-          exit
-        else
-          ierror= fstr_ctrl_close( ctrl )
-          ictrl = ictrl - 1
-          ctrl  = ctrl_list(ictrl)
-          if( fstr_ctrl_seek_next_header(ctrl) == 0 ) exit
-        endif
-      endif
-
-    end do
-
-    call fstr_setup_finish( ctrl, P, c_material )
+    call fstr_setup_finish( ctrl, P, counts )
     rcode = fstr_ctrl_close( ctrl )
 
   end subroutine fstr_setup
@@ -319,32 +147,58 @@ contains
 
     ! Counted in the first reading to allocate the arrays they are stored in, and stored in the second reading.
     ! !CONTACT also uses !CONTACT_ALGO, and !CONTACT_INTERFERENCE refers to the pairs of !CONTACT.
-    call fstr_card_add( T, 'ORIENTATION' )
-    call fstr_card_add( T, 'CONTACT',              by_line=.true. )
-    call fstr_card_add( T, 'EMBED',                by_line=.true. )
-    call fstr_card_add( T, 'CONTACT_INTERFERENCE', by_line=.true. )
-    call fstr_card_add( T, 'CONTACT_PARAM' )
-    call fstr_card_add( T, 'AUTOINC_PARAM' )
-    call fstr_card_add( T, 'CONVERG_PARAM' )
-    call fstr_card_add( T, 'TIME_POINTS' )
-    call fstr_card_add( T, 'INITIAL_CONDITION' )
-    call fstr_card_add( T, 'WELD_LINE' )
-    call fstr_card_add( T, 'MATERIAL' )
+    call fstr_card_add( T, 'ORIENTATION',          second=fstr_setup_ORIENTATION )
+    call fstr_card_add( T, 'CONTACT',              second=fstr_setup_CONTACT, by_line=.true. )
+    call fstr_card_add( T, 'EMBED',                second=fstr_setup_EMBED, by_line=.true. )
+    call fstr_card_add( T, 'CONTACT_INTERFERENCE', second=fstr_setup_CONTACT_INTERFERENCE, by_line=.true. )
+    call fstr_card_add( T, 'CONTACT_PARAM',        second=fstr_setup_CONTACT_PARAM )
+    call fstr_card_add( T, 'AUTOINC_PARAM',        second=fstr_setup_AUTOINC_PARAM )
+    call fstr_card_add( T, 'CONVERG_PARAM',        second=fstr_setup_CONVERG_PARAM )
+    call fstr_card_add( T, 'TIME_POINTS',          second=fstr_setup_TIME_POINTS )
+    call fstr_card_add( T, 'INITIAL_CONDITION',    second=fstr_setup_INITIAL_CONDITION )
+    call fstr_card_add( T, 'WELD_LINE',            second=fstr_setup_WELD_LINE )
+    call fstr_card_add( T, 'MATERIAL',             second=fstr_setup_MATERIAL )
     ! !ISTEP also refers by name to !AUTOINC_PARAM, !CONVERG_PARAM and !TIME_POINTS read before it.
     ! !STEP of !VERSION 0 is read in the first reading. !STEP of !VERSION 1 or later is a step like !ISTEP,
     ! stored in the same array. !STEP of a negative !VERSION is not read, but is counted as a step in the first reading.
-    call fstr_card_add( T, 'ISTEP',                seq='steps' )
+    call fstr_card_add( T, 'ISTEP',                second=fstr_setup_ISTEP, seq='steps' )
     call fstr_card_add( T, 'STEP',                 first=fstr_setup_STEP, version_min=0, version_max=0 )
-    call fstr_card_add( T, 'STEP',                 seq='steps', version_min=1 )
+    call fstr_card_add( T, 'STEP',                 second=fstr_setup_STEP_store, seq='steps', version_min=1 )
     call fstr_card_add( T, 'STEP',                 seq='steps', version_max=-1 )
 
     ! Read in the second reading to refer by name to the cards of the second reading read before them:
-    ! !HEAT to !TIME_POINTS
-    call fstr_card_add( T, 'HEAT' )
+    ! !SECTION to !ORIENTATION, and !HEAT to !TIME_POINTS
+    call fstr_card_add( T, 'SECTION',              second=fstr_setup_SECTION )
+    call fstr_card_add( T, 'HEAT',                 second=fstr_setup_HEAT )
 
     ! Stored in the output controls that fstr_setup_prepare allocates.
     ! !WRITE also sets the output flags in the first reading.
-    call fstr_card_add( T, 'WRITE',                first=fstr_setup_WRITE_flags )
+    call fstr_card_add( T, 'WRITE',                first=fstr_setup_WRITE_flags, second=fstr_setup_WRITE_store )
+    call fstr_card_add( T, 'OUTPUT_RES',           second=fstr_setup_OUTPUT_RES )
+    call fstr_card_add( T, 'OUTPUT_VIS',           second=fstr_setup_OUTPUT_VIS )
+
+    ! Stored in the material of the last !MATERIAL
+    call fstr_card_add( T, 'ELASTIC',              second=fstr_setup_ELASTIC )
+    call fstr_card_add( T, 'PLASTIC',              second=fstr_setup_PLASTIC )
+    call fstr_card_add( T, 'HYPERELASTIC',         second=fstr_setup_HYPERELASTIC )
+    call fstr_card_add( T, 'VISCOELASTIC',         second=fstr_setup_VISCOELASTIC )
+    call fstr_card_add( T, 'TRS',                  second=fstr_setup_TRS )
+    call fstr_card_add( T, 'CREEP',                second=fstr_setup_CREEP )
+    call fstr_card_add( T, 'DENSITY',              second=fstr_setup_DENSITY )
+    call fstr_card_add( T, 'EXPANSION_COEF',       second=fstr_setup_EXPANSION_COEFF )
+    call fstr_card_alias( T, 'EXPANSION_COEFF', 'EXPANSION_COEF' )
+    call fstr_card_alias( T, 'EXPANSION',       'EXPANSION_COEF' )
+    call fstr_card_add( T, 'DAMPING',              second=fstr_setup_DAMPING )
+    call fstr_card_add( T, 'FLUID',                second=fstr_setup_FLUID )
+    call fstr_card_add( T, 'SPRING_D',             second=fstr_setup_SPRING_D )
+    call fstr_card_add( T, 'SPRING_A',             second=fstr_setup_SPRING_A )
+    call fstr_card_add( T, 'DASHPOT_D',            second=fstr_setup_DASHPOT_D )
+    call fstr_card_add( T, 'DASHPOT_A',            second=fstr_setup_DASHPOT_A )
+    call fstr_card_add( T, 'USER_MATERIAL',        second=fstr_setup_USER_MATERIAL )
+
+    ! Read in the second reading
+    call fstr_card_add( T, 'ELEMOPT',              second=fstr_setup_ELEMOPT )
+    call fstr_card_add( T, 'ULOAD',                second=fstr_setup_ULOAD )
   end subroutine fstr_setup_cards
 
   !> Counts for fstr_setup_prepare, from the totals of the sequences of the table T in the first reading
@@ -372,7 +226,8 @@ contains
   !> and calls the reader of each card in the table T for the reading ipass (1 or 2), setting the places of the card
   !> in its sequence to P%STATE%slot. The cards are found in T by the names without the '!' of the header.
   !> Each reading counts the sequences from 0. The first reading counts all the cards in T and returns the totals of
-  !> the sequences in total. The second reading counts only the cards it reads. The cards not in T are skipped.
+  !> the sequences in total. The second reading counts only the cards it reads,
+  !> and stops if a sequence goes beyond its total, which the arrays are allocated by. The cards not in T are skipped.
   !> On return, ctrl is the file where the reading ended.
   subroutine fstr_setup_read_cards( ctrl, T, ipass, total, P )
     implicit none
@@ -419,6 +274,8 @@ contains
             pos(s) = pos(s) + 1
           endif
           P%STATE%slot%last = pos(s)
+          if( ipass == 2 .and. pos(s) > total(s) ) call fstr_setup_util_err_stop( '### Error: '// &
+            trim(header_name)//' : more than counted in the first reading of the control file' )
           if( ipass == 1 .and. associated(T%card(k)%first) ) call T%card(k)%first( ctrl, P )
           if( ipass == 2 ) call T%card(k)%second( ctrl, P )
         endif

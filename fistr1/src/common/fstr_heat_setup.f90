@@ -19,6 +19,7 @@ module m_fstr_heat_setup
     , hecmw_expand_real_array2
   use fstr_setup_util, only &
     : fstr_param_pack &
+    , fstr_card_slot &
     , fstr_ctrl_err_stop &
     , reallocate_integer &
     , reallocate_real &
@@ -53,10 +54,9 @@ contains
   !> Read in !HEAT                                                             !
   !-----------------------------------------------------------------------------!
 
-  subroutine fstr_setup_HEAT( ctrl, counter, P )
+  subroutine fstr_setup_HEAT( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: counter
     type(fstr_param_pack) :: P
 
     integer(kind=kint) :: rcode
@@ -428,11 +428,13 @@ contains
 
     type(hecmwST_local_mesh), pointer :: hecMESH
     type(fstr_heat), pointer :: fstrHEAT
+    type(fstr_card_slot) :: slot
 
+    slot = P%STATE%slot
     hecMESH => P%MESH
     fstrHEAT => P%HEAT
 
-    fstrHEAT%WL_tot = fstrHEAT%WL_tot+1
+    fstrHEAT%WL_tot = slot%last
     if( fstr_ctrl_get_WELDLINE( ctrl, hecMESH, HECMW_NAME_LEN, fstrHEAT%weldline(fstrHEAT%WL_tot) )/=0 ) then
       write(*,*) '### Error: Fail in read in Weld Line definition : ' , fstrHEAT%WL_tot
       write(ILOG,*) '### Error: Fail in read in Weld Line definition : ', fstrHEAT%WL_tot
