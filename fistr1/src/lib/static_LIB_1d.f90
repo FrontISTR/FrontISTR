@@ -71,7 +71,7 @@ contains
   !
   !> Update strain and stress inside element
   !---------------------------------------------------------------------*
-  subroutine UPDATE_C1( etype, nn, ecoord, area, u, du, qf ,gausses, TT, T0 )
+  subroutine UPDATE_C1( etype, nn, ecoord, area, u, du, qf ,gausses, reftemp, TT, T0 )
     !---------------------------------------------------------------------*
     use m_fstr
     ! I/F VARIABLES
@@ -83,6 +83,7 @@ contains
     real(kind=kreal),   intent(in)     :: du(3,nn)       !< \param [in] nodal displacement ( solutions of solver )
     real(kind=kreal),   intent(out)    :: qf(nn*3)        !< \param [out] Internal Force
     type(tGaussStatus), intent(inout)  :: gausses(:)      !< \param [out] status of qudrature points
+    real(kind=kreal),   intent(in)     :: reftemp         !< reference temperature
     real(kind=kreal),   intent(in), optional :: TT(nn)    !< current temperature
     real(kind=kreal),   intent(in), optional :: T0(nn)    !< reference temperature
 
@@ -123,7 +124,7 @@ contains
       if( ierr ) outa(1) = gausses(1)%pMaterial%variables(M_EXPANSION)
       alp0 = outa(1)
 
-      epsth=alp*(ttc-ref_temp)-alp0*(tt0-ref_temp)
+      epsth=alp*(ttc-reftemp)-alp0*(tt0-reftemp)
     else
       call fetch_TableData( MC_ISOELASTIC, gausses(1)%pMaterial%dict, outa, ierr )
       if( ierr ) outa(1) = gausses(1)%pMaterial%variables(M_YOUNGS)

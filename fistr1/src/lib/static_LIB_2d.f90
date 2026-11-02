@@ -416,7 +416,7 @@ contains
   !> Update strain and stress inside element
   !---------------------------------------------------------------------*
   subroutine UPDATE_C2( etype,nn,ecoord,gausses,PARAM1,iset,         &
-      u, ddu, qf, TT, T0, TN )
+      u, ddu, qf, TT, T0, TN, reftemp )
     !---------------------------------------------------------------------*
     use m_fstr
     use mMechGauss
@@ -432,6 +432,7 @@ contains
     real(kind=kreal),   intent(in)     :: TT(nn)   !< current temperature
     real(kind=kreal),   intent(in)     :: T0(nn)   !< reference temperature
     real(kind=kreal),   intent(in)     :: TN(nn)   !< reference temperature
+    real(kind=kreal),   intent(in)     :: reftemp  !< reference temperature
 
 
     integer(kind=kint), parameter :: ndof=2
@@ -481,7 +482,7 @@ contains
         call fetch_TableData( MC_THEMOEXP, gausses(LX)%pMaterial%dict, outa(:), ierr, ina )
         if( ierr ) outa(1) = gausses(LX)%pMaterial%variables(M_EXPANSION)
         alp0 = outa(1)
-        EPSTH(1:2)=alp*(ttc-ref_temp)-alp0*(tt0-ref_temp)
+        EPSTH(1:2)=alp*(ttc-reftemp)-alp0*(tt0-reftemp)
       end if
       !
       WG=getWeight( etype, LX )*DET

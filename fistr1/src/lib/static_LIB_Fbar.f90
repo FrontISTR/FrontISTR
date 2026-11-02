@@ -339,7 +339,7 @@ contains
   !----------------------------------------------------------------------*
   subroutine Update_C3D8Fbar                              &
       (etype, nn, ecoord, u, du, cdsys_ID, coords, &
-      qf, gausses, iter, time, tincr, TT, T0, TN  )
+      qf, gausses, iter, time, tincr, TT, T0, TN, reftemp )
     !----------------------------------------------------------------------*
 
     use m_fstr
@@ -368,6 +368,7 @@ contains
     real(kind=kreal), intent(in)      :: TT(nn)        !< current temperature
     real(kind=kreal), intent(in)      :: T0(nn)        !< reference temperature
     real(kind=kreal), intent(in)      :: TN(nn)        !< reference temperature
+    real(kind=kreal), intent(in)      :: reftemp       !< reference temperature
 
     !---------------------------------------------------------------------
 
@@ -481,7 +482,7 @@ contains
       ttc = dot_product(TT, spfunc)
       tt0 = dot_product(T0, spfunc)
       ttn = dot_product(TN, spfunc)
-      call Cal_Thermal_expansion_C3( tt0, ttc, gausses(LX)%pMaterial, coordsys, matlaniso, EPSTH )
+      call Cal_Thermal_expansion_C3( tt0, ttc, reftemp, gausses(LX)%pMaterial, coordsys, matlaniso, EPSTH )
 
       ! Update strain
       if( flag == INFINITESIMAL ) then
@@ -661,7 +662,7 @@ contains
   !> This subroutien calculate thermal loading
   !----------------------------------------------------------------------*
   subroutine TLOAD_C3D8Fbar                    &
-      (etype, nn, XX, YY, ZZ, TT, T0,   &
+      (etype, nn, XX, YY, ZZ, TT, T0, reftemp, &
       gausses, VECT, cdsys_ID, coords)
     !----------------------------------------------------------------------*
 
@@ -676,7 +677,7 @@ contains
     integer(kind=kint), intent(in)  :: etype, nn
     type(tGaussStatus), intent(in)  :: gausses(:)             !< status of qudrature points
     real(kind=kreal), intent(in)    :: XX(nn), YY(nn), ZZ(nn)
-    real(kind=kreal), intent(in)    :: TT(nn), T0(nn)
+    real(kind=kreal), intent(in)    :: TT(nn), T0(nn), reftemp
     real(kind=kreal), intent(out)   :: VECT(nn*ndof)
     integer(kind=kint), intent(in)  :: cdsys_ID
     real(kind=kreal), intent(inout) :: coords(3, 3)           !< variables to define material coordinate system
@@ -794,14 +795,14 @@ contains
       !**
       if( matlaniso ) then
         do j = 1, 3
-          estrain(j) = ALPO(j)*(TEMPC-ref_temp)-alpo0(j)*(TEMP0-ref_temp)
+          estrain(j) = ALPO(j)*(TEMPC-reftemp)-alpo0(j)*(TEMP0-reftemp)
         end do
         estrain(4:6) = 0.0D0
         call transformation(coordsys, tm)
         estrain(:) = matmul( estrain(:), tm  )      ! to global coord
         estrain(4:6) = estrain(4:6)*2.0D0
       else
-        THERMAL_EPS = ALP*(TEMPC-ref_temp)-alp0*(TEMP0-ref_temp)
+        THERMAL_EPS = ALP*(TEMPC-reftemp)-alp0*(TEMP0-reftemp)
         estrain(1:3) = THERMAL_EPS
         estrain(4:6) = 0.0D0
       end if

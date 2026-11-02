@@ -96,7 +96,6 @@ contains
         write(ILOG,*) hecMESH%global_elem_ID(in)
       enddo
     enddo
-    write(ILOG,*) '### Reftemp',ref_temp
     !C====
   end subroutine FSTR_ECHO
 end module m_static_echo

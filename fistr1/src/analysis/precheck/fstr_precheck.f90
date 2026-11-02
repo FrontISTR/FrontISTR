@@ -52,13 +52,13 @@ contains
       call precheck_mesh_quality(hecMESH, hecMAT, elem_vol, elem_asp)
 
       ! Write result file
-      if(IRESULT == 1) then
+      if(fstrPARAM%fg_result == 1) then
         call precheck_write_result(hecMESH, elem_vol, elem_asp)
       endif
 
       ! Build visualization result data and output
       call precheck_make_result(hecMESH, fstrRESULT, elem_vol, elem_asp)
-      if(IVISUAL == 1) then
+      if(fstrPARAM%fg_visual == 1) then
         call fstr2hecmw_mesh_conv(hecMESH)
         call hecmw_visualize_init
         call hecmw_visualize_by_addfname(hecMESH, fstrRESULT, 0, '_precheck')
