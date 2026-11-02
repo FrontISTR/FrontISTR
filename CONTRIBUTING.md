@@ -22,6 +22,10 @@ Development takes place on GitLab: https://gitlab.com/FrontISTR-Commons/FrontIST
 4. Adding a small model (mesh / cnt) under `tests/` helps keep your change covered: a case that exercises a new feature, or the input that reproduced a fixed bug kept as a regression test. Encouraged, not required.
 5. Open a Merge Request against `master`.
 
+## Review
+
+How Merge Requests are reviewed, and what reviewers check, is described in [REVIEWING.md](REVIEWING.md).
+
 ## Where new code goes
 
 Each file holds roughly one module, and each directory has a clear role: analysis-type-specific drivers live under `fistr1/src/analysis/`, reusable analysis parts (elements, material models, contact, ...) live in `lib/`, and control-file I/O and setup live in `common/`. Following the existing layout keeps a change easy to review and to build on.
@@ -55,6 +59,10 @@ FrontISTR への貢献に興味を持っていただきありがとうござい�
    同じテストが CI でも実行されるので、パスすることを確認してください。
 4. `tests/` に小さなモデル（mesh / cnt）を追加すると、変更がカバーされ続けます。新機能を動かすケースや、バグを再現した入力を回帰テストとして残すかたちです。必須ではありませんが、ぜひ。
 5. `master` 向けに Merge Request を作成する。
+
+## レビュー
+
+Merge Request のレビューの進め方と確認することは、[REVIEWING.ja.md](REVIEWING.ja.md) にまとめています。
 
 ## 新しいコードの置き場所
 
