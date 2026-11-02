@@ -20,10 +20,6 @@ contains
     allocate(fstrPARAM)
     call fstr_nullify_fstr_param(fstrPARAM)
 
-    fstrPARAM%solution_type = kstSTATIC
-    fstrPARAM%analysis_n = 0
-    fstrPARAM%contact_algo = kcaSLagrange
-
     ! -------  global pointer setting ----------
     REF_TEMP => fstrPARAM%ref_temp
     IECHO    => fstrPARAM%fg_echo
