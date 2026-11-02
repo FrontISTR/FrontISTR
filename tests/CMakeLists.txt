@@ -103,3 +103,7 @@ foreach(parallel IN LISTS parallels)
     endif()
   endforeach()
 endforeach()
+
+if(WITH_LAPACK AND NOT WINDOWS)
+  add_subdirectory(unit/saamg)
+endif()

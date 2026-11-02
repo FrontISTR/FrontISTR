@@ -30,7 +30,11 @@ supported by `WITH_MPI` and `WITH_OPENMP`; every build supports `serial`.
 `with_mumps/*` and `with_mkl/*` are registered only when the corresponding
 solver is enabled. Non-MPI builds exercise sequential MUMPS, while MPI runs
 of `with_mkl/*` exercise Cluster PARDISO. `with_refiner/*` is registered only
-when REVOCAP_Refiner is enabled (`WITH_REFINER`). Reconfigure after changing build options;
+when REVOCAP_Refiner is enabled (`WITH_REFINER`). `unit/saamg` holds unit tests
+that check the building blocks of the SA-AMG preconditioner directly, without
+`fistr1`; they are registered only when LAPACK is enabled (`WITH_LAPACK`) and
+the build is not for Windows, and only in the `serial` and `openmp` modes since
+they run on a single process. Reconfigure after changing build options;
 CTest uses the generated test list rather than detecting libraries at run time.
 
 | label | OpenMP | MPI |
