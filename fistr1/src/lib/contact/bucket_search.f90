@@ -35,9 +35,9 @@ module bucket_search
     real(kind=kreal) :: x_min(3)                           !< min coordinate of rectangular area
     real(kind=kreal) :: x_max(3)                           !< max coordinate of rectangular area
     real(kind=kreal) :: d(3)                               !< bucket sizes in x,y,z direction
-    integer(kind=kint) :: ndiv(3)                          !< divisions in x,y,z direction
+    integer(kind=kint) :: ndiv(3) = 0                      !< divisions in x,y,z direction
     type(bucket), pointer :: buckets(:,:,:) => null()      !< 3D array of buckets
-    integer(kind=kint) :: n_tot                            !< total number of members
+    integer(kind=kint) :: n_tot = 0                        !< total number of members
     integer(kind=kint), pointer :: member_all(:) => null() !< array of members (referenced by each bucket)
   end type bucketDB
 
@@ -152,21 +152,25 @@ contains
     type(bucketDB), intent(inout) :: bktdb  !< bucket info
     integer(kind=kint) :: i, j, k
     if (bktdb%n_tot > 0) then
-      deallocate(bktdb%member_all)
+      if(associated(bktdb%member_all)) deallocate(bktdb%member_all)
+      nullify(bktdb%member_all)
       bktdb%n_tot = 0
     endif
     if (any(bktdb%ndiv == 0)) then
       bktdb%ndiv(:) = 0
       return
     endif
-    do k = 1, bktdb%ndiv(3)
-      do j = 1, bktdb%ndiv(2)
-        do i = 1, bktdb%ndiv(1)
-          call bucket_finalize(bktdb%buckets(i,j,k))
+    if(associated(bktdb%buckets)) then
+      do k = 1, bktdb%ndiv(3)
+        do j = 1, bktdb%ndiv(2)
+          do i = 1, bktdb%ndiv(1)
+            call bucket_finalize(bktdb%buckets(i,j,k))
+          enddo
         enddo
       enddo
-    enddo
-    deallocate(bktdb%buckets)
+      deallocate(bktdb%buckets)
+      nullify(bktdb%buckets)
+    endif
     bktdb%ndiv(:) = 0
   end subroutine bucketDB_finalize
 
