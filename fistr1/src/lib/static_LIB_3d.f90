@@ -386,7 +386,7 @@ contains
   !> This subroutien calculate thermal loading
   !----------------------------------------------------------------------*
   subroutine TLOAD_C3                                 &
-      (etype, nn, XX, YY, ZZ, TT, T0, gausses, &
+      (etype, nn, XX, YY, ZZ, TT, T0, reftemp, gausses, &
       VECT, cdsys_ID, coords)
     !----------------------------------------------------------------------*
 
@@ -402,6 +402,7 @@ contains
     type(tGaussStatus), intent(in)  :: gausses(:)             !< status of qudrature points
     real(kind=kreal), intent(in)    :: XX(nn), YY(nn), ZZ(nn)
     real(kind=kreal), intent(in)    :: TT(nn),T0(nn)
+    real(kind=kreal), intent(in)    :: reftemp
     real(kind=kreal), intent(out)   :: VECT(nn*NDOF)
     integer(kind=kint), intent(in)  :: cdsys_ID
     real(kind=kreal), intent(inout) :: coords(3, 3)           !< variables to define material coordinate system
@@ -492,14 +493,14 @@ contains
       !**
       if( matlaniso ) then
         do j=1,3
-          EPSTH(j) = ALPO(j)*(TEMPC-ref_temp)-alpo0(j)*(TEMP0-ref_temp)
+          EPSTH(j) = ALPO(j)*(TEMPC-reftemp)-alpo0(j)*(TEMP0-reftemp)
         end do
         EPSTH(4:6) = 0.0D0
         call transformation(coordsys, tm)
         EPSTH(:) = matmul( EPSTH(:), tm  )      ! to global coord
         EPSTH(4:6) = EPSTH(4:6)*2.0D0
       else
-        THERMAL_EPS=ALP*(TEMPC-ref_temp)-alp0*(TEMP0-ref_temp)
+        THERMAL_EPS=ALP*(TEMPC-reftemp)-alp0*(TEMP0-reftemp)
         EPSTH(1:3) = THERMAL_EPS
         EPSTH(4:6) = 0.0D0
       end if
@@ -517,11 +518,12 @@ contains
 
   end subroutine TLOAD_C3
 
-  subroutine Cal_Thermal_expansion_C3( tt0, ttc, material, coordsys, matlaniso, EPSTH )
+  subroutine Cal_Thermal_expansion_C3( tt0, ttc, reftemp, material, coordsys, matlaniso, EPSTH )
     use m_fstr
     use m_utilities
     real(kind=kreal),   INTENT(IN)     :: tt0
     real(kind=kreal),   INTENT(IN)     :: ttc
+    real(kind=kreal),   INTENT(IN)     :: reftemp
     type( tMaterial ),  INTENT(IN)     :: material
     real(kind=kreal),   INTENT(IN)     :: coordsys(3,3)
     logical,            INTENT(IN)     :: matlaniso
@@ -555,13 +557,13 @@ contains
     end if
     if( matlaniso ) then
       do j=1,3
-        EPSTH(j) = ALPO(j)*(ttc-ref_temp)-alpo0(j)*(tt0-ref_temp)
+        EPSTH(j) = ALPO(j)*(ttc-reftemp)-alpo0(j)*(tt0-reftemp)
       end do
       call transformation( coordsys(:, :), tm)
       EPSTH(:) = matmul( EPSTH(:), tm  ) ! to global coord
       EPSTH(4:6) = EPSTH(4:6)*2.0D0
     else
-      EPSTH(1:3)=alp*(ttc-ref_temp)-alp0*(tt0-ref_temp)
+      EPSTH(1:3)=alp*(ttc-reftemp)-alp0*(tt0-reftemp)
     end if
   end subroutine
 
@@ -788,7 +790,7 @@ contains
   !---------------------------------------------------------------------*
   subroutine UPDATE_C3                                       &
       (etype,nn,ecoord, u, ddu, cdsys_ID, coords, qf, &
-      gausses, iter, time, tincr, TT, T0, TN)
+      gausses, iter, time, tincr, TT, T0, TN, reftemp)
     !---------------------------------------------------------------------*
 
     use m_fstr
@@ -813,6 +815,7 @@ contains
     real(kind=kreal), intent(in)      :: TT(nn)   !< current temperature
     real(kind=kreal), intent(in)      :: T0(nn)   !< reference temperature
     real(kind=kreal), intent(in)      :: TN(nn)   !< reference temperature
+    real(kind=kreal), intent(in)      :: reftemp  !< reference temperature
 
     ! LOCAL VARIABLES
     integer(kind=kint) :: flag
@@ -868,7 +871,7 @@ contains
       ttc = dot_product(TT, spfunc)
       tt0 = dot_product(T0, spfunc)
       ttn = dot_product(TN, spfunc)
-      call Cal_Thermal_expansion_C3( tt0, ttc, gausses(LX)%pMaterial, coordsys, matlaniso, EPSTH )
+      call Cal_Thermal_expansion_C3( tt0, ttc, reftemp, gausses(LX)%pMaterial, coordsys, matlaniso, EPSTH )
 
       ! Update strain
       ! Small strain

@@ -57,7 +57,7 @@ contains
     call update_rhs_vector(hecMESH, hecMAT, fstrSOLID)
     
     ! Process thermal loads (TLOAD)
-    call process_thermal_loads(cstep, ctime, hecMESH, hecMAT, fstrSOLID)
+    call process_thermal_loads(cstep, ctime, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
     
     ! Process spring forces
     call fstr_Update_NDForce_spring(cstep, hecMESH, fstrSOLID, hecMAT%B)
@@ -372,12 +372,13 @@ contains
     ! -------------------------------------------------------------------
     !  TLOAD : THERMAL LOAD USING TEMPERATURE
     ! -------------------------------------------------------------------
-  subroutine process_thermal_loads(cstep, ctime, hecMESH, hecMAT, fstrSOLID)
+  subroutine process_thermal_loads(cstep, ctime, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
     integer(kind=kint), intent(in)       :: cstep
     real(kind=kreal), intent(in)         :: ctime
     type(hecmwST_local_mesh), intent(in) :: hecMESH
     type(hecmwST_matrix), intent(inout)  :: hecMAT
     type(fstr_solid), intent(inout)      :: fstrSOLID
+    type(fstr_param), intent(in)         :: fstrPARAM
     
     integer(kind=kint) :: ndof, ig0, ig, iS0, iE0, ik, in, grpid
     integer(kind=kint) :: itype, is, iE, icel, ic_type, nn, isect, cdsys_ID, id, iset
@@ -477,7 +478,8 @@ contains
             
             call TLOAD_Beam_641( ic_type, nn, ndof, xx(1:nn), yy(1:nn), zz(1:nn), tt(1:nn), tt0(1:nn),    &
               fstrSOLID%elements(icel)%gausses, hecMESH%section%sect_R_item(ihead+1:), &
-                               vect(1:nn*ndof))
+              fstrPARAM%ref_temp, &
+              vect(1:nn*ndof))
             
             do j = 1, ndof*nn
               hecMAT%B(iwk(j)) = hecMAT%B(iwk(j)) + vect(j)
@@ -490,7 +492,7 @@ contains
           
           ! Calculate thermal load based on element type
           call calculate_thermal_load(ic_type, nn, xx, yy, zz, tt, tt0, isect, ndof, &
-                                     hecMESH, fstrSOLID, icel, vect, cdsys_ID, local_coords, &
+                                     hecMESH, fstrSOLID, fstrPARAM, icel, vect, cdsys_ID, local_coords, &
                                      iset, pa1, iwk, hecMAT%B)
         enddo
       enddo
@@ -502,13 +504,14 @@ contains
   !> Calculate thermal load based on element type
   !======================================================================!
   subroutine calculate_thermal_load(ic_type, nn, xx, yy, zz, tt, tt0, isect, ndof, &
-                                   hecMESH, fstrSOLID, icel, vect, cdsys_ID, coords, &
+                                   hecMESH, fstrSOLID, fstrPARAM, icel, vect, cdsys_ID, coords, &
                                    iset, pa1, iwk, B)
     integer(kind=kint), intent(in)       :: ic_type, nn, isect, ndof, cdsys_ID, iset
     real(kind=kreal), intent(in)         :: xx(*), yy(*), zz(*), tt(*), tt0(*), pa1
     real(kind=kreal), intent(inout)      :: coords(3,3)  ! Changed INTENT from IN to INOUT
     type(hecmwST_local_mesh), intent(in) :: hecMESH
     type(fstr_solid), intent(in)         :: fstrSOLID
+    type(fstr_param), intent(in)         :: fstrPARAM
     integer(kind=kint), intent(in)       :: icel
     real(kind=kreal), intent(out)        :: vect(*)
     integer(kind=kint), intent(in)       :: iwk(*)
@@ -526,19 +529,19 @@ contains
     else if (ic_type == 361) then
       if (fstrSOLID%sections(isect)%elemopt361 == kel361FI) then
               call TLOAD_C3                                                          &
-                ( ic_type, nn, xx(1:nn), yy(1:nn), zz(1:nn), tt(1:nn), tt0(1:nn),       &
+                ( ic_type, nn, xx(1:nn), yy(1:nn), zz(1:nn), tt(1:nn), tt0(1:nn), fstrPARAM%ref_temp, &
                      fstrSOLID%elements(icel)%gausses, vect(1:nn*ndof), cdsys_ID, coords)
       else if (fstrSOLID%sections(isect)%elemopt361 == kel361BBAR) then
               call TLOAD_C3D8Bbar                                                          &
-                ( ic_type, nn, xx(1:nn), yy(1:nn), zz(1:nn), tt(1:nn), tt0(1:nn),       &
+                ( ic_type, nn, xx(1:nn), yy(1:nn), zz(1:nn), tt(1:nn), tt0(1:nn), fstrPARAM%ref_temp, &
                            fstrSOLID%elements(icel)%gausses, vect(1:nn*ndof), cdsys_ID, coords)
       else if (fstrSOLID%sections(isect)%elemopt361 == kel361IC) then
               call TLOAD_C3D8IC                                                            &
-                ( ic_type, nn, xx(1:nn), yy(1:nn), zz(1:nn), tt(1:nn), tt0(1:nn),       &
+                ( ic_type, nn, xx(1:nn), yy(1:nn), zz(1:nn), tt(1:nn), tt0(1:nn), fstrPARAM%ref_temp, &
                          fstrSOLID%elements(icel)%gausses, vect(1:nn*ndof), cdsys_ID, coords)
       else if (fstrSOLID%sections(isect)%elemopt361 == kel361FBAR) then
               call TLOAD_C3D8Fbar                                                            &
-                ( ic_type, nn, xx(1:nn), yy(1:nn), zz(1:nn), tt(1:nn), tt0(1:nn),       &
+                ( ic_type, nn, xx(1:nn), yy(1:nn), zz(1:nn), tt(1:nn), tt0(1:nn), fstrPARAM%ref_temp, &
                            fstrSOLID%elements(icel)%gausses, vect(1:nn*ndof), cdsys_ID, coords)
       else if (fstrSOLID%sections(isect)%elemopt361 == kel361UP) then
               ! UP element : reuse the standard C3 thermal load. Note the thermal
@@ -546,14 +549,14 @@ contains
               ! this is not strictly consistent with the u-p deviatoric/pressure
               ! split (see report); provided for basic thermal loading support.
               call TLOAD_C3                                                          &
-                ( ic_type, nn, xx(1:nn), yy(1:nn), zz(1:nn), tt(1:nn), tt0(1:nn),       &
+                ( ic_type, nn, xx(1:nn), yy(1:nn), zz(1:nn), tt(1:nn), tt0(1:nn), fstrPARAM%ref_temp, &
                 fstrSOLID%elements(icel)%gausses, vect(1:nn*ndof), cdsys_ID, coords )
       endif
     
     else if (ic_type == 341 .or. ic_type == 351 .or. &
              ic_type == 342 .or. ic_type == 352 .or. ic_type == 362) then
             call TLOAD_C3                                                                &
-              ( ic_type, nn, xx(1:nn), yy(1:nn), zz(1:nn), tt(1:nn), tt0(1:nn),       &
+              ( ic_type, nn, xx(1:nn), yy(1:nn), zz(1:nn), tt(1:nn), tt0(1:nn), fstrPARAM%ref_temp, &
                    fstrSOLID%elements(icel)%gausses, vect(1:nn*ndof), cdsys_ID, coords)
     
     else if (ic_type == 741 .or. ic_type == 743 .or. ic_type == 731 .or. &

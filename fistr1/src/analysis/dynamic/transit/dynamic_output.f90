@@ -71,14 +71,14 @@ contains
       enddo
     endif
 
-    if( IRESULT==1 .and. &
+    if( fstrPARAM%fg_result==1 .and. &
         (mod(istep,fstrSOLID%output_ctrl(3)%frequency)==0 .or. outflag) ) then
       if( associated( fstrSOLID%contacts ) ) &
         &  call setup_contact_output_variables( hecMESH, fstrSOLID, 3, fstrDYNAMIC%t_delta, expflag )
       call fstr_write_result( hecMESH, fstrSOLID, fstrPARAM, istep, t_curr, 0, fstrDYNAMIC )
     endif
 
-    if( IVISUAL==1 .and. &
+    if( fstrPARAM%fg_visual==1 .and. &
         (mod(istep,fstrSOLID%output_ctrl(4)%frequency)==0 .or. outflag) ) then
 
       if( associated( fstrSOLID%contacts ) ) &

@@ -29,6 +29,7 @@ module m_fstr_setup
   !> Package of all data needs to initialize
   type fstr_param_pack
     type(hecmwST_local_mesh), pointer :: MESH
+    type(hecmwST_matrix), pointer     :: MAT
     type(fstr_param), pointer         :: PARAM
     type(fstr_solid), pointer         :: SOLID
     type(fstr_heat), pointer          :: HEAT
@@ -43,11 +44,12 @@ contains
   !=============================================================================!
   !> Read in and initialize control data                                        !
   !=============================================================================!
-  subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
+  subroutine fstr_setup( cntl_filename, hecMESH, hecMAT, fstrPARAM,  &
       fstrSOLID, fstrEIG, fstrHEAT, fstrDYNAMIC, fstrCPL, fstrFREQ )
     use mMaterial
     character(len=HECMW_FILENAME_LEN) :: cntl_filename, input_filename
     type(hecmwST_local_mesh),target :: hecMESH
+    type(hecmwST_matrix),target :: hecMAT
     type(fstr_param),target   :: fstrPARAM
     type(fstr_solid),target   :: fstrSOLID
     type(fstr_eigen),target     :: fstrEIG
@@ -94,6 +96,7 @@ contains
 
     ! packaging
     P%MESH   => hecMESH
+    P%MAT    => hecMAT
     P%PARAM  => fstrPARAM
     P%SOLID  => fstrSOLID
     P%EIGEN  => fstrEIG
@@ -1087,7 +1090,7 @@ contains
         call flush(idbg)
         call hecmw_abort( hecmw_comm_get_comm())
       end if
-      fstrSOLID%temperature = REF_TEMP
+      fstrSOLID%temperature = fstrPARAM%ref_temp
       allocate ( fstrSOLID%last_temp( hecMESH%n_node )      ,stat=ierror )
       if( ierror /= 0 ) then
         write(idbg,*) 'stop due to allocation error <FSTR_SOLID, LAST_TEMP>'
@@ -2542,19 +2545,21 @@ contains
     !   solver_ropt=> svRarray(41:50)
 
     rcode = fstr_ctrl_get_SOLVER( ctrl,                      &
-      svIarray(2), svIarray(3), svIarray(4), svIarray(21), svIarray(22), svIarray(23),&
-      svIarray(1), svIarray(5), svIarray(6), svIarray(60), svIarray(7), &
-      svIarray(31), svIarray(32), svIarray(33), svIarray(34), svIarray(13), svIarray(14), svIarray(8),&
-      svIarray(35), svIarray(41:50), svIarray(15), &
-      svRarray(1), svRarray(2), svRarray(3),                &
-      svRarray(4), svRarray(5), svRarray(41:50), svIarray(24), &
-      svIarray(36), svIarray(37), svIarray(16) )
+      p%MAT%Iarray(2), p%MAT%Iarray(3), p%MAT%Iarray(4), &
+      p%MAT%Iarray(21), p%MAT%Iarray(22), p%MAT%Iarray(23), &
+      p%MAT%Iarray(1), p%MAT%Iarray(5), p%MAT%Iarray(6), p%MAT%Iarray(60), p%MAT%Iarray(7), &
+      p%MAT%Iarray(31), p%MAT%Iarray(32), p%MAT%Iarray(33), p%MAT%Iarray(34), &
+      p%MAT%Iarray(13), p%MAT%Iarray(14), p%MAT%Iarray(8), &
+      p%MAT%Iarray(35), p%MAT%Iarray(41:50), p%MAT%Iarray(15), &
+      p%MAT%Rarray(1), p%MAT%Rarray(2), p%MAT%Rarray(3), &
+      p%MAT%Rarray(4), p%MAT%Rarray(5), p%MAT%Rarray(41:50), p%MAT%Iarray(24), &
+      p%MAT%Iarray(36), p%MAT%Iarray(37), p%MAT%Iarray(16) )
     if( rcode /= 0 ) call fstr_ctrl_err_stop
 
-    if( svIarray(2) <= 100 ) then
-      svIarray(99) = 1  ! indirect method
+    if( p%MAT%Iarray(2) <= 100 ) then
+      p%MAT%Iarray(99) = 1  ! indirect method
     else
-      svIarray(99) = svIarray(2)-99 !2  ! direct method
+      p%MAT%Iarray(99) = p%MAT%Iarray(2)-99 !2  ! direct method
     end if
 
   end subroutine fstr_setup_SOLVER
@@ -2989,6 +2994,8 @@ end function fstr_setup_INITIAL
     integer :: nout, nout_monit,node_monit_1 ,elem_monit_1 ,intg_monit_1
     integer :: ipt, idx_elpl, iout_list(6)
     real(kind=kreal) :: sig_y0, h_dash
+    real(kind=kreal) :: DT, ETIME, EPS ! dummy
+    integer :: ITMAX ! dummy
 
     if( counter > 1 ) then
       write(*,*)
@@ -4841,7 +4848,7 @@ end function fstr_setup_INITIAL
     !        endif
 
     !   penalty => svRarray(11)
-    rcode = fstr_ctrl_get_MPC( ctrl, svRarray(11))
+    rcode = fstr_ctrl_get_MPC( ctrl, p%MAT%Rarray(11))
     if( rcode /= 0) call fstr_ctrl_err_stop
   end subroutine fstr_setup_MPC
 
