@@ -19,19 +19,6 @@ contains
     type(fstr_param), pointer :: fstrPARAM => null()
     allocate(fstrPARAM)
     call fstr_nullify_fstr_param(fstrPARAM)
-
-    ! -------  global pointer setting ----------
-    REF_TEMP => fstrPARAM%ref_temp
-    IECHO    => fstrPARAM%fg_echo
-    IRESULT  => fstrPARAM%fg_result
-    IVISUAL  => fstrPARAM%fg_visual
-    ! for heat ...
-    INEUTRAL => fstrPARAM%fg_neutral
-    IRRES    => fstrPARAM%fg_irres
-    IWRES    => fstrPARAM%fg_iwres
-    NRRES    => fstrPARAM%nrres
-    NPRINT   => fstrPARAM%nprint
-
     fstr_api_param_new = c_loc(fstrPARAM)
   end function
 
