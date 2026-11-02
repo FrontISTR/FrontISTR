@@ -127,26 +127,6 @@ contains
     call fstr_nullify_fstr_couple ( fstrCPL     )
     call fstr_init_file
 
-    ! ----  default setting of global params ---
-    DT    = 1
-    ETIME = 1
-    ITMAX = 20
-    EPS   = 1.0d-6
-
-    ! -------  pointer setting ----------
-    REF_TEMP => fstrPARAM%ref_temp
-    IECHO    => fstrPARAM%fg_echo
-    IRESULT  => fstrPARAM%fg_result
-    IVISUAL  => fstrPARAM%fg_visual
-
-    ! for heat ...
-    INEUTRAL => fstrPARAM%fg_neutral
-    IRRES    => fstrPARAM%fg_irres
-    IWRES    => fstrPARAM%fg_iwres
-    NRRES    => fstrPARAM%nrres
-    NPRINT   => fstrPARAM%nprint
-
-
     ! ------- initial value setting -------------
     call fstr_mat_init  ( hecMAT   )
     call fstr_param_init( fstrPARAM, hecMESH )
@@ -264,13 +244,13 @@ contains
 
     ! loading boundary conditions etc. from fstr control file or nastran mesh file
     ! and setup parameters ...
-    svRarray(:) = hecMAT%Rarray(:)
-    svIarray(:) = hecMAT%Iarray(:)
+!    svRarray(:) = hecMAT%Rarray(:)
+!    svIarray(:) = hecMAT%Iarray(:)
 
-    call fstr_setup( cntfileNAME, hecMESH, fstrPARAM, fstrSOLID, fstrEIG, fstrHEAT, fstrDYNAMIC, fstrCPL, fstrFREQ )
+    call fstr_setup( cntfileNAME, hecMESH, hecMAT, fstrPARAM, fstrSOLID, fstrEIG, fstrHEAT, fstrDYNAMIC, fstrCPL, fstrFREQ )
 
-    hecMAT%Rarray(:) = svRarray(:)
-    hecMAT%Iarray(:) = svIarray(:)
+!    hecMAT%Rarray(:) = svRarray(:)
+!    hecMAT%Iarray(:) = svIarray(:)
 
     call fstr_input_precheck( hecMESH, hecMAT, fstrSOLID, fstrPARAM )
 
@@ -287,7 +267,7 @@ contains
   subroutine fstr_static_analysis
     implicit none
 
-    if( IECHO.eq.1 ) call fstr_echo(hecMESH)
+    if( fstrPARAM%fg_echo.eq.1 ) call fstr_echo(hecMESH)
 
     if(myrank .EQ. 0) then
       write(IMSG,*)
@@ -316,7 +296,7 @@ contains
     use m_fstr
     implicit none
 
-    if( IECHO.eq.1 ) call fstr_echo(hecMESH)
+    if( fstrPARAM%fg_echo.eq.1 ) call fstr_echo(hecMESH)
     if(myrank .EQ. 0) then
       write(IMSG,*)
       write(IMSG,*)
@@ -335,7 +315,7 @@ contains
   subroutine fstr_heat_analysis
     implicit none
 
-    if( IECHO.eq.1 ) call heat_echo(fstrPARAM,hecMESH,fstrHEAT)
+    if( fstrPARAM%fg_echo.eq.1 ) call heat_echo(fstrPARAM,hecMESH,fstrHEAT)
     if(myrank .EQ. 0) then
       write(IMSG,*)
       write(IMSG,*)
@@ -354,7 +334,7 @@ contains
   subroutine fstr_dynamic_analysis
     implicit none
 
-    if( IECHO.eq.1 ) call fstr_echo(hecMESH)
+    if( fstrPARAM%fg_echo.eq.1 ) call fstr_echo(hecMESH)
 
     if(myrank == 0) then
       write(IMSG,*)
@@ -380,7 +360,7 @@ contains
   subroutine fstr_static_eigen_analysis
     implicit none
 
-    if( IECHO==1 ) call fstr_echo(hecMESH)
+    if( fstrPARAM%fg_echo==1 ) call fstr_echo(hecMESH)
 
     if(myrank == 0) then
       write(IMSG,*)
