@@ -147,7 +147,7 @@ contains
     !C=============================C
     !C-- implicit dynamic analysis
     !C=============================C
-    if( fstrDYNAMIC%idx_eqa == 1 ) then
+    if( fstrDYNAMIC%idx_eqa /= 11 ) then
 
       do ig0 = 1, fstrSOLID%VELOCITY_ngrp_tot
         if( fstrSOLID%VELOCITY_ngrp_rotID(ig0) > 0 ) cycle

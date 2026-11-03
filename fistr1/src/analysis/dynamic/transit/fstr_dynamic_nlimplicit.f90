@@ -34,7 +34,7 @@ module fstr_dynamic_nlimplicit
 
 contains
 
-  !> \brief This subroutine provides function of nonlinear implicit dynamic analysis using the Newmark method.
+  !> \brief This subroutine provides function of nonlinear implicit dynamic analysis using the Newmark or HHT method.
   !> Standard Lagrange multiplier algorithm for contact analysis is included in this subroutine.
   subroutine FSTR_SOLVE_NLGEOM_DYNAMIC_IMPLICIT_CONTACTSLAG(hecMESH,hecMAT,fstrSOLID,fstrEIG   &
       ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
@@ -126,6 +126,11 @@ contains
         call hecmw_abort( hecmw_comm_get_comm())
       endif
       call dynamic_init_varibles( hecMESH, hecMAT, fstrSOLID, fstrEIG, fstrDYNAMIC, fstrPARAM )
+    endif
+
+    !C-- HHT: the force at t_0 is taken to balance the initial acceleration
+    if( fstrDYNAMIC%idx_eqa == 2 .and. restart_step_num == 1 .and. restart_substep_num == 1 ) then
+      call fstr_calc_mass_product( hecMESH, fstrSOLID, fstrDYNAMIC, fstrDYNAMIC%ACC(:,1), fstrDYNAMIC%HHT_FORCE )
     endif
 
     !C-- output of initial state
@@ -321,6 +326,7 @@ contains
     integer(kind=kint) :: iter
     real(kind=kreal) :: a1, a2, a3, b1, b2, b3, c1, c2
     real(kind=kreal) :: coef(6)
+    real(kind=kreal) :: hht_prev
     integer(kind=kint) :: count_step, stepcnt
     integer(kind=kint) :: contact_changed_global
     logical :: is_mat_symmetric
@@ -331,6 +337,7 @@ contains
     real(kind=kreal), allocatable :: coord(:)
     integer(kind=kint) :: iterStatus, nresid
     real(kind=kreal), allocatable :: resid_work(:)
+    real(kind=kreal), allocatable :: mass_acc(:)
     type(fstr_convergence_state) :: cnvstat
 
     fstrSOLID%NRstat_i(:) = 0 ! logging newton iteration(init)
@@ -355,6 +362,10 @@ contains
 
     coef(1) = a1; coef(2) = a2; coef(3) = a3
     coef(4) = b1; coef(5) = b2; coef(6) = b3
+
+    ! HHT: the equation of motion divided by 1+alpha keeps alpha/(1+alpha) of the force at t_n
+    hht_prev = 0.0d0
+    if( fstrDYNAMIC%idx_eqa == 2 ) hht_prev = fstrDYNAMIC%alpha/(1.0d0+fstrDYNAMIC%alpha)
 
     if(hecMESH%my_rank==0) then
       write(*,'(A)')'-------------------------------------------------'
@@ -390,6 +401,11 @@ contains
         do j=1, hecMESH%n_node*  hecMESH%n_dof
           hecMAT%B(j) = hecMAT%B(j) - fstrSOLID%QFORCE(j) + fstrSOLID%DFORCE(j)
         enddo
+        if( fstrDYNAMIC%idx_eqa == 2 ) then
+          do j=1, hecMESH%n_node*  hecMESH%n_dof
+            hecMAT%B(j) = hecMAT%B(j) - hht_prev*fstrDYNAMIC%HHT_FORCE(j)
+          enddo
+        endif
 
         call fstr_Update_NDForce_spring( cstep, hecMESH, fstrSOLID, hecMAT%B )
 
@@ -548,6 +564,15 @@ contains
     enddo
     fstrDYNAMIC%kineticEnergy = fstr_calc_kinetic_energy( &
       hecMESH, fstrSOLID, fstrDYNAMIC, fstrDYNAMIC%VEL(:,2))
+    if( fstrDYNAMIC%idx_eqa == 2 ) then
+      allocate(mass_acc(ndof*nnod))
+      call fstr_calc_mass_product( hecMESH, fstrSOLID, fstrDYNAMIC, fstrDYNAMIC%ACC(:,1), mass_acc )
+      do j = 1 ,ndof*nnod
+        fstrDYNAMIC%HHT_FORCE(j) = (mass_acc(j) + fstrDYNAMIC%alpha*fstrDYNAMIC%HHT_FORCE(j)) &
+          /(1.0d0+fstrDYNAMIC%alpha)
+      enddo
+      deallocate(mass_acc)
+    endif
 
     call fstr_UpdateState( hecMESH, fstrSOLID, t_delta )
     call fstr_update_contact_TangentForce( cstep, fstrSOLID )

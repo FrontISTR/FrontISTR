@@ -51,7 +51,7 @@ contains
     !C=============================C
     !C-- implicit dynamic analysis
     !C=============================C
-    if( fstrDYNAMIC%idx_eqa == 1 ) then
+    if( fstrDYNAMIC%idx_eqa /= 11 ) then
 
       do ig0 = 1, fstrSOLID%BOUNDARY_ngrp_tot
         ig   = fstrSOLID%BOUNDARY_ngrp_ID(ig0)

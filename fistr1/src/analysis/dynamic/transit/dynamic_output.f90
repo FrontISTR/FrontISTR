@@ -124,7 +124,7 @@ contains
     integer(kind=kint) :: label(6)
 
     if( istep==0 ) return
-    if( fstrDYNAMIC%idx_eqa==1 .and. istep>0 ) then
+    if( fstrDYNAMIC%idx_eqa/=11 .and. istep>0 ) then
       idx = 2
     else
       idx = 1
@@ -374,7 +374,7 @@ contains
 
     if( mod(istep,fstrDYNAMIC%nout_monit)/=0 ) return
 
-    if( fstrDYNAMIC%idx_eqa==1 .and. istep>0 ) then
+    if( fstrDYNAMIC%idx_eqa/=11 .and. istep>0 ) then
       idx = 2
     else
       idx = 1
@@ -457,7 +457,7 @@ contains
           write( fstrDYNAMIC%dynamic_IW10, * ) &
             ' time step', '     time    ', '  kinetic energy', '   strain energy', '   total energy'
         endif
-        if(istep==0 .and. fstrDYNAMIC%idx_eqa/=1) then
+        if(istep==0 .and. fstrDYNAMIC%idx_eqa==11) then
           fstrDYNAMIC%kineticEnergy = 0.0d0
           do ii = 1, hecMESH%n_node*hecMESH%n_dof
             fstrDYNAMIC%kineticEnergy = fstrDYNAMIC%kineticEnergy &

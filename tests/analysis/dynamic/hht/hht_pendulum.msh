@@ -1,0 +1,26 @@
+!HEADER
+ TWO STIFF SPRING PENDULUMS OF TRUSS 301
+!NODE
+      1,           0.,           0.,           0.
+      2,           1.,           0.,           0.
+      3,           0.,           0.,           1.
+      4,          -1.,           0.,           1.
+!ELEMENT, TYPE=301, EGRP=BAR
+      1,  1,  2
+      2,  3,  4
+!NGROUP, NGRP=FIX
+  1, 3
+!NGROUP, NGRP=TIP1
+  2
+!NGROUP, NGRP=TIP2
+  4
+!NGROUP, NGRP=TIP
+  2, 4
+!MATERIAL, NAME=M1, ITEM=2
+!ITEM=1, SUBITEM=2
+ 1.00000000E+04, 0.00000000E+00
+!ITEM=2, SUBITEM=1
+ 1.00000000E+00
+!SECTION, TYPE=SOLID, EGRP=BAR, MATERIAL=M1
+1.0
+!END

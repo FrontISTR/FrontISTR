@@ -543,10 +543,11 @@ contains
     fstrDYNAMIC%idx_eqa = dyna_int(1)
     call hecmw_restart_read_real(dyna_data)
     fstrDYNAMIC%strainEnergy = dyna_data(1)
-    if( fstrDYNAMIC%idx_eqa == 1 ) then
+    if( fstrDYNAMIC%idx_eqa /= 11 ) then
       call hecmw_restart_read_real(fstrDYNAMIC%DISP(:,1))
       call hecmw_restart_read_real(fstrDYNAMIC%VEL(:,1))
       call hecmw_restart_read_real(fstrDYNAMIC%ACC(:,1))
+      if( fstrDYNAMIC%idx_eqa == 2 ) call hecmw_restart_read_real(fstrDYNAMIC%HHT_FORCE)
     else
       call hecmw_restart_read_real(fstrDYNAMIC%DISP(:,1))
       call hecmw_restart_read_real(fstrDYNAMIC%DISP(:,3))
@@ -688,10 +689,12 @@ contains
     call hecmw_restart_add_int(dyna_int,1)
     dyna_data(1) = fstrDYNAMIC%strainEnergy
     call hecmw_restart_add_real(dyna_data,size(dyna_data))
-    if( fstrDYNAMIC%idx_eqa == 1 ) then
+    if( fstrDYNAMIC%idx_eqa /= 11 ) then
       call hecmw_restart_add_real(fstrDYNAMIC%DISP(:,1),size(fstrDYNAMIC%DISP(:,1)))
       call hecmw_restart_add_real(fstrDYNAMIC%VEL(:,1),size(fstrDYNAMIC%VEL(:,1)))
       call hecmw_restart_add_real(fstrDYNAMIC%ACC(:,1),size(fstrDYNAMIC%ACC(:,1)))
+      if( fstrDYNAMIC%idx_eqa == 2 ) &
+        call hecmw_restart_add_real(fstrDYNAMIC%HHT_FORCE,size(fstrDYNAMIC%HHT_FORCE))
     else
       call hecmw_restart_add_real(fstrDYNAMIC%DISP(:,1),size(fstrDYNAMIC%DISP(:,1)))
       call hecmw_restart_add_real(fstrDYNAMIC%DISP(:,3),size(fstrDYNAMIC%DISP(:,3)))

@@ -107,7 +107,7 @@ contains
 
     if( is_dynamic ) then
       idx = 1
-      if( fstrDYNAMIC%idx_eqa==1 .and. istep>0 ) idx = 2
+      if( fstrDYNAMIC%idx_eqa/=11 .and. istep>0 ) idx = 2
     endif
 
     ndof = hecMESH%n_dof
@@ -756,7 +756,7 @@ contains
 
     if( is_dynamic ) then
       idx = 1
-      if( fstrDYNAMIC%idx_eqa==1 .and. istep>0 ) idx = 2
+      if( fstrDYNAMIC%idx_eqa/=11 .and. istep>0 ) idx = 2
     endif
 
     ndof = hecMESH%n_dof
