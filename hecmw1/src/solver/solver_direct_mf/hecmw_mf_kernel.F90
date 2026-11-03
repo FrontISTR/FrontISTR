@@ -28,6 +28,7 @@ module hecmw_mf_kernel
   public :: hecmw_mf_kernel_trsv
   public :: hecmw_mf_kernel_trsv_t
   public :: hecmw_mf_kernel_dsolve
+  public :: hecmw_mf_kernel_dsolve2
   public :: hecmw_mf_kernel_gemv
   public :: hecmw_mf_kernel_gemv_t
   public :: hecmw_mf_kernel_lu
@@ -431,7 +432,9 @@ contains
     enddo
   end subroutine hecmw_mf_kernel_trsv_t
 
-  !> x <- D^-1 x with the block diagonal D of the factored tile l(n,n).
+  !> x <- D^-1 x with the block diagonal D of the factored tile l(n,n). A 2x2 pivot whose
+  !> second column lies beyond the tile (ptype(n) = 2) is left to the caller: the final panel
+  !> of a root front may place a 2x2 pivot across a tile boundary.
   subroutine hecmw_mf_kernel_dsolve(n, ldl, l, ptype, dsub, x)
     implicit none
     integer(kind=kint), intent(in) :: n, ldl
@@ -440,23 +443,29 @@ contains
     real(kind=kreal), intent(in) :: dsub(n)
     real(kind=kreal), intent(inout) :: x(n)
     integer(kind=kint) :: j
-    real(kind=kreal) :: d11, d21, d22, det, x1, x2
 
     do j = 1, n
       if (ptype(j) == 1) then
         x(j) = x(j) / l(j,j)
-      else if (ptype(j) == 2) then
-        d11 = l(j,j)
-        d21 = dsub(j)
-        d22 = l(j+1,j+1)
-        det = d11*d22 - d21*d21
-        x1 = x(j)
-        x2 = x(j+1)
-        x(j) = (d22*x1 - d21*x2) / det
-        x(j+1) = (d11*x2 - d21*x1) / det
+      else if (ptype(j) == 2 .and. j < n) then
+        call hecmw_mf_kernel_dsolve2(l(j,j), dsub(j), l(j+1,j+1), x(j))
       endif
     enddo
   end subroutine hecmw_mf_kernel_dsolve
+
+  !> x(2) <- D^-1 x(2) with the 2x2 pivot D = [d11 d21; d21 d22].
+  subroutine hecmw_mf_kernel_dsolve2(d11, d21, d22, x)
+    implicit none
+    real(kind=kreal), intent(in) :: d11, d21, d22
+    real(kind=kreal), intent(inout) :: x(2)
+    real(kind=kreal) :: det, x1, x2
+
+    det = d11*d22 - d21*d21
+    x1 = x(1)
+    x2 = x(2)
+    x(1) = (d22*x1 - d21*x2) / det
+    x(2) = (d11*x2 - d21*x1) / det
+  end subroutine hecmw_mf_kernel_dsolve2
 
   !> y(m) <- y - a(m,n) * x(n)
   subroutine hecmw_mf_kernel_gemv(m, n, lda, a, x, y)
@@ -592,11 +601,12 @@ contains
 
   !> LU of the panel a(m,n), b(m,n) with threshold partial pivoting among its n rows: column p
   !> takes the row of largest magnitude among the rows of the same block (blkr against blk(p)),
-  !> else among the other panel rows, when it reaches u times the largest magnitude of the whole
-  !> column. Rows are exchanged, columns are not. Columns without an acceptable pivot are moved
-  !> with their rows to the end of the panel (allow_delay) or stop the factorization (info =
-  !> column). On return the first npiv columns are factored, permc(j) and permr(j) are the
-  !> original column and row at position j, and blk, blkr are permuted alike.
+  !> else among the other panel rows, when it is above zero and reaches u times the largest
+  !> magnitude of the whole column. Rows are exchanged, columns are not. Columns without an
+  !> acceptable pivot are moved with their rows to the end of the panel (allow_delay) or stop
+  !> the factorization (info = column). On return the first npiv columns are factored, permc(j)
+  !> and permr(j) are the original column and row at position j, and blk, blkr are permuted
+  !> alike.
   subroutine hecmw_mf_kernel_panel_lu_piv(m, n, lda, a, ldb, b, blk, blkr, u, zero, allow_delay, &
       npiv, permc, permr, nswap, info)
     implicit none
@@ -626,7 +636,7 @@ contains
       r = 0
       if (lam > zero) then
         do pass = 1, 2
-          best = 0.0d0
+          best = zero
           do i = p, nrem
             same = (blkr(i) == blk(p))
             if (same .neqv. (pass == 1)) cycle
@@ -798,7 +808,7 @@ contains
   !> Truncated rank revealing QR of a(m,n) with the truncation |R(k,k)| <= eps |R(1,1)|:
   !> on success the leading rank columns of a hold U and v(n,rank) holds V with a ~ U V^T.
   !> rank is -1, with a destroyed, when the low rank form would not take fewer than m*n words
-  !> (the caller keeps its full rank copy) or without LAPACK.
+  !> (the caller keeps its full rank copy), when a holds a NaN or an Inf, or without LAPACK.
   !> The column pivoted Householder QR stops right at the truncation or at the word bound, so
   !> the cost is O(m*n*rank) where dgeqp3 pays the full decomposition. The pivot column is
   !> selected by downdated norms with the dgeqp3 recomputation guard, but the truncation is
@@ -864,6 +874,12 @@ contains
       vn1(j) = dnrm2(m, a(1,j), 1)
       vn2(j) = vn1(j)
     enddo
+    ! the rank test below reads a NaN or an Inf as a negligible column, which would drop it
+    ! from the factor; such a tile stays full rank
+    if (.not. all(vn1(1:n) <= huge(1.0d0))) then
+      deallocate(jpvt, tau, vn1, vn2, wk)
+      return
+    endif
     r11 = 0.0d0
     r = 0
     do k = 1, rlim + 1
