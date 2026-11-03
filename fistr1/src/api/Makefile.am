@@ -96,7 +96,7 @@ HEADERS = \
 #------------------------------------------------------------------------------#
 all: @build_target@
 
-build-default: $(TARGET) $(F90TARGET) install-module
+build-default: $(TARGET) $(F90TARGET) install-module install-header
 
 $(TARGET): $(OBJS)
 	$(AR) $(FSTRLIBDIR)/$@ $(OBJS)
