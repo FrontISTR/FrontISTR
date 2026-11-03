@@ -88,7 +88,7 @@ OBJS =
 OBJSF = \
 	fstr_api_param.@f90objfilepostfix@
 
-INCLUDESF = \
+INCLUDESF =
 
 HEADERS = \
 	fstr_api_param.h

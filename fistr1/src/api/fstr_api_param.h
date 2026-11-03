@@ -65,4 +65,7 @@ void fstr_api_param_set_fg_visual(void* param,int fg_visual);
 fstr_contact_algorithm fstr_api_param_contact_algo(const void* param);
 void fstr_api_param_set_contact_algo(void* param,fstr_contact_algorithm calgo);
 
+double fstr_api_param_ref_temp(const void* param);
+void fstr_api_param_set_ref_temp(void* param,double rtemp);
+
 #endif

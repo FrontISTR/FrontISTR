@@ -235,4 +235,28 @@ contains
     fstrPARAM%contact_algo = calgo
   end subroutine
 
+  !> @brief Retrieve reference temperature
+  !! @param[in] param : Parameter handler
+  !! @return reference temperature
+  function fstr_api_param_ref_temp(param) bind(C,name='fstr_api_param_ref_temp')
+    implicit none
+    real(c_double) :: fstr_api_param_ref_temp
+    type(c_ptr), value :: param
+    type(fstr_param), pointer :: fstrPARAM
+    call c_f_pointer(cptr=param, fptr=fstrPARAM)
+    fstr_api_param_ref_temp = fstrPARAM%ref_temp
+  end function
+
+  !> @brief Set the reference temperature
+  !! @param[in] param : Parameter handler
+  !! @param[in] rtemp : reference temperature
+  subroutine fstr_api_param_set_ref_temp(param,rtemp) bind(C,name='fstr_api_param_set_ref_temp')
+    implicit none
+    type(c_ptr), value :: param
+    real(c_double), value :: rtemp
+    type(fstr_param), pointer :: fstrPARAM
+    call c_f_pointer(cptr=param, fptr=fstrPARAM)
+    fstrPARAM%ref_temp = rtemp
+  end subroutine
+
 end module
