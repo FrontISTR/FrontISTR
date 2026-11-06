@@ -151,7 +151,7 @@ contains
 
 
     allocate(D(NDOF2*N), AL(NDOF2*NPL), AU(NDOF2*NPU))
-    call hecmw_matrix_reorder_values(N, NDOF, perm, iperm, &
+    call hecmw_matrix_reorder_values(N, NDOF, iperm, &
       hecMAT%indexL, hecMAT%indexU, hecMAT%itemL, hecMAT%itemU, &
       hecMAT%AL, hecMAT%AU, hecMAT%D, &
       indexL, indexU, itemL, itemU, AL, AU, D)

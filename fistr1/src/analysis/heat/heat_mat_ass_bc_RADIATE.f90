@@ -11,7 +11,7 @@ contains
   !C*** MAT_ASS_RADIATE
   !C***
   !C
-  subroutine heat_mat_ass_bc_RADIATE( hecMESH, hecMAT, fstrHEAT, CTIME, DTIME, beta )
+  subroutine heat_mat_ass_bc_RADIATE( hecMESH, hecMAT, fstrHEAT, CTIME )
 
     use m_fstr
     use m_heat_get_amplitude
@@ -20,7 +20,7 @@ contains
     implicit none
     integer(kind=kint) :: k, icel, isuf, iam1, iam2, ic_type, isect, nn, is, j, mm, m, ic, ip
     integer(kind=kint) :: jp
-    real(kind=kreal)   :: CTIME, DTIME, TZERO, QQ, RR, SINK, thick, beta
+    real(kind=kreal)   :: CTIME, TZERO, QQ, RR, SINK, thick
     type(fstr_heat)          :: fstrHEAT
     type(hecmwST_matrix)     :: hecMAT
     type(hecmwST_local_mesh) :: hecMESH
@@ -60,22 +60,22 @@ contains
         is = hecMesh%section%sect_R_index(isect)
         thick = hecMESH%section%sect_R_item(is)
         mm=2
-        call heat_RADIATE_231(nn,xx,yy,zz,thick,tt,isuf,RR,SINK,TZERO,mm,term1,term2,nsuf)
+        call heat_RADIATE_231(nn,xx,yy,thick,tt,isuf,RR,SINK,TZERO,mm,term1,term2,nsuf)
       elseif( ic_type.eq.232 ) then
         is = hecMesh%section%sect_R_index(isect)
         thick = hecMESH%section%sect_R_item(is)
         mm=3
-        call heat_RADIATE_232(nn,xx,yy,zz,thick,tt,isuf,RR,SINK,TZERO,mm,term1,term2,nsuf)
+        call heat_RADIATE_232(nn,xx,yy,thick,tt,isuf,RR,SINK,TZERO,mm,term1,term2,nsuf)
       elseif( ic_type.eq.241 ) then
         is = hecMesh%section%sect_R_index(isect)
         thick = hecMESH%section%sect_R_item(is)
         mm=2
-        call heat_RADIATE_241(nn,xx,yy,zz,thick,tt,isuf,RR,SINK,TZERO,mm,term1,term2,nsuf)
+        call heat_RADIATE_241(nn,xx,yy,thick,tt,isuf,RR,SINK,TZERO,mm,term1,term2,nsuf)
       elseif( ic_type.eq.242 ) then
         is = hecMesh%section%sect_R_index(isect)
         thick = hecMESH%section%sect_R_item(is)
         mm=3
-        call heat_RADIATE_242(nn,xx,yy,zz,thick,tt,isuf,RR,SINK,TZERO,mm,term1,term2,nsuf)
+        call heat_RADIATE_242(nn,xx,yy,thick,tt,isuf,RR,SINK,TZERO,mm,term1,term2,nsuf)
       elseif( ic_type.eq.341 ) then
         mm=3
         call heat_RADIATE_341(nn,xx,yy,zz,tt,isuf,RR,SINK,TZERO,mm,term1,term2,nsuf)
@@ -97,13 +97,13 @@ contains
         mm=8
         call heat_RADIATE_362(nn,xx,yy,zz,tt,isuf,RR,SINK,TZERO,mm,term1,term2,nsuf)
       elseif( ic_type.eq.731 ) then
-        call heat_RADIATE_731(nn,xx,yy,zz,tt,isuf,RR,SINK,TZERO,term1,term2)
+        call heat_RADIATE_731(nn,xx,yy,zz,tt,RR,SINK,TZERO,term1,term2)
         mm=3
         do m = 1, mm
           nsuf(m) = m
         enddo
       elseif( ic_type.eq.741 ) then
-        call heat_RADIATE_741(nn,xx,yy,zz,tt,isuf,RR,SINK,TZERO,term1,term2)
+        call heat_RADIATE_741(nn,xx,yy,zz,tt,RR,SINK,TZERO,term1,term2)
         mm=4
         do m = 1, mm
           nsuf(m) = m

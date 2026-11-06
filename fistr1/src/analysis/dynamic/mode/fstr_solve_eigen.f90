@@ -43,7 +43,7 @@ contains
 
     fstrSOLID%dunode = 0.0d0
     call fstr_CreateMatrix_and_DampingForce(hecMESH, hecMAT, fstrSOLID, 0.0d0, 0.0d0)
-    call fstr_AddSPRING(1, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
+    call fstr_AddSPRING(1, hecMESH, hecMAT, fstrSOLID)
 
     call hecmw_ebc_init(hecMAT, hecEBC)
     call fstr_AddBC(1,  hecMESH, hecMAT, fstrSOLID, fstrPARAM, hecLagMAT, 2, hecEBC)

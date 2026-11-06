@@ -71,13 +71,13 @@ contains
     SIGMA_DIAG = hecmw_mat_get_sigma_diag(hecMAT)
 
     if (PRECOND.eq.10) call FORM_ILU0_nn &
-      &   (N, NDOF, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
+      &   (NDOF, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
       &    SIGMA_DIAG)
     if (PRECOND.eq.11) call FORM_ILU1_nn &
-      &   (N, NDOF, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
+      &   (NDOF, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
       &    SIGMA_DIAG)
     if (PRECOND.eq.12) call FORM_ILU2_nn &
-      &   (N, NDOF, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
+      &   (NDOF, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
       &    SIGMA_DIAG)
 
     INITIALIZED = .true.
@@ -193,10 +193,10 @@ contains
   !C    form ILU(0) matrix
   !C
   subroutine FORM_ILU0_nn                                   &
-      &   (N, NDOF, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
+      &   (NDOF, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
       &    SIGMA_DIAG)
     implicit none
-    integer(kind=kint ), intent(in):: N, NDOF, NP, NPU, NPL
+    integer(kind=kint ), intent(in):: NDOF, NP, NPU, NPL
     real   (kind=kreal), intent(in):: SIGMA_DIAG
 
     real(kind=kreal), dimension(NDOF*NDOF*NPL), intent(in):: AL
@@ -339,10 +339,10 @@ contains
   !C    form ILU(1) matrix
   !C
   subroutine FORM_ILU1_nn                                   &
-      &   (N, NDOF, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
+      &   (NDOF, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
       &    SIGMA_DIAG)
     implicit none
-    integer(kind=kint ), intent(in):: N, NDOF, NP, NPU, NPL
+    integer(kind=kint ), intent(in):: NDOF, NP, NPU, NPL
     real   (kind=kreal), intent(in):: SIGMA_DIAG
 
     real(kind=kreal), dimension(9*NPL), intent(in):: AL
@@ -716,10 +716,10 @@ contains
   !C    form ILU(2) matrix
   !C
   subroutine FORM_ILU2_nn &
-      &   (N, NDOF, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
+      &   (NDOF, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
       &    SIGMA_DIAG)
     implicit none
-    integer(kind=kint ), intent(in):: N, NDOF, NP, NPU, NPL
+    integer(kind=kint ), intent(in):: NDOF, NP, NPU, NPL
     real   (kind=kreal), intent(in):: SIGMA_DIAG
 
     real(kind=kreal), dimension(9*NPL), intent(in):: AL

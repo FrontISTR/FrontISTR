@@ -5,11 +5,11 @@
 module m_heat_lib_conductivity
 contains
 
-  subroutine heat_GET_coefficient(Tpoi, imat, coef, ntab, temp, funcA, funcB)
+  subroutine heat_GET_coefficient(Tpoi, coef, ntab, temp, funcA, funcB)
     use hecmw
     implicit none
     real(kind=kreal) :: coef(3)
-    integer(kind=kint) :: in, imat, itab, ntab
+    integer(kind=kint) :: in, itab, ntab
     real(kind=kreal) :: Tpoi, temp(ntab), funcA(ntab+1), funcB(ntab+1)
 
     itab = 0
@@ -31,7 +31,7 @@ contains
     coef(3) = coef(1)
   end subroutine heat_GET_coefficient
 
-  subroutine heat_conductivity_C1(etype, nn, ecoord, temperature, IMAT, surf, stiff, &
+  subroutine heat_conductivity_C1(etype, nn, ecoord, temperature, surf, stiff, &
       ntab, temp, funcA, funcB)
     use hecmw
     implicit none
@@ -40,7 +40,6 @@ contains
     real(kind=kreal), intent(in) :: temperature(nn) !< temperature
     real(kind=kreal), intent(out) :: stiff(:,:) !< stiff matrix
     integer(kind=kint), parameter :: ndof = 1
-    integer(kind=kint) :: IMAT
     integer(kind=kint) :: ntab
     real(kind=kreal) :: ecoord(3, nn)
     real(kind=kreal) :: dx, dy, dz, surf, val, temp_i, length
@@ -58,7 +57,7 @@ contains
     val = surf*length
 
     temp_i = (temperature(1) + temperature(2))*0.5d0
-    call heat_GET_coefficient(temp_i, IMAT, CC, ntab, temp, funcA, funcB)
+    call heat_GET_coefficient(temp_i, CC, ntab, temp, funcA, funcB)
 
     stiff(1,1) =  val*CC(1)
     stiff(2,1) = -val*CC(1)
@@ -66,7 +65,7 @@ contains
     stiff(2,2) =  val*CC(1)
   end subroutine heat_conductivity_C1
 
-  subroutine heat_conductivity_C2(etype, nn, ecoord, temperature, IMAT, thick, stiff, &
+  subroutine heat_conductivity_C2(etype, nn, ecoord, temperature, thick, stiff, &
       ntab, temp, funcA, funcB)
     use mMechGauss
     use m_MatMatrix
@@ -78,7 +77,7 @@ contains
     real(kind=kreal), intent(in)  :: ecoord(2,nn)           !< coordinates of elemental nodes
     real(kind=kreal), intent(out) :: stiff(:,:)              !< stiff matrix
     real(kind=kreal), intent(in) :: temperature(nn) !< temperature
-    integer(kind=kint) :: i, j, LX, IMAT, ntab
+    integer(kind=kint) :: i, j, LX, ntab
     real(kind=kreal) :: naturalCoord(2)
     real(kind=kreal) :: func(nn), thick, temp_i
     real(kind=kreal) :: det, wg
@@ -95,7 +94,7 @@ contains
       call getGlobalDeriv(etype, nn, naturalcoord, ecoord, det, gderiv)
 
       temp_i = dot_product(func, temperature)
-      call heat_GET_coefficient(temp_i, IMAT, CC, ntab, temp, funcA, funcB)
+      call heat_GET_coefficient(temp_i, CC, ntab, temp, funcA, funcB)
 
       D = 0.0d0
       D(1,1) = CC(1)*thick
@@ -111,7 +110,7 @@ contains
     enddo
   end subroutine heat_conductivity_C2
 
-  subroutine heat_conductivity_C3(etype, nn, ecoord, temperature, IMAT, stiff, &
+  subroutine heat_conductivity_C3(etype, nn, ecoord, temperature, stiff, &
       ntab, temp, funcA, funcB)
     use mMechGauss
     use m_MatMatrix
@@ -123,7 +122,7 @@ contains
     real(kind=kreal), intent(in)  :: ecoord(3,nn)           !< coordinates of elemental nodes
     real(kind=kreal), intent(out) :: stiff(:,:)              !< stiff matrix
     real(kind=kreal), intent(in) :: temperature(nn) !< temperature
-    integer(kind=kint) :: i, j, LX, IMAT, ntab
+    integer(kind=kint) :: i, j, LX, ntab
     real(kind=kreal) :: naturalCoord(3)
     real(kind=kreal) :: func(nn), temp_i
     real(kind=kreal) :: det, wg
@@ -140,7 +139,7 @@ contains
       call getGlobalDeriv(etype, nn, naturalcoord, ecoord, det, gderiv)
 
       temp_i = dot_product(func, temperature)
-      call heat_GET_coefficient(temp_i, IMAT, SPE, ntab, temp, funcA, funcB)
+      call heat_GET_coefficient(temp_i, SPE, ntab, temp, funcA, funcB)
 
       D = 0.0d0
       D(1,1) = SPE(1)
@@ -159,7 +158,7 @@ contains
   end subroutine heat_conductivity_C3
 
   !> CALCULATION 4 NODE SHELL ELEMENT
-  subroutine heat_conductivity_shell_731(etype, nn, ecoord, TT, IMAT, thick, SS, stiff, &
+  subroutine heat_conductivity_shell_731(nn, ecoord, TT, thick, SS, &
       ntab, temp, funcA, funcB)
     use mMechGauss
     use m_MatMatrix
@@ -167,13 +166,11 @@ contains
     use m_dynamic_mass
     implicit none
     !type(tGaussStatus), intent(in) :: gausses(:)             !< status of qudrature points
-    integer(kind=kint), intent(in) :: etype                  !< element type
     integer(kind=kint), intent(in) :: nn                     !< number of elemental nodes
     real(kind=kreal), intent(in)  :: ecoord(3,nn)           !< coordinates of elemental nodes
-    real(kind=kreal), intent(out) :: stiff(:,:)              !< stiff matrix
     real(kind=kreal), intent(inout) :: SS(:)              !< stiff matrix
     real(kind=kreal), intent(inout) :: TT(nn) !< temperature
-    integer(kind=kint) :: i, IMAT, ntab
+    integer(kind=kint) :: i, ntab
     integer(kind=kint) :: IG1, IG2, IG3, INOD
     real(kind=kreal) :: thick
     real(kind=kreal) :: RI, RM, RP, SI, SM, SP, TI, VALX, VALY, VAR
@@ -373,7 +370,7 @@ contains
           do I = 1, NN
             CTEMP = CTEMP + H(I)*TT(I)
           enddo
-          call heat_GET_coefficient( CTEMP,IMAT,CC,ntab,temp,funcA,funcB )
+          call heat_GET_coefficient( CTEMP,CC,ntab,temp,funcA,funcB )
 
           !* SET INTEGRATION WEIGHT
           VALX = CC(1)*WGT(IG1)*WGT(IG2)*WGT(IG3)*DET
@@ -418,20 +415,18 @@ contains
     SS(15) = SS(12)
   end subroutine heat_conductivity_shell_731
 
-  subroutine heat_conductivity_shell_741(etype, nn, ecoord, TT, IMAT, thick, SS, stiff, &
+  subroutine heat_conductivity_shell_741(nn, ecoord, TT, thick, SS, &
       ntab, temp, funcA, funcB)
     use mMechGauss
     use m_MatMatrix
     use elementInfo
     implicit none
     !type(tGaussStatus), intent(in) :: gausses(:)             !< status of qudrature points
-    integer(kind=kint), intent(in) :: etype                  !< element type
     integer(kind=kint), intent(in) :: nn                     !< number of elemental nodes
     real(kind=kreal), intent(in)  :: ecoord(3,nn)           !< coordinates of elemental nodes
-    real(kind=kreal), intent(out) :: stiff(:,:)              !< stiff matrix
     real(kind=kreal), intent(inout) :: SS(:)              !< stiff matrix
     real(kind=kreal), intent(in) :: TT(nn) !< temperature
-    integer(kind=kint) :: i, IMAT, ntab
+    integer(kind=kint) :: i, ntab
     integer(kind=kint) :: IG1, IG2, IG3, INOD
     real(kind=kreal) :: TI, VALX, VALY, VAR
     real(kind=kreal) :: XJ11, XJ12, XJ13, XJ21, XJ22, XJ23, XJ31, XJ32, XJ33
@@ -651,7 +646,7 @@ contains
           do I = 1, NN
             CTEMP = CTEMP + H(I)*TT(I)
           enddo
-          call heat_GET_coefficient( CTEMP,IMAT,CC,ntab,temp,funcA,funcB )
+          call heat_GET_coefficient( CTEMP,CC,ntab,temp,funcA,funcB )
 
           !* SET INTEGRATION WEIGHT
           VALX = CC(1)*WGT(IG1)*WGT(IG2)*WGT(IG3)*DET
@@ -687,12 +682,11 @@ contains
     SS(15) = SS(12)
   end subroutine heat_conductivity_shell_741
 
-  subroutine heat_conductivity_541(NN,ecoord,TEMP,TZERO,THICK,HH,RR1,RR2,SS,stiff )
+  subroutine heat_conductivity_541(NN,ecoord,TEMP,TZERO,THICK,HH,RR1,RR2,SS )
     use hecmw
     implicit none
     integer(kind=kint), intent(in) :: NN
     real(kind=kreal), intent(in)  :: ecoord(3,nn)           !< coordinates of elemental nodes
-    real(kind=kreal), intent(out) :: stiff(:,:)              !< stiff matrix
     real(kind=kreal), intent(in)  :: TEMP(NN), TZERO, THICK, HH, RR1, RR2
     real(kind=kreal), intent(inout) :: SS(NN*NN)
     real(kind=kreal) :: SA, SB, SM

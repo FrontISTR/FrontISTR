@@ -54,13 +54,13 @@ contains
         if(ic_type == 231 .or. ic_type == 232 .or. ic_type == 241 .or. ic_type == 242)then
           in = hecMesh%section%sect_R_index(isect)
           thick = hecMESH%section%sect_R_item(in)
-          call heat_capacity_C2(ic_type, nn, ecoord(1:2,1:nn), temp, IMAT, thick, lumped, mass, &
+          call heat_capacity_C2(ic_type, nn, ecoord(1:2,1:nn), temp, thick, lumped, mass, &
             fstrHEAT%CPtab(IMAT), fstrHEAT%CPtemp(IMAT,:), fstrHEAT%CPfuncA(IMAT,:) ,fstrHEAT%CPfuncB(IMAT,:), &
             fstrHEAT%RHOtab(IMAT), fstrHEAT%RHOtemp(IMAT,:), fstrHEAT%RHOfuncA(IMAT,:), fstrHEAT%RHOfuncB(IMAT,:))
 
         elseif(ic_type == 341 .or. ic_type == 342 .or. ic_type == 351 .or. ic_type == 352 .or. &
              & ic_type == 361 .or. ic_type == 362)then
-          call heat_capacity_C3(ic_type, nn, ecoord(1:3,1:nn), temp, IMAT, lumped, mass, &
+          call heat_capacity_C3(ic_type, nn, ecoord(1:3,1:nn), temp, lumped, mass, &
             fstrHEAT%CPtab(IMAT), fstrHEAT%CPtemp(IMAT,:), fstrHEAT%CPfuncA(IMAT,:) ,fstrHEAT%CPfuncB(IMAT,:), &
             fstrHEAT%RHOtab(IMAT), fstrHEAT%RHOtemp(IMAT,:), fstrHEAT%RHOfuncA(IMAT,:), fstrHEAT%RHOfuncB(IMAT,:))
 
@@ -70,21 +70,21 @@ contains
         elseif(ic_type == 731)then
           in = hecMesh%section%sect_R_index(isect)
           thick = hecMESH%section%sect_R_item(in)
-          call heat_capacity_shell_731(ic_type, nn, ecoord(1:3,1:nn), temp, IMAT, thick, lumped, mass, &
+          call heat_capacity_shell_731(nn, ecoord(1:3,1:nn), temp, thick, lumped, mass, &
             fstrHEAT%CPtab(IMAT), fstrHEAT%CPtemp(IMAT,:), fstrHEAT%CPfuncA(IMAT,:) ,fstrHEAT%CPfuncB(IMAT,:), &
             fstrHEAT%RHOtab(IMAT), fstrHEAT%RHOtemp(IMAT,:), fstrHEAT%RHOfuncA(IMAT,:), fstrHEAT%RHOfuncB(IMAT,:))
 
         elseif(ic_type == 741)then
           in = hecMesh%section%sect_R_index(isect)
           thick = hecMESH%section%sect_R_item(in)
-          call heat_capacity_shell_741(ic_type, nn, ecoord(1:3,1:nn), temp, IMAT, thick, lumped, mass, &
+          call heat_capacity_shell_741(nn, ecoord(1:3,1:nn), temp, thick, lumped, mass, &
             fstrHEAT%CPtab(IMAT), fstrHEAT%CPtemp(IMAT,:), fstrHEAT%CPfuncA(IMAT,:) ,fstrHEAT%CPfuncB(IMAT,:), &
             fstrHEAT%RHOtab(IMAT), fstrHEAT%RHOtemp(IMAT,:), fstrHEAT%RHOfuncA(IMAT,:), fstrHEAT%RHOfuncB(IMAT,:))
 
         elseif(ic_type == 111 .or. ic_type == 301 .or. ic_type == 611 .or. ic_type == 641)then
           in = hecMesh%section%sect_R_index(isect)
           surf = hecMESH%section%sect_R_item(in)
-          call heat_capacity_C1(ic_type, nn, ecoord(1:3,1:nn), temp, IMAT, surf, lumped, mass, &
+          call heat_capacity_C1(ic_type, nn, ecoord(1:3,1:nn), temp, surf, lumped, &
             fstrHEAT%CPtab(IMAT), fstrHEAT%CPtemp(IMAT,:), fstrHEAT%CPfuncA(IMAT,:) ,fstrHEAT%CPfuncB(IMAT,:), &
             fstrHEAT%RHOtab(IMAT), fstrHEAT%RHOtemp(IMAT,:), fstrHEAT%RHOfuncA(IMAT,:), fstrHEAT%RHOfuncB(IMAT,:))
 

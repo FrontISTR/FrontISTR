@@ -15,7 +15,7 @@ contains
   !>  This subroutine calculate stiff matrix of u-p mixed solid elements
   subroutine STF_C3_up                                        &
       (etype, nn, ecoord, gausses, stiff, cdsys_ID, coords,   &
-      time, tincr, nn_p, lambda, u, temperature)
+      time, tincr, nn_p, u, temperature)
 
     use mMechGauss
     use m_MatMatrix
@@ -32,7 +32,6 @@ contains
     real(kind=kreal),   intent(in)  :: time                    !< current time
     real(kind=kreal),   intent(in)  :: tincr                   !< time increment
     integer(kind=kint), intent(in)  :: nn_p                    !< number of elemental pressure nodes
-    real(kind=kreal),   intent(in)  :: lambda(nn_p)            !< Lagrange multiplier
     real(kind=kreal),   intent(in), optional :: u(:, :)        !< nodal displacemwent
     real(kind=kreal),   intent(in), optional :: temperature(nn) !< temperature
 
@@ -59,7 +58,6 @@ contains
     real(kind=kreal) :: g
     real(kind=kreal) :: d2(6)
     real(kind=kreal) :: bd2(3*nn)
-    real(kind=kreal) :: lambda_lx
     real(kind=kreal) :: spfunc_p(nn_p)
 
     stiff(:, :) = 0.0D0
@@ -101,18 +99,12 @@ contains
 
       if( nn_p == 1 ) spfunc_p(1) = 1.0D0
 
-      ! Lagrange multiplier
-      lambda_lx = 0.0D0
-      do na_p = 1, nn_p
-        lambda_lx = lambda_lx+spfunc_p(na_p)*lambda(na_p)
-      end do
-
       if( present( temperature ) ) then
         call getShapeFunc( etype, naturalcoord, spfunc )
         temp = dot_product( temperature, spfunc )
-        call MatlMatrix_up( gausses(lx), D3, d, lambda_lx, d2, alpha_inv, g, time, tincr, coordsys, temp )
+        call MatlMatrix_up( gausses(lx), D3, d, d2, alpha_inv, g, time, tincr, coordsys, temp )
       else
-        call MatlMatrix_up( gausses(lx), D3, d, lambda_lx, d2, alpha_inv, g, time, tincr, coordsys )
+        call MatlMatrix_up( gausses(lx), D3, d, d2, alpha_inv, g, time, tincr, coordsys )
       end if
 
       ! Updated Lagrangian : material tangent correction with the Cauchy stress
@@ -397,7 +389,7 @@ contains
         call getShapeFunc( etype, naturalcoord, spfunc )
         ttc = dot_product( tt, spfunc )
         tt0 = dot_product( t0, spfunc )
-        call MatlMatrix_up( gausses(lx), D3, d, lambda_lx, d2, alpha_inv, g, time, tincr, coordsys, ttc )
+        call MatlMatrix_up( gausses(lx), D3, d, d2, alpha_inv, g, time, tincr, coordsys, ttc )
         if( ( iter <= 1 ) .or. ( flag == TOTALLAG ) ) then
           ina(1) = ttc
           call fetch_TableData( MC_THEMOEXP, gausses(lx)%pMaterial%dict, outa, ierr, ina )
@@ -405,7 +397,7 @@ contains
           epsth(1:3) = outa(1)*( ttc-tt0 )
         end if
       else
-        call MatlMatrix_up( gausses(lx), D3, d, lambda_lx, d2, alpha_inv, g, time, tincr, coordsys )
+        call MatlMatrix_up( gausses(lx), D3, d, d2, alpha_inv, g, time, tincr, coordsys )
       end if
 
       do nb = 1, nn
@@ -590,7 +582,7 @@ contains
 
       if( flag == UPDATELAG ) then
         ! deviatoric tangent (K=0) of the increment
-        call MatlMatrix_up( gausses(lx), D3, d, lambda_lx, d2, alpha_inv, g, time, tincr, coordsys )
+        call MatlMatrix_up( gausses(lx), D3, d, d2, alpha_inv, g, time, tincr, coordsys )
         ! objective (Jaumann/Hughes-Winget) update of the deviatoric stress.
         ! pressure is imposed by the Lagrange multiplier (UP), not by the rate.
         p_bak = ( gausses(lx)%stress_bak(1)+gausses(lx)%stress_bak(2)+gausses(lx)%stress_bak(3) )/3.0D0
@@ -622,7 +614,7 @@ contains
         call getShapeFunc( etype, naturalcoord, spfunc )
         ttc = dot_product( tt, spfunc )
         tt0 = dot_product( t0, spfunc )
-        call MatlMatrix_up( gausses(lx), D3, d, lambda_lx, d2, alpha_inv, g, time, tincr, coordsys, ttc )
+        call MatlMatrix_up( gausses(lx), D3, d, d2, alpha_inv, g, time, tincr, coordsys, ttc )
         if( ( iter <= 1 ) .or. ( flag == TOTALLAG ) ) then
           ina(1) = ttc
           call fetch_TableData( MC_THEMOEXP, gausses(lx)%pMaterial%dict, outa, ierr, ina )
@@ -630,7 +622,7 @@ contains
           epsth(1:3) = outa(1)*( ttc-tt0 )
         end if
       else
-        call MatlMatrix_up( gausses(lx), D3, d, lambda_lx, d2, alpha_inv, g, time, tincr, coordsys )
+        call MatlMatrix_up( gausses(lx), D3, d, d2, alpha_inv, g, time, tincr, coordsys )
       end if
 
       ! Updated Lagrangian : switch to the end (current) configuration for the

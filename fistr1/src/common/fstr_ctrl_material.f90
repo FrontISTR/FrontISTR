@@ -484,12 +484,11 @@ contains
 
   !----------------------------------------------------------------------
   !> Read in !PLASTIC
-  integer function fstr_ctrl_get_PLASTICITY( ctrl, mattype, nlgeom, matval, mattable, dict )
+  integer function fstr_ctrl_get_PLASTICITY( ctrl, mattype, nlgeom, matval, dict )
     integer(kind=kint), intent(in)    :: ctrl
     integer(kind=kint), intent(inout) :: mattype
     integer(kind=kint), intent(out)   :: nlgeom
     real(kind=kreal),intent(inout)    :: matval(:)
-    real(kind=kreal), pointer         :: mattable(:)
     type(DICT_STRUCT), pointer        :: dict
 
     integer(kind=kint) :: i, n, rcode, depends, ipt, hipt

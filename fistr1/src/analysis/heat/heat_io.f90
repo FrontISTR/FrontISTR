@@ -87,7 +87,7 @@ contains
 
   end subroutine heat_output_log
 
-  subroutine fstr_heat_make_result_step(hecMESH, fstrHEAT, fstrSOLID, fstrRESULT, tstep, ctime)
+  subroutine fstr_heat_make_result_step(hecMESH, fstrHEAT, fstrSOLID, fstrRESULT, ctime)
     use m_fstr
     use m_fstr_elemact
     implicit none
@@ -95,7 +95,6 @@ contains
     type(fstr_heat)           :: fstrHEAT
     type(fstr_solid)          :: fstrSOLID
     type(hecmwST_result_data) :: fstrRESULT
-    integer(kind=kint) :: tstep
     real(kind=kreal)   :: ctime
 
     real(kind=kreal), pointer  :: work(:)
@@ -184,7 +183,7 @@ contains
     real(kind=kreal)   :: ctime
 
     call hecmw_nullify_result_data(fstrRESULT)
-    call fstr_heat_make_result_step(hecMESH, fstrHEAT, fstrSOLID, fstrRESULT, tstep, ctime)
+    call fstr_heat_make_result_step(hecMESH, fstrHEAT, fstrSOLID, fstrRESULT, ctime)
     call fstr2hecmw_mesh_conv(hecMESH)
     call hecmw_visualize_init
     call hecmw_visualize( hecMESH, fstrRESULT, tstep )

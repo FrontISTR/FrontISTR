@@ -61,15 +61,12 @@ contains
     write(ISTA,'(A10,"-+-",A60,"-+-",A40)') repeat("-",10),repeat("-",60),repeat("-",40)
   end subroutine
 
-  subroutine fstr_TimeInc_PrintSTATUS( stepinfo, fstrPARAM, totstep, substep, NRstatI, NRstatR, AutoINC_stat, Cutback_stat )
+  subroutine fstr_TimeInc_PrintSTATUS( stepinfo, fstrPARAM, totstep, substep, fstrSOLID )
     type(step_info), intent(in)       ::  stepinfo
     type(fstr_param), intent(in)      ::  fstrPARAM
     integer(kind=kint), intent(in)    ::  totstep
     integer(kind=kint), intent(in)    ::  substep
-    integer(kind=kint), intent(in)    ::  NRstatI(:)  !previous Newton Raphson Iteration Log
-    real(kind=kreal), intent(in)      ::  NRstatR(:)  !previous Newton Raphson Iteration Log
-    integer(kind=kint), intent(inout) ::  AutoINC_stat
-    integer(kind=kint), intent(in)    ::  Cutback_stat
+    type(fstr_solid), intent(in)      ::  fstrSOLID
 
     character(len=5) :: cstep, csstep, cstate, ccont
     character(len=7) :: cmaxn, ctotn
@@ -81,22 +78,22 @@ contains
 
     write(cstep,'(I5)') totstep
     write(csstep,'(I5)') substep
-    write(ccont,'(I5)') NRstatI(knstCITER)
-    write(cmaxn,'(I7)') NRstatI(knstMAXIT)
-    write(ctotn,'(I7)') NRstatI(knstSUMIT)
+    write(ccont,'(I5)') fstrSOLID%NRstat_i(knstCITER)
+    write(cmaxn,'(I7)') fstrSOLID%NRstat_i(knstMAXIT)
+    write(ctotn,'(I7)') fstrSOLID%NRstat_i(knstSUMIT)
     write(ctime,'(1pE12.4)') current_time
     write(cdtime,'(1pE12.4)') time_inc
 
-    if( Cutback_stat > 0 ) then
+    if( fstrSOLID%CutBack_stat > 0 ) then
       write(etime,'(1pE12.4)') current_time
-      write(cstate,'(I4,A)') Cutback_stat,'F'
-      if( NRstatI(knstDRESN) == 1 ) write(message,'(A)') 'Failed to converge due to MAXITER.'
-      if( NRstatI(knstDRESN) == 2 ) write(message,'(A)') 'Failed to converge due to MAXRES.'
-      if( NRstatI(knstDRESN) == 3 ) write(message,'(A)') 'Failed to converge due to MAXCONTITER.'
-      if( NRstatI(knstDRESN) == 4 ) write(message,'(A)') 'Failed to converge due to MatSolveError.'
-      if( NRstatI(knstDRESN) == 5 ) write(message,'(A)') 'Failed to converge due to MatNotConv.'
-      if( NRstatI(knstDRESN) == 6 ) write(message,'(A)') 'Failed to converge due to MatDiverged.'
-      if( Cutback_stat == pAinc%CBbound ) write(message,'(A)') '# of successive cutback reached max.'
+      write(cstate,'(I4,A)') fstrSOLID%CutBack_stat,'F'
+      if( fstrSOLID%NRstat_i(knstDRESN) == 1 ) write(message,'(A)') 'Failed to converge due to MAXITER.'
+      if( fstrSOLID%NRstat_i(knstDRESN) == 2 ) write(message,'(A)') 'Failed to converge due to MAXRES.'
+      if( fstrSOLID%NRstat_i(knstDRESN) == 3 ) write(message,'(A)') 'Failed to converge due to MAXCONTITER.'
+      if( fstrSOLID%NRstat_i(knstDRESN) == 4 ) write(message,'(A)') 'Failed to converge due to MatSolveError.'
+      if( fstrSOLID%NRstat_i(knstDRESN) == 5 ) write(message,'(A)') 'Failed to converge due to MatNotConv.'
+      if( fstrSOLID%NRstat_i(knstDRESN) == 6 ) write(message,'(A)') 'Failed to converge due to MatDiverged.'
+      if( fstrSOLID%CutBack_stat == pAinc%CBbound ) write(message,'(A)') '# of successive cutback reached max.'
     else
       write(etime,'(1pE12.4)') current_time+time_inc
       write(cstate,'(A5)') 'S'
@@ -145,14 +142,11 @@ contains
   end function
 
   !! set time_inc from stepinfo and Newton Raphson iteration status
-  subroutine fstr_TimeInc_SetTimeIncrement( stepinfo, fstrPARAM, substep, NRstatI, NRstatR, AutoINC_stat, Cutback_stat )
+  subroutine fstr_TimeInc_SetTimeIncrement( stepinfo, fstrPARAM, substep, fstrSOLID )
     type(step_info), intent(in)       ::  stepinfo
     type(fstr_param), intent(in)      ::  fstrPARAM
     integer(kind=kint), intent(in)    ::  substep
-    integer(kind=kint), intent(in)    ::  NRstatI(:)  !previous Newton Raphson Iteration Log
-    real(kind=kreal), intent(in)      ::  NRstatR(:)  !previous Newton Raphson Iteration Log
-    integer(kind=kint), intent(inout) ::  AutoINC_stat
-    integer(kind=kint), intent(in)    ::  Cutback_stat
+    type(fstr_solid), intent(inout)   ::  fstrSOLID
 
     real(kind=kreal) :: timeinc0
     real(kind=kreal) :: endtime, remain
@@ -164,44 +158,44 @@ contains
     if( stepinfo%inc_type == stepFixedInc ) then
       timeinc0 = stepinfo%initdt
     else ! INCTYPE==AUTO
-      if( Cutback_stat > 0 ) then
+      if( fstrSOLID%CutBack_stat > 0 ) then
         timeinc0 = pAinc%ainc_Rc*time_inc
         if(myrank == 0) write(*,'(2(A,E10.3))') 'time increment is decreased from ', time_inc_base, ' to ', timeinc0
-        AutoINC_stat = -1
+        fstrSOLID%AutoINC_stat = -1
       else
         if( substep == 1 ) then
           timeinc0 = stepinfo%initdt
-          AutoINC_stat = 0
+          fstrSOLID%AutoINC_stat = 0
         else
           timeinc0 = time_inc_base
 
           !decrease condition
           to_be_decreased = .false.
-          if( NRstatI(knstMAXIT) > pAinc%NRbound_s(knstMAXIT) ) to_be_decreased = .true.
-          if( NRstatI(knstSUMIT) > pAinc%NRbound_s(knstSUMIT) ) to_be_decreased = .true.
-          if( NRstatI(knstCITER) > pAinc%NRbound_s(knstCITER) ) to_be_decreased = .true.
+          if( fstrSOLID%NRstat_i(knstMAXIT) > pAinc%NRbound_s(knstMAXIT) ) to_be_decreased = .true.
+          if( fstrSOLID%NRstat_i(knstSUMIT) > pAinc%NRbound_s(knstSUMIT) ) to_be_decreased = .true.
+          if( fstrSOLID%NRstat_i(knstCITER) > pAinc%NRbound_s(knstCITER) ) to_be_decreased = .true.
 
           !increase condition
           to_be_increased = .true.
-          if( NRstatI(knstMAXIT) > pAinc%NRbound_l(knstMAXIT) ) to_be_increased = .false.
-          if( NRstatI(knstSUMIT) > pAinc%NRbound_l(knstSUMIT) ) to_be_increased = .false.
-          if( NRstatI(knstCITER) > pAinc%NRbound_l(knstCITER) ) to_be_increased = .false.
+          if( fstrSOLID%NRstat_i(knstMAXIT) > pAinc%NRbound_l(knstMAXIT) ) to_be_increased = .false.
+          if( fstrSOLID%NRstat_i(knstSUMIT) > pAinc%NRbound_l(knstSUMIT) ) to_be_increased = .false.
+          if( fstrSOLID%NRstat_i(knstCITER) > pAinc%NRbound_l(knstCITER) ) to_be_increased = .false.
 
           ! count # of times that increase/decrease condition has been satisfied
           ! AutoINC_stat < 0 ... decrease condition has been satisfied -AutoINC_stat times
           ! AutoINC_stat > 0 ... increase condition has been satisfied AutoINC_stat times
           if(to_be_decreased) then
-            AutoINC_stat = min(AutoINC_stat,0) - 1
+            fstrSOLID%AutoINC_stat = min(fstrSOLID%AutoINC_stat,0) - 1
           else if(to_be_increased) then
-            AutoINC_stat = max(AutoINC_stat,0) + 1
+            fstrSOLID%AutoINC_stat = max(fstrSOLID%AutoINC_stat,0) + 1
           else
-            AutoINC_stat = 0
+            fstrSOLID%AutoINC_stat = 0
           end if
 
-          if( AutoINC_stat <= -pAinc%NRtimes_s ) then
+          if( fstrSOLID%AutoINC_stat <= -pAinc%NRtimes_s ) then
             timeinc0 = pAinc%ainc_Rs*timeinc0
             if(myrank == 0) write(*,'(2(A,E10.3))') 'time increment is decreased from ', time_inc_base, ' to ', timeinc0
-          else if( AutoINC_stat >= pAinc%NRtimes_l ) then
+          else if( fstrSOLID%AutoINC_stat >= pAinc%NRtimes_l ) then
             timeinc0 = dmin1(pAinc%ainc_Rl*timeinc0,stepinfo%maxdt)
             if(myrank == 0) write(*,'(2(A,E10.3))') 'time increment is increased from ', time_inc_base, ' to ', timeinc0
           end if

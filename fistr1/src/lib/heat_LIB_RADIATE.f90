@@ -7,20 +7,20 @@
 module m_heat_LIB_RADIATE
 contains
   !***********************************************************************
-  !  RADIATE_231(NN,XX,YY,ZZ,LTYPE,TEMP,RR,SINK,TZERO,MM,TERM1,TERM2,NOD)
-  !  RADIATE_232(NN,XX,YY,ZZ,LTYPE,TEMP,RR,SINK,TZERO,MM,TERM1,TERM2,NOD)
-  !  RADIATE_241(NN,XX,YY,ZZ,LTYPE,TEMP,RR,SINK,TZERO,MM,TERM1,TERM2,NOD)
-  !  RADIATE_242(NN,XX,YY,ZZ,LTYPE,TEMP,RR,SINK,TZERO,MM,TERM1,TERM2,NOD)
+  !  RADIATE_231(NN,XX,YY,LTYPE,TEMP,RR,SINK,TZERO,MM,TERM1,TERM2,NOD)
+  !  RADIATE_232(NN,XX,YY,LTYPE,TEMP,RR,SINK,TZERO,MM,TERM1,TERM2,NOD)
+  !  RADIATE_241(NN,XX,YY,LTYPE,TEMP,RR,SINK,TZERO,MM,TERM1,TERM2,NOD)
+  !  RADIATE_242(NN,XX,YY,LTYPE,TEMP,RR,SINK,TZERO,MM,TERM1,TERM2,NOD)
   !  RADIATE_341(NN,XX,YY,ZZ,LTYPE,TEMP,RR,SINK,TZERO,MM,TERM1,TERM2,NOD)
   !  RADIATE_342(NN,XX,YY,ZZ,LTYPE,TEMP,RR,SINK,TZERO,MM,TERM1,TERM2,NOD)
   !  RADIATE_351(NN,XX,YY,ZZ,LTYPE,TEMP,RR,SINK,TZERO,MM,TERM1,TERM2,NOD)
   !  RADIATE_352(NN,XX,YY,ZZ,LTYPE,TEMP,RR,SINK,TZERO,MM,TERM1,TERM2,NOD)
   !  RADIATE_361(NN,XX,YY,ZZ,LTYPE,TEMP,RR,SINK,TZERO,MM,TERM1,TERM2,NOD)
   !  RADIATE_362(NN,XX,YY,ZZ,LTYPE,TEMP,RR,SINK,TZERO,MM,TERM1,TERM2,NOD)
-  !  RADIATE_731(NN,XX,YY,ZZ,LTYPE,TEMP,RR,SINK,TZERO,TERM1,TERM2)
-  !  RADIATE_741(NN,XX,YY,ZZ,LTYPE,TEMP,RR,SINK,TZERO,TERM1,TERM2)
+  !  RADIATE_731(NN,XX,YY,ZZ,TEMP,RR,SINK,TZERO,TERM1,TERM2)
+  !  RADIATE_741(NN,XX,YY,ZZ,TEMP,RR,SINK,TZERO,TERM1,TERM2)
   !----------------------------------------------------------------------*
-  subroutine heat_RADIATE_231( NN,XX,YY,ZZ,THICK,TEMP,LTYPE                   &
+  subroutine heat_RADIATE_231( NN,XX,YY,THICK,TEMP,LTYPE                      &
       ,RR,SINK,TZERO,MM,TERM1,TERM2,NOD )
     !----------------------------------------------------------------------*
     !**
@@ -35,7 +35,7 @@ contains
     integer(kind=kint) :: NN, LTYPE, MM
     integer(kind=kint) :: NOD(MM)
     real(kind=kreal)   :: THICK, RR, SINK, TZERO
-    real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), TEMP(NN), TERM1(MM*MM), TERM2(MM)
+    real(kind=kreal)   :: XX(NN), YY(NN), TEMP(NN), TERM1(MM*MM), TERM2(MM)
     ! LOCAL VARIABLES
     integer(kind=kint) :: I, IC, IP, JP, LX
     real(kind=kreal)   :: RI, GX, GY, XSUM, TT, T1, T2, RRR, WG
@@ -89,7 +89,7 @@ contains
 
   end subroutine heat_RADIATE_231
   !----------------------------------------------------------------------*
-  subroutine heat_RADIATE_232( NN,XX,YY,ZZ,THICK,TEMP,LTYPE                   &
+  subroutine heat_RADIATE_232( NN,XX,YY,THICK,TEMP,LTYPE                      &
       ,RR,SINK,TZERO,MM,TERM1,TERM2,NOD )
     !----------------------------------------------------------------------*
     !**
@@ -104,7 +104,7 @@ contains
     integer(kind=kint) :: NN, LTYPE, MM
     integer(kind=kint) :: NOD(MM)
     real(kind=kreal)   :: THICK, RR, SINK, TZERO
-    real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), TEMP(NN), TERM1(MM*MM), TERM2(MM)
+    real(kind=kreal)   :: XX(NN), YY(NN), TEMP(NN), TERM1(MM*MM), TERM2(MM)
     ! LOCAL VARIABLES
     integer(kind=kint) :: I, IC, IP, JP, LX
     real(kind=kreal)   :: RI, GX, GY, XSUM, TT, T1, T2, RRR, WG
@@ -170,7 +170,7 @@ contains
 
   end subroutine heat_RADIATE_232
   !----------------------------------------------------------------------*
-  subroutine heat_RADIATE_241( NN,XX,YY,ZZ,THICK,TEMP,LTYPE                   &
+  subroutine heat_RADIATE_241( NN,XX,YY,THICK,TEMP,LTYPE                      &
       ,RR,SINK,TZERO,MM,TERM1,TERM2,NOD )
     !----------------------------------------------------------------------*
     !**
@@ -186,7 +186,7 @@ contains
     integer(kind=kint) :: NN, LTYPE, MM
     integer(kind=kint) :: NOD(MM)
     real(kind=kreal)   :: THICK, RR, SINK, TZERO
-    real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), TEMP(NN), TERM1(MM*MM), TERM2(MM)
+    real(kind=kreal)   :: XX(NN), YY(NN), TEMP(NN), TERM1(MM*MM), TERM2(MM)
     ! LOCAL VARIABLES
     integer(kind=kint) :: I, IC, IP, JP, LX
     real(kind=kreal)   :: RI, GX, GY, XSUM, TT, T1, T2, RRR, WG
@@ -243,7 +243,7 @@ contains
 
   end subroutine heat_RADIATE_241
   !----------------------------------------------------------------------*
-  subroutine heat_RADIATE_242( NN,XX,YY,ZZ,THICK,TEMP,LTYPE                   &
+  subroutine heat_RADIATE_242( NN,XX,YY,THICK,TEMP,LTYPE                      &
       ,RR,SINK,TZERO,MM,TERM1,TERM2,NOD )
     !----------------------------------------------------------------------*
     !**
@@ -259,7 +259,7 @@ contains
     integer(kind=kint) :: NN, LTYPE, MM
     integer(kind=kint) :: NOD(MM)
     real(kind=kreal)   :: THICK, RR, SINK, TZERO
-    real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), TEMP(NN), TERM1(MM*MM), TERM2(MM)
+    real(kind=kreal)   :: XX(NN), YY(NN), TEMP(NN), TERM1(MM*MM), TERM2(MM)
     ! LOCAL VARIABLES
     integer(kind=kint) :: I, IC, IP, JP, LX
     real(kind=kreal)   :: RI, GX, GY, XSUM, TT, T1, T2, RRR, WG
@@ -1242,7 +1242,7 @@ contains
 
   end subroutine heat_RADIATE_362
   !----------------------------------------------------------------------*
-  subroutine heat_RADIATE_731( NN,XX,YY,ZZ,TEMP,LTYPE &
+  subroutine heat_RADIATE_731( NN,XX,YY,ZZ,TEMP &
       ,RR,SINK,TZERO,TERM1,TERM2 )
     !----------------------------------------------------------------------*
     !**
@@ -1252,7 +1252,7 @@ contains
     use hecmw
     implicit none
     ! I/F VARIABLES
-    integer(kind=kint) :: NN, LTYPE
+    integer(kind=kint) :: NN
     real(kind=kreal) :: RR, SINK, TZERO
     real(kind=kreal) :: XX(NN), YY(NN), ZZ(NN), TEMP(NN), TERM1(NN*NN), TERM2(NN)
     ! LOCAL VARIABLES
@@ -1285,7 +1285,7 @@ contains
 
   end subroutine heat_RADIATE_731
   !----------------------------------------------------------------------*
-  subroutine heat_RADIATE_741( NN,XX,YY,ZZ,TEMP,LTYPE                         &
+  subroutine heat_RADIATE_741( NN,XX,YY,ZZ,TEMP                               &
       ,RR,SINK,TZERO,TERM1,TERM2 )
     !----------------------------------------------------------------------*
     !**
@@ -1295,7 +1295,7 @@ contains
     use hecmw
     implicit none
     ! I/F VARIABLES
-    integer(kind=kint) :: NN, LTYPE
+    integer(kind=kint) :: NN
     real(kind=kreal) :: RR, SINK, TZERO
     real(kind=kreal) :: XX(NN), YY(NN), ZZ(NN), TEMP(NN), TERM1(NN*NN), TERM2(NN)
     ! LOCAL VARIABLES

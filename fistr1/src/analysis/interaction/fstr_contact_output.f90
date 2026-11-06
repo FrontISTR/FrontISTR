@@ -77,8 +77,7 @@ contains
     end if
   end subroutine
 
-  subroutine setup_contact_elesurf_for_area( cstep, hecMESH, fstrSOLID )
-    integer(kind=kint), intent(in)               :: cstep         !< current step number
+  subroutine setup_contact_elesurf_for_area( hecMESH, fstrSOLID )
     type( hecmwST_local_mesh ), intent(in)       :: hecMESH       !< type mesh
     type(fstr_solid), intent(inout)              :: fstrSOLID     !< type fstr_solid
 
@@ -174,7 +173,7 @@ contains
         ecoord(1:NDOF,i) = coord(idx+1:idx+NDOF)
       end do
 
-      call calc_nodalarea_surfelement( etype, nn, ecoord, sid, vect )
+      call calc_nodalarea_surfelement( etype, ecoord, sid, vect )
 
       do i=1,nn
         idx = ndlocal(i)
@@ -186,9 +185,8 @@ contains
     deallocate(coord)
   end subroutine
 
-  subroutine calc_nodalarea_surfelement( etype, nn, ecoord, sid, vect )
+  subroutine calc_nodalarea_surfelement( etype, ecoord, sid, vect )
     integer(kind=kint), intent(in)   :: etype
-    integer(kind=kint), intent(in)   :: nn
     real(kind=kreal), intent(in)     :: ecoord(:,:)
     integer(kind=kint), intent(in)   :: sid
     real(kind=kreal), intent(out)    :: vect(:)

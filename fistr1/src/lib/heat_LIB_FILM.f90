@@ -7,10 +7,10 @@
 module m_heat_LIB_FILM
 contains
   !***********************************************************************
-  !  FILM_231(NN,XX,YY,ZZ,LTYPE,HH,SINK,MM,TERM1,TERM2,NOD)
-  !  FILM_232(NN,XX,YY,ZZ,LTYPE,HH,SINK,MM,TERM1,TERM2,NOD)
-  !  FILM_241(NN,XX,YY,ZZ,LTYPE,HH,SINK,MM,TERM1,TERM2,NOD)
-  !  FILM_242(NN,XX,YY,ZZ,LTYPE,HH,SINK,MM,TERM1,TERM2,NOD)
+  !  FILM_231(NN,XX,YY,LTYPE,HH,SINK,MM,TERM1,TERM2,NOD)
+  !  FILM_232(NN,XX,YY,LTYPE,HH,SINK,MM,TERM1,TERM2,NOD)
+  !  FILM_241(NN,XX,YY,LTYPE,HH,SINK,MM,TERM1,TERM2,NOD)
+  !  FILM_242(NN,XX,YY,LTYPE,HH,SINK,MM,TERM1,TERM2,NOD)
   !  FILM_341(NN,XX,YY,ZZ,LTYPE,HH,SINK,MM,TERM1,TERM2,NOD)
   !  FILM_342(NN,XX,YY,ZZ,LTYPE,HH,SINK,MM,TERM1,TERM2,NOD)
   !  FILM_351(NN,XX,YY,ZZ,LTYPE,HH,SINK,MM,TERM1,TERM2,NOD)
@@ -20,7 +20,7 @@ contains
   !  FILM_731(NN,XX,YY,ZZ,LTYPE,HH,SINK,TERM1,TERM2)
   !  FILM_741(NN,XX,YY,ZZ,LTYPE,HH,SINK,TERM1,TERM2)
   !----------------------------------------------------------------------*
-  subroutine heat_FILM_231(NN,XX,YY,ZZ,THICK,LTYPE,HH,SINK,MM,TERM1,TERM2,NOD)
+  subroutine heat_FILM_231(NN,XX,YY,THICK,LTYPE,HH,SINK,MM,TERM1,TERM2,NOD)
     !----------------------------------------------------------------------*
     !**
     !**  SET 231 FILM
@@ -34,7 +34,7 @@ contains
     integer(kind=kint) NN, LTYPE, MM
     integer(kind=kint) NOD(MM)
     real(kind=kreal)   THICK, HH, SINK
-    real(kind=kreal)   XX(NN),YY(NN),ZZ(NN),TERM1(MM*MM),TERM2(MM)
+    real(kind=kreal)   XX(NN),YY(NN),TERM1(MM*MM),TERM2(MM)
     ! LOCAL VARIABLES
     integer(kind=kint) I, IC, IP, JP, LX
     real(kind=kreal)   RI, GX, GY, XSUM
@@ -85,7 +85,7 @@ contains
 
   end subroutine heat_FILM_231
   !----------------------------------------------------------------------*
-  subroutine heat_FILM_232(NN,XX,YY,ZZ,THICK,LTYPE,HH,SINK,MM,TERM1,TERM2,NOD)
+  subroutine heat_FILM_232(NN,XX,YY,THICK,LTYPE,HH,SINK,MM,TERM1,TERM2,NOD)
     !----------------------------------------------------------------------*
     !**
     !**  SET 232 FILM
@@ -99,7 +99,7 @@ contains
     integer(kind=kint) :: NN, LTYPE, MM
     integer(kind=kint) :: NOD(MM)
     real(kind=kreal)   :: THICK, HH, SINK
-    real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), TERM1(MM*MM), TERM2(MM)
+    real(kind=kreal)   :: XX(NN), YY(NN), TERM1(MM*MM), TERM2(MM)
     ! LOCAL VARIABLES
     integer(kind=kint) :: I, IC, IP, JP, LX
     real(kind=kreal)   :: RI, GX, GY, XSUM
@@ -162,7 +162,7 @@ contains
 
   end subroutine heat_FILM_232
   !----------------------------------------------------------------------*
-  subroutine heat_FILM_241(NN,XX,YY,ZZ,THICK,LTYPE,HH,SINK,MM,TERM1,TERM2,NOD)
+  subroutine heat_FILM_241(NN,XX,YY,THICK,LTYPE,HH,SINK,MM,TERM1,TERM2,NOD)
     !----------------------------------------------------------------------*
     !**
     !**  SET 241 FILM
@@ -177,7 +177,7 @@ contains
     integer(kind=kint) :: NN, LTYPE, MM
     integer(kind=kint) :: NOD(MM)
     real(kind=kreal)   :: THICK, HH, SINK
-    real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), TERM1(MM*MM), TERM2(MM)
+    real(kind=kreal)   :: XX(NN), YY(NN), TERM1(MM*MM), TERM2(MM)
     ! LOCAL VARIABLES
     integer(kind=kint) :: I, IC, IP, JP, LX
     real(kind=kreal)   :: RI, GX, GY, XSUM
@@ -231,7 +231,7 @@ contains
 
   end subroutine heat_FILM_241
   !----------------------------------------------------------------------*
-  subroutine heat_FILM_242(NN,XX,YY,ZZ,THICK,LTYPE,HH,SINK,MM,TERM1,TERM2,NOD)
+  subroutine heat_FILM_242(NN,XX,YY,THICK,LTYPE,HH,SINK,MM,TERM1,TERM2,NOD)
     !----------------------------------------------------------------------*
     !**
     !**  SET 242 FILM
@@ -246,7 +246,7 @@ contains
     integer(kind=kint) :: NN, LTYPE, MM
     integer(kind=kint) :: NOD(MM)
     real(kind=kreal)   :: THICK, HH, SINK
-    real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), TERM1(MM*MM), TERM2(MM)
+    real(kind=kreal)   :: XX(NN), YY(NN), TERM1(MM*MM), TERM2(MM)
     ! LOCAL VARIABLES
     integer(kind=kint) :: I, IC, IP, JP, LX
     real(kind=kreal)   :: RI, GX, GY, XSUM

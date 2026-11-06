@@ -646,11 +646,10 @@ contains
   end function fstr_ctrl_get_CONTACTALGO
 
   !>  Read in contact definition
-  logical function fstr_ctrl_get_CONTACT( ctrl, n, contact, np, tp, ntol, ttol, ctAlgo, cpname, smoothing )
+  logical function fstr_ctrl_get_CONTACT( ctrl, n, contact, np, tp, ntol, ttol, cpname, smoothing )
     use fstr_setup_util
     integer(kind=kint), intent(in)    :: ctrl          !< ctrl file
     integer(kind=kint), intent(in)    :: n             !< number of item defined in this section
-    integer(kind=kint), intent(in)    :: ctAlgo        !< contact algorithm
     type(tContact), intent(out)       :: contact(n)    !< contact definition
     real(kind=kreal), intent(out)      :: np             !< penalty along contact nomral
     real(kind=kreal), intent(out)      :: tp             !< penalty along contact tangent

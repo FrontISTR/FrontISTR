@@ -348,7 +348,7 @@ contains
     endif
 
     call fstr_solve_dynamic( hecMESH, hecMAT, fstrSOLID, fstrEIG, &
-      fstrDYNAMIC, fstrRESULT, fstrPARAM, fstrCPL, fstrFREQ, hecLagMAT, &
+      fstrDYNAMIC, fstrPARAM, fstrCPL, fstrFREQ, hecLagMAT, &
       conMAT )
 
   end subroutine fstr_dynamic_analysis

@@ -9,9 +9,9 @@ contains
   !C************************************************************************
   !C*  DFLUX_111(NN,XX,YY,ZZ,ASECT,LTYPE,VAL,VECT)
   !C*  DFLUX_231(NN,XX,YY,ZZ,THICK,LTYPE,VAL,VECT)
-  !C*  DFLUX_232(NN,XX,YY,ZZ,THICK,LTYPE,VAL,VECT)
-  !C*  DFLUX_241(NN,XX,YY,ZZ,THICK,LTYPE,VAL,VECT)
-  !C*  DFLUX_242(NN,XX,YY,ZZ,THICK,LTYPE,VAL,VECT)
+  !C*  DFLUX_232(NN,XX,YY,THICK,LTYPE,VAL,VECT)
+  !C*  DFLUX_241(NN,XX,YY,THICK,LTYPE,VAL,VECT)
+  !C*  DFLUX_242(NN,XX,YY,THICK,LTYPE,VAL,VECT)
   !C*  DFLUX_341(NN,XX,YY,ZZ,LTYPE,VAL,VECT)
   !C*  DFLUX_342(NN,XX,YY,ZZ,LTYPE,VAL,VECT)
   !C*  DFLUX_351(NN,XX,YY,ZZ,LTYPE,VAL,VECT)
@@ -151,7 +151,7 @@ contains
 
   end subroutine heat_DFLUX_231
   !C*--------------------------------------------------------------------*
-  subroutine heat_DFLUX_232(NN,XX,YY,ZZ,THICK,LTYPE,val,VECT)
+  subroutine heat_DFLUX_232(NN,XX,YY,THICK,LTYPE,val,VECT)
     !C*--------------------------------------------------------------------*
     !C***
     !C***  SET 232 DFLUX
@@ -161,7 +161,7 @@ contains
     implicit none
     !C* I/F VARIABLES
     integer(kind=kint) :: NN, LTYPE
-    real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), THICK, val, VECT(NN)
+    real(kind=kreal)   :: XX(NN), YY(NN), THICK, val, VECT(NN)
     !C* LOCAL VARIABLES
     integer(kind=kint) :: IVOL, ISUF, I, L1, L2, LX
     real(kind=kreal)   :: RI, GX, GY, XSUM, X1, X2, X3, XL1, XL2
@@ -289,7 +289,7 @@ contains
 
   end subroutine heat_DFLUX_232
   !C*--------------------------------------------------------------------*
-  subroutine heat_DFLUX_241(NN,XX,YY,ZZ,THICK,LTYPE,val,VECT)
+  subroutine heat_DFLUX_241(NN,XX,YY,THICK,LTYPE,val,VECT)
     !C*--------------------------------------------------------------------*
     !C***
     !C***  SET 241 DFLUX
@@ -299,7 +299,7 @@ contains
     implicit none
     !C* I/F VARIABLES
     integer(kind=kint) :: NN, LTYPE
-    real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), THICK, val, VECT(NN)
+    real(kind=kreal)   :: XX(NN), YY(NN), THICK, val, VECT(NN)
     !C* LOCAL VARIABLES
     integer(kind=kint) :: IVOL, ISUF, I, LX, LY
     real(kind=kreal)   :: GX, GY, XSUM
@@ -401,7 +401,7 @@ contains
 
   end subroutine heat_DFLUX_241
   !C*--------------------------------------------------------------------*
-  subroutine heat_DFLUX_242(NN,XX,YY,ZZ,THICK,LTYPE,val,VECT)
+  subroutine heat_DFLUX_242(NN,XX,YY,THICK,LTYPE,val,VECT)
     !C*--------------------------------------------------------------------*
     !C***
     !C***  SET 242 DFLUX
@@ -411,7 +411,7 @@ contains
     implicit none
     !C* I/F VARIABLES
     integer(kind=kint) :: NN, LTYPE
-    real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), THICK, val, VECT(NN)
+    real(kind=kreal)   :: XX(NN), YY(NN), THICK, val, VECT(NN)
     !C* LOCAL VARIABLES
     integer(kind=kint) :: IVOL, ISUF, I, LX, LY
     real(kind=kreal)   :: GX, GY, XSUM

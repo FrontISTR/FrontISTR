@@ -179,9 +179,8 @@ contains
 
   !> This subroutine update lagrangian multiplier and the
   !> distance between contacting nodes
-  subroutine update_contact_multiplier( ctAlgo, contact, coord, disp, ddisp, fcoeff, &
+  subroutine update_contact_multiplier( contact, coord, disp, ddisp, fcoeff, &
     hecMESH, hecLagMAT, gnt, ctchanged )
-    integer(kind=kint), intent(in)       :: ctAlgo         !< contact algorithm
     type( tContact ), intent(inout)      :: contact        !< contact info
     real(kind=kreal), intent(in)         :: coord(:)       !< mesh coordinate
     real(kind=kreal), intent(in)         :: disp(:)        !< disp till current step
@@ -320,7 +319,7 @@ contains
       if( fcoeff /= 0.d0 ) then
         allocate(Sigma_node(unique_count,nnode_s,3), nacc_node(unique_count,nnode_s,3))
         call getTangentSlip(contact%slave_surf(i), contact%master, coord, disp, ddisp, &
-                            unique_count, maplist, master_idxs, Sigma_node, nacc_node)
+                            maplist, Sigma_node, nacc_node)
         do g = 1, unique_count
           do a = 1, nnode_s
             nrm = sqrt( nacc_node(g,a,1)**2 + nacc_node(g,a,2)**2 + nacc_node(g,a,3)**2 )
@@ -693,9 +692,8 @@ contains
 
           else if( ctAlgo == kcaALagrange ) then
             id_lagrange = 0
-            lagrange = 0.d0
             call getContactNodalForce_Alag(contact%states(j),contact%master(ctsurf),ndCoord,ndDu,    &
-              mu_n, mu_t, contact%fcoeff,contact%symmetric,lagrange,ctNForce,ctTForce,.true.,contact%smoothing)
+              mu_n, mu_t, contact%fcoeff,contact%symmetric,ctNForce,ctTForce,contact%smoothing)
 
           end if
 

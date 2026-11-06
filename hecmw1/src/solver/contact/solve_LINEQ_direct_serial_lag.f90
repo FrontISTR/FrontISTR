@@ -32,7 +32,6 @@ contains
     type (hecmwST_matrix_lagrange)           :: hecLagMAT        !< type hecmwST_matrix_lagrange
     type (hecmwST_ebc)                       :: hecEBC         !< prescribed displacements imposed after the MPC processing
     integer (kind=4)                         :: ntdf, ilag_sta
-    integer (kind=4)                         :: numNon0
 
     real(kind=8), allocatable               :: b(:)           !< right-hand side vector
     integer(kind=kint) :: mpc_method
@@ -57,13 +56,11 @@ contains
 
     ntdf = hecMAT%NP*hecMAT%NDOF + hecLagMAT%num_lagrange
     ilag_sta = hecMAT%NP*hecMAT%NDOF + 1
-    numNon0 = hecMAT%NPU*hecMAT%NDOF**2+hecMAT%NP*hecMAT%NDOF*(ntdf+1)/2 &
-      + (hecLagMAT%numU_lagrange)*hecMAT%NDOF+hecLagMAT%num_lagrange
 
     allocate(b(size(hecMAT%B)))
     b = hecMAT%B
 
-    call hecmw_solve_direct_serial_lag(ntdf, ilag_sta, numNon0, pointers, indices, values, b)
+    call hecmw_solve_direct_serial_lag(ntdf, ilag_sta, pointers, indices, values, b)
 
     hecMAT%X = b
 

@@ -7,11 +7,11 @@ module m_heat_LIB_CAPACITY
 
 contains
 
-  subroutine heat_GET_coefficient(Tpoi, imat, coef, ntab, temp, funcA, funcB)
+  subroutine heat_GET_coefficient(Tpoi, coef, ntab, temp, funcA, funcB)
     use hecmw
     implicit none
     real(kind=kreal) :: coef(3)
-    integer(kind=kint) :: in, imat, itab, ntab
+    integer(kind=kint) :: in, itab, ntab
     real(kind=kreal) :: Tpoi, temp(ntab), funcA(ntab+1), funcB(ntab+1)
 
     itab = 0
@@ -33,17 +33,15 @@ contains
     coef(3) = coef(1)
   end subroutine heat_GET_coefficient
 
-  subroutine heat_capacity_C1(etype, nn, ecoord, temperature, IMAT, surf, lumped, mass, &
+  subroutine heat_capacity_C1(etype, nn, ecoord, temperature, surf, lumped, &
       ntab1, temp1, funcA1, funcB1, ntab2, temp2, funcA2, funcB2)
     use hecmw
     implicit none
     integer(kind=kint), intent(in) :: etype !< element type
     integer(kind=kint), intent(in) :: nn !< number of elemental nodes
     real(kind=kreal), intent(in) :: temperature(nn) !< temperature
-    real(kind=kreal), intent(out) :: mass(:,:) !< mass matrix
     real(kind=kreal), intent(inout) :: lumped(:) !< mass matrix
     integer(kind=kint), parameter :: ndof = 1
-    integer(kind=kint) :: IMAT
     integer(kind=kint) :: ntab1, ntab2
     real(kind=kreal) :: ecoord(3, nn)
     real(kind=kreal) :: dx, dy, dz, surf, val, temp, length
@@ -62,14 +60,14 @@ contains
     val = surf*length
 
     temp = (temperature(1) + temperature(2))*0.5d0
-    call heat_GET_coefficient(temp, IMAT, SPE, ntab1, temp1, funcA1, funcB1)
-    call heat_GET_coefficient(temp, IMAT, DEN, ntab2, temp2, funcA2, funcB2)
+    call heat_GET_coefficient(temp, SPE, ntab1, temp1, funcA1, funcB1)
+    call heat_GET_coefficient(temp, DEN, ntab2, temp2, funcA2, funcB2)
 
     lumped(1) = val*SPE(1)*DEN(1)*0.5d0
     lumped(2) = val*SPE(1)*DEN(1)*0.5d0
   end subroutine heat_capacity_C1
 
-  subroutine heat_capacity_C2(etype, nn, ecoord, temperature, IMAT, thick, lumped, mass, &
+  subroutine heat_capacity_C2(etype, nn, ecoord, temperature, thick, lumped, mass, &
       ntab1, temp1, funcA1, funcB1, ntab2, temp2, funcA2, funcB2)
     use mMechGauss
     use m_MatMatrix
@@ -82,7 +80,7 @@ contains
     real(kind=kreal), intent(out) :: mass(:,:)              !< mass matrix
     real(kind=kreal), intent(out) :: lumped(:)              !< mass matrix
     real(kind=kreal), intent(in) :: temperature(nn) !< temperature
-    integer(kind=kint) :: i, j, LX, IMAT, ntab1, ntab2
+    integer(kind=kint) :: i, j, LX, ntab1, ntab2
     real(kind=kreal) :: naturalCoord(2)
     real(kind=kreal) :: func(nn), thick, temp
     real(kind=kreal) :: det, wg
@@ -102,8 +100,8 @@ contains
       call getGlobalDeriv(etype, nn, naturalcoord, ecoord, det, gderiv)
 
       temp = dot_product(func, temperature)
-      call heat_GET_coefficient(temp, IMAT, SPE, ntab1, temp1, funcA1, funcB1)
-      call heat_GET_coefficient(temp, IMAT, DEN, ntab2, temp2, funcA2, funcB2)
+      call heat_GET_coefficient(temp, SPE, ntab1, temp1, funcA1, funcB1)
+      call heat_GET_coefficient(temp, DEN, ntab2, temp2, funcA2, funcB2)
 
       D(1,1) = SPE(1)*DEN(1)*thick
       wg = getWeight(etype, LX)*det
@@ -125,7 +123,7 @@ contains
     if(is_lumped) call get_lumped_mass(nn, 1, mass, lumped)
   end subroutine heat_capacity_C2
 
-  subroutine heat_capacity_C3(etype, nn, ecoord, temperature, IMAT, lumped, mass, &
+  subroutine heat_capacity_C3(etype, nn, ecoord, temperature, lumped, mass, &
       ntab1, temp1, funcA1, funcB1, ntab2, temp2, funcA2, funcB2)
     use mMechGauss
     use m_MatMatrix
@@ -138,7 +136,7 @@ contains
     real(kind=kreal), intent(out) :: mass(:,:)              !< mass matrix
     real(kind=kreal), intent(out) :: lumped(:)              !< mass matrix
     real(kind=kreal), intent(in), optional :: temperature(nn) !< temperature
-    integer(kind=kint) :: i, j, LX, IMAT, ntab1, ntab2
+    integer(kind=kint) :: i, j, LX, ntab1, ntab2
     real(kind=kreal) :: naturalCoord(3)
     real(kind=kreal) :: func(nn), temp
     real(kind=kreal) :: det, wg
@@ -158,8 +156,8 @@ contains
       call getGlobalDeriv(etype, nn, naturalcoord, ecoord, det, gderiv)
 
       temp = dot_product(func, temperature)
-      call heat_GET_coefficient(temp, IMAT, SPE, ntab1, temp1, funcA1, funcB1)
-      call heat_GET_coefficient(temp, IMAT, DEN, ntab2, temp2, funcA2, funcB2)
+      call heat_GET_coefficient(temp, SPE, ntab1, temp1, funcA1, funcB1)
+      call heat_GET_coefficient(temp, DEN, ntab2, temp2, funcA2, funcB2)
 
       D = 0.0d0
       D(1,1) = SPE(1)*DEN(1)
@@ -182,7 +180,7 @@ contains
     if(is_lumped) call get_lumped_mass(nn, 1, mass, lumped)
   end subroutine heat_capacity_C3
 
-  subroutine heat_capacity_shell_731(etype, nn, ecoord, temperature, IMAT, thick, lumped, mass, &
+  subroutine heat_capacity_shell_731(nn, ecoord, temperature, thick, lumped, mass, &
       ntab1, temp1, funcA1, funcB1, ntab2, temp2, funcA2, funcB2)
     use mMechGauss
     use m_MatMatrix
@@ -190,13 +188,12 @@ contains
     use m_dynamic_mass
     implicit none
     !type(tGaussStatus), intent(in) :: gausses(:)             !< status of qudrature points
-    integer(kind=kint), intent(in) :: etype                  !< element type
     integer(kind=kint), intent(in) :: nn                     !< number of elemental nodes
     real(kind=kreal), intent(in)  :: ecoord(3,nn)           !< coordinates of elemental nodes
     real(kind=kreal), intent(out) :: mass(:,:)              !< mass matrix
     real(kind=kreal), intent(out) :: lumped(:)              !< mass matrix
     real(kind=kreal), intent(in), optional :: temperature(nn) !< temperature
-    integer(kind=kint) :: i, IMAT, ntab1, ntab2
+    integer(kind=kint) :: i, ntab1, ntab2
     real(kind=kreal) :: surf, thick, temp
     real(kind=kreal) :: SPE(3), DEN(3)
     real(kind=kreal) :: temp1(ntab1), funcA1(ntab1+1), funcB1(ntab1+1)
@@ -210,8 +207,8 @@ contains
 
     do i = 1, nn
       temp = temperature(i)
-      call heat_GET_coefficient(temp, IMAT, SPE, ntab1, temp1, funcA1, funcB1)
-      call heat_GET_coefficient(temp, IMAT, DEN, ntab2, temp2, funcA2, funcB2)
+      call heat_GET_coefficient(temp, SPE, ntab1, temp1, funcA1, funcB1)
+      call heat_GET_coefficient(temp, DEN, ntab2, temp2, funcA2, funcB2)
 
       mass(i,i) = mass(i,i) + surf*thick*SPE(1)*DEN(1)/3.0d0
     enddo
@@ -220,20 +217,19 @@ contains
     if(is_lumped) call get_lumped_mass(nn, 1, mass, lumped)
   end subroutine heat_capacity_shell_731
 
-  subroutine heat_capacity_shell_741(etype, nn, ecoord, temperature, IMAT, thick, lumped, mass, &
+  subroutine heat_capacity_shell_741(nn, ecoord, temperature, thick, lumped, mass, &
       ntab1, temp1, funcA1, funcB1, ntab2, temp2, funcA2, funcB2)
     use mMechGauss
     use m_MatMatrix
     use elementInfo
     implicit none
     !type(tGaussStatus), intent(in) :: gausses(:)             !< status of qudrature points
-    integer(kind=kint), intent(in) :: etype                  !< element type
     integer(kind=kint), intent(in) :: nn                     !< number of elemental nodes
     real(kind=kreal), intent(in)  :: ecoord(3,nn)           !< coordinates of elemental nodes
     real(kind=kreal), intent(out) :: mass(:,:)              !< mass matrix
     real(kind=kreal), intent(out) :: lumped(:)              !< mass matrix
     real(kind=kreal), intent(in), optional :: temperature(nn) !< temperature
-    integer(kind=kint) :: i, LX, LY, IMAT, ntab1, ntab2
+    integer(kind=kint) :: i, LX, LY, ntab1, ntab2
     real(kind=kreal) :: thick, temp
     real(kind=kreal) :: det
     real(kind=kreal) :: SPE(3), DEN(3)
@@ -297,8 +293,8 @@ contains
         do i = 1, 4
           temp = temp + temperature(i)*H(i)
         enddo
-        call heat_GET_coefficient(temp, IMAT, SPE, ntab1, temp1, funcA1, funcB1)
-        call heat_GET_coefficient(temp, IMAT, DEN, ntab2, temp2, funcA2, funcB2)
+        call heat_GET_coefficient(temp, SPE, ntab1, temp1, funcA1, funcB1)
+        call heat_GET_coefficient(temp, DEN, ntab2, temp2, funcA2, funcB2)
 
         do i = 1, 4
           mass(i,i) = mass(i,i) + SPE(1)*DEN(1)*H(i)*det*thick

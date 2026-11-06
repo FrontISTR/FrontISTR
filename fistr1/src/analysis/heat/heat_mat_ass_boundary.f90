@@ -24,25 +24,23 @@ contains
     type(hecmwST_local_mesh) :: hecMESH
     type(hecmwST_local_mesh), pointer :: hecMESHmpc
     type(hecmwST_ebc) :: hecEBC
-    real(kind=kreal) :: next_time, delta_time, beta
-
-    beta = fstrHEAT%beta
+    real(kind=kreal) :: next_time, delta_time
 
     !> !CFLUX
-    call heat_mat_ass_bc_CFLUX(hecMAT, fstrHEAT, next_time, delta_time, beta)
+    call heat_mat_ass_bc_CFLUX(hecMAT, fstrHEAT, next_time)
 
     !> !DFLUX
-    call heat_mat_ass_bc_DFLUX(hecMESH, hecMAT, fstrSOLID, fstrHEAT, next_time, delta_time, beta)
+    call heat_mat_ass_bc_DFLUX(hecMESH, hecMAT, fstrSOLID, fstrHEAT, next_time, delta_time)
 
     !> !FILM
-    call heat_mat_ass_bc_FILM(hecMESH, hecMAT, fstrSOLID, fstrHEAT, next_time, delta_time, beta)
+    call heat_mat_ass_bc_FILM(hecMESH, hecMAT, fstrSOLID, fstrHEAT, next_time)
 
     !> !RADIATE
-    call heat_mat_ass_bc_RADIATE(hecMESH, hecMAT, fstrHEAT, next_time, delta_time, beta)
+    call heat_mat_ass_bc_RADIATE(hecMESH, hecMAT, fstrHEAT, next_time)
 
     !> !BOUNDARY
     call hecmw_ebc_init(hecMAT, hecEBC)
-    call heat_mat_ass_bc_FIXT(hecMAT, hecEBC, fstrHEAT, next_time, delta_time, beta)
+    call heat_mat_ass_bc_FIXT(hecMAT, hecEBC, fstrHEAT, next_time)
 
     !> MPC
     call hecmw_mpc_mat_ass(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)

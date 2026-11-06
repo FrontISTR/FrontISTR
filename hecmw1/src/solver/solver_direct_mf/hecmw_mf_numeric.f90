@@ -2028,7 +2028,7 @@ contains
       if (.not. allocated(fct%sn(c0)%cval)) return
       do dst = map%rbeg(s), map%rbeg(s) + map%rcnt(s) - 1
         if (dst == me) cycle
-        call ea_count(c0, me, dst, nlo, nup)
+        call ea_count(me, dst, nlo, nup)
         if (nlo == 0) cycle
         ib = mf_pool_slot(pool)
         allocate(pool%box(ib)%rv(nlo + nup))
@@ -2060,22 +2060,22 @@ contains
       enddo
       do is0 = 1, nsrc
         src = srcs(is0)
-        call ea_count(c0, src, me, nlo, nup)
+        call ea_count(src, me, nlo, nup)
         if (nlo == 0) cycle
         if (src == me) then
           call ea_apply_local(c0)
         else
           allocate(rb(nlo + nup))
           call hecmw_recv_r(rb, nlo + nup, src, 16*c0+2, map%comm, stat)
-          call ea_apply(c0, src, rb, nlo)
+          call ea_apply(src, rb, nlo)
           deallocate(rb)
         endif
       enddo
     end subroutine ea_recv_apply
 
     !> entries of child c0 held by src and destined to dst
-    subroutine ea_count(c0, src, dst, nlo, nup)
-      integer(kind=kint), intent(in) :: c0, src, dst
+    subroutine ea_count(src, dst, nlo, nup)
+      integer(kind=kint), intent(in) :: src, dst
       integer(kind=kint), intent(out) :: nlo, nup
       integer(kind=kint) :: jj0, ii0, cc, rr, hr
 
@@ -2104,7 +2104,7 @@ contains
       integer(kind=kint) :: jj0, ii0, cc, rr, hr, hh, il, iu
       integer(kind=8) :: sb, halfc, off
 
-      halfc = ea_src_words(c0, src)
+      halfc = ea_src_words(src)
       il = 0
       iu = 0
       sb = 0
@@ -2131,8 +2131,8 @@ contains
     end subroutine ea_pack
 
     !> apply the received slice of child c0 from src into what I hold
-    subroutine ea_apply(c0, src, buf, nlo)
-      integer(kind=kint), intent(in) :: c0, src, nlo
+    subroutine ea_apply(src, buf, nlo)
+      integer(kind=kint), intent(in) :: src, nlo
       real(kind=kreal), intent(in) :: buf(:)
       integer(kind=kint) :: jj0, ii0, cc, rr, hr, il, iu
 
@@ -2163,7 +2163,7 @@ contains
       integer(kind=kint) :: jj0, ii0, cc, rr, hr, hh
       integer(kind=8) :: sb, halfc, off
 
-      halfc = ea_src_words(c0, me)
+      halfc = ea_src_words(me)
       sb = 0
       do jj0 = 1, cnb
         do ii0 = jj0, cnb
@@ -2184,8 +2184,8 @@ contains
     end subroutine ea_apply_local
 
     !> words of one face of the blocks of child c0 held by src
-    function ea_src_words(c0, src) result(ww)
-      integer(kind=kint), intent(in) :: c0, src
+    function ea_src_words(src) result(ww)
+      integer(kind=kint), intent(in) :: src
       integer(kind=8) :: ww
       integer(kind=kint) :: jj0, ii0
 
@@ -2762,7 +2762,7 @@ contains
         ww = pmsg_words(kk, me, w)
         if (ww > 0) then
           call mf_grow_r(swb, ww)
-          call ppack_rows(kk, w, swb)
+          call ppack_rows(w, swb)
           call masterside(kk, w, me, swb, .true.)
         endif
         do ic2 = 1, npl
@@ -2842,7 +2842,7 @@ contains
         if (ww > 0) then
           ib = mf_pool_slot(pool)
           allocate(pool%box(ib)%rv(ww))
-          call ppack_rows(kk, w, pool%box(ib)%rv)
+          call ppack_rows(w, pool%box(ib)%rv)
           req = 0
           call hecmw_isend_r(pool%box(ib)%rv, int(ww, kind=kint), master, 16*s+5, map%comm, req)
           call mf_pool_req(pool, req)
@@ -2886,14 +2886,14 @@ contains
           if (ww > 0) then
             call mf_grow_r(swb, ww)
             call masterside(kk, np, me, swb, .false.)
-            call punpack_rows(kk, np, swb)
+            call punpack_rows(np, swb)
           endif
         else
           ww = pmsg_words(kk, me, np)
           if (ww > 0) then
             allocate(rw(ww))
             call hecmw_recv_r(rw, int(ww, kind=kint), master, 16*s+4, map%comm, stat)
-            call punpack_rows(kk, np, rw)
+            call punpack_rows(np, rw)
             deallocate(rw)
           endif
         endif
@@ -2933,30 +2933,30 @@ contains
 
     !> my panel rows into buf: per column the diagonal tile rows (from the diagonal
     !> down), my column tile rows and my band rows, the lower face then the upper (LU)
-    subroutine ppack_rows(kk, nc0, buf)
-      integer(kind=kint), intent(in) :: kk, nc0
+    subroutine ppack_rows(nc0, buf)
+      integer(kind=kint), intent(in) :: nc0
       real(kind=kreal), intent(inout) :: buf(:)
       integer(kind=8) :: ox
 
       ox = 0
-      call pface_rows(kk, nc0, pv, pfs, pband, buf, ox, .true., .false.)
-      if (fct%lu) call pface_rows(kk, nc0, pvu, pfsu, pbandu, buf, ox, .true., .true.)
+      call pface_rows(nc0, pv, pfs, pband, buf, ox, .true., .false.)
+      if (fct%lu) call pface_rows(nc0, pvu, pfsu, pbandu, buf, ox, .true., .true.)
     end subroutine ppack_rows
 
     !> buf into my panel rows (the reverse of ppack_rows)
-    subroutine punpack_rows(kk, nc0, buf)
-      integer(kind=kint), intent(in) :: kk, nc0
+    subroutine punpack_rows(nc0, buf)
+      integer(kind=kint), intent(in) :: nc0
       real(kind=kreal), intent(inout) :: buf(:)
       integer(kind=8) :: ox
 
       ox = 0
-      call pface_rows(kk, nc0, pv, pfs, pband, buf, ox, .false., .false.)
-      if (fct%lu) call pface_rows(kk, nc0, pvu, pfsu, pbandu, buf, ox, .false., .true.)
+      call pface_rows(nc0, pv, pfs, pband, buf, ox, .false., .false.)
+      if (fct%lu) call pface_rows(nc0, pvu, pfsu, pbandu, buf, ox, .false., .true.)
     end subroutine punpack_rows
 
     !> one face of my panel rows moved between the panel buffers and buf
-    subroutine pface_rows(kk, nc0, pva, pfsa, pbda, buf, ox, topack, uface)
-      integer(kind=kint), intent(in) :: kk, nc0
+    subroutine pface_rows(nc0, pva, pfsa, pbda, buf, ox, topack, uface)
+      integer(kind=kint), intent(in) :: nc0
       real(kind=kreal), intent(inout) :: pva(:), pfsa(:), pbda(:), buf(:)
       integer(kind=8), intent(inout) :: ox
       logical, intent(in) :: topack, uface
@@ -6587,8 +6587,8 @@ contains
 
     !> receive and add the forward contributions of child c0 (my own part straight from
     !> the local dval), the fully summed destinations through the permuted position map
-    subroutine dv_apply(s0, c0)
-      integer(kind=kint), intent(in) :: s0, c0
+    subroutine dv_apply(c0)
+      integer(kind=kint), intent(in) :: c0
       real(kind=kreal), allocatable :: rb(:)
       integer(kind=kint) :: is0, src, nsl, il, rr, nsrc
       integer(kind=kint) :: srcs(cnrow0 + 1)
@@ -6689,7 +6689,7 @@ contains
           if (fct%clist(j) == c) jc = j - fct%cptr(s0) + 1
         enddo
         call crows_setup(s0, c, jc)
-        call dv_apply(s0, c)
+        call dv_apply(c)
         c = fct%cnext(c)
       enddo
       partic = ismaster .or. hasband .or. myfst > 0
