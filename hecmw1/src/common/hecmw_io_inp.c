@@ -3915,13 +3915,13 @@ static int read_boundary_keyword(void) {
   /* *BOUNDARY */
   token = HECMW_inplex_next_token();
   if (token != HECMW_INPLEX_H_BOUNDARY) {
-    set_err_token(token, HECMW_IO_INP_E1500, "*BOUNDARY required");
+    set_err_token(token, HECMW_IO_INP_E2600, "*BOUNDARY required");
     return -1;
   }
   token = HECMW_inplex_next_token();
   if (token == ',') token = HECMW_inplex_skip_line();
   if (token != HECMW_INPLEX_NL) {
-    set_err_token(token, HECMW_IO_INP_E1700,
+    set_err_token(token, HECMW_IO_INP_E2600,
                   "',' or NL required after *BOUNDARY");
     return -1;
   }
@@ -3934,7 +3934,7 @@ static int read_boundary_keyword(void) {
   return 0;
 }
 
-static int read_boundary_data(int *nnode, int **node_array) {
+static int read_boundary_data(int *nnode, int **node_array, int msgno) {
   int i, n, *node, token;
   int isSuggest, isNode;
   struct hecmw_io_id *head, *prev, *p, *q;
@@ -4001,8 +4001,7 @@ static int read_boundary_data(int *nnode, int **node_array) {
     /* ',' or NL */
     token = HECMW_inplex_next_token();
     if (token != ',' && token != HECMW_INPLEX_NL) {
-      set_err_token(token, HECMW_IO_INP_E1500,
-                    "',' or NL required after node ID");
+      set_err_token(token, msgno, "',' or NL required after node ID");
       goto error;
     }
     if (token == HECMW_INPLEX_NL) break;
@@ -4061,7 +4060,7 @@ static int read_boundary(void) {
       int *node;
 
       HECMW_assert(flag_boundary);
-      if (read_boundary_data(&n, &node)) return -1;
+      if (read_boundary_data(&n, &node, HECMW_IO_INP_E2600)) return -1;
 
       if (n > 0) {
         isNodeInput = 1;
@@ -4097,16 +4096,16 @@ static int read_boundary(void) {
 static int read_cload_keyword(void) {
   int token;
 
-  /* *BOUNDARY */
+  /* *CLOAD */
   token = HECMW_inplex_next_token();
   if (token != HECMW_INPLEX_H_CLOAD) {
-    set_err_token(token, HECMW_IO_INP_E1500, "*CLOAD required");
+    set_err_token(token, HECMW_IO_INP_E2700, "*CLOAD required");
     return -1;
   }
   token = HECMW_inplex_next_token();
   if (token == ',') token = HECMW_inplex_skip_line();
   if (token != HECMW_INPLEX_NL) {
-    set_err_token(token, HECMW_IO_INP_E1700,
+    set_err_token(token, HECMW_IO_INP_E2700,
                   "',' or NL required after *CLOAD");
     return -1;
   }
@@ -4136,7 +4135,7 @@ static int read_cload(void) {
       int n, *node;
 
       HECMW_assert(flag_cload);
-      if (read_boundary_data(&n, &node)) return -1;
+      if (read_boundary_data(&n, &node, HECMW_IO_INP_E2700)) return -1;
 
       /* add node to group */
       if (n != 0) {
@@ -4175,13 +4174,13 @@ static int read_dload_keyword(void) {
   /* *DLOAD */
   token = HECMW_inplex_next_token();
   if (token != HECMW_INPLEX_H_DLOAD) {
-    set_err_token(token, HECMW_IO_INP_E1500, "*DLOAD required");
+    set_err_token(token, HECMW_IO_INP_E2800, "*DLOAD required");
     return -1;
   }
   token = HECMW_inplex_next_token();
   if (token == ',') token = HECMW_inplex_skip_line();
   if (token != HECMW_INPLEX_NL) {
-    set_err_token(token, HECMW_IO_INP_E1700,
+    set_err_token(token, HECMW_IO_INP_E2800,
                   "',' or NL required after *DLOAD");
     return -1;
   }
@@ -4211,7 +4210,7 @@ static int read_dload(void) {
       int n, *elem;
 
       HECMW_assert(flag_dload);
-      if (read_boundary_data(&n, &elem)) return -1;
+      if (read_boundary_data(&n, &elem, HECMW_IO_INP_E2800)) return -1;
 
       if (n != 0) {
         isDload = 1;

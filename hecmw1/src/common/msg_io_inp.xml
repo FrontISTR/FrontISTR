@@ -302,6 +302,18 @@
 			<message>*CONDUCTIVITY: Invalid token</message>
 			<description>*CONDUCTIVITY読み込み中に予期しないトークンを検出した</description>
 		</define>
+		<define type="error" name="E2600">
+			<message>*BOUNDARY: Invalid token</message>
+			<description>*BOUNDARY読み込み中に予期しないトークンを検出した</description>
+		</define>
+		<define type="error" name="E2700">
+			<message>*CLOAD: Invalid token</message>
+			<description>*CLOAD読み込み中に予期しないトークンを検出した</description>
+		</define>
+		<define type="error" name="E2800">
+			<message>*DLOAD: Invalid token</message>
+			<description>*DLOAD読み込み中に予期しないトークンを検出した</description>
+		</define>
 	</table>
 </msg-table>
 
