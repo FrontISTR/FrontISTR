@@ -391,7 +391,7 @@ static int read_mat_data_common(int nval, int nval_line, int temp_col,
   }
 
   item->item    = -1; /* I don't know */
-  item->nval    = nval;
+  item->nval    = temp_col - 1; /* the columns before the temperature */
   item->subitem = NULL;
 
   while (1) {
