@@ -260,6 +260,28 @@ static void order_structural_mat_data(void) {
   }
 }
 
+/* heat_init_material takes items 1, 2 and 3 as *DENSITY, *SPECIFIC HEAT and
+ * *CONDUCTIVITY */
+static void order_thermal_mat_data(void) {
+  static const int to_head[] = {HECMW_INPLEX_H_SPECIFIC_HEAT,
+                                HECMW_INPLEX_H_DENSITY};
+  struct material_data *p, *q, *prev;
+  int i;
+
+  for (i = 0; i < sizeof(to_head) / sizeof(to_head[0]); i++) {
+    for (prev = NULL, p = matdata; p; p = q) {
+      q = p->next;
+      if (p->keyword == to_head[i] && prev) {
+        prev->next = q;
+        p->next    = matdata;
+        matdata    = p;
+      } else {
+        prev = p;
+      }
+    }
+  }
+}
+
 static int regist_material(void) {
   int i, n;
   struct hecmw_io_material *mat = NULL;
@@ -282,7 +304,11 @@ static int regist_material(void) {
     return 0;
   }
 
-  if (has_mat_data(HECMW_INPLEX_H_ELASTIC)) order_structural_mat_data();
+  if (has_mat_data(HECMW_INPLEX_H_ELASTIC)) {
+    order_structural_mat_data();
+  } else {
+    order_thermal_mat_data();
+  }
   n = count_mat_item();
 
   mat = HECMW_calloc(1, sizeof(*mat) * n);

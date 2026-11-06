@@ -1,0 +1,16 @@
+# Steady heat conduction through a bar of two materials in series with
+# L1 = L2 = 1 and k1 = 50, k2 = 10, held at T = 0 at the bottom and T = 100 at
+# the top. The cards of each material are written in an order other than
+# *DENSITY, *SPECIFIC HEAT, *CONDUCTIVITY, and one card has a temperature
+# column. The interface at z = 1 is at T = 100*k2/(k1 + k2) = 16.667.
+!VERSION
+ 3
+!SOLUTION, TYPE=HEAT
+!FIXTEMP
+ BOTTOM, 0.0
+ TOP, 100.0
+!SOLVER, METHOD=CG, PRECOND=1, ITERLOG=NO, TIMELOG=NO
+ 10000, 1
+ 1.0e-10, 1.0, 0.0
+!WRITE, RESULT
+!END
