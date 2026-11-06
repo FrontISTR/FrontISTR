@@ -13,16 +13,22 @@
 !! threshold pivoting (inertia reported like the other backends) and a
 !! non-symmetric one (friction contact) LU.  A numeric-only refresh re-factors
 !! the new values on the retained symbolic structure.
+!!
+!! All HEC-MW and DIRECTmf code is guarded by HECMW_SAAMG_STANDALONE, which only the
+!! stand-alone core build of the unit tests (tests/unit/saamg, no libhecmw) defines;
+!! there this module compiles to stubs that abort, so that build cannot select it.
 module hecmw_precond_SAAMG_coarse_mf
   use hecmw_precond_SAAMG_util
   use hecmw_precond_SAAMG_matrix
   use hecmw_precond_SAAMG_comm, only: hecmw_saamg_abort, hecmw_saamg_check_alloc
+#ifndef HECMW_SAAMG_STANDALONE
   use hecmw_util,        only: hecmwST_matrix
   use hecmw_ordering,    only: hecmw_ordering_gen
   use hecmw_mf_graph,    only: hecmwST_mf_graph, hecmw_mf_graph_from_hecmat, hecmw_mf_graph_finalize
   use hecmw_mf_symbolic, only: hecmwST_mf_symbolic, hecmw_mf_symbolic_build, hecmw_mf_symbolic_finalize
   use hecmw_mf_numeric,  only: hecmwST_mf_factor, hecmw_mf_numeric_init, hecmw_mf_numeric_factor, &
        hecmw_mf_numeric_solve, hecmw_mf_numeric_finalize
+#endif
   implicit none
 
   private
@@ -32,10 +38,12 @@ module hecmw_precond_SAAMG_coarse_mf
   public :: hecmw_saamg_cmf_solve
   public :: hecmw_saamg_cmf_free
 
+#ifndef HECMW_SAAMG_STANDALONE
   !> DIRECTmf driver defaults, mirrored here because this backend calls the
   !! factorization API directly (there is no solver option line on this path)
   integer(kind=kint), parameter :: CMF_RELAX_COLS = 16  !< relaxed amalgamation target in DOFs
   integer(kind=kint), parameter :: CMF_TILE = 256       !< factor tile size in DOFs
+#endif
 
   !> Redundant sparse DIRECTmf coarsest solver state: the gathered coarse operator
   !! as a synthetic NDOF=m block matrix plus the persistent symbolic structure and
@@ -45,9 +53,11 @@ module hecmw_precond_SAAMG_coarse_mf
     logical            :: symmetric = .true.  !< .true. = LDL^T (threshold pivoting), .false. = LU
     integer(kind=kint) :: n = 0
     integer(kind=kint) :: n_neg = 0           !< # negative eigenvalues (inertia; LDL^T only)
+#ifndef HECMW_SAAMG_STANDALONE
     type(hecmwST_matrix)      :: mat          !< pointers defined only while ready
     type(hecmwST_mf_symbolic) :: symb
     type(hecmwST_mf_factor)   :: fct
+#endif
   end type hecmwST_saamg_cmf
 
 contains
@@ -60,6 +70,7 @@ contains
     type(hecmwST_saamg_bcsr), intent(in)    :: Ac
     logical,                  intent(in)    :: symmetric
     type(hecmwST_saamg_cmf),  intent(inout) :: cmf
+#ifndef HECMW_SAAMG_STANDALONE
     logical :: ok
 
     call hecmw_saamg_cmf_free(cmf)
@@ -71,6 +82,9 @@ contains
     call cmf_fill_values(Ac, cmf%mat, ok)   ! ok guaranteed: the pattern was built from this Ac
     call cmf_analyze(cmf)
     call cmf_factor(cmf)
+#else
+    call cmf_unavailable()
+#endif
   end subroutine hecmw_saamg_cmf_setup
 
   !> Numeric refresh: reload the values of the re-gathered operator into the stored
@@ -82,6 +96,7 @@ contains
     implicit none
     type(hecmwST_saamg_bcsr), intent(in)    :: Ac
     type(hecmwST_saamg_cmf),  intent(inout) :: cmf
+#ifndef HECMW_SAAMG_STANDALONE
     logical :: ok
 
     call cmf_fill_values(Ac, cmf%mat, ok)
@@ -90,6 +105,9 @@ contains
       return
     end if
     call cmf_factor(cmf)
+#else
+    call cmf_unavailable()
+#endif
   end subroutine hecmw_saamg_cmf_refresh
 
   !> Solve  Ac x = b  with the stored factor (plain-array interface, every rank
@@ -100,13 +118,18 @@ contains
     real(kind=kreal),        intent(in)    :: b(:)
     real(kind=kreal),        intent(out)   :: x(:)
 
+#ifndef HECMW_SAAMG_STANDALONE
     call hecmw_mf_numeric_solve(cmf%symb, cmf%fct, b, x)
+#else
+    call cmf_unavailable()
+#endif
   end subroutine hecmw_saamg_cmf_solve
 
   subroutine hecmw_saamg_cmf_free(cmf)
     implicit none
     type(hecmwST_saamg_cmf), intent(inout) :: cmf
 
+#ifndef HECMW_SAAMG_STANDALONE
     call hecmw_mf_numeric_finalize(cmf%fct)
     call hecmw_mf_symbolic_finalize(cmf%symb)
     ! hecmwST_matrix components are pointers with no default initialization, so they
@@ -115,9 +138,11 @@ contains
       deallocate(cmf%mat%D, cmf%mat%AL, cmf%mat%AU)
       deallocate(cmf%mat%indexL, cmf%mat%indexU, cmf%mat%itemL, cmf%mat%itemU)
     end if
+#endif
     cmf%ready = .false.; cmf%n = 0; cmf%n_neg = 0
   end subroutine hecmw_saamg_cmf_free
 
+#ifndef HECMW_SAAMG_STANDALONE
   !> Build the block-CSR pattern of the synthetic matrix from Ac's block pattern,
   !! SYMMETRIZED as the union of (i,j) and (j,i): the gather drops numerically zero
   !! entries, so one triangle of a block pair can be missing from Ac, while the
@@ -335,5 +360,10 @@ contains
       cmf%n_neg = cmf%fct%n_neg
     end if
   end subroutine cmf_factor
+#else
+  subroutine cmf_unavailable()
+    call hecmw_saamg_abort('DIRECTmf coarsest requested but not compiled (HECMW_SAAMG_STANDALONE)')
+  end subroutine cmf_unavailable
+#endif
 
 end module hecmw_precond_SAAMG_coarse_mf
