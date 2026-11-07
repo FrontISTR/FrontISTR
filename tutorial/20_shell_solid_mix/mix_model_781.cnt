@@ -10,7 +10,9 @@
  10000, 1
  1.0e-8, 1.0, 0.0
 !WRITE,RESULT
-!OUTPUT_VIS
- BIN_VTK
 !WRITE,VISUAL
+!VISUAL,method=PSR
+!surface_num=1
+!surface 1
+!output_type=BIN_VTK
 !END
