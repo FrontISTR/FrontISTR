@@ -1,0 +1,15 @@
+# analysis/eigen/section_thickness/K741TH2 written in inp: two cantilever plates
+# of different thickness share one material, and the eigenvalues equal those of
+# K741TH2.
+# The temperature column of *ELASTIC is not a material value, so it must not
+# be read as the thickness of the mass matrix.
+!SOLUTION, TYPE=EIGEN
+!EIGEN
+ 6, 1.0E-8, 60
+!BOUNDARY
+ FIX, 1, 6, 0.0
+!SOLVER, METHOD=CG, PRECOND=3, ITERLOG=NO, TIMELOG=NO
+ 10000, 1
+ 1.0e-8, 1.0, 0.0
+!WRITE, RESULT
+!END

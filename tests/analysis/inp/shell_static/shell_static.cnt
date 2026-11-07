@@ -1,0 +1,15 @@
+# analysis/static/exA/A741 written in inp: a cantilever plate of S4R elements,
+# whose results equal those of A741. The temperature column of *ELASTIC and
+# *DENSITY is not a material value, so it must not be read as the drilling
+# stiffness ratio.
+!BOUNDARY
+ FIX, 1, 6, 0.0
+!CLOAD
+ CL1, 3, -0.25
+ CL2, 3, -0.50
+ CL3, 3, -0.25
+!SOLVER, METHOD=CG, PRECOND=3, ITERLOG=NO, TIMELOG=NO
+ 10000, 1
+ 1.0e-8, 1.0, 0.0
+!WRITE, RESULT
+!END

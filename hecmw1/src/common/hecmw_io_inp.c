@@ -88,6 +88,21 @@ static void log_warn(int msgno, const char *fmt, ...) {
 
 /*----------------------------------------------------------------------------*/
 
+/* returns 0 at EOF */
+static int skip_to_next_keyword(void) {
+  int token;
+  char *p;
+
+  while ((token = HECMW_inplex_next_token())) {
+    p = HECMW_inplex_get_text();
+    if (p[0] == '*') break;
+  }
+  if (token) HECMW_inplex_unput_token(); /* unput *XXXX */
+  return token;
+}
+
+/*----------------------------------------------------------------------------*/
+
 typedef struct { int i; } Integer;
 
 static struct hecmw_map_int *elem_secopt;
@@ -148,6 +163,17 @@ static int is_material_zone(void) { return flag_material_zone; }
 
 static void set_material_zone(int flag) { flag_material_zone = flag ? 1 : 0; }
 
+static void free_mat_item(struct hecmw_io_matitem *item) {
+  struct hecmw_io_matsubitem *p, *q;
+
+  for (p = item->subitem; p; p = q) {
+    q = p->next;
+    HECMW_free(p->val);
+    HECMW_free(p);
+  }
+  HECMW_free(item);
+}
+
 static int add_mat_data(int keyword, struct hecmw_io_matitem *matitem) {
   int i;
   struct material_data *p, *q, *mdata;
@@ -156,16 +182,10 @@ static int add_mat_data(int keyword, struct hecmw_io_matitem *matitem) {
     if (p->keyword == keyword) break;
   }
   if (p) {
-    struct hecmw_io_matsubitem *sip, *siq;
     struct hecmw_io_matitem *item = p->matitem;
     p->matitem                    = matitem; /* update */
     matitem->item                 = item->item;
-    for (sip = item->subitem; sip; sip = siq) {
-      siq = sip->next;
-      HECMW_free(sip->val);
-      HECMW_free(sip);
-    }
-    HECMW_free(item);
+    free_mat_item(item);
     log_warn(HECMW_IO_INP_W0095, "%s updated for *MATERIAL %s",
              get_material_string(keyword), matname);
     return 0;
@@ -203,13 +223,93 @@ static int count_mat_item(void) {
   return n;
 }
 
+static int has_mat_data(int keyword) {
+  struct material_data *p;
+
+  for (p = matdata; p; p = p->next) {
+    if (p->keyword == keyword) return 1;
+  }
+  return 0;
+}
+
+/* fstr_get_prop takes item 1 as *ELASTIC and item 2 as *DENSITY */
+static void order_structural_mat_data(void) {
+  struct material_data *p, *q, *prev;
+
+  for (prev = NULL, p = matdata; p; p = q) {
+    q = p->next;
+    if (p->keyword == HECMW_INPLEX_H_SPECIFIC_HEAT ||
+        p->keyword == HECMW_INPLEX_H_CONDUCTIVITY) {
+      HECMW_print_msg(HECMW_LOG_WARN, HECMW_IO_INP_W0099,
+                      "%s in *MATERIAL %s with *ELASTIC",
+                      get_material_string(p->keyword), matname);
+      if (prev) {
+        prev->next = q;
+      } else {
+        matdata = q;
+      }
+      free_mat_item(p->matitem);
+      HECMW_free(p);
+    } else if (p->keyword == HECMW_INPLEX_H_ELASTIC && prev) {
+      prev->next = q;
+      p->next    = matdata;
+      matdata    = p;
+    } else {
+      prev = p;
+    }
+  }
+}
+
+/* heat_init_material takes items 1, 2 and 3 as *DENSITY, *SPECIFIC HEAT and
+ * *CONDUCTIVITY */
+static void order_thermal_mat_data(void) {
+  static const int to_head[] = {HECMW_INPLEX_H_SPECIFIC_HEAT,
+                                HECMW_INPLEX_H_DENSITY};
+  struct material_data *p, *q, *prev;
+  int i;
+
+  for (i = 0; i < sizeof(to_head) / sizeof(to_head[0]); i++) {
+    for (prev = NULL, p = matdata; p; p = q) {
+      q = p->next;
+      if (p->keyword == to_head[i] && prev) {
+        prev->next = q;
+        p->next    = matdata;
+        matdata    = p;
+      } else {
+        prev = p;
+      }
+    }
+  }
+}
+
 static int regist_material(void) {
   int i, n;
   struct hecmw_io_material *mat = NULL;
   struct material_data *p, *q;
 
+  if (!has_mat_data(HECMW_INPLEX_H_ELASTIC) &&
+      !has_mat_data(HECMW_INPLEX_H_SPECIFIC_HEAT) &&
+      !has_mat_data(HECMW_INPLEX_H_CONDUCTIVITY)) {
+    HECMW_print_msg(HECMW_LOG_WARN, HECMW_IO_INP_W0099,
+                    "*MATERIAL %s without *ELASTIC, *SPECIFIC HEAT or "
+                    "*CONDUCTIVITY",
+                    matname);
+    for (p = matdata; p; p = q) {
+      q = p->next;
+      free_mat_item(p->matitem);
+      HECMW_free(p);
+    }
+    matname[0] = '\0';
+    matdata    = NULL;
+    return 0;
+  }
+
+  if (has_mat_data(HECMW_INPLEX_H_ELASTIC)) {
+    order_structural_mat_data();
+  } else {
+    order_thermal_mat_data();
+  }
   n = count_mat_item();
-  if (n == 0) return 0;
 
   mat = HECMW_calloc(1, sizeof(*mat) * n);
   if (mat == NULL) {
@@ -229,9 +329,9 @@ static int regist_material(void) {
   }
 
   for (i = 0, p = matdata; p; p = q, i++) {
-    q = p->next;
-    HECMW_assert(p->matitem->item == i + 1);
-    mat->item[i] = *p->matitem;
+    q                = p->next;
+    p->matitem->item = i + 1;
+    mat->item[i]     = *p->matitem;
     HECMW_free(p->matitem);
     HECMW_free(p);
   }
@@ -317,7 +417,7 @@ static int read_mat_data_common(int nval, int nval_line, int temp_col,
   }
 
   item->item    = -1; /* I don't know */
-  item->nval    = nval;
+  item->nval    = temp_col - 1; /* the columns before the temperature */
   item->subitem = NULL;
 
   while (1) {
@@ -1733,8 +1833,10 @@ static int read_initial_param_type(int *type) {
   }
   token = HECMW_inplex_next_token();
   if (token != HECMW_INPLEX_K_TEMPERATURE) {
-    set_err_token(token, HECMW_IO_INP_E1000, "TEMPERATURE required");
-    return -1;
+    log_warn(HECMW_IO_INP_W0099, "*INITIAL CONDITIONS, TYPE=%s",
+             HECMW_inplex_get_text());
+    *type = -1;
+    return 0;
   }
   *type = HECMW_INITIAL_TYPE_TEMPERATURE;
   return 0;
@@ -1836,6 +1938,10 @@ static int read_initial(void) {
       if (token == HECMW_INPLEX_K_TYPE) {
         /* must */
         if (read_initial_param_type(&type)) return -1;
+        if (type == -1) {
+          skip_to_next_keyword();
+          return 0;
+        }
         flag_type = 1;
       } else if (token == HECMW_INPLEX_K_INPUT) {
         /* oprtional */
@@ -3809,13 +3915,14 @@ static int read_boundary_keyword(void) {
   /* *BOUNDARY */
   token = HECMW_inplex_next_token();
   if (token != HECMW_INPLEX_H_BOUNDARY) {
-    set_err_token(token, HECMW_IO_INP_E1500, "*BOUNDARY required");
+    set_err_token(token, HECMW_IO_INP_E2600, "*BOUNDARY required");
     return -1;
   }
   token = HECMW_inplex_next_token();
+  if (token == ',') token = HECMW_inplex_skip_line();
   if (token != HECMW_INPLEX_NL) {
-    set_err_token(token, HECMW_IO_INP_E1700,
-                  "',' is not required after *BOUNDARY SECTION");
+    set_err_token(token, HECMW_IO_INP_E2600,
+                  "',' or NL required after *BOUNDARY");
     return -1;
   }
   /* if(isFirst == 0) { */
@@ -3827,7 +3934,7 @@ static int read_boundary_keyword(void) {
   return 0;
 }
 
-static int read_boundary_data(int *nnode, int **node_array) {
+static int read_boundary_data(int *nnode, int **node_array, int msgno) {
   int i, n, *node, token;
   int isSuggest, isNode;
   struct hecmw_io_id *head, *prev, *p, *q;
@@ -3894,8 +4001,7 @@ static int read_boundary_data(int *nnode, int **node_array) {
     /* ',' or NL */
     token = HECMW_inplex_next_token();
     if (token != ',' && token != HECMW_INPLEX_NL) {
-      set_err_token(token, HECMW_IO_INP_E1500,
-                    "',' or NL required after node ID");
+      set_err_token(token, msgno, "',' or NL required after node ID");
       goto error;
     }
     if (token == HECMW_INPLEX_NL) break;
@@ -3954,7 +4060,7 @@ static int read_boundary(void) {
       int *node;
 
       HECMW_assert(flag_boundary);
-      if (read_boundary_data(&n, &node)) return -1;
+      if (read_boundary_data(&n, &node, HECMW_IO_INP_E2600)) return -1;
 
       if (n > 0) {
         isNodeInput = 1;
@@ -3990,16 +4096,17 @@ static int read_boundary(void) {
 static int read_cload_keyword(void) {
   int token;
 
-  /* *BOUNDARY */
+  /* *CLOAD */
   token = HECMW_inplex_next_token();
   if (token != HECMW_INPLEX_H_CLOAD) {
-    set_err_token(token, HECMW_IO_INP_E1500, "*CLOAD required");
+    set_err_token(token, HECMW_IO_INP_E2700, "*CLOAD required");
     return -1;
   }
   token = HECMW_inplex_next_token();
+  if (token == ',') token = HECMW_inplex_skip_line();
   if (token != HECMW_INPLEX_NL) {
-    set_err_token(token, HECMW_IO_INP_E1700,
-                  "',' is not required after *CLOAD SECTION");
+    set_err_token(token, HECMW_IO_INP_E2700,
+                  "',' or NL required after *CLOAD");
     return -1;
   }
   fprintf(stderr,
@@ -4028,7 +4135,7 @@ static int read_cload(void) {
       int n, *node;
 
       HECMW_assert(flag_cload);
-      if (read_boundary_data(&n, &node)) return -1;
+      if (read_boundary_data(&n, &node, HECMW_IO_INP_E2700)) return -1;
 
       /* add node to group */
       if (n != 0) {
@@ -4041,7 +4148,7 @@ static int read_cload(void) {
 
       /* check next state */
       token = HECMW_inplex_next_token();
-      if (token != HECMW_INPLEX_INT) {
+      if (token != HECMW_INPLEX_INT && token != HECMW_INPLEX_NAME) {
         state = ST_FINISHED;
       } else {
         state = ST_DATA_LINE;
@@ -4067,13 +4174,14 @@ static int read_dload_keyword(void) {
   /* *DLOAD */
   token = HECMW_inplex_next_token();
   if (token != HECMW_INPLEX_H_DLOAD) {
-    set_err_token(token, HECMW_IO_INP_E1500, "*DLOAD required");
+    set_err_token(token, HECMW_IO_INP_E2800, "*DLOAD required");
     return -1;
   }
   token = HECMW_inplex_next_token();
+  if (token == ',') token = HECMW_inplex_skip_line();
   if (token != HECMW_INPLEX_NL) {
-    set_err_token(token, HECMW_IO_INP_E1700,
-                  "',' is not required after *DLOAD SECTION");
+    set_err_token(token, HECMW_IO_INP_E2800,
+                  "',' or NL required after *DLOAD");
     return -1;
   }
   fprintf(stderr,
@@ -4102,7 +4210,7 @@ static int read_dload(void) {
       int n, *elem;
 
       HECMW_assert(flag_dload);
-      if (read_boundary_data(&n, &elem)) return -1;
+      if (read_boundary_data(&n, &elem, HECMW_IO_INP_E2800)) return -1;
 
       if (n != 0) {
         isDload = 1;
@@ -4114,7 +4222,7 @@ static int read_dload(void) {
 
       /* check next state */
       token = HECMW_inplex_next_token();
-      if (token != HECMW_INPLEX_INT) {
+      if (token != HECMW_INPLEX_INT && token != HECMW_INPLEX_NAME) {
         state = ST_FINISHED;
       } else {
         state = ST_DATA_LINE;
@@ -4199,16 +4307,15 @@ static int parse(void) {
         return -1;
       }
       /* skip unsupported keyword */
-      token = HECMW_inplex_next_token();
-      p     = token ? HECMW_inplex_get_text() : "";
-      HECMW_print_msg(HECMW_LOG_WARN, HECMW_IO_INP_W0099, "*%s", p);
-      if (!token) break;
-      while ((token = HECMW_inplex_next_token())) {
-        p = HECMW_inplex_get_text();
-        if (p[0] == '*') break;
+      if (p[1] == '\0') {
+        token = HECMW_inplex_next_token();
+        p     = token ? HECMW_inplex_get_text() : "";
+        HECMW_print_msg(HECMW_LOG_WARN, HECMW_IO_INP_W0099, "*%s", p);
+        if (!token) break;
+      } else {
+        HECMW_print_msg(HECMW_LOG_WARN, HECMW_IO_INP_W0099, "%s", p);
       }
-      if (!token) break;
-      HECMW_inplex_unput_token(); /* unput *XXXX */
+      if (!skip_to_next_keyword()) break;
       continue;
     }
     if (is_material_keyword(token) && !is_material_zone()) {

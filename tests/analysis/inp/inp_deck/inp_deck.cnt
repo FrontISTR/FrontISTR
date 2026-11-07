@@ -1,0 +1,20 @@
+# The mesh is a whole inp deck: besides the mesh it carries output and step
+# keywords, *BOUNDARY/*CLOAD/*DLOAD with parameters and set-name lines,
+# *INITIAL CONDITIONS other than TEMPERATURE, a material with only unsupported
+# keywords, and *CONDUCTIVITY in a structural material, all of which the inp
+# reader must skip. *DENSITY is written before *ELASTIC.
+# With nu=0 the top of the column moves by -rho*g*L^2/(2E) = -1.8335E-04.
+!VERSION
+ 3
+!SOLUTION, TYPE=STATIC
+!BOUNDARY
+ BOTTOM, 3, 3, 0.0
+ XSYM, 1, 1, 0.0
+ YSYM, 2, 2, 0.0
+!DLOAD
+ EALL, GRAV, 9810.0, 0.0, 0.0, -1.0
+!SOLVER, METHOD=CG, PRECOND=1, ITERLOG=NO, TIMELOG=NO
+ 10000, 1
+ 1.0e-10, 1.0, 0.0
+!WRITE, RESULT
+!END
