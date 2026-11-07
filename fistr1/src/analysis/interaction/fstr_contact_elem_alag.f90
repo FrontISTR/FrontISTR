@@ -336,18 +336,17 @@ contains
   !!
   !! Mirrors getIntGap's per-IP loop (same weights, shape functions and direction field) but
   !! accumulates the mortar relative displacement du_rel(IP) = N_s . (slave ddisp) - N_m . (master ddisp).
-  !! The caller passes the maplist/master_idxs/unique_count from getIntGap so the group->IP
+  !! The caller passes the maplist from getIntGap so the group->IP
   !! mapping matches. Each IP slip/normal is distributed to slave node a via shapefunc_s(a),
   !! so the caller can build a per-node frame, Dxi and cone radius. Outputs per group g and node a:
   !!   Sigma_node(g,a,:) = sum_IP N_s(a) * weight * du_rel(IP)   (per-node mortar slip)
   !!   nacc_node(g,a,:)  = sum_IP N_s(a) * weight * direction    (per-node slave normal)
   subroutine getTangentSlip(slave_surf, master, coord, disp, ddisp, &
-     unique_count, maplist, master_idxs, Sigma_node, nacc_node)
+     maplist, Sigma_node, nacc_node)
     type(tContactSurf)  :: slave_surf
     type(tSurfElement) :: master(:)
     real(kind=kreal), intent(in)                :: coord(:), disp(:), ddisp(:)
-    integer(kind=kint), intent(in)              :: unique_count
-    integer(kind=kint), intent(in)              :: maplist(:), master_idxs(:)
+    integer(kind=kint), intent(in)              :: maplist(:)
     real(kind=kreal), intent(out)               :: Sigma_node(:,:,:)  !< (unique_count,nnode_s,3) per-node weighted 3D relative disp
     real(kind=kreal), intent(out)               :: nacc_node(:,:,:)   !< (unique_count,nnode_s,3) per-node weighted slave normal
 
@@ -661,7 +660,7 @@ contains
       active_t = .false.
       allocate(Sigma_node(unique_count,nnode_s,3), nacc_node(unique_count,nnode_s,3))
       call getTangentSlip(slave_surf, master, coord, disp, ddisp, &
-                          unique_count, maplist, master_idxs, Sigma_node, nacc_node)
+                          maplist, Sigma_node, nacc_node)
       do g = 1, unique_count
         nnode_m = size(master(master_idxs(g))%nodes)
         do a = 1, nnode_s
@@ -845,7 +844,7 @@ contains
       active_t = .false.
       allocate(Sigma_node(unique_count,nnode_s,3), nacc_node(unique_count,nnode_s,3))
       call getTangentSlip(slave_surf, master, coord, disp, ddisp, &
-                          unique_count, maplist, master_idxs, Sigma_node, nacc_node)
+                          maplist, Sigma_node, nacc_node)
       do g = 1, unique_count
         nnode_m = size(master(master_idxs(g))%nodes)
         do a = 1, nnode_s
@@ -893,7 +892,7 @@ contains
     deallocate(Snode, Nsnode, gapwnode, lambda_node)
   end subroutine getContactNodalForce_Alag_SurfSurf
 
-  subroutine getContactNodalForce_Alag(ctState,tSurf,ndCoord,ndDu,mu,mut,fcoeff,symm,lagrange,ctNForce,ctTForce,cflag, &
+  subroutine getContactNodalForce_Alag(ctState,tSurf,ndCoord,ndDu,mu,mut,fcoeff,symm,ctNForce,ctTForce, &
       smoothing_type)
 
     use mSurfElement
@@ -904,11 +903,9 @@ contains
     real(kind=kreal), intent(in) :: mu, mut !< penalty parameters
     real(kind=kreal)   :: fcoeff !< friction coefficient
     logical, intent(in) :: symm  !< freeze the friction cone radius at the multiplier
-    real(kind=kreal)   :: lagrange !< not used for ALagrange (kept for interface compatibility)
     real(kind=kreal)   :: ndCoord(:), ndDu(:) !< nodal coordinates (coord+disp+ddisp); nodal displacement increment (ddisp)
     real(kind=kreal)   :: ctNForce(:) !< contact normal force vector
     real(kind=kreal)   :: ctTForce(:) !< contact tangential force vector
-    logical            :: cflag  !< not used for ALagrange (kept for interface compatibility)
     integer(kind=kint), optional, intent(in) :: smoothing_type  !< kcsNONE or kcsNAGATA
 
     real(kind=kreal)   :: normal(3) !< normal vector at target point

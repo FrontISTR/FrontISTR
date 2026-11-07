@@ -8,8 +8,8 @@
 !! coarse levels (which have no mesh) carry their own halo-exchange descriptor.
 !! The halo exchange mirrors hecmw_solver_SR (HECMW_SOLVE_SEND_RECV) but is kept
 !! self-contained (raw MPI guarded by HECMW_SERIAL) so the SA-AMG core stays
-!! FrontISTR-independent and still compiles in the stand-alone gfortran harness
-!! (HECMW_SERIAL -> the exchange is a no-op).
+!! FrontISTR-independent and still compiles in the stand-alone build of the unit
+!! tests (HECMW_SERIAL -> the exchange is a no-op).
 !!
 !! Vector convention: a level vector has length nb*nnode; the internal part is
 !! 1..nb*nint, the halo part nb*nint+1..nb*nnode is filled by comm_update from
@@ -84,8 +84,9 @@ contains
   !> Fatal-error termination with a clear message.  Under MPI this is a COLLECTIVE
   !! abort (hecmw_abort -> MPI_Abort) so a setup failure on one rank tears the job
   !! down cleanly instead of a bare `stop` that leaves the other ranks hanging in
-  !! the next collective.  In the stand-alone (HECMW_SERIAL) harness it is a plain
-  !! stop.  Used by the SA-AMG core in place of bare `stop` on unrecoverable errors.
+  !! the next collective.  Under HECMW_SERIAL (builds without MPI, including the
+  !! unit tests) it is a plain stop.  Used by the SA-AMG core in place of bare
+  !! `stop` on unrecoverable errors.
   subroutine hecmw_saamg_abort(msg)
     character(len=*), intent(in) :: msg
     !$omp critical

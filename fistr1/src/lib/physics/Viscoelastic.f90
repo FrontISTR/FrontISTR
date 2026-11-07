@@ -88,10 +88,9 @@ contains
   !-------------------------------------------------------------------------------
   !> This subroutine calculates tangent moduli for isotropic viscoelastic material
   !-------------------------------------------------------------------------------
-  subroutine calViscoelasticMatrix(matl, sectType, dt, D, temp)
+  subroutine calViscoelasticMatrix(matl, dt, D, temp)
     use m_ElasticLinear
     type( tMaterial ), intent(in) :: matl      !< material properties
-    integer, intent(in)           :: sectType  !< not used currently
     real(kind=kreal), intent(in)  :: dt        !< time increment
     real(kind=kreal), intent(out) :: D(:,:)    !< constitutive relation
     real(kind=kreal), intent(in)  :: temp      !> temperature

@@ -63,12 +63,12 @@ contains
     end do
   end subroutine hecmw_matrix_reorder_profile
 
-  subroutine hecmw_matrix_reorder_values(N, NDOF, perm, iperm, &
+  subroutine hecmw_matrix_reorder_values(N, NDOF, iperm, &
       indexL, indexU, itemL, itemU, AL, AU, D, &
       indexLp, indexUp, itemLp, itemUp, ALp, AUp, Dp)
     implicit none
     integer(kind=kint), intent(in) :: N, NDOF
-    integer(kind=kint), intent(in) :: perm(:), iperm(:)
+    integer(kind=kint), intent(in) :: iperm(:)
     integer(kind=kint), intent(in) :: indexL(0:), indexU(0:)
     integer(kind=kint), intent(in) :: itemL(:), itemU(:)
     real(kind=kreal), intent(in) :: AL(:), AU(:), D(:)

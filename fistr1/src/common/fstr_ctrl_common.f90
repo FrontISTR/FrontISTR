@@ -210,7 +210,7 @@ contains
       ! read the real line at all.
       ! (verbose has no slot here: enable diagnostics via !SOLVER LOGLEVEL>=1.)
       !  line 3 (integers):
-      !    1 coarse_solver (0=auto/1=smoother/2=dense/3=mumps), 2 smoother (0/1=Chebyshev only),
+      !    1 coarse_solver (0=auto/1=smoother/2=dense/3=mumps/4=DIRECTmf), 2 smoother (0/1=Chebyshev only),
       !    3 cycle (0=default(W)/1=V/2=W), 4 max_level,
       !    5 RESERVED (ML CoarsenScheme: ignored with a warning), 6 cheb_deg, 7 coarse_size,
       !    8 max_size, 9 galerkin_lowmem (0=default(2-stage,faster),
@@ -646,11 +646,10 @@ contains
   end function fstr_ctrl_get_CONTACTALGO
 
   !>  Read in contact definition
-  logical function fstr_ctrl_get_CONTACT( ctrl, n, contact, np, tp, ntol, ttol, ctAlgo, cpname, smoothing )
+  logical function fstr_ctrl_get_CONTACT( ctrl, n, contact, np, tp, ntol, ttol, cpname, smoothing )
     use fstr_setup_util
     integer(kind=kint), intent(in)    :: ctrl          !< ctrl file
     integer(kind=kint), intent(in)    :: n             !< number of item defined in this section
-    integer(kind=kint), intent(in)    :: ctAlgo        !< contact algorithm
     type(tContact), intent(out)       :: contact(n)    !< contact definition
     real(kind=kreal), intent(out)      :: np             !< penalty along contact nomral
     real(kind=kreal), intent(out)      :: tp             !< penalty along contact tangent

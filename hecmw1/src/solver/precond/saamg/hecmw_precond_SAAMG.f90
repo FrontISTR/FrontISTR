@@ -107,7 +107,7 @@ contains
     end if
 
     ! structure changed -> full rebuild
-    if (INITIALIZED) call hecmw_precond_SAAMG_clear(hecMAT%NDOF)
+    if (INITIALIZED) call hecmw_precond_SAAMG_clear()
     call saamg_register_mat(hecMAT, hecMESH)     ! register for the fine-level matvec hook (HEC-MW matvec)
 
     ndof = hecMAT%NDOF
@@ -302,10 +302,9 @@ contains
          '#### SA-AMG: wrote finest aggregation to saamg_agg.<rank>.vtk (ParaView)'
   end subroutine dump_agg_vtk
 
-  subroutine hecmw_precond_SAAMG_apply(ZP, NDOF)
+  subroutine hecmw_precond_SAAMG_apply(ZP)
     implicit none
     real(kind=kreal),   intent(inout) :: ZP(:)
-    integer(kind=kint), intent(in)    :: NDOF
     real(kind=kreal), allocatable :: r(:), z(:)
     allocate(r(g_n), z(g_n))
     r(1:g_n) = ZP(1:g_n)
@@ -315,9 +314,8 @@ contains
     deallocate(r, z)
   end subroutine hecmw_precond_SAAMG_apply
 
-  subroutine hecmw_precond_SAAMG_clear(NDOF)
+  subroutine hecmw_precond_SAAMG_clear()
     implicit none
-    integer(kind=kint), intent(in) :: NDOF
     if (INITIALIZED) then
       call hecmw_saamg_free(g_dh)
       call hecmw_saamg_comm_free(g_cmt)

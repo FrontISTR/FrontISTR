@@ -150,8 +150,7 @@ contains
   end subroutine STF_Beam_local
 
   !> Calculate stiff matrix of BEAM elements
-  subroutine STF_Beam(etype,nn,ecoord,section,E,P,STIFF,formulation)
-    integer, intent(in)            :: etype        !< element's type
+  subroutine STF_Beam(nn,ecoord,section,E,P,STIFF,formulation)
     integer, intent(in)            :: nn           !< number of element's nodes
     real(kind=kreal), intent(in)   :: ecoord(3,nn) !< coordinates of elemental nodes
     real(kind=kreal), intent(in)   :: section(:)   !< section parameters
@@ -180,8 +179,7 @@ contains
   end subroutine STF_Beam
 
   !####################################################################
-  subroutine UpdateST_Beam(etype,nn,ecoord,u,du,section,gausses,QF,formulation)
-    integer, intent(in)            :: etype        !< element's type
+  subroutine UpdateST_Beam(nn,ecoord,u,du,section,gausses,QF,formulation)
     integer, intent(in)            :: nn           !< number of element's nodes
     real(kind=kreal), intent(in)   :: ecoord(3,nn) !< coordinates of elemental nodes
     real(kind=kreal), intent(in)   :: u(6,nn)      !< displacement of elemental nodes
@@ -198,7 +196,7 @@ contains
     E = gausses(1)%pMaterial%variables(M_YOUNGS)
     P = gausses(1)%pMaterial%variables(M_POISSON)
 
-    call STF_Beam(etype,nn,ecoord,section,E,P,STIFF,formulation)
+    call STF_Beam(nn,ecoord,section,E,P,STIFF,formulation)
 
     do i=1,nn
       do j=1,6
@@ -226,7 +224,7 @@ contains
 
     ee = gausses(1)%pMaterial%variables(M_YOUNGS)
     pp = gausses(1)%pMaterial%variables(M_POISSON)
-    call STF_Beam(611, 2, ecoord(1:3,1:2), section, ee, pp, natural_stiff, formulation)
+    call STF_Beam(2, ecoord(1:3,1:2), section, ee, pp, natural_stiff, formulation)
 
     do j = 1, 12
       do i = 1, 12
@@ -253,7 +251,7 @@ contains
     beam_u(4:6,1:2) = u(1:3,3:4)
     beam_du(1:3,1:2) = du(1:3,1:2)
     beam_du(4:6,1:2) = du(1:3,3:4)
-    call UpdateST_Beam(611, 2, ecoord(1:3,1:2), beam_u, beam_du, section, &
+    call UpdateST_Beam(2, ecoord(1:3,1:2), beam_u, beam_du, section, &
       gausses, natural_qf, formulation)
 
     do i = 1, 12
@@ -290,9 +288,8 @@ contains
   end subroutine NQM_Beam
 
   !> Calculate NODAL STRESS and STRAIN of 611 beam elements
-  subroutine NodalStress_Beam(etype, nn, ecoord, gausses, section, edisp, ndstrain, ndstress, formulation)
+  subroutine NodalStress_Beam(nn, ecoord, gausses, section, edisp, ndstrain, ndstress, formulation)
     use mMechGauss
-    integer(kind=kint), intent(in)    :: etype           !< element type
     integer(kind=kint), intent(in)    :: nn              !< number of element's nodes
     real(kind=kreal), intent(in)      :: ecoord(3, nn)   !< coordinates of elemental nodes
     type(tGaussStatus), intent(inout) :: gausses(:)      !< status of Gaussian quadrature points
@@ -931,7 +928,7 @@ contains
   ! (Gaku Hashimoto, The University of Tokyo, 2014/02/06) <
   !####################################################################
   subroutine TLOAD_Beam_641 &
-      (etype, nn, ndof, xx, yy, zz, tt, t0, &
+      (nn, ndof, xx, yy, zz, tt, t0, &
       gausses, section, reftemp, vect)
     !####################################################################
 
@@ -942,7 +939,6 @@ contains
 
     !--------------------------------------------------------------------
 
-    integer(kind = kint), intent(in) :: etype
     integer(kind = kint), intent(in) :: nn
     integer(kind = kint), intent(in) :: ndof
     type(tGaussStatus), intent(in)   :: gausses(:)

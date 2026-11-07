@@ -542,6 +542,9 @@ module m_fstr
     real(kind=kreal)   :: gamma         ! Newmark-beta parameter gamma
     real(kind=kreal)   :: beta          ! Newmark-beta parameter beta
 
+    !> HHT parameter
+    real(kind=kreal)   :: alpha         ! HHT parameter alpha
+
     !> mass matrix control
     integer(kind=kint) :: idx_mas       ! kMassLumped or kMassConsistent
 
@@ -569,6 +572,7 @@ module m_fstr
     real(kind=kreal), pointer :: DISP  (:,:)     !> Displacement, U(t+dt), U(t), U(t-dt)
     real(kind=kreal), pointer :: VEL   (:,:)     !> Velocity
     real(kind=kreal), pointer :: ACC   (:,:)     !> Acceleration
+    real(kind=kreal), pointer :: HHT_FORCE(:) => null() !> HHT: force except inertia at t_n
 
     real(kind=kreal) :: kineticEnergy
     real(kind=kreal) :: strainEnergy

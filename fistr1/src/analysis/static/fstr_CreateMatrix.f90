@@ -14,6 +14,7 @@ module m_fstr_CreateMatrix_and_DampingForce
   private
   public :: fstr_CreateMatrix_and_DampingForce
   public :: fstr_calc_kinetic_energy
+  public :: fstr_calc_mass_product
   public :: fstr_report_lumped_mass_fallback
 
   !> element types without a consistent mass formulation; calc_mass_elem returns their lumped mass
@@ -65,7 +66,7 @@ contains
     real(kind=kreal)   :: shell_drill(fstrSOLID%max_ncon)
     real(kind=kreal)   :: vecA(fstrSOLID%max_ncon_stf*6), vecB(fstrSOLID%max_ncon_stf*6)
     real(kind=kreal)   :: acc(fstrSOLID%max_ncon_stf*6), vec(fstrSOLID%max_ncon_stf*6), df(fstrSOLID%max_ncon_stf*6)
-    real(kind=kreal)   :: a1, a2, a3, b1, b2, b3, thick
+    real(kind=kreal)   :: a1, a2, a3, b1, b2, b3, wm, thick
     type(tMaterial), pointer :: material
     logical            :: is_dynamic, use_lumped_mass
 
@@ -74,12 +75,15 @@ contains
     if( is_dynamic ) use_lumped_mass = (fstrDYNAMIC%idx_mas == kMassLumped)
     a1 = 0.0d0; a2 = 0.0d0; a3 = 0.0d0
     b1 = 0.0d0; b2 = 0.0d0; b3 = 0.0d0
+    wm = 1.0d0
 
     call hecmw_mat_clear( hecMAT )
     if( is_dynamic ) then
       fstrSOLID%DFORCE = 0.0d0
       a1 = coef(1); a2 = coef(2); a3 = coef(3)
       b1 = coef(4); b2 = coef(5); b3 = coef(6)
+      ! HHT: the equation of motion is divided by 1+alpha, which leaves only the inertia scaled
+      if( fstrDYNAMIC%idx_eqa == 2 ) wm = 1.0d0/(1.0d0+fstrDYNAMIC%alpha)
     endif
 
     ndof = hecMAT%NDOF
@@ -102,7 +106,7 @@ contains
         !$omp&          material,thick,stiff_mat,mass_mat,damp_mat, &
         !$omp&          lumped,mat,df,vec,acc,vecA,vecB), &
         !$omp&  shared(iS,iE,hecMESH,ndof,fstrSOLID,ic_type,hecMAT,time,tincr,fstrDYNAMIC, &
-        !$omp&         is_dynamic,use_lumped_mass,a1,a2,a3,b1,b2,b3)
+        !$omp&         is_dynamic,use_lumped_mass,a1,a2,a3,b1,b2,b3,wm)
       !$omp do
       do icel = iS, iE
 
@@ -164,7 +168,7 @@ contains
         ! ----- inactive element : assemble dummy stiffness and skip the rest
         if( fstrSOLID%elements(icel)%elemact_flag == kELACT_INACTIVE ) then
           stiff_mat = 0.0d0
-          call STF_DUMMY( ndof, nn, ecoord(:,1:nn), u(1:3,1:nn), &
+          call STF_DUMMY( ndof, nn, ecoord(:,1:nn), &
             &  stiff_mat(1:nn*ndof, 1:nn*ndof), fstrSOLID%elements(icel) )
           call hecmw_mat_ass_elem(hecMAT, nn, nodLOCAL, stiff_mat)
           cycle
@@ -201,7 +205,7 @@ contains
           ! effective dynamic system matrix A = c1*K + c2*M (+ b3*C) and damping force df
           material => fstrSOLID%elements(icel)%gausses(1)%pMaterial
           call calc_damping_mat_and_force_elem( ic_type, nn, ndof, material, fstrDYNAMIC, &
-            a3, b3, vecA, vecB, stiff_mat, mass_mat, damp_mat, mat, df )
+            a3, b3, wm, vecA, vecB, stiff_mat, mass_mat, damp_mat, mat, df )
 
           call hecmw_mat_ass_elem(hecMAT, nn, nodLOCAL, mat)
 
@@ -297,6 +301,78 @@ contains
     kinetic_energy = 0.5d0*kinetic_energy
   end function fstr_calc_kinetic_energy
 
+  !> Recompute each element mass matrix and evaluate M*vec.
+  !! Only rows owned by this rank are computed; the other rows are set to zero.
+  subroutine fstr_calc_mass_product( hecMESH, fstrSOLID, fstrDYNAMIC, vec, mass_vec )
+    use m_elemact
+
+    type(hecmwST_local_mesh), intent(in) :: hecMESH
+    type(fstr_solid), intent(in) :: fstrSOLID
+    type(fstr_dynamic), intent(in) :: fstrDYNAMIC
+    real(kind=kreal), intent(in) :: vec(:)
+    real(kind=kreal), intent(out) :: mass_vec(:)
+
+    integer(kind=kint) :: ndof, itype, iS, iE, ic_type, icel, iiS, nn
+    integer(kind=kint) :: i, j, row, in, nsize
+    integer(kind=kint) :: nodLOCAL(fstrSOLID%max_ncon)
+    real(kind=kreal) :: ecoord(3,fstrSOLID%max_ncon)
+    real(kind=kreal) :: mass_mat(20*6,20*6), lumped(20*6), elem_vec(20*6), prod
+    logical :: use_lumped_mass
+
+    ndof = hecMESH%n_dof
+    use_lumped_mass = (fstrDYNAMIC%idx_mas == kMassLumped)
+    mass_vec(:) = 0.0d0
+
+    do itype = 1, hecMESH%n_elem_type
+      iS = hecMESH%elem_type_index(itype-1) + 1
+      iE = hecMESH%elem_type_index(itype)
+      ic_type = hecMESH%elem_type_item(itype)
+
+      if( hecmw_is_etype_link(ic_type) ) cycle
+      if( hecmw_is_etype_patch(ic_type) ) cycle
+      if( hecmw_is_etype_smoothing(ic_type) ) cycle
+
+      !$omp parallel default(none), &
+        !$omp& private(icel,iiS,nn,i,j,row,in,nsize,nodLOCAL,ecoord,mass_mat,lumped,elem_vec,prod), &
+        !$omp& shared(iS,iE,ic_type,ndof,hecMESH,fstrSOLID,vec,mass_vec,use_lumped_mass)
+      !$omp do
+      do icel = iS, iE
+        iiS = hecMESH%elem_node_index(icel-1)
+        nn = hecMESH%elem_node_index(icel) - iiS
+        if( .not.hecmw_has_internal_node(hecMESH, nn, hecMESH%elem_node_item(iiS+1:iiS+nn)) ) cycle
+        if( fstrSOLID%elements(icel)%elemact_flag == kELACT_INACTIVE ) cycle
+
+        ecoord = 0.0d0
+        elem_vec = 0.0d0
+        do j = 1, nn
+          in = hecMESH%elem_node_item(iiS+j)
+          nodLOCAL(j) = in
+          ecoord(1:3,j) = hecMESH%node(3*(in-1)+1:3*in)
+          elem_vec(ndof*(j-1)+1:ndof*j) = vec(ndof*(in-1)+1:ndof*in)
+        enddo
+
+        mass_mat = 0.0d0
+        lumped = 0.0d0
+        call calc_mass_elem(ic_type, nn, ndof, ecoord, fstrSOLID, hecMESH, icel, &
+          use_lumped_mass, mass_mat, lumped)
+
+        nsize = nn*ndof
+        do j = 1, nn
+          in = nodLOCAL(j)
+          if( in > hecMESH%nn_internal ) cycle
+          do i = 1, ndof
+            row = ndof*(j-1)+i
+            prod = dot_product(mass_mat(row,1:nsize), elem_vec(1:nsize))
+            !$omp atomic
+            mass_vec(ndof*(in-1)+i) = mass_vec(ndof*(in-1)+i) + prod
+          enddo
+        enddo
+      enddo
+      !$omp end do
+      !$omp end parallel
+    enddo
+  end subroutine fstr_calc_mass_product
+
   !> Report the element types that use the lumped mass although the consistent mass is selected.
   !! The element types are gathered from all ranks.
   subroutine fstr_report_lumped_mass_fallback( hecMESH, fstrDYNAMIC )
@@ -378,7 +454,7 @@ contains
         stiff_mat(1:nn*ndof,1:nn*ndof), fstrSOLID%elements(icel)%iset, u(1:2,1:nn) )
 
     elseif( ic_type==301 ) then
-      call STF_C1( ic_type, nn, ecoord(:,1:nn), thick, fstrSOLID%elements(icel)%gausses(:), &
+      call STF_C1( nn, ecoord(:,1:nn), thick, fstrSOLID%elements(icel)%gausses(:), &
         stiff_mat(1:nn*ndof,1:nn*ndof), u(1:3,1:nn) )
 
     elseif( ic_type==361 ) then
@@ -398,7 +474,7 @@ contains
       else if( fstrSOLID%sections(isect)%elemopt361 == kel361UP ) then ! UP (u-p mixed) element
         call STF_C3_up( ic_type, nn, ecoord(:,1:nn), fstrSOLID%elements(icel)%gausses(:), &
           stiff_mat(1:nn*ndof,1:nn*ndof), cdsys_ID, coords, time, tincr, &
-          1, fstrSOLID%elements(icel)%p, u(1:3,1:nn), tt(1:nn) )
+          1, u(1:3,1:nn), tt(1:nn) )
       endif
 
     elseif( ic_type==341 .or. ic_type==351 .or. ic_type==342 .or. ic_type==352 .or. ic_type==362 ) then
@@ -410,15 +486,15 @@ contains
       endif
 
     else if( ic_type == 511 ) then
-      call STF_CONNECTOR( ic_type, nn, ecoord(:,1:nn), fstrSOLID%elements(icel)%gausses(:), &
-        stiff_mat(1:nn*ndof,1:nn*ndof), u(1:3,1:nn), tt(1:nn))
+      call STF_CONNECTOR( nn, ecoord(:,1:nn), fstrSOLID%elements(icel)%gausses(:), &
+        stiff_mat(1:nn*ndof,1:nn*ndof), u(1:3,1:nn))
 
-      if( is_dynamic ) call DMP_CONNECTOR( ic_type, nn, ecoord(:,1:nn), fstrSOLID%elements(icel)%gausses(:), &
-        damp_mat(1:nn*ndof,1:nn*ndof), u(1:3,1:nn), tt(1:nn))
+      if( is_dynamic ) call DMP_CONNECTOR( nn, ecoord(:,1:nn), fstrSOLID%elements(icel)%gausses(:), &
+        damp_mat(1:nn*ndof,1:nn*ndof), u(1:3,1:nn))
 
     else if( ic_type == 611 ) then
       if( material%nlgeom_flag /= INFINITESIMAL ) call CreateMat_abort( ic_type, 2 )
-      call STF_Beam(ic_type, nn, ecoord, hecMESH%section%sect_R_item(ihead+1:), &
+      call STF_Beam(nn, ecoord, hecMESH%section%sect_R_item(ihead+1:), &
         material%variables(M_YOUNGS), material%variables(M_POISSON), stiff_mat(1:nn*ndof,1:nn*ndof), &
         fstrSOLID%sections(isect)%elemopt611)
 
@@ -576,13 +652,14 @@ contains
   !!
   !! Per-material Rayleigh damping (is_elem_Rayleigh_damping) overrides the
   !! global fstrDYNAMIC%ray_{m,k} for the current element.
+  !! wm scales the inertia term only, not the mass-proportional damping.
   subroutine calc_damping_mat_and_force_elem( ic_type, nn, ndof, material, fstrDYNAMIC, &
-      a3, b3, vecA, vecB, stiff_mat, mass_mat, damp_mat, mat, df )
+      a3, b3, wm, vecA, vecB, stiff_mat, mass_mat, damp_mat, mat, df )
   !---------------------------------------------------------------------*
     integer(kind=kint), intent(in) :: ic_type, nn, ndof
     type(tMaterial), pointer, intent(in)    :: material
     type(fstr_dynamic),       intent(in)    :: fstrDYNAMIC
-    real(kind=kreal),         intent(in)    :: a3, b3
+    real(kind=kreal),         intent(in)    :: a3, b3, wm
     real(kind=kreal),         intent(in)    :: vecA(:), vecB(:)
     real(kind=kreal),         intent(in)    :: stiff_mat(:,:), mass_mat(:,:), damp_mat(:,:)
     real(kind=kreal),         intent(out)   :: mat(:,:), df(:)
@@ -601,7 +678,7 @@ contains
 
     ! ----- LHS: A = c1*K + c2*M (+ b3*C for connector)
     c1 = 1.d0 + ray_k*b3
-    c2 = a3   + ray_m*b3
+    c2 = wm*a3 + ray_m*b3
     do i = 1, nn*ndof
       do j = 1, nn*ndof
         mat(j,i) = c1*stiff_mat(j,i) + c2*mass_mat(j,i)
@@ -615,9 +692,9 @@ contains
       enddo
     endif
 
-    ! ----- RHS: df = M*(vecA + ray_m*vecB) + ray_k*K*vecB (+ C*vecB for connector)
+    ! ----- RHS: df = M*(wm*vecA + ray_m*vecB) + ray_k*K*vecB (+ C*vecB for connector)
     do i = 1, nn*ndof
-      vecC(i) = vecA(i) + ray_m*vecB(i)
+      vecC(i) = wm*vecA(i) + ray_m*vecB(i)
     enddo
 
     Kb = 0.0d0

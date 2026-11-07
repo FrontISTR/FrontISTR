@@ -34,10 +34,10 @@ module fstr_dynamic_nlimplicit
 
 contains
 
-  !> \brief This subroutine provides function of nonlinear implicit dynamic analysis using the Newmark method.
+  !> \brief This subroutine provides function of nonlinear implicit dynamic analysis using the Newmark or HHT method.
   !> Standard Lagrange multiplier algorithm for contact analysis is included in this subroutine.
   subroutine FSTR_SOLVE_NLGEOM_DYNAMIC_IMPLICIT_CONTACTSLAG(hecMESH,hecMAT,fstrSOLID,fstrEIG   &
-      ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
+      ,fstrDYNAMIC,fstrPARAM &
       ,fstrCPL,hecLagMAT,restart_step_num,restart_substep_num,infoCTChange  &
       ,conMAT,restart_step_count )
     implicit none
@@ -47,7 +47,6 @@ contains
     type(hecmwST_matrix), pointer        :: hecMAT0
     type(fstr_eigen)                     :: fstrEIG
     type(fstr_solid)                     :: fstrSOLID
-    type(hecmwST_result_data)            :: fstrRESULT ! unused - kept for interface compatibility
     type(fstr_param)                     :: fstrPARAM
     type(fstr_dynamic)                   :: fstrDYNAMIC
     type(fstr_couple)                    :: fstrCPL !for COUPLE
@@ -95,7 +94,7 @@ contains
 
     if( associated( fstrSOLID%contacts ) ) then
       call initialize_contact_output_vectors(fstrSOLID,hecMAT)
-      call setup_contact_elesurf_for_area( 1, hecMESH, fstrSOLID )
+      call setup_contact_elesurf_for_area( hecMESH, fstrSOLID )
     endif
 
     !!-- initial value
@@ -128,26 +127,31 @@ contains
       call dynamic_init_varibles( hecMESH, hecMAT, fstrSOLID, fstrEIG, fstrDYNAMIC, fstrPARAM )
     endif
 
+    !C-- HHT: the force at t_0 is taken to balance the initial acceleration
+    if( fstrDYNAMIC%idx_eqa == 2 .and. restart_step_num == 1 .and. restart_substep_num == 1 ) then
+      call fstr_calc_mass_product( hecMESH, fstrSOLID, fstrDYNAMIC, fstrDYNAMIC%ACC(:,1), fstrDYNAMIC%HHT_FORCE )
+    endif
+
     !C-- output of initial state
     if( restart_step_num == 1 ) then
       fstrDYNAMIC%kineticEnergy = fstr_calc_kinetic_energy( &
         hecMESH, fstrSOLID, fstrDYNAMIC, fstrDYNAMIC%VEL(:,1))
       call fstr_dynamic_Output(1, 0, 0.d0, hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM, .true.)
-      call dynamic_output_monit(1, 0, 0.d0, hecMESH, fstrPARAM, fstrDYNAMIC, fstrEIG, fstrSOLID)
+      call dynamic_output_monit(1, 0, 0.d0, hecMESH, fstrDYNAMIC, fstrEIG, fstrSOLID)
     endif
 
     fstrDYNAMIC%VEC3(:) =0.d0
     hecMAT%X(:) =0.d0
 
     call fstr_save_originalMatrixStructure(hecMAT)
-    call fstr_scan_contact_state(restart_step_num, restart_step_num, 0, fstrDYNAMIC%t_delta, &
+    call fstr_scan_contact_state(restart_step_num, restart_step_num, 0, &
           ctAlgo, hecMESH, fstrSOLID, infoCTChange)
 
     call hecmw_mat_copy_profile( hecMAT, conMAT )
 
     if ( fstr_is_contact_active() ) then
       call fstr_mat_con_contact( restart_step_num, ctAlgo, hecMAT, fstrSOLID, hecLagMAT, &
-          infoCTChange, conMAT, fstr_is_contact_active())
+          conMAT, fstr_is_contact_active())
     elseif( hecMAT%Iarray(99)==4 ) then
       write(*,*) ' This type of direct solver is not yet available in such case ! '
       write(*,*) ' Please change solver type to intel MKL direct solver !'
@@ -160,7 +164,7 @@ contains
     call solve_LINEQ_contact_init(hecMESH,hecMAT,hecLagMAT,is_mat_symmetric)
 
     fstrSOLID%FACTOR = 0.0d0
-    call fstr_cutback_init( hecMESH, fstrSOLID, fstrPARAM )
+    call fstr_cutback_init( hecMESH, fstrSOLID )
     call fstr_cutback_save( fstrSOLID, infoCTChange, infoCTChange_bak )
     
     step_count = restart_step_count
@@ -173,8 +177,7 @@ contains
       do while(.true.)
         if (ndof == 4 .and. hecMESH%my_rank==0) write(*,'(a,i5)')"iter: ",sub_step
         ! ----- time history of factor
-        call fstr_TimeInc_SetTimeIncrement( fstrSOLID%step_ctrl(tot_step), fstrPARAM, sub_step, &
-          &  fstrSOLID%NRstat_i, fstrSOLID%NRstat_r, fstrSOLID%AutoINC_stat, fstrSOLID%CutBack_stat )
+        call fstr_TimeInc_SetTimeIncrement( fstrSOLID%step_ctrl(tot_step), fstrPARAM, sub_step, fstrSOLID )
 
         fstrDYNAMIC%t_curr = fstr_get_time()
         fstrDYNAMIC%t_delta = fstr_get_timeinc()
@@ -185,8 +188,7 @@ contains
 
         ! Time Increment
         if( hecMESH%my_rank == 0 ) call fstr_TimeInc_PrintSTATUS( fstrSOLID%step_ctrl(tot_step), fstrPARAM, &
-          &  tot_step_print, sub_step, fstrSOLID%NRstat_i, fstrSOLID%NRstat_r,   &
-          &  fstrSOLID%AutoINC_stat, fstrSOLID%CutBack_stat )
+          &  tot_step_print, sub_step, fstrSOLID )
         if( fstr_cutback_active() ) then
 
           if( fstrSOLID%CutBack_stat == 0 ) then ! converged
@@ -209,7 +211,7 @@ contains
             ! restore matrix structure for slagrange contact analysis
             if( is_interaction_active ) then
               call fstr_mat_con_contact( tot_step, fstrPARAM%contact_algo, hecMAT, fstrSOLID, hecLagMAT, &
-                &  infoCTChange, conMAT, fstr_is_contact_active())
+                &  conMAT, fstr_is_contact_active())
               conMAT%B(:) = 0.0d0
               call solve_LINEQ_contact_init(hecMESH, hecMAT, hecLagMAT, fstr_is_matrixStruct_symmetric(fstrSOLID, hecMESH))
             endif
@@ -248,7 +250,7 @@ contains
         call fstr_dynamic_Output(tot_step, step_count, fstrDYNAMIC%t_curr, hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM, is_OutPoint)
 
         !C-- output result of monitoring node
-        call dynamic_output_monit(tot_step, sub_step, fstrDYNAMIC%t_curr, hecMESH, fstrPARAM, fstrDYNAMIC, fstrEIG, fstrSOLID)
+        call dynamic_output_monit(tot_step, sub_step, fstrDYNAMIC%t_curr, hecMESH, fstrDYNAMIC, fstrEIG, fstrSOLID)
 
         !---  Restart info
         if( fstrDYNAMIC%restart_nout > 0 ) then
@@ -321,6 +323,7 @@ contains
     integer(kind=kint) :: iter
     real(kind=kreal) :: a1, a2, a3, b1, b2, b3, c1, c2
     real(kind=kreal) :: coef(6)
+    real(kind=kreal) :: hht_prev
     integer(kind=kint) :: count_step, stepcnt
     integer(kind=kint) :: contact_changed_global
     logical :: is_mat_symmetric
@@ -331,6 +334,7 @@ contains
     real(kind=kreal), allocatable :: coord(:)
     integer(kind=kint) :: iterStatus, nresid
     real(kind=kreal), allocatable :: resid_work(:)
+    real(kind=kreal), allocatable :: mass_acc(:)
     type(fstr_convergence_state) :: cnvstat
 
     fstrSOLID%NRstat_i(:) = 0 ! logging newton iteration(init)
@@ -355,6 +359,10 @@ contains
 
     coef(1) = a1; coef(2) = a2; coef(3) = a3
     coef(4) = b1; coef(5) = b2; coef(6) = b3
+
+    ! HHT: the equation of motion divided by 1+alpha keeps alpha/(1+alpha) of the force at t_n
+    hht_prev = 0.0d0
+    if( fstrDYNAMIC%idx_eqa == 2 ) hht_prev = fstrDYNAMIC%alpha/(1.0d0+fstrDYNAMIC%alpha)
 
     if(hecMESH%my_rank==0) then
       write(*,'(A)')'-------------------------------------------------'
@@ -383,13 +391,18 @@ contains
         stepcnt=stepcnt+1
         call fstr_CreateMatrix_and_DampingForce( hecMESH, hecMAT, fstrSOLID, t_curr, t_delta, fstrDYNAMIC, coef )
 
-        call fstr_AddSPRING(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
+        call fstr_AddSPRING(cstep, hecMESH, hecMAT, fstrSOLID)
 
         !C-- mechanical boundary condition
         call dynamic_mat_ass_load (cstep, t_curr+t_delta, hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, iter )
         do j=1, hecMESH%n_node*  hecMESH%n_dof
           hecMAT%B(j) = hecMAT%B(j) - fstrSOLID%QFORCE(j) + fstrSOLID%DFORCE(j)
         enddo
+        if( fstrDYNAMIC%idx_eqa == 2 ) then
+          do j=1, hecMESH%n_node*  hecMESH%n_dof
+            hecMAT%B(j) = hecMAT%B(j) - hht_prev*fstrDYNAMIC%HHT_FORCE(j)
+          enddo
+        endif
 
         call fstr_Update_NDForce_spring( cstep, hecMESH, fstrSOLID, hecMAT%B )
 
@@ -485,7 +498,7 @@ contains
       if( fstr_is_contact_active() ) &
         call fstr_calc_contact_output_force(cstep,ctAlgo,hecMESH,hecLagMAT,fstrSOLID,conMAT)
 
-      call fstr_scan_contact_state(cstep, istep, count_step, t_delta, ctAlgo, &
+      call fstr_scan_contact_state(cstep, istep, count_step, ctAlgo, &
                                    hecMESH, fstrSOLID, infoCTChange)
 
       if( hecMAT%Iarray(99)==4 .and. .not. fstr_is_contact_active() ) then
@@ -496,10 +509,10 @@ contains
 
       is_mat_symmetric = fstr_is_matrixStruct_symmetric(fstrSOLID,hecMESH)
       contact_changed_global=0
-      if( fstr_is_contact_conv(ctAlgo,infoCTChange,hecMESH) ) then
+      if( fstr_is_contact_conv(infoCTChange,hecMESH) ) then
         exit loopFORcontactAnalysis
       elseif( fstr_is_matrixStructure_changed(infoCTChange) ) then
-        call fstr_mat_con_contact( cstep, ctAlgo, hecMAT, fstrSOLID, hecLagMAT, infoCTChange, conMAT, fstr_is_contact_active())
+        call fstr_mat_con_contact( cstep, ctAlgo, hecMAT, fstrSOLID, hecLagMAT, conMAT, fstr_is_contact_active())
         contact_changed_global=1
       endif
       call hecmw_allreduce_I1(hecMESH,contact_changed_global,HECMW_MAX)
@@ -548,6 +561,15 @@ contains
     enddo
     fstrDYNAMIC%kineticEnergy = fstr_calc_kinetic_energy( &
       hecMESH, fstrSOLID, fstrDYNAMIC, fstrDYNAMIC%VEL(:,2))
+    if( fstrDYNAMIC%idx_eqa == 2 ) then
+      allocate(mass_acc(ndof*nnod))
+      call fstr_calc_mass_product( hecMESH, fstrSOLID, fstrDYNAMIC, fstrDYNAMIC%ACC(:,1), mass_acc )
+      do j = 1 ,ndof*nnod
+        fstrDYNAMIC%HHT_FORCE(j) = (mass_acc(j) + fstrDYNAMIC%alpha*fstrDYNAMIC%HHT_FORCE(j)) &
+          /(1.0d0+fstrDYNAMIC%alpha)
+      enddo
+      deallocate(mass_acc)
+    endif
 
     call fstr_UpdateState( hecMESH, fstrSOLID, t_delta )
     call fstr_update_contact_TangentForce( cstep, fstrSOLID )

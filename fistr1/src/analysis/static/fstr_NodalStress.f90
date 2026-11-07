@@ -191,7 +191,7 @@ contains
               tt(j) = fstrSOLID%temperature( nodLOCAL(j) )
             end do
           end if
-          call NodalStress_Beam( 611, 2, ecoord(1:3,1:2), fstrSOLID%elements(icel)%gausses, &
+          call NodalStress_Beam( 2, ecoord(1:3,1:2), fstrSOLID%elements(icel)%gausses, &
             hecMESH%section%sect_R_item(ihead+1:), beam_disp, &
             ndstrain(1:2,1:6), ndstress(1:2,1:6), fstrSOLID%sections(isect)%elemopt611 )
           call ElementalStress_Beam( fstrSOLID%elements(icel)%gausses, estrain, estress, enqm )
@@ -289,9 +289,9 @@ contains
           call fstr_getavg_shell(fstrSOLID,icel,estrain,estress)
 
         else if( ic_type == 301 ) then
-          call NodalStress_C1( ic_type, nn, fstrSOLID%elements(icel)%gausses, &
+          call NodalStress_C1( nn, fstrSOLID%elements(icel)%gausses, &
             ndstrain(1:nn,1:6), ndstress(1:nn,1:6) )
-          call ElementStress_C1( ic_type, fstrSOLID%elements(icel)%gausses, estrain, estress )
+          call ElementStress_C1( fstrSOLID%elements(icel)%gausses, estrain, estress )
 
         else if( ic_type == fe_tet10n .or. ic_type == fe_hex8n .or. &
             ic_type == fe_prism15n .or. ic_type == fe_hex20n ) then
@@ -1333,7 +1333,7 @@ contains
           enqm     = 0.0d0
           ndstrain = 0.0d0
           ndstress = 0.0d0
-          call NodalStress_Beam( ic_type, nn, ecoord, fstrSOLID%elements(icel)%gausses, &
+          call NodalStress_Beam( nn, ecoord, fstrSOLID%elements(icel)%gausses, &
             &     hecMESH%section%sect_R_item(ihead+1:), edisp(1:6,1:nn),                 &
             &     ndstrain(1:nn,1:6), ndstress(1:nn,1:6), fstrSOLID%sections(isect)%elemopt611 )
           call ElementalStress_Beam( fstrSOLID%elements(icel)%gausses, estrain, estress, enqm )

@@ -229,11 +229,10 @@ contains
   end subroutine fstr_calc_contact_refStiff
 
   !> Scanning contact state
-  subroutine fstr_scan_contact_state( cstep, sub_step, cont_step, dt, ctAlgo, hecMESH, fstrSOLID, infoCTChange )
+  subroutine fstr_scan_contact_state( cstep, sub_step, cont_step, ctAlgo, hecMESH, fstrSOLID, infoCTChange )
     integer(kind=kint), intent(in)         :: cstep      !< current step number
     integer(kind=kint), intent(in)         :: sub_step   !< current sub-step number
     integer(kind=kint), intent(in)         :: cont_step  !< current contact step number
-    real(kind=kreal), intent(in)           :: dt
     integer(kind=kint), intent(in)         :: ctAlgo     !< contact analysis algorithm
     type( hecmwST_local_mesh ), intent(in) :: hecMESH     !< type mesh
     type(fstr_solid), intent(inout)        :: fstrSOLID   !< type fstr_solid
@@ -291,8 +290,8 @@ contains
       if( .not. fstr_isEmbedActive( fstrSOLID, grpid, cstep ) ) then
         call clear_contact_state(fstrSOLID%embeds(i));  cycle
       endif
-      call scan_embed_state( flag_ctAlgo, fstrSOLID%embeds(i), fstrSOLID%ddunode(:), fstrSOLID%dunode(:), &
-      & fstrSOLID%QFORCE(:), infoCTChange, hecMESH%global_node_ID(:), hecMESH%global_elem_ID(:), is_init, iactive )
+      call scan_embed_state( fstrSOLID%embeds(i), fstrSOLID%ddunode(:), &
+      & infoCTChange, hecMESH%global_node_ID(:), hecMESH%global_elem_ID(:), is_init, iactive )
       if( .not. active ) active = iactive
     enddo
     ! kept in infoCTChange as well, so that a cutback restores it together with the contact state
@@ -454,8 +453,7 @@ contains
     infoCTChange%active = active
   end subroutine
 
-  logical function fstr_is_contact_conv(ctAlgo,infoCTChange,hecMESH)
-    integer(kind=kint), intent(in)  :: ctAlgo                    !< contact analysis algorithm
+  logical function fstr_is_contact_conv(infoCTChange,hecMESH)
     type (fstr_info_contactChange), intent(in) :: infoCTChange   !< fstr_contactChange
     type (hecmwST_local_mesh), intent(in) :: hecMESH
 
@@ -481,9 +479,8 @@ contains
       fstr_is_matrixStructure_changed = .true.
   end function
 
-  subroutine fstr_update_contact_multiplier( cstep, ctAlgo, hecMESH, hecLagMAT, fstrSOLID, ctchanged )
+  subroutine fstr_update_contact_multiplier( cstep, hecMESH, hecLagMAT, fstrSOLID, ctchanged )
     integer(kind=kint), intent(in)        :: cstep
-    integer(kind=kint), intent(in)        :: ctAlgo
     type( hecmwST_local_mesh ), intent(in) :: hecMESH
     type(hecmwST_matrix_lagrange), intent(in) :: hecLagMAT
     type(fstr_solid), intent(inout)        :: fstrSOLID
@@ -503,7 +500,7 @@ contains
       else
         algtype = fstrSOLID%contacts(i)%algtype
         if( algtype == CONTACTSSLID .or. algtype == CONTACTFSLID ) then
-          call update_contact_multiplier( ctAlgo, fstrSOLID%contacts(i), hecMESH%node(:), fstrSOLID%unode(:), &
+          call update_contact_multiplier( fstrSOLID%contacts(i), hecMESH%node(:), fstrSOLID%unode(:), &
             fstrSOLID%dunode(:), fstrSOLID%contacts(i)%fcoeff, &
             hecMESH, hecLagMAT, gnt, ctchanged )
         else if( algtype == CONTACTTIED ) then

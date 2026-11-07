@@ -11,7 +11,7 @@ contains
   !C*** MAT_ASS_FILM
   !C***
   !C
-  subroutine heat_mat_ass_bc_FILM( hecMESH, hecMAT, fstrSOLID, fstrHEAT, CTIME, DTIME, beta )
+  subroutine heat_mat_ass_bc_FILM( hecMESH, hecMAT, fstrSOLID, fstrHEAT, CTIME )
 
     use m_fstr
     use m_heat_get_amplitude
@@ -20,7 +20,7 @@ contains
     implicit none
     integer(kind=kint) :: k, icel, isuf, iam1, iam2, ic_type, isect, nn, is, j, mm, m, ic, ip
     integer(kind=kint) :: inod, jp, jnod, isU, ieU, ik, isL, ieL
-    real(kind=kreal)   :: CTIME, DTIME, QQ, HH, SINK, thick, beta
+    real(kind=kreal)   :: CTIME, QQ, HH, SINK, thick
     type(fstr_solid)         :: fstrSOLID
     type(fstr_heat)          :: fstrHEAT
     type(hecmwST_matrix)     :: hecMAT
@@ -67,22 +67,22 @@ contains
         is = hecMesh%section%sect_R_index(isect)
         thick = hecMESH%section%sect_R_item(is)
         mm = 2
-        call heat_FILM_231(nn,xx,yy,zz,thick,isuf,HH,SINK,mm,term1,term2,nsuf)
+        call heat_FILM_231(nn,xx,yy,thick,isuf,HH,SINK,mm,term1,term2,nsuf)
       elseif( ic_type.eq.232 ) then
         is = hecMesh%section%sect_R_index(isect)
         thick = hecMESH%section%sect_R_item(is)
         mm = 3
-        call heat_FILM_232(nn,xx,yy,zz,thick,isuf,HH,SINK,mm,term1,term2,nsuf)
+        call heat_FILM_232(nn,xx,yy,thick,isuf,HH,SINK,mm,term1,term2,nsuf)
       elseif( ic_type.eq.241 ) then
         is = hecMesh%section%sect_R_index(isect)
         thick = hecMESH%section%sect_R_item(is)
         mm = 2
-        call heat_FILM_241(nn,xx,yy,zz,thick,isuf,HH,SINK,mm,term1,term2,nsuf)
+        call heat_FILM_241(nn,xx,yy,thick,isuf,HH,SINK,mm,term1,term2,nsuf)
       elseif( ic_type.eq.242 ) then
         is = hecMesh%section%sect_R_index(isect)
         thick = hecMESH%section%sect_R_item(is)
         mm = 3
-        call heat_FILM_242(nn,xx,yy,zz,thick,isuf,HH,SINK,mm,term1,term2,nsuf)
+        call heat_FILM_242(nn,xx,yy,thick,isuf,HH,SINK,mm,term1,term2,nsuf)
       elseif( ic_type.eq.341 ) then
         mm = 3
         call heat_FILM_341(nn,xx,yy,zz,isuf,HH,SINK,mm,term1,term2,nsuf)

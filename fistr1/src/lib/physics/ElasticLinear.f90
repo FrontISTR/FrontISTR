@@ -109,10 +109,9 @@ contains
   !> bij: rotation matrix from material axes to global axes, supplied via !SECTION ORIENTATION= (mandatory)
   !> hdflag: 0=full, 1=deviatoric only (edge-smoothed, etype=891), 2=volumetric only (node-smoothed, etype=881)
   !>   volumetric part uses projector split: c = 1 / sum(S(1:3,1:3)), D_vol = c * m*m^T
-  subroutine calElasticMatrix_ortho( matl, sectType, bij, DMAT, temp, hdflag  )
+  subroutine calElasticMatrix_ortho( matl, bij, DMAT, temp, hdflag  )
     use m_utilities
     type( tMaterial ), intent(in) :: matl       !> material properties
-    integer, intent(in)           :: sectType   !> plane strain/stress or 3D
     real(kind=kreal), intent(in)  :: bij(3,3)   !> director (from !SECTION ORIENTATION=; mandatory for orthotropic)
     real(kind=kreal), intent(out) :: DMAT(:,:)  !> elastic matrix
     real(kind=kreal), intent(in)  :: temp       !> temperature

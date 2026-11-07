@@ -75,7 +75,7 @@ contains
         (mod(istep,fstrSOLID%output_ctrl(3)%frequency)==0 .or. outflag) ) then
       if( associated( fstrSOLID%contacts ) ) &
         &  call setup_contact_output_variables( hecMESH, fstrSOLID, 3, fstrDYNAMIC%t_delta, expflag )
-      call fstr_write_result( hecMESH, fstrSOLID, fstrPARAM, istep, t_curr, 0, fstrDYNAMIC )
+      call fstr_write_result( hecMESH, fstrSOLID, istep, t_curr, 0, fstrDYNAMIC )
     endif
 
     if( fstrPARAM%fg_visual==1 .and. &
@@ -124,7 +124,7 @@ contains
     integer(kind=kint) :: label(6)
 
     if( istep==0 ) return
-    if( fstrDYNAMIC%idx_eqa==1 .and. istep>0 ) then
+    if( fstrDYNAMIC%idx_eqa/=11 .and. istep>0 ) then
       idx = 2
     else
       idx = 1
@@ -357,13 +357,12 @@ contains
   !C================================================================C
   !C-- subroutine dynamic_output_monit
   !C================================================================C
-  subroutine dynamic_output_monit(cstep, istep, t_curr, hecMESH, fstrPARAM, fstrDYNAMIC, fstrEIG, fstrSOLID)
+  subroutine dynamic_output_monit(cstep, istep, t_curr, hecMESH, fstrDYNAMIC, fstrEIG, fstrSOLID)
     use m_fstr
     integer, intent(in)      :: cstep       !< current step number
     integer, intent(in)      :: istep       !< current substep number
     real(kind=kreal), intent(in) :: t_curr      !< current time
     type(hecmwST_local_mesh) :: hecMESH
-    type(fstr_param)         :: fstrPARAM
     type(fstr_dynamic)       :: fstrDYNAMIC
     type(fstr_eigen)         :: fstrEIG
     type(fstr_solid)         :: fstrSOLID
@@ -374,7 +373,7 @@ contains
 
     if( mod(istep,fstrDYNAMIC%nout_monit)/=0 ) return
 
-    if( fstrDYNAMIC%idx_eqa==1 .and. istep>0 ) then
+    if( fstrDYNAMIC%idx_eqa/=11 .and. istep>0 ) then
       idx = 2
     else
       idx = 1
@@ -457,7 +456,7 @@ contains
           write( fstrDYNAMIC%dynamic_IW10, * ) &
             ' time step', '     time    ', '  kinetic energy', '   strain energy', '   total energy'
         endif
-        if(istep==0 .and. fstrDYNAMIC%idx_eqa/=1) then
+        if(istep==0 .and. fstrDYNAMIC%idx_eqa==11) then
           fstrDYNAMIC%kineticEnergy = 0.0d0
           do ii = 1, hecMESH%n_node*hecMESH%n_dof
             fstrDYNAMIC%kineticEnergy = fstrDYNAMIC%kineticEnergy &

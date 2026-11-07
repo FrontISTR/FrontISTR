@@ -14,13 +14,11 @@ contains
 
   !> This subroutine calculates stiffness for elastically isotropic
   !>     materials with isotropic creep
-  subroutine iso_creep(matl, sectType, stress, strain, extval,plstrain,            &
+  subroutine iso_creep(matl, sectType, stress, plstrain,            &
       dtime,ttime,stiffness, temp, hdflag)
     type( tMaterial ), intent(in)    :: matl      !< material properties
     integer, intent(in)              :: sectType  !< not used currently
     real(kind=kreal), intent(in)     :: stress(6) !< Piola-Kirchhoff stress
-    real(kind=kreal), intent(in)     :: strain(6) !< strain
-    real(kind=kreal), intent(in)     :: extval(:) !< plastic strain
     real(kind=kreal), intent(in)     :: plstrain  !< plastic strain increment
     real(kind=kreal), intent(in)     :: ttime     !< total time at the start of the current increment
     real(kind=kreal), intent(in)     :: dtime     !< time length of the increment
@@ -117,11 +115,9 @@ contains
 
   !> This subroutine calculates stresses and creep status for an elastically isotropic
   !>     material with isotropic creep
-  subroutine update_iso_creep(matl, sectType, strain, stress, extval, plstrain,         &
+  subroutine update_iso_creep(matl, stress, extval, plstrain,         &
       dtime, ttime, temp, hdflag)
     type( tMaterial ), intent(in)    :: matl      !< material properties
-    integer, intent(in)              :: sectType  !< not used currently
-    real(kind=kreal), intent(in)     :: strain(6) !< strain
     real(kind=kreal), intent(inout)  :: stress(6) !< Piola-Kirchhoff stress
     real(kind=kreal), intent(inout)  :: extval(:) !< plastic strain
     real(kind=kreal), intent(inout)  :: plstrain  !< plastic strain increment

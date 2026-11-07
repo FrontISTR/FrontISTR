@@ -47,9 +47,8 @@ module hecmw_mf_dist
   end type hecmwST_mf_map
 
   !> The part of the global matrix this rank holds, assembled from the internal rows of
-  !> the distributed matrix (complete in the overlapped HEC-MW assembly). The global node
-  !> numbering concatenates the internal nodes rank by rank, the way the sparse matrix
-  !> interface of the external direct solvers numbers them. The structure is gathered once
+  !> the distributed matrix (complete in the overlapped HEC-MW assembly). The global rows
+  !> are numbered by ascending user node id (gid, g2s). The structure is gathered once
   !> (hecmw_mf_dist_gmat_build), the full profile living on rank 0 only until the ordering
   !> has read it; the partial profile and the value routing are then derived from the
   !> mapping (hecmw_mf_dist_gmat_part), and the values move to their holding ranks before

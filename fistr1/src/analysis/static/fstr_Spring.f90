@@ -9,14 +9,13 @@ module m_fstr_spring
   implicit none
 contains
 
-  subroutine fstr_AddSPRING(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
+  subroutine fstr_AddSPRING(cstep, hecMESH, hecMAT, fstrSOLID)
     use m_fstr
     use m_static_lib
     integer, intent(in)                  :: cstep       !< current step
     type (hecmwST_matrix),intent(inout)  :: hecMAT      !< hecmw matrix
     type (hecmwST_local_mesh),intent(in) :: hecMESH     !< hecmw mesh
     type (fstr_solid),intent(inout)      :: fstrSOLID   !< fstr_solid
-    type (fstr_param),intent(inout)      :: fstrPARAM   !< analysis control parameters
 
     integer(kind=kint) :: grpid, ndof, ig0, ig, ityp, iS0, iE0, ik, in, idx, jj_n_amp
     real(kind=kreal) :: fval, factor, ctime

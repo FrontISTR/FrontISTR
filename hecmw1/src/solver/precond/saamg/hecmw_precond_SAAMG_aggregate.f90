@@ -287,7 +287,7 @@ contains
   !! distance-2 maximal independent set of seeds -- the only freedom is WHICH
   !! admissible seed is taken first, and that decides the aggregate shapes:
   !! 0/absent = natural node order (legacy; kept as the no-argument default so the
-  !! standalone harness stays bit-stable), 1 = BFS (graph) order (the production
+  !! unit tests stay bit-stable), 1 = BFS (graph) order (the production
   !! default via prm%agg_order: contiguous tiling -> uniform aggregates, much
   !! better on badly numbered meshes), 2 = hash order of gid (deterministic
   !! pseudo-random; with global ids the seed priority is partition-independent),

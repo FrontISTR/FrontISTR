@@ -235,15 +235,15 @@ contains
       call hecmw_trimatmul_TtKT_mpc(hecMESHmpc, hecMAT, hecMATmpc)
       if (present(conMAT).and.present(conMATmpc).and.present(hecLagMAT)) then
         call hecmw_trimatmul_TtKT_mpc(hecMESHmpc, conMAT, conMATmpc)
-        call resize_hecLagMAT(conMAT%NP, conMATmpc%NP, conMAT%NDOF, hecLagMAT)
+        call resize_hecLagMAT(conMAT%NP, conMATmpc%NP, hecLagMAT)
       endif
     end select
 
   end subroutine hecmw_mpc_mat_ass
 
 
-  subroutine resize_hecLagMAT(NP_orig, NP_new, ndof, hecLagMAT)
-    integer(kind=kint), intent(in) :: NP_orig, NP_new, ndof
+  subroutine resize_hecLagMAT(NP_orig, NP_new, hecLagMAT)
+    integer(kind=kint), intent(in) :: NP_orig, NP_new
     type (hecmwST_matrix_lagrange), intent(inout) :: hecLagMAT
     integer(kind=kint), pointer :: itemp(:)
 

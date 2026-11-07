@@ -152,7 +152,7 @@ contains
         if (ierr > 0) then
           idof = FCT%pdof(ierr)
           ! the node prints as the user's id where the matrix rows are the mesh nodes
-          ! (not the expanded saddle-point or coarse-grid systems)
+          ! (not the expanded saddle-point systems of the contact wrapper)
           node = (idof-1)/hecMAT%NDOF + 1
           if (hecMAT%NP == hecMESH%n_node) node = hecMESH%global_node_ID(node)
           write(imsg,'(a,i0,a,i0,a)') 'ERROR: DIRECTmf: no acceptable pivot at node ', node, &

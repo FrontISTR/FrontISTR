@@ -11,10 +11,9 @@ module mHyperElastic
 contains
 
   !> This subroutine calculates derivative of the invariant with respect to Cauchy-Green tensor
-  subroutine cderiv( matl, sectType, ctn, itn,               &
+  subroutine cderiv( matl, ctn, itn,               &
       inv1b, inv2b, inv3b, dibdc, d2ibdc2, strain, direction, inv4b, dibdc_ani, d2ibdc2_ani )
     type( tMaterial ), intent(in) :: matl                  !< material rpoperties
-    integer, intent(in)           :: sectType              !< not used currently
     real(kind=kreal), intent(out) :: inv1b                 !< invariants
     real(kind=kreal), intent(out) :: inv2b                 !< invariants
     real(kind=kreal), intent(out) :: inv3b                 !< invariants
@@ -194,9 +193,8 @@ contains
   !> This subroutine provides elastic tangent coefficient for Arruda-Boyce hyperelastic material
   !
   !-------------------------------------------------------------------------------
-  subroutine calElasticArrudaBoyce( matl, sectType, cijkl, strain )
+  subroutine calElasticArrudaBoyce( matl, cijkl, strain )
     type( tMaterial ), intent(in) :: matl             !< material rpoperties
-    integer, intent(in)           :: sectType         !< not used currently
     real(kind=kreal), intent(out) :: cijkl(3,3,3,3)   !< constitutive relation
     real(kind=kreal), intent(in)  :: strain(6)        !< Cauchy-Lagrange strain tensor
 
@@ -207,7 +205,7 @@ contains
     real(kind=kreal) :: d2ibdc2(3,3,3,3,3)
     real(kind=kreal) :: constant(3), coef
 
-    call cderiv(  matl, sectType, ctn, itn, inv1b, inv2b, inv3b,            &
+    call cderiv(  matl, ctn, itn, inv1b, inv2b, inv3b,            &
       dibdc, d2ibdc2, strain    )
     constant(1:3)=matl%variables(M_PLCONST1:M_PLCONST3)
     coef = constant(2)
@@ -238,9 +236,8 @@ contains
 
   !-------------------------------------------------------------------------------
   !> This subroutine provides to update stress and strain for Arrude-Royce material
-  subroutine calUpdateElasticArrudaBoyce( matl, sectType, dstrain, dstress )
+  subroutine calUpdateElasticArrudaBoyce( matl, dstrain, dstress )
     type( tMaterial ), intent(in) :: matl         !> material properties
-    integer, intent(in)           :: sectType     !> not used currently
     real(kind=kreal), intent(out) :: dstress(6)   !> Cauchy-Green strain
     real(kind=kreal), intent(in)  :: dstrain(6)   !> 2nd Piola-Kirchhoff stress
 
@@ -255,7 +252,7 @@ contains
 
     constant(1:3)=matl%variables(M_PLCONST1:M_PLCONST3)
     coef = constant(2)
-    call cderiv(  matl, sectType, ctn, itn,      &
+    call cderiv(  matl, ctn, itn,      &
       inv1b, inv2b, inv3b,           &
       dibdc, d2ibdc2, dstrain    )
 
@@ -283,9 +280,8 @@ contains
   !-------------------------------------------------------------------------------
   !> This subroutine provides elastic tangent coefficient for Mooney-Rivlin hyperelastic material
   !-------------------------------------------------------------------------------
-  subroutine calElasticMooneyRivlin( matl, sectType, cijkl, strain, hdflag )
+  subroutine calElasticMooneyRivlin( matl, cijkl, strain, hdflag )
     type( tMaterial ), intent(in) :: matl             !< material rpoperties
-    integer, intent(in)           :: sectType         !< not used curr
     real(kind=kreal), intent(out) :: cijkl(3,3,3,3)   !< constitutive relation
     real(kind=kreal), intent(in)  :: strain(6)        !< Cauchy-Lagrange strain tensor
     integer(kind=kint), intent(in), optional :: hdflag  !> return only hyd and dev term if specified
@@ -308,7 +304,7 @@ contains
     end if
     if( dabs(constant(3))>1.d-12 ) constant(3) = 1.d0/constant(3)
 
-    call cderiv( matl, sectType, ctn, itn, inv1b, inv2b, inv3b,            &
+    call cderiv( matl, ctn, itn, inv1b, inv2b, inv3b,            &
       dibdc, d2ibdc2, strain    )
 
     do n=1,3
@@ -330,9 +326,8 @@ contains
   !-------------------------------------------------------------------------------
   !> This subroutine provides to update stress and strain for Mooney-Rivlin material
   !-------------------------------------------------------------------------------
-  subroutine calUpdateElasticMooneyRivlin( matl, sectType, strain, stress, strain_energy, hdflag )
+  subroutine calUpdateElasticMooneyRivlin( matl, strain, stress, strain_energy, hdflag )
     type( tMaterial ), intent(in) :: matl        !< material properties
-    integer, intent(in)           :: sectType    !< not used currently
     real(kind=kreal), intent(out) :: stress(6)   !< 2nd Piola-Kirchhoff stress
     real(kind=kreal), intent(in)  :: strain(6)   !< Green-Lagrangen strain
     real(kind=kreal), intent(out) :: strain_energy   !< strain energy
@@ -356,7 +351,7 @@ contains
     end if
     if( dabs(constant(3))>1.d-12 ) constant(3) = 1.d0/constant(3)
 
-    call cderiv( matl, sectType, ctn, itn, inv1b, inv2b, inv3b,      &
+    call cderiv( matl, ctn, itn, inv1b, inv2b, inv3b,      &
       dibdc, d2ibdc2, strain    )
 
 
@@ -383,9 +378,8 @@ contains
   !-------------------------------------------------------------------------------
   !> This subroutine provides elastic tangent coefficient for anisotropic Mooney-Rivlin hyperelastic material
   !-------------------------------------------------------------------------------
-  subroutine calElasticMooneyRivlinAniso( matl, sectType, cijkl, strain, cdsys, hdflag  )
+  subroutine calElasticMooneyRivlinAniso( matl, cijkl, strain, cdsys, hdflag  )
     type( tMaterial ), intent(in) :: matl             !< material rpoperties
-    integer, intent(in)           :: sectType         !< not used curr
     real(kind=kreal), intent(out) :: cijkl(3,3,3,3)   !< constitutive relation
     real(kind=kreal), intent(in)  :: strain(6)        !< Cauchy-Lagrange strain tensor
     real(kind=kreal), intent(in)  :: cdsys(3,3) !> material coordinate system
@@ -412,7 +406,7 @@ contains
     end if
     if( dabs(constant(3))>1.d-12 ) constant(3) = 1.d0/constant(3)
 
-    call cderiv( matl, sectType, ctn, itn, inv1b, inv2b, inv3b,      &
+    call cderiv( matl, ctn, itn, inv1b, inv2b, inv3b,      &
       dibdc, d2ibdc2, strain, cdsys(1,1:3), inv4b, dibdc_ani, d2ibdc2_ani )
 
     do n=1,3 
@@ -436,9 +430,8 @@ contains
   !-------------------------------------------------------------------------------
   !> This subroutine provides to update stress and strain for anisotropic Mooney-Rivlin material
   !-------------------------------------------------------------------------------
-  subroutine calUpdateElasticMooneyRivlinAniso( matl, sectType, strain, stress, cdsys, hdflag  )
+  subroutine calUpdateElasticMooneyRivlinAniso( matl, strain, stress, cdsys, hdflag  )
     type( tMaterial ), intent(in) :: matl        !< material properties
-    integer, intent(in)           :: sectType    !< not used currently
     real(kind=kreal), intent(out) :: stress(6)   !< 2nd Piola-Kirchhoff stress
     real(kind=kreal), intent(in)  :: strain(6)   !< Green-Lagrangen strain
     real(kind=kreal), intent(in)  :: cdsys(3,3) !> material coordinate system
@@ -465,7 +458,7 @@ contains
     end if
     if( dabs(constant(3))>1.d-12 ) constant(3) = 1.d0/constant(3)
 
-    call cderiv( matl, sectType, ctn, itn, inv1b, inv2b, inv3b,      &
+    call cderiv( matl, ctn, itn, inv1b, inv2b, inv3b,      &
       dibdc, d2ibdc2, strain, cdsys(1,1:3), inv4b, dibdc_ani, d2ibdc2_ani )
 
     ! ----- stress

@@ -31,7 +31,7 @@ module m_fstr_NonLinearMethod
 contains
 
   subroutine fstr_init_Newton(hecMESH, hecMAT, fstrSOLID, &
-      &  ctime, tincr, iter, cstep, dtime, fstrPARAM, hecLagMAT, ndof, ctAlgo, conMAT)
+      &  ctime, tincr, cstep, dtime, fstrPARAM, hecLagMAT, ndof, ctAlgo, conMAT)
     use m_fstr_Update
     implicit none
     type (hecmwST_local_mesh)             :: hecMESH   !< hecmw mesh
@@ -41,7 +41,6 @@ contains
     real(kind=kreal), intent(in)          :: dtime     !< time increment
     type (fstr_param)                     :: fstrPARAM !< type fstr_param
     real(kind=kreal), intent(inout)       :: tincr
-    integer(kind=kint)                    :: iter
     integer, intent(in)                   :: cstep     !< current loading step
     type (hecmwST_matrix_lagrange)        :: hecLagMAT !< type hecmwST_matrix_lagrange
     integer(kind=kint), intent(inout)     :: ndof
@@ -115,7 +114,7 @@ contains
       isLinear = .true.
     endif
 
-    call fstr_init_Newton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, hecLagMAT, ndof, 0, hecMAT)
+    call fstr_init_Newton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, cstep, dtime, fstrPARAM, hecLagMAT, ndof, 0, hecMAT)
 
     allocate(P(hecMESH%n_node*NDOF))
     allocate(coord(hecMESH%n_node*ndof))
@@ -127,7 +126,7 @@ contains
       stepcnt = stepcnt+1
 
       call fstr_CreateMatrix_and_DampingForce( hecMESH, hecMAT, fstrSOLID, ctime, tincr )
-      call fstr_AddSPRING(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
+      call fstr_AddSPRING(cstep, hecMESH, hecMAT, fstrSOLID)
 
       ! ----- Set Boundary condition
       call hecmw_ebc_init(hecMAT, hecEBC)
@@ -236,7 +235,7 @@ contains
     ! ----- BEGIN lambda transaction: clear working before fstr_init_Newton reads the multipliers -----
     if( ctAlgo == kcaALagrange ) call fstr_begin_lambda_txn( fstrSOLID, cstep )
 
-    call fstr_init_Newton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, hecLagMAT, ndof, ctAlgo, conMAT)
+    call fstr_init_Newton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, cstep, dtime, fstrPARAM, hecLagMAT, ndof, ctAlgo, conMAT)
 
     if( cstep == 1 .and. sub_step == restart_substep_num ) then
       call fstr_save_originalMatrixStructure(hecMAT)
@@ -245,11 +244,11 @@ contains
         infoCTChange%contactNode_current = infoCTChange%contactNode_previous
       else
         if(hecMESH%my_rank==0) write(*,*) "---Scanning initial contact state---"
-        call fstr_scan_contact_state( cstep, sub_step, 0, dtime, ctAlgo, hecMESH, fstrSOLID, infoCTChange )
+        call fstr_scan_contact_state( cstep, sub_step, 0, ctAlgo, hecMESH, fstrSOLID, infoCTChange )
       endif
       call hecmw_mat_copy_profile( hecMAT, conMAT )
       if ( fstr_is_contact_active() ) then
-        call fstr_mat_con_contact(cstep, ctAlgo, hecMAT, fstrSOLID, hecLagMAT, infoCTChange, conMAT, fstr_is_contact_active())
+        call fstr_mat_con_contact(cstep, ctAlgo, hecMAT, fstrSOLID, hecLagMAT, conMAT, fstr_is_contact_active())
       elseif( hecMAT%Iarray(99)==4 ) then
         write(*, *) ' This type of direct solver is not yet available in such case ! '
         write(*, *) ' Please change the solver type to intel MKL direct solver !'
@@ -287,7 +286,7 @@ contains
           stepcnt = stepcnt+1
 
           call fstr_CreateMatrix_and_DampingForce( hecMESH, hecMAT, fstrSOLID, ctime, tincr )
-          call fstr_AddSPRING(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
+          call fstr_AddSPRING(cstep, hecMESH, hecMAT, fstrSOLID)
 
           call hecmw_mat_clear( conMAT )
           conMAT%X = 0.0d0
@@ -361,7 +360,7 @@ contains
         fstrSOLID%NRstat_i(knstMAXIT) = max(fstrSOLID%NRstat_i(knstMAXIT),iter) ! logging newton iteration(maxtier)
         fstrSOLID%NRstat_i(knstSUMIT) = fstrSOLID%NRstat_i(knstSUMIT) + iter    ! logging newton iteration(sum of iter)
 
-        call fstr_update_contact_multiplier( cstep, ctAlgo, hecMESH, hecLagMAT, fstrSOLID, ctchange )
+        call fstr_update_contact_multiplier( cstep, hecMESH, hecLagMAT, fstrSOLID, ctchange )
 
         ! ----- Set residual for next newton iteration
         call fstr_Update_NDForce(cstep, hecMESH, hecMAT, fstrSOLID, conMAT)
@@ -380,7 +379,7 @@ contains
         call fstr_calc_contact_output_force(cstep,ctAlgo,hecMESH,hecLagMAT,fstrSOLID,conMAT)
 
       ! ----- deal with contact boundary
-      call fstr_scan_contact_state( cstep, sub_step, count_step, dtime, ctAlgo, hecMESH, fstrSOLID, infoCTChange )
+      call fstr_scan_contact_state( cstep, sub_step, count_step, ctAlgo, hecMESH, fstrSOLID, infoCTChange )
 
       contact_changed_global = 0
       ! Mortar safety net: force a rebuild when an active pair's coupling is no longer in the
@@ -389,7 +388,7 @@ contains
       if( .not. fstr_is_matrixStructure_changed(infoCTChange) ) &
         need_prof_refresh = fstr_s2s_profile_needs_refresh( cstep, ctAlgo, fstrSOLID, conMAT )
       if( fstr_is_matrixStructure_changed(infoCTChange) .or. need_prof_refresh ) then
-        call fstr_mat_con_contact( cstep, ctAlgo, hecMAT, fstrSOLID, hecLagMAT, infoCTChange, conMAT, fstr_is_contact_active())
+        call fstr_mat_con_contact( cstep, ctAlgo, hecMAT, fstrSOLID, hecLagMAT, conMAT, fstr_is_contact_active())
         contact_changed_global = 1
       endif
       call hecmw_allreduce_I1(hecMESH, contact_changed_global, HECMW_MAX)
@@ -399,7 +398,7 @@ contains
         call solve_LINEQ_contact_init(hecMESH, hecMAT, hecLagMAT, fstr_is_contactALag_symmetric(fstrSOLID, hecMESH))
       endif
 
-      if( fstr_is_contact_conv(ctAlgo,infoCTChange,hecMESH) .and. .not. ctchange ) exit loopFORcontactAnalysis
+      if( fstr_is_contact_conv(infoCTChange,hecMESH) .and. .not. ctchange ) exit loopFORcontactAnalysis
 
       ! ----- check divergence
       if( count_step >= fstrSOLID%step_ctrl(cstep)%max_contiter ) then
@@ -494,11 +493,11 @@ contains
         call fstr_set_contact_active_restart( cstep, fstrSOLID, infoCTChange )
         infoCTChange%contactNode_current = infoCTChange%contactNode_previous
       else
-        call fstr_scan_contact_state( cstep, sub_step, 0, dtime, ctAlgo, hecMESH, fstrSOLID, infoCTChange )
+        call fstr_scan_contact_state( cstep, sub_step, 0, ctAlgo, hecMESH, fstrSOLID, infoCTChange )
       endif
         call hecmw_mat_copy_profile( hecMAT, conMAT )
       if ( fstr_is_contact_active() ) then
-        call fstr_mat_con_contact(cstep, ctAlgo, hecMAT, fstrSOLID, hecLagMAT, infoCTChange, conMAT, fstr_is_contact_active())
+        call fstr_mat_con_contact(cstep, ctAlgo, hecMAT, fstrSOLID, hecLagMAT, conMAT, fstr_is_contact_active())
       elseif( hecMAT%Iarray(99)==4 ) then
         write(*, *) ' This type of direct solver is not yet available in such case ! '
         write(*, *) ' Please change the solver type to intel MKL direct solver !'
@@ -508,7 +507,7 @@ contains
       call solve_LINEQ_contact_init(hecMESH, hecMAT, hecLagMAT, is_mat_symmetric)
     endif
 
-    call fstr_init_Newton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, hecLagMAT, ndof, ctAlgo, conMAT)
+    call fstr_init_Newton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, cstep, dtime, fstrPARAM, hecLagMAT, ndof, ctAlgo, conMAT)
 
     stepcnt = 0
     count_step = 0
@@ -526,7 +525,7 @@ contains
         stepcnt = stepcnt+1
 
         call fstr_CreateMatrix_and_DampingForce(hecMESH, hecMAT, fstrSOLID, ctime, tincr)
-        call fstr_AddSPRING(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
+        call fstr_AddSPRING(cstep, hecMESH, hecMAT, fstrSOLID)
 
           call hecmw_mat_clear( conMAT )
           conMAT%X = 0.0d0
@@ -606,7 +605,7 @@ contains
       fstrSOLID%NRstat_i(knstMAXIT) = max(fstrSOLID%NRstat_i(knstMAXIT),iter) ! logging newton iteration(maxtier)
       fstrSOLID%NRstat_i(knstSUMIT) = fstrSOLID%NRstat_i(knstSUMIT) + iter    ! logging newton iteration(sum of iter)
 
-      call fstr_scan_contact_state( cstep, sub_step, count_step, dtime, ctAlgo, hecMESH, fstrSOLID, infoCTChange )
+      call fstr_scan_contact_state( cstep, sub_step, count_step, ctAlgo, hecMESH, fstrSOLID, infoCTChange )
 
       if( hecMAT%Iarray(99) == 4 .and. .not. fstr_is_contact_active() ) then
         write(*, *) ' This type of direct solver is not yet available in such case ! '
@@ -617,11 +616,11 @@ contains
       is_mat_symmetric = fstr_is_matrixStruct_symmetric(fstrSOLID, hecMESH)
       contact_changed_global = 0
       if( fstr_is_matrixStructure_changed(infoCTChange) ) then
-        call fstr_mat_con_contact( cstep, ctAlgo, hecMAT, fstrSOLID, hecLagMAT, infoCTChange, conMAT, fstr_is_contact_active())
+        call fstr_mat_con_contact( cstep, ctAlgo, hecMAT, fstrSOLID, hecLagMAT, conMAT, fstr_is_contact_active())
         contact_changed_global = 1
       endif
 
-      if( fstr_is_contact_conv(ctAlgo,infoCTChange,hecMESH) ) exit loopFORcontactAnalysis
+      if( fstr_is_contact_conv(infoCTChange,hecMESH) ) exit loopFORcontactAnalysis
 
       call hecmw_allreduce_I1(hecMESH, contact_changed_global, HECMW_MAX)
       if (contact_changed_global > 0) then

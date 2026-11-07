@@ -514,14 +514,11 @@ contains
   !> This subroutine update contact states, which include
   !!-# Free to contact or contact to free state changes
   !!-# Clear lagrangian multipliers when free to contact
-  subroutine scan_embed_state( flag_ctAlgo, embed, currpos, currdisp, ndforce, infoCTChange, &
+  subroutine scan_embed_state( embed, currpos, infoCTChange, &
     nodeID, elemID, is_init, active, B )
-    character(len=9), intent(in)                     :: flag_ctAlgo  !< contact analysis algorithm flag
     type( tContact ), intent(inout)                  :: embed      !< contact info
     type( fstr_info_contactChange ), intent(inout)   :: infoCTChange !< contact change info
     real(kind=kreal), intent(in)                     :: currpos(:)   !< current coordinate of each nodes
-    real(kind=kreal), intent(in)                     :: currdisp(:)  !< current displacement of each nodes
-    real(kind=kreal), intent(in)                     :: ndforce(:)   !< nodal force
     integer(kind=kint), intent(in)                   :: nodeID(:)    !< global nodal ID, just for print out
     integer(kind=kint), intent(in)                   :: elemID(:)    !< global elemental ID, just for print out
     logical, intent(in)                              :: is_init      !< whether initial scan or not
@@ -574,7 +571,7 @@ contains
     !$omp& private(i,slave,id,coord,nn,j,iSS,elem,idm,etype,isin, &
     !$omp&         bktID,nCand,indexCand,id_best,cstate_free,cstate_try,cstate_best) &
     !$omp& firstprivate(is_present_B) &
-    !$omp& shared(embed,ndforce,flag_ctAlgo,infoCTChange,currpos,currdisp,nodeID,elemID,Bp,distclr,contact_surf) &
+    !$omp& shared(embed,infoCTChange,currpos,nodeID,elemID,Bp,distclr,contact_surf) &
     !$omp& reduction(.or.:active) &
     !$omp& schedule(dynamic,1)
     do i= 1, size(embed%slave)
@@ -603,7 +600,7 @@ contains
             elem(1:3,j)=currpos(3*iSS-2:3*iSS)
           enddo
           cstate_try = cstate_free
-          call project_Point2SolidElement( coord,etype,nn,elem,embed%master(id)%reflen,cstate_try, &
+          call project_Point2SolidElement( coord,etype,nn,elem,cstate_try, &
             isin,distclr,localclr=embed%cparam%CLEARANCE )
           if( .not. isin ) cycle
           if( id_best /= 0 ) then

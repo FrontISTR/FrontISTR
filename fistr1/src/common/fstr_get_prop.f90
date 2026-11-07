@@ -75,7 +75,7 @@ contains
       alpha_over_mu=1.0D-3
       !<<********************   shell analysis   ********************
       if (section_type == 2)then
-        call fstr_get_prop_shell(hecMESH,shell_var,mid,n_subitem,ee,pp,rho,alpha,thick,alpha_over_mu, &
+        call fstr_get_prop_shell(hecMESH,shell_var,n_subitem,ee,pp,thick, &
           n_totlyr,shell_ortho,mpos)
       else
         if( n_subitem .lt. 1 ) then
@@ -139,14 +139,14 @@ contains
 
   end subroutine fstr_get_prop
 
-  subroutine fstr_get_prop_shell(hecMESH,shell_var,mid,n_subitem,ee,pp,rho,alpha,thick,alpha_over_mu, &
+  subroutine fstr_get_prop_shell(hecMESH,shell_var,n_subitem,ee,pp,thick, &
       n_totlyr,shell_ortho,mpos)
     use m_fstr
     implicit none
     type (hecmwST_local_mesh) :: hecMESH
     type (tshellmat),pointer :: shell_var(:)
-    real(kind=kreal) :: ee, pp, rho, alpha, thick, alpha_over_mu, tmp
-    integer(kind=kint) :: mid, count, i, j, flag
+    real(kind=kreal) :: ee, pp, thick, tmp
+    integer(kind=kint) :: count, i, j, flag
     integer(kind=kint) :: shell_ortho, n_totlyr
     integer(kind=kint) :: n_subitem, mpos
 

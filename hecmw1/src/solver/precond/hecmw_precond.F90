@@ -77,7 +77,7 @@ contains
       case(21)
         call hecmw_precond_RIF_clear(hecMAT%NDOF)
       case(22)
-        call hecmw_precond_SAAMG_clear(hecMAT%NDOF)
+        call hecmw_precond_SAAMG_clear()
       case default
     end select
 
@@ -156,7 +156,7 @@ contains
         case(21)
           call hecmw_precond_RIF_apply(ZP,hecMAT%NDOF)
         case(22)
-          call hecmw_precond_SAAMG_apply(ZP,hecMAT%NDOF)
+          call hecmw_precond_SAAMG_apply(ZP)
         case default
       end select
 

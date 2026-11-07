@@ -56,7 +56,7 @@ contains
     if( flag==kstSTATICEIGEN ) then
       if( fstrPARAM%fg_result==1 .and. &
           (mod(istep,fstrSOLID%output_ctrl(3)%frequency)==0 .or. outflag) ) then
-        call fstr_write_result( hecMESH, fstrSOLID, fstrPARAM, istep, time, 1 )
+        call fstr_write_result( hecMESH, fstrSOLID, istep, time, 1 )
       endif
       return
     endif
@@ -70,7 +70,7 @@ contains
           call setup_contact_output_variables( hecMESH, fstrSOLID, 3, fstrSOLID%step_ctrl(cstep)%initdt )
         endif
       endif
-      call fstr_write_result( hecMESH, fstrSOLID, fstrPARAM, istep, time, 0 )
+      call fstr_write_result( hecMESH, fstrSOLID, istep, time, 0 )
     endif
 
     if( fstrPARAM%fg_visual==1 .and. &

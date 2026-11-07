@@ -292,7 +292,7 @@ contains
     case (0)
       call calElastoPlasticMatrix_VM( matl, sectType, stress, istat, extval, plstrain, D, temperature, hdflag_in )
     case (1)
-      call calElastoPlasticMatrix_MC( matl, sectType, stress, istat, extval, plstrain, D, temperature, hdflag_in )
+      call calElastoPlasticMatrix_MC( matl, sectType, stress, istat, extval, D, temperature, hdflag_in )
     case (2)
       call calElastoPlasticMatrix_DP( matl, sectType, stress, istat, extval, plstrain, D, temperature, hdflag_in )
     case (3)
@@ -330,7 +330,7 @@ contains
     khard = 0.d0
     if( kinematic ) then
       back(1:6) = extval(2:7)
-      khard = calKinematicHarden( matl, extval(1) )
+      khard = calKinematicHarden( matl )
     endif
 
     J1 = (stress(1)+stress(2)+stress(3))
@@ -356,13 +356,12 @@ contains
   end subroutine calElastoPlasticMatrix_VM
 
   !> This subroutine calculates elastoplastic constitutive relation
-  subroutine calElastoPlasticMatrix_MC( matl, sectType, stress, istat, extval, plstrain, D, temperature, hdflag )
+  subroutine calElastoPlasticMatrix_MC( matl, sectType, stress, istat, extval, D, temperature, hdflag )
     use m_utilities, only : eigen3,deriv_general_iso_tensor_func_3d
     type( tMaterial ), intent(in) :: matl      !< material properties
     integer, intent(in)           :: sectType  !< not used currently
     real(kind=kreal), intent(in)  :: stress(6) !< stress
     real(kind=kreal), intent(in)  :: extval(:) !< plastic strain, back stress
-    real(kind=kreal), intent(in)  :: plstrain  !< plastic strain
     integer, intent(in)           :: istat     !< plastic state
     real(kind=kreal), intent(out) :: D(:,:)    !< constitutive relation
     real(kind=kreal), intent(in)  :: temperature   !> temperature
@@ -592,9 +591,8 @@ contains
   end function
 
   !> This function calculates kinematic hardening coefficient
-  real(kind=kreal) function calKinematicHarden( matl, pstrain )
+  real(kind=kreal) function calKinematicHarden( matl )
     type( tMaterial ), intent(in) :: matl    !< material property
-    real(kind=kreal), intent(in)  :: pstrain !< plastic strain
 
     integer :: htype
     htype = getHardenType( matl%mtype )
@@ -764,7 +762,7 @@ contains
     do i=1,MAXITER
       H= calHardenCoeff( matl, pstrain, temp )
       if( kinematic ) then
-        KH = calKinematicHarden( matl, pstrain )
+        KH = calKinematicHarden( matl )
       endif
       dd= 3.d0*G+H+KH
       dlambda = dlambda+f/dd

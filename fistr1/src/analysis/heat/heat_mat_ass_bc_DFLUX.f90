@@ -14,12 +14,12 @@ contains
   !C*** MAT_ASS_DFLUX
   !C***
   !C
-  subroutine heat_mat_ass_bc_DFLUX( hecMESH, hecMAT, fstrSOLID, fstrHEAT, CTIME, DTIME, beta )
+  subroutine heat_mat_ass_bc_DFLUX( hecMESH, hecMAT, fstrSOLID, fstrHEAT, CTIME, DTIME )
     use m_heat_get_amplitude
     use m_heat_LIB_DFLUX
     use m_static_LIB_3d
     integer(kind=kint) :: k, icel, ic_type, isect, isuf, iamp, nn, is, j
-    real(kind=kreal)   :: CTIME, DTIME, QQ, val, asect, thick, vol, beta
+    real(kind=kreal)   :: CTIME, DTIME, QQ, val, asect, thick, vol
     type(fstr_solid)         :: fstrSOLID
     type(fstr_heat)          :: fstrHEAT
     type(hecmwST_matrix)     :: hecMAT
@@ -73,17 +73,17 @@ contains
       elseif( ic_type.eq.232 ) then
         is = hecMesh%section%sect_R_index(isect)
         thick = hecMESH%section%sect_R_item(is)
-        call heat_DFLUX_232(nn,xx,yy,zz,thick,isuf,val,vect)
+        call heat_DFLUX_232(nn,xx,yy,thick,isuf,val,vect)
 
       elseif( ic_type.eq.241 ) then
         is = hecMesh%section%sect_R_index(isect)
         thick = hecMESH%section%sect_R_item(is)
-        call heat_DFLUX_241(nn,xx,yy,zz,thick,isuf,val,vect)
+        call heat_DFLUX_241(nn,xx,yy,thick,isuf,val,vect)
 
       elseif( ic_type.eq.242 ) then
         is = hecMesh%section%sect_R_index(isect)
         thick = hecMESH%section%sect_R_item(is)
-        call heat_DFLUX_242(nn,xx,yy,zz,thick,isuf,val,vect)
+        call heat_DFLUX_242(nn,xx,yy,thick,isuf,val,vect)
 
       elseif( ic_type.eq.341 ) then
         call heat_DFLUX_341(nn,xx,yy,zz,isuf,val,vect)
