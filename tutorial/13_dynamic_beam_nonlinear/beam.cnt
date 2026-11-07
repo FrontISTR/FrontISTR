@@ -30,5 +30,5 @@
 ### Solver Setting
 !SOLVER,METHOD=CG,PRECOND=1,ITERLOG=NO,TIMELOG=NO
  10000, 1
- 1.0e-06, 1.0, 0.0
+ 1.0e-06, 1.0, 1.0
 !END
