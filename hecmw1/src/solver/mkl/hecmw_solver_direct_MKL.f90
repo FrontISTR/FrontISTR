@@ -54,6 +54,9 @@ contains
       hecMAT%Iarray(98) = 1
     endif
 
+    ! 3: solve only, with the factorization kept from an earlier call (both flags 0)
+    phase_start = 3
+
     !* Flag to activate symbolic factorization: 1(yes) 0(no)  hecMESH%Iarray(98)
     !* Flag to activate numeric  factorization: 1(yes) 0(no)  hecMESH%Iarray(97)
 
