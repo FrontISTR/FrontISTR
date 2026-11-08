@@ -12,7 +12,6 @@ module m_fstr_setup_finish
     : fstr_param_pack &
     , fstr_setup_util_err_stop &
     , append_node_grp_from_surf_grp &
-    , fstr_setup_visualize &
     , reallocate_integer &
     , reallocate_real
   use m_fstr_solid_setup, only &
@@ -190,10 +189,8 @@ contains
 
   !> Processing after all the cards are read: the temperature arrays, the default step,
   !> the element initialization and the checks, and the result arrays (fstr_setup_post).
-  !> ctrl is used only for !VISUAL.
-  subroutine fstr_setup_finish( ctrl, P, c_material )
+  subroutine fstr_setup_finish( P, c_material )
     implicit none
-    integer(kind=kint) :: ctrl
     type(fstr_param_pack) :: P
     integer(kind=kint), intent(in) :: c_material
 
@@ -319,7 +316,7 @@ contains
     enddo
     P%SOLID%max_lyr = n_totlyr
 
-    call fstr_setup_post( ctrl, P )
+    call fstr_setup_post( P )
   end subroutine fstr_setup_finish
 
   subroutine fstr_check_up_inputs(hecMESH, fstrSOLID)
@@ -444,9 +441,9 @@ contains
     if( istat /= 0 ) stop "Allocation error: phys%ENQM"
   end subroutine fstr_setup_post_phys_alloc
 
-  subroutine fstr_setup_post( ctrl, P )
+  subroutine fstr_setup_post( P )
     implicit none
-    integer(kind=kint) :: ctrl, i
+    integer(kind=kint) :: i
     type(fstr_param_pack) :: P
     type(fstr_solid_physic_val), pointer :: phys => null()
 
@@ -482,10 +479,6 @@ contains
       allocate( P%SOLID%REACTION( P%MESH%n_dof*P%MESH%n_node ), stat=i )
       if( i /= 0 ) stop "Allocation error: REACTION"
       P%SOLID%REACTION = 0.d0
-    end if
-
-    if( P%PARAM%fg_visual == kON )then
-      call fstr_setup_visualize( ctrl, P%MESH )
     end if
 
     call hecmw_barrier( P%MESH ) ! JP-7

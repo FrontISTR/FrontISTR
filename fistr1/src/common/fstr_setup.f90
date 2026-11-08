@@ -515,7 +515,8 @@ contains
 
     end do
 
-    call fstr_setup_finish( ctrl, P, c_material )
+    call fstr_setup_finish( P, c_material )
+    if( P%PARAM%fg_visual == kON ) call fstr_setup_visualize( ctrl, P%MESH )
     rcode = fstr_ctrl_close( ctrl )
 
   end subroutine fstr_setup
