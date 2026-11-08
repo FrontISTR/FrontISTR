@@ -99,7 +99,8 @@ LIBSRCDIRS="\
 	src/solver/contact \
 	src/visualizer \
 	src/hecmw \
-	src/etc"
+	src/etc \
+	src/api"
 
 TOOLSDIRS="\
 	tools \

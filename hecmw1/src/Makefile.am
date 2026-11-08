@@ -16,6 +16,7 @@ all: @build_target@
 	@cd hecmw      && $(MAKE) @build_target@
 	@cd visualizer && $(MAKE) @build_target@
 #	@cd etc        && $(MAKE) @build_target@
+	@cd api        && $(MAKE) @build_target@
 
 msg-setup:
 	@cd common     && $(MAKE) msg-setup
@@ -31,6 +32,7 @@ clean:
 	@cd hecmw      && $(MAKE) clean
 	@cd visualizer && $(MAKE) clean
 	@cd etc        && $(MAKE) clean
+	@cd api        && $(MAKE) clean
 
 distclean:
 	@cd common     && $(MAKE) distclean
@@ -40,6 +42,7 @@ distclean:
 	@cd hecmw      && $(MAKE) distclean
 	@cd visualizer && $(MAKE) distclean
 	@cd etc        && $(MAKE) distclean
+	@cd api        && $(MAKE) distclean
 
 install:
 	@cd common     && $(MAKE) install
@@ -49,6 +52,7 @@ install:
 	@cd hecmw      && $(MAKE) install
 	@cd visualizer && $(MAKE) install
 	@cd etc        && $(MAKE) install
+	@cd api        && $(MAKE) install
 
 depend:
 	@cd common     && $(MAKE) depend
@@ -58,3 +62,4 @@ depend:
 	@cd hecmw      && $(MAKE) depend
 	@cd visualizer && $(MAKE) depend
 	@cd etc        && $(MAKE) depend
+	@cd api        && $(MAKE) depend

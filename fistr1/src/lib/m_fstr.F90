@@ -147,13 +147,13 @@ module m_fstr
 
     !> STATIC !HEAT
     integer(kind=kint) :: analysis_n=0             !< Number of analysis
-    real(kind=kreal), pointer  :: dtime(:)=>null() !< (=DT)    STEP_DLTIME
-    real(kind=kreal), pointer  :: etime(:)=>null() !< (/=ETIME) STEP_EETIME
-    real(kind=kreal), pointer  :: dtmin(:)=>null() !< (=DTMIN) STEP_DELMIN
-    real(kind=kreal), pointer  :: delmax(:)=>null()!< (=DTMAX) STEP_DELMAX
-    integer(kind=kint), pointer:: itmax(:)=>null() !< (/=ITMAX)
-    real(kind=kreal), pointer  :: eps(:)=>null()   !< (/=ESP)
-    real(kind=kreal)           :: ref_temp=0.d0    !< (=REF_TEMP)
+    real(kind=kreal), pointer  :: dtime(:)=>null() !< STEP_DLTIME
+    real(kind=kreal), pointer  :: etime(:)=>null() !< STEP_EETIME
+    real(kind=kreal), pointer  :: dtmin(:)=>null() !< STEP_DELMIN
+    real(kind=kreal), pointer  :: delmax(:)=>null()!< STEP_DELMAX
+    integer(kind=kint), pointer:: itmax(:)=>null() !< 
+    real(kind=kreal), pointer  :: eps(:)=>null()   !< 
+    real(kind=kreal)           :: ref_temp=0.d0    !< 
     integer(kind=kint)         :: timepoint_id=0   !< time point ID for heat analysis
 
     !> output control

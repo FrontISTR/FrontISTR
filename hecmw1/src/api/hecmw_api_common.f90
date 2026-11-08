@@ -9,8 +9,8 @@ module hecmw_api_common
 
 contains
 
-  ! hecmw_lib_fc.c の HECMW_strcpy_f2c と同等だがメモリ確保していることを前提
-  ! c_str は c_len の大きさで呼び出し側で確保済み
+  ! Convert a Fortran string f_str to a C string c_str.
+  ! c_str has already been allocated by the caller with a size of c_len.
   subroutine f_c_str_copy(f_str, c_str, c_len)
     implicit none
     character(len=*), intent(in)  :: f_str
@@ -29,8 +29,8 @@ contains
     c_str(f_len+1) = c_null_char
   end subroutine
 
-  ! hecmw_lib_fc.c の HECMW_strcpy_c2f と同等
-  ! f_str は f_len の大きさで呼び出し側で確保済み
+  ! Convert a C string c_str to a Fortran string f_str.
+  ! f_str has already been allocated by the caller with a size of f_len.
   subroutine c_f_str_copy(c_str, f_str, f_len)
     implicit none
     character(kind=c_char), intent(in) :: c_str(*)
