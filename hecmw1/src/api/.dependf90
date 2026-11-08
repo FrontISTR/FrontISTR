@@ -1,0 +1,3 @@
+hecmw_api_common.o : hecmw_api_common.f90
+hecmw_api_local_mesh.o : hecmw_api_local_mesh.f90 hecmw_api_common.o
+hecmw_api_result_data.o : hecmw_api_result_data.f90 hecmw_api_common.o
