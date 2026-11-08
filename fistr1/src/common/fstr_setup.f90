@@ -1105,6 +1105,7 @@ contains
     if( associated(fstrSOLID%step_ctrl) )  then
       fstrSOLID%nstep_tot = size(fstrSOLID%step_ctrl)
       call setup_stepInfo_starttime( fstrSOLID%step_ctrl )
+      call fstr_setup_check_matrix_reuse( fstrSOLID, P%PARAM )
     else
       if( p%PARAM%solution_type==kstSTATIC .and. P%PARAM%nlgeom ) then
         write( *,* ) " ERROR: STEP not defined!"
@@ -1180,6 +1181,72 @@ contains
     rcode = fstr_ctrl_close( ctrl )
 
   end subroutine fstr_setup
+
+  !> Check the steps that keep the factorized stiffness matrix of the previous step (!STEP, MATRIX=REUSE).
+  !> The matrix must be the same as in the previous step, so everything that changes it is an input error.
+  subroutine fstr_setup_check_matrix_reuse( fstrSOLID, fstrPARAM )
+    type(fstr_solid), intent(inout) :: fstrSOLID
+    type(fstr_param), intent(in)    :: fstrPARAM
+    integer(kind=kint) :: i, ig
+    character(len=HECMW_MSG_LEN) :: why
+
+    do i = 1, fstrSOLID%nstep_tot
+      if( fstrSOLID%step_ctrl(i)%matrix /= stepMatrixReuse ) cycle
+      if( i == 1 ) then
+        if( myrank == 0 ) write(*,'(a)') ' ### Warning: !STEP 1 has MATRIX=REUSE but there is no previous step; '// &
+          & 'the matrix is factorized (MATRIX=UPDATE)'
+        write(ILOG,'(a)') ' ### Warning: !STEP 1 has MATRIX=REUSE but there is no previous step; '// &
+          & 'the matrix is factorized (MATRIX=UPDATE)'
+        fstrSOLID%step_ctrl(i)%matrix = stepMatrixUpdate
+        cycle
+      endif
+      why = ''
+      if( fstrPARAM%solution_type /= kstSTATIC .or. fstrPARAM%nlgeom ) then
+        why = 'it is allowed only in linear static analysis (!SOLUTION, TYPE=STATIC)'
+      else if( fstrSOLID%step_ctrl(i)%solution /= stepStatic .or. fstrSOLID%step_ctrl(i-1)%solution /= stepStatic ) then
+        why = 'it is not allowed with TYPE=VISCO'
+      else if( .not. same_group_set( fstrSOLID%step_ctrl(i)%Boundary, fstrSOLID%step_ctrl(i-1)%Boundary ) ) then
+        why = 'its BOUNDARY groups differ from the previous step'
+      else if( has_groups( fstrSOLID%step_ctrl(i)%Contact ) .or. has_groups( fstrSOLID%step_ctrl(i-1)%Contact ) ) then
+        why = 'it is not allowed with CONTACT'
+      else if( has_groups( fstrSOLID%step_ctrl(i)%ElemActivation ) .or. &
+          &    has_groups( fstrSOLID%step_ctrl(i-1)%ElemActivation ) ) then
+        why = 'it is not allowed with element activation'
+      else if( fstrSOLID%TEMP_irres > 0 ) then
+        why = 'it is not allowed with temperatures read from a file (!TEMPERATURE, READRESULT)'
+      else
+        do ig = 1, fstrSOLID%SPRING_ngrp_tot
+          if( isLoadActive( fstrSOLID%SPRING_ngrp_GRPID(ig), fstrSOLID%step_ctrl(i) ) .neqv. &
+              isLoadActive( fstrSOLID%SPRING_ngrp_GRPID(ig), fstrSOLID%step_ctrl(i-1) ) ) then
+            why = 'its active !SPRING groups differ from the previous step'
+            exit
+          endif
+        enddo
+        do ig = 1, fstrSOLID%TEMP_ngrp_tot
+          if( len_trim(why) > 0 ) exit
+          if( isLoadActive( fstrSOLID%TEMP_ngrp_GRPID(ig), fstrSOLID%step_ctrl(i) ) .neqv. &
+              isLoadActive( fstrSOLID%TEMP_ngrp_GRPID(ig), fstrSOLID%step_ctrl(i-1) ) ) then
+            why = 'its active !TEMPERATURE groups differ from the previous step'
+            exit
+          endif
+        enddo
+      endif
+      if( len_trim(why) > 0 ) then
+        write(*,'(a,i0,a)') ' ### Error: !STEP ', i, ' has MATRIX=REUSE but '//trim(why)
+        write(ILOG,'(a,i0,a)') ' ### Error: !STEP ', i, ' has MATRIX=REUSE but '//trim(why)
+        call fstr_abort( HECMW_EXIT_INPUT )
+      endif
+    enddo
+
+  contains
+
+    logical function has_groups( a )
+      integer, pointer :: a(:)
+      has_groups = .false.
+      if( associated(a) ) has_groups = size(a) > 0
+    end function
+
+  end subroutine fstr_setup_check_matrix_reuse
 
 
   !> Initializer of structure fstr_solid

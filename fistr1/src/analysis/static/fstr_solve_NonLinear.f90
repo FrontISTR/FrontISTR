@@ -106,6 +106,7 @@ contains
     real(kind=kreal)   :: tincr
     real(kind=kreal), allocatable :: coord(:), P(:)
     logical :: isLinear = .false.
+    logical, save :: hasFactor = .false.   !< the linear solver holds a factorization from an earlier solve of this run
     integer(kind=kint) :: iterStatus
     type(fstr_convergence_state) :: cnvstat
 
@@ -137,15 +138,25 @@ contains
       call hecmw_ebc_apply(hecMESHmpc, hecMATmpc, hecEBC)
 
       !----- SOLVE [Kt]{du}={R}
-      if( sub_step == restrt_step_num .and. iter == 1 ) hecMATmpc%Iarray(98) = 1
-      if( iter == 1 ) then
-        hecMATmpc%Iarray(97) = 2   !Force numerical factorization
+      if( isLinear .and. hasFactor .and. iter == 1 .and. sub_step == 1 .and. cstep > 1 .and. &
+          & fstrSOLID%step_ctrl(cstep)%matrix == stepMatrixReuse ) then
+        ! !STEP, MATRIX=REUSE: the stiffness matrix is the same as in the previous step (checked in fstr_setup),
+        ! so the solver keeps its factorization (or preconditioner) and only solves for the new right-hand side
+        hecMATmpc%Iarray(98) = 0
+        hecMATmpc%Iarray(97) = 0
+        if( hecMESH%my_rank == 0 ) write(*,'(a,i0)') ' matrix factorization reused from the previous step: step ', cstep
       else
-        hecMATmpc%Iarray(97) = 1   !Need numerical factorization
+        if( sub_step == restrt_step_num .and. iter == 1 ) hecMATmpc%Iarray(98) = 1
+        if( iter == 1 ) then
+          hecMATmpc%Iarray(97) = 2   !Force numerical factorization
+        else
+          hecMATmpc%Iarray(97) = 1   !Need numerical factorization
+        endif
       endif
       hecMATmpc%X = 0.0d0
       call fstr_set_current_config_to_mesh(hecMESHmpc,fstrSOLID,coord)
       call solve_LINEQ(hecMESHmpc,hecMATmpc)
+      hasFactor = .true.
       call fstr_recover_initial_config_to_mesh(hecMESHmpc,fstrSOLID,coord)
       ! ----- check matrix solver error
       call fstr_check_linear_solver(hecMESH, hecMATmpc, fstrSOLID, cstep, sub_step, iterStatus)

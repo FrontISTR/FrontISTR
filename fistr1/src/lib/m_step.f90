@@ -15,6 +15,8 @@ module m_step
   integer, parameter :: stepAutoInc  = 2
   integer, parameter :: stepAmpRamp = 1  ! prescribed disp. ramped over the step (default for static)
   integer, parameter :: stepAmpStep = 2  ! prescribed disp. applied in full at step start (default for visco)
+  integer, parameter :: stepMatrixUpdate = 1  ! factorize the stiffness matrix again at the start of the step (default)
+  integer, parameter :: stepMatrixReuse  = 2  ! keep the factorization (or preconditioner) of the previous step
 
   ! statistics of newton iteration
   integer(kind=kint),parameter :: knstMAXIT  = 1 ! maximum number of newton iteration
@@ -61,6 +63,7 @@ module m_step
     integer, pointer :: ElemActivation(:)=>null()      !< active group of elemact conditions of current step
     integer :: timepoint_id                   !< id of timepoint
     integer :: AincParam_id                   !< id of auto increment parameter
+    integer :: matrix                         !< stepMatrixUpdate or stepMatrixReuse (linear static only)
   end type
 
   type tParamAutoInc
@@ -109,6 +112,7 @@ contains
     stepinfo%maxres = 1.d+10
     stepinfo%timepoint_id = 0
     stepinfo%AincParam_id = 0
+    stepinfo%matrix = stepMatrixUpdate
     call setup_stepInfo_converg( stepinfo )
   end subroutine
 
@@ -185,6 +189,31 @@ contains
     isElemActivationActive = .false.
     if( .not. associated( stepinfo%ElemActivation ) ) return
     if( any( stepinfo%ElemActivation== bnd ) ) isElemActivationActive = .true.
+  end function
+
+  !> Do two group id lists hold the same set of ids (order and repetition ignored)?
+  logical function same_group_set( a, b )
+    integer, pointer :: a(:), b(:)
+    integer :: i
+    same_group_set = .false.
+    if( associated(a) .neqv. associated(b) ) then
+      if( associated(a) ) then
+        if( size(a) > 0 ) return
+      else
+        if( size(b) > 0 ) return
+      endif
+      same_group_set = .true.
+      return
+    endif
+    if( associated(a) ) then
+      do i = 1, size(a)
+        if( .not. any( b == a(i) ) ) return
+      enddo
+      do i = 1, size(b)
+        if( .not. any( a == b(i) ) ) return
+      enddo
+    endif
+    same_group_set = .true.
   end function
 
   !> Finalizer

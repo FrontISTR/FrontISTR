@@ -339,6 +339,10 @@ contains
     if( fstr_ctrl_get_param_ex( ctrl, 'AUTOINCPARAM ',  '# ',  0, 'S', apname )/= 0) return
     cpname=""
     if( fstr_ctrl_get_param_ex( ctrl, 'CONVERGPARAM ',  '# ',  0, 'S', cpname )/= 0) return
+    ! MATRIX = UPDATE | REUSE : REUSE keeps the factorized stiffness matrix of the previous step
+    ! (linear static analysis only; checked in fstr_setup_check_matrix_reuse).
+    steps%matrix = stepMatrixUpdate
+    if( fstr_ctrl_get_param_ex( ctrl, 'MATRIX ', 'UPDATE,REUSE ', 0, 'P', steps%matrix )/= 0) return
 
     n = fstr_ctrl_get_data_line_n( ctrl )
     if( n == 0 ) then
