@@ -1615,7 +1615,7 @@ contains
       enddo
     endif
     if( associated(fstrPARAM%ainc) ) then
-      do i=1,size(fstrPARAM%ainc)
+      do i=1,size(fstrPARAM%ainc)-1
         if( hecmw_streqr( fstrPARAM%ainc(i)%name, mName2 ) ) then
           fstrSOLID%step_ctrl(c_istep)%AincParam_id = i; exit
         endif
