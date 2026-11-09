@@ -2178,6 +2178,61 @@ contains
     fstrHEAT%beta        = -1.0d0
   end subroutine fstr_heat_init
 
+  subroutine fstr_heat_finalize( fstrHEAT )
+    implicit none
+    type(fstr_heat) :: fstrHEAT
+    if(associated(fstrHEAT%STEP_DLTIME)) deallocate(fstrHEAT%STEP_DLTIME)
+    if(associated(fstrHEAT%STEP_EETIME)) deallocate(fstrHEAT%STEP_EETIME)
+    if(associated(fstrHEAT%STEP_DELMIN)) deallocate(fstrHEAT%STEP_DELMIN)
+    if(associated(fstrHEAT%STEP_DELMAX)) deallocate(fstrHEAT%STEP_DELMAX)
+    if(associated(fstrHEAT%RHOtab)) deallocate(fstrHEAT%RHOtab)
+    if(associated(fstrHEAT%CPtab)) deallocate(fstrHEAT%CPtab)
+    if(associated(fstrHEAT%CONDtab)) deallocate(fstrHEAT%CONDtab)
+    if(associated(fstrHEAT%RHO)) deallocate(fstrHEAT%RHO)
+    if(associated(fstrHEAT%RHOtemp)) deallocate(fstrHEAT%RHOtemp)
+    if(associated(fstrHEAT%CP)) deallocate(fstrHEAT%CP)
+    if(associated(fstrHEAT%CPtemp)) deallocate(fstrHEAT%CPtemp)
+    if(associated(fstrHEAT%COND)) deallocate(fstrHEAT%COND)
+    if(associated(fstrHEAT%CONDtemp)) deallocate(fstrHEAT%CONDtemp)
+    if(associated(fstrHEAT%RHOfuncA)) deallocate(fstrHEAT%RHOfuncA)
+    if(associated(fstrHEAT%RHOfuncB)) deallocate(fstrHEAT%RHOfuncB)
+    if(associated(fstrHEAT%CPfuncA)) deallocate(fstrHEAT%CPfuncA)
+    if(associated(fstrHEAT%CPfuncB)) deallocate(fstrHEAT%CPfuncB)
+    if(associated(fstrHEAT%CONDfuncA)) deallocate(fstrHEAT%CONDfuncA)
+    if(associated(fstrHEAT%CONDfuncB)) deallocate(fstrHEAT%CONDfuncB)
+    if(associated(fstrHEAT%AMPLtab)) deallocate(fstrHEAT%AMPLtab)
+    if(associated(fstrHEAT%AMPL)) deallocate(fstrHEAT%AMPL)
+    if(associated(fstrHEAT%AMPLtime)) deallocate(fstrHEAT%AMPLtime)
+    if(associated(fstrHEAT%AMPLfuncA)) deallocate(fstrHEAT%AMPLfuncA)
+    if(associated(fstrHEAT%AMPLfuncB)) deallocate(fstrHEAT%AMPLfuncB)
+    if(associated(fstrHEAT%TEMP0)) deallocate(fstrHEAT%TEMP0)
+    if(associated(fstrHEAT%TEMPC)) deallocate(fstrHEAT%TEMPC)
+    if(associated(fstrHEAT%TEMP)) deallocate(fstrHEAT%TEMP)
+    if(associated(fstrHEAT%is_dummy_node)) deallocate(fstrHEAT%is_dummy_node)
+    if(associated(fstrHEAT%T_FIX_node)) deallocate(fstrHEAT%T_FIX_node)
+    if(associated(fstrHEAT%T_FIX_ampl)) deallocate(fstrHEAT%T_FIX_ampl)
+    if(associated(fstrHEAT%T_FIX_val)) deallocate(fstrHEAT%T_FIX_val)
+    if(associated(fstrHEAT%Q_NOD_node)) deallocate(fstrHEAT%Q_NOD_node)
+    if(associated(fstrHEAT%Q_NOD_ampl)) deallocate(fstrHEAT%Q_NOD_ampl)
+    if(associated(fstrHEAT%Q_NOD_val)) deallocate(fstrHEAT%Q_NOD_val)
+    if(associated(fstrHEAT%Q_VOL_elem)) deallocate(fstrHEAT%Q_VOL_elem)
+    if(associated(fstrHEAT%Q_VOL_ampl)) deallocate(fstrHEAT%Q_VOL_ampl)
+    if(associated(fstrHEAT%Q_VOL_val)) deallocate(fstrHEAT%Q_VOL_val)
+    if(associated(fstrHEAT%Q_SUF_elem)) deallocate(fstrHEAT%Q_SUF_elem)
+    if(associated(fstrHEAT%Q_SUF_ampl)) deallocate(fstrHEAT%Q_SUF_ampl)
+    if(associated(fstrHEAT%Q_SUF_surf)) deallocate(fstrHEAT%Q_SUF_surf)
+    if(associated(fstrHEAT%Q_SUF_val)) deallocate(fstrHEAT%Q_SUF_val)
+    if(associated(fstrHEAT%R_SUF_elem)) deallocate(fstrHEAT%R_SUF_elem)
+    if(associated(fstrHEAT%R_SUF_ampl)) deallocate(fstrHEAT%R_SUF_ampl)
+    if(associated(fstrHEAT%R_SUF_surf)) deallocate(fstrHEAT%R_SUF_surf)
+    if(associated(fstrHEAT%R_SUF_val)) deallocate(fstrHEAT%R_SUF_val)
+    if(associated(fstrHEAT%H_SUF_elem)) deallocate(fstrHEAT%H_SUF_elem)
+    if(associated(fstrHEAT%H_SUF_ampl)) deallocate(fstrHEAT%H_SUF_ampl)
+    if(associated(fstrHEAT%H_SUF_surf)) deallocate(fstrHEAT%H_SUF_surf)
+    if(associated(fstrHEAT%H_SUF_val)) deallocate(fstrHEAT%H_SUF_val)
+    if(associated(fstrHEAT%weldline)) deallocate(fstrHEAT%weldline)
+  end subroutine fstr_heat_finalize
+
   !> Initial setting of eigen ca;culation
   subroutine fstr_eigen_init( fstrEIG )
     implicit none
@@ -2191,6 +2246,18 @@ contains
     fstrEIG%tolerance   = 1.0d-6
     fstrEIG%totalmass   = 0.0d0
   end subroutine fstr_eigen_init
+
+  subroutine fstr_eigen_finalize( fstrEIG )
+    implicit none
+    type(fstr_eigen) :: fstrEIG
+    if(associated(fstrEIG%eigval)) deallocate(fstrEIG%eigval)
+    if(associated(fstrEIG%eigvec)) deallocate(fstrEIG%eigvec)
+    if(associated(fstrEIG%resid)) deallocate(fstrEIG%resid)
+    if(associated(fstrEIG%filter)) deallocate(fstrEIG%filter)
+    if(associated(fstrEIG%mass)) deallocate(fstrEIG%mass)
+    if(associated(fstrEIG%effmass)) deallocate(fstrEIG%effmass)
+    if(associated(fstrEIG%partfactor)) deallocate(fstrEIG%partfactor)
+  end subroutine fstr_eigen_finalize
 
   !> Initial setting of dynamic calculation
   subroutine fstr_dynamic_init( fstrDYNAMIC )
@@ -2341,6 +2408,14 @@ contains
       call flush(idbg)
       call hecmw_abort( hecmw_comm_get_comm())
     end if
+    if( associated(fstrDYNAMIC%HHT_FORCE) ) then
+      deallocate( fstrDYNAMIC%HHT_FORCE    ,stat=ierror )
+      if( ierror /= 0 ) then
+        write(idbg,*) 'stop due to deallocation error <fstr_solve_LINEAR_DYNAMIC, HHT_FORCE>'
+        call flush(idbg)
+        call hecmw_abort( hecmw_comm_get_comm())
+      end if
+    endif
     if( associated(fstrDYNAMIC%VEC1) )        &
       deallocate( fstrDYNAMIC%VEC1    ,stat=ierror )
     if( ierror /= 0 ) then
@@ -2362,17 +2437,41 @@ contains
       call flush(idbg)
       call hecmw_abort( hecmw_comm_get_comm())
     end if
-    if( associated(fstrDYNAMIC%HHT_FORCE) ) then
-      deallocate( fstrDYNAMIC%HHT_FORCE    ,stat=ierror )
-      if( ierror /= 0 ) then
-        write(idbg,*) 'stop due to deallocation error <fstr_solve_LINEAR_DYNAMIC, HHT_FORCE>'
-        call flush(idbg)
-        call hecmw_abort( hecmw_comm_get_comm())
-      end if
-    endif
 
   end subroutine
 
+  subroutine fstr_freqanalysis_finalize( f )
+    implicit none
+    type( fstr_freqanalysis ), intent(inout) :: f
+    if(associated(f%FLOAD_ngrp_GRPID)) deallocate(f%FLOAD_ngrp_GRPID)
+    if(associated(f%FLOAD_ngrp_ID)) deallocate(f%FLOAD_ngrp_ID)
+    if(associated(f%FLOAD_ngrp_TYPE)) deallocate(f%FLOAD_ngrp_TYPE)
+    if(associated(f%FLOAD_ngrp_DOF)) deallocate(f%FLOAD_ngrp_DOF)
+    if(associated(f%FLOAD_ngrp_valre)) deallocate(f%FLOAD_ngrp_valre)
+    if(associated(f%FLOAD_ngrp_valim)) deallocate(f%FLOAD_ngrp_valim)
+    if(associated(f%FACC_ngrp_ID)) deallocate(f%FACC_ngrp_ID)
+    if(associated(f%FACC_ngrp_type)) deallocate(f%FACC_ngrp_type)
+    if(associated(f%FACC_ngrp_valre)) deallocate(f%FACC_ngrp_valre)
+    if(associated(f%FACC_ngrp_valim)) deallocate(f%FACC_ngrp_valim)
+  end subroutine fstr_freqanalysis_finalize
+
+  subroutine fstr_freqanalysis_data_finalize( f )
+    implicit none
+    type( fstr_freqanalysis_data ), intent(inout) :: f
+    if(associated(f%eigOmega)) deallocate(f%eigOmega)
+    if(associated(f%eigVector)) deallocate(f%eigVector)
+  end subroutine fstr_freqanalysis_data_finalize
+
+  subroutine fstr_couple_finalize( C )
+    implicit none
+    type( fstr_couple ) :: C
+    if(associated(C%coupled_node)) deallocate(C%coupled_node)
+    if(associated(C%trac)) deallocate(C%trac)
+    if(associated(C%disp)) deallocate(C%disp)
+    if(associated(C%velo)) deallocate(C%velo)
+    if(associated(C%accel)) deallocate(C%accel)
+    if(associated(C%index)) deallocate(C%index)
+  end subroutine fstr_couple_finalize
 
   !-----------------------------------------------------------------------------!
   !> Initial setting of postprecessor
