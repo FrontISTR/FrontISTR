@@ -266,7 +266,7 @@ contains
     call hecmw_saamg_setup(A, g_cmt, B, m, prm, g_dh, saamg_fine_matvec, &
          move_in=(.not. prm%verify))
     ! verify: a numeric refresh reproduces (a) the full build for the SAME A and
-    ! (b) a fresh full build for a value-perturbed A' (same pattern) -- S4 routing
+    ! (b) a fresh full build for a value-perturbed A' (same pattern)
     if (prm%verify) call hecmw_saamg_verify_refresh(g_dh, A, g_cmt, B, m, prm, nint*ndof)
     if (prm%dump_vtk) call dump_agg_vtk(g_dh, hecMESH, ndof, nint)
     call hecmw_saamg_bcsr_free(A)

@@ -5,8 +5,8 @@
 ! SA-AMG unit test : F3a (hierarchy diagnostics)
 !
 ! Builds a hierarchy with verbose=.true. (prints the diagnostic table) and checks
-! the captured statistics are sane: >= 2 levels, aggregates respect min_size,
-! operator/grid complexity in a reasonable band.
+! the captured statistics are sane: >= 2 levels, every non-coarsest level has
+! aggregates, operator complexity in a reasonable band.
 !-------------------------------------------------------------------------------
 program test_step7
   use hecmw_precond_SAAMG_util
@@ -25,7 +25,7 @@ program test_step7
   integer(kind=8) :: nnz_tot
   integer(kind=kint) :: n, l
   real(kind=kreal) :: opc
-  logical :: minsize_ok
+  logical :: aggr_ok
 
   npass = 0; nfail = 0
 
@@ -45,12 +45,12 @@ program test_step7
   call check('built >= 2 levels', dh%nlevel >= 2, npass, nfail)
 
   ! aggregation produced coarse nodes on every non-coarsest level
-  minsize_ok = .true.
+  aggr_ok = .true.
   do l = 1, dh%nlevel - 1
-    if (dh%lev(l)%naggr_local <= 0) minsize_ok = .false.
+    if (dh%lev(l)%naggr_local <= 0) aggr_ok = .false.
   end do
   call check('aggregation produced coarse nodes (all non-coarsest levels)', &
-       minsize_ok, npass, nfail)
+       aggr_ok, npass, nfail)
 
   ! operator complexity in a sane band
   nnz_tot = 0

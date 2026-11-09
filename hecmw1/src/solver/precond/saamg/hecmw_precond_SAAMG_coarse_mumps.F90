@@ -4,7 +4,7 @@
 !-------------------------------------------------------------------------------
 !> \brief  Smoothed Aggregation AMG preconditioner : distributed MUMPS coarsest solver
 !!
-!! Alternative coarsest-level backend (F7): a parallel sparse direct factorization
+!! Alternative coarsest-level backend: a parallel sparse direct factorization
 !! of the DISTRIBUTED coarse operator, with NO redundant gather.  Each rank feeds
 !! its owned coarse rows to MUMPS as distributed assembled input (ICNTL(18)=3, lower
 !! triangle, SYM=2) over the level communicator; MUMPS factors in parallel.  Per

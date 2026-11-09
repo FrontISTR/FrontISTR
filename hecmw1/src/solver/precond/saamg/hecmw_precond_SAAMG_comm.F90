@@ -830,7 +830,7 @@ contains
   !> MPI_Alltoallv of triplets (2 int + 1 real).  scnt(#ranks) = send counts per
   !! destination; si/sj/sv ordered by destination rank.  Returns ntot received and
   !! ri/rj/rv (allocated here).  Routes sparse-matrix partial contributions to the
-  !! owning ranks (possibly non-neighbors) for distributed Galerkin assembly.
+  !! owning ranks (this rank or a neighbor) for distributed Galerkin assembly.
   subroutine hecmw_saamg_comm_alltoallv_triplets(cmt, scnt, si, sj, sv, ntot, ri, rj, rv)
     type(hecmwST_saamg_comm), intent(in)  :: cmt
     integer(kind=kint),     intent(in)  :: scnt(:), si(:), sj(:)

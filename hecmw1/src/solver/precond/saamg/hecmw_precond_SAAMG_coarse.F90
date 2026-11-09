@@ -4,12 +4,10 @@
 !-------------------------------------------------------------------------------
 !> \brief  Smoothed Aggregation AMG preconditioner : coarsest-level solver
 !!
-!! Abstract coarsest-solver interface (setup_structure / setup_values / solve);
-!! the first backend is a redundant dense symmetric LDL^T factorization (LAPACK
-!! dsytrf/dsytrs).  dsytrf (not dpotrf) is used so the same backend handles the
-!! symmetric-indefinite coarse matrices of the future u-p extension.  In the MPI
-!! phase the coarse matrix will be Allgather'd and factored redundantly on every
-!! rank; here (sequential) the level matrix is simply densified in place.
+!! Redundant dense coarsest solver: the coarsest operator, gathered on every rank by
+!! the caller, is densified and factored by LAPACK -- LDL^T (dsytrf/dsytrs) when
+!! symmetric, LU (dgetrf/dgetrs) otherwise.  dsytrf (not dpotrf) is used so that
+!! symmetric-indefinite coarse matrices are handled too.
 module hecmw_precond_SAAMG_coarse
   use hecmw_precond_SAAMG_util
   use hecmw_precond_SAAMG_matrix

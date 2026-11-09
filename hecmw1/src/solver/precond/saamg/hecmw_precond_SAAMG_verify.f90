@@ -75,7 +75,7 @@ contains
     rel_same = sqrt(d2/max(n2,1.0d-300))
 
     ! (b) value perturbation A' = Df A Df (symmetric congruence: same pattern, still
-    ! SPD).  A refresh from A' must match a FRESH full build from A' (S4 routing
+    ! SPD).  A refresh from A' must match a FRESH full build from A' (the refresh routing
     ! re-sends only values).  Df(node) = 1 + 0.3*sin(gid) > 0.
     call hecmw_saamg_bcsr_copy(A, Ap)
     do ir = 1, Ap%nbrow                         ! block row = node
