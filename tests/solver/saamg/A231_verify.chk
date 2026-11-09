@@ -1,0 +1,11 @@
+# every self-check must run to the end; the exact identities must hold
+F4a verify: global
+F4b verify: total coarse nodes= [0-9]+ +coarse-halo refs= [0-9]+ +commtable symmetric= T
+F4b-2 verify: .*= +([0-9]\.[0-9]+E-(1[3-9]|[2-9][0-9])|0\.000E\+00)$
+# the smoothed-P residual is partition-independent
+F4c-1 verify: global .*= +2\.07818201
+F4c-2a verify: .*mismatch= +0\.000E\+00
+F4c-2b verify: .*relative asymmetry= +([0-9]\.[0-9]+E-(1[3-9]|[2-9][0-9])|0\.000E\+00)$
+S1 verify: .*= +0\.000E\+00 +cmt_op symmetric= T
+refresh verify \(same A\): .*= +([0-9]\.[0-9]+E-(1[3-9]|[2-9][0-9])|0\.000E\+00)$
+refresh verify \(perturb A\): .*= +([0-9]\.[0-9]+E-(1[3-9]|[2-9][0-9])|0\.000E\+00)$

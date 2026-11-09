@@ -203,26 +203,15 @@ contains
     type(hecmwST_saamg_comm) :: cmt_c
     integer(kind=kint), allocatable :: aggr(:), agg_loc(:)
     real(kind=kreal),   allocatable :: Bext(:,:), bcoarse(:,:), bc(:), y(:)
-    integer(kind=kint) :: naggr_local, ncnode, np, ni, nrow, i, base, c, j
-    real(kind=kreal) :: xx, yy, zz, resid
+    integer(kind=kint) :: naggr_local, ncnode, np, ni, nrow, i, c, j
+    real(kind=kreal) :: resid
 
     call hecmw_saamg_from_hecmat(hecMAT, Afull, include_halo=.true.)
     call hecmw_saamg_coarsen_struct(Afull, cmt, prm%min_size, prm%max_size, &
          prm%theta, m, aggr, naggr_local, agg_loc, ncnode, cmt_c, agg_order=prm%agg_order)
 
     np = hecMESH%n_node; ni = hecMESH%nn_internal; nrow = np*ndof
-    ! rigid-body near-kernel over ALL nodes, ZERO centroid (rank-consistent)
-    allocate(Bext(nrow, m)); Bext = 0.0d0
-    do i = 1, np
-      xx = hecMESH%node(3*i-2); yy = hecMESH%node(3*i-1); zz = hecMESH%node(3*i)
-      base = ndof*(i-1)
-      Bext(base+1,1)=1.0d0; Bext(base+1,5)= zz; Bext(base+1,6)=-yy
-      Bext(base+2,2)=1.0d0; Bext(base+2,4)=-zz; Bext(base+2,6)= xx
-      Bext(base+3,3)=1.0d0; Bext(base+3,4)= yy; Bext(base+3,5)=-xx
-      if (ndof == 6) then
-        Bext(base+4,4)=1.0d0; Bext(base+5,5)=1.0d0; Bext(base+6,6)=1.0d0
-      end if
-    end do
+    call verify_near_kernel(hecMESH, ndof, m, Bext)
 
     call hecmw_saamg_tentative_ext(cmt, ndof, m, Bext(1:ni*ndof, :), aggr, &
          naggr_local, agg_loc, ncnode, phat_ext, bcoarse)
@@ -268,26 +257,16 @@ contains
     type(hecmwST_saamg_comm) :: cmt_c
     integer(kind=kint), allocatable :: aggr(:), agg_loc(:), chalo_gid(:)
     real(kind=kreal),   allocatable :: Bext(:,:), bcoarse(:,:), bc(:), y(:)
-    integer(kind=kint) :: naggr_local, ncnode, np, ni, nir, i, base, c, j, my_off
-    real(kind=kreal) :: xx, yy, zz, omega, res2, prows_mism, asym
+    integer(kind=kint) :: naggr_local, ncnode, ni, nir, i, c, j, my_off
+    real(kind=kreal) :: omega, res2, prows_mism, asym
 
     call hecmw_saamg_from_hecmat(hecMAT, Afull, include_halo=.true.)
     call hecmw_saamg_coarsen_struct(Afull, cmt, prm%min_size, prm%max_size, &
          prm%theta, m, aggr, naggr_local, agg_loc, ncnode, cmt_c, my_off, chalo_gid, &
          agg_order=prm%agg_order)
 
-    np = hecMESH%n_node; ni = hecMESH%nn_internal; nir = ni*ndof
-    allocate(Bext(np*ndof, m)); Bext = 0.0d0
-    do i = 1, np
-      xx = hecMESH%node(3*i-2); yy = hecMESH%node(3*i-1); zz = hecMESH%node(3*i)
-      base = ndof*(i-1)
-      Bext(base+1,1)=1.0d0; Bext(base+1,5)= zz; Bext(base+1,6)=-yy
-      Bext(base+2,2)=1.0d0; Bext(base+2,4)=-zz; Bext(base+2,6)= xx
-      Bext(base+3,3)=1.0d0; Bext(base+3,4)= yy; Bext(base+3,5)=-xx
-      if (ndof == 6) then
-        Bext(base+4,4)=1.0d0; Bext(base+5,5)=1.0d0; Bext(base+6,6)=1.0d0
-      end if
-    end do
+    ni = hecMESH%nn_internal; nir = ni*ndof
+    call verify_near_kernel(hecMESH, ndof, m, Bext)
 
     call hecmw_saamg_prolongator(Afull, cmt, m, prm%safety, prm%lanczos_iter, &
          Bext(1:nir, :), aggr, naggr_local, agg_loc, ncnode, P, bcoarse, omega)
@@ -339,5 +318,38 @@ contains
     call hecmw_saamg_bcsr_free(Ac_global)
     call hecmw_saamg_bcsr_free(Afull)
   end subroutine hecmw_saamg_verify_smoothp
+
+  !> Near-kernel B_fine (np*ndof x m) over ALL nodes (internal and halo): the rigid-body
+  !! modes of hecmw_precond_rbm_from_mesh for each ndof, but without the centroid shift
+  !! (every rank sharing a node must build the same rows) and without the special rows
+  !! of 33struct rotation nodes (the checks hold for any B of full column rank).
+  subroutine verify_near_kernel(hecMESH, ndof, m, Bext)
+    implicit none
+    type(hecmwST_local_mesh),      intent(in)  :: hecMESH
+    integer(kind=kint),            intent(in)  :: ndof, m
+    real(kind=kreal), allocatable, intent(out) :: Bext(:,:)
+    integer(kind=kint) :: i, base
+    real(kind=kreal) :: xx, yy, zz
+
+    allocate(Bext(hecMESH%n_node*ndof, m)); Bext = 0.0d0
+    do i = 1, hecMESH%n_node
+      xx = hecMESH%node(3*i-2); yy = hecMESH%node(3*i-1); zz = hecMESH%node(3*i)
+      base = ndof*(i-1)
+      select case (ndof)
+      case (1)
+        Bext(base+1,1)=1.0d0
+      case (2)
+        Bext(base+1,1)=1.0d0; Bext(base+1,3)=-yy
+        Bext(base+2,2)=1.0d0; Bext(base+2,3)= xx
+      case default
+        Bext(base+1,1)=1.0d0; Bext(base+1,5)= zz; Bext(base+1,6)=-yy
+        Bext(base+2,2)=1.0d0; Bext(base+2,4)=-zz; Bext(base+2,6)= xx
+        Bext(base+3,3)=1.0d0; Bext(base+3,4)= yy; Bext(base+3,5)=-xx
+        if (ndof == 6) then
+          Bext(base+4,4)=1.0d0; Bext(base+5,5)=1.0d0; Bext(base+6,6)=1.0d0
+        end if
+      end select
+    end do
+  end subroutine verify_near_kernel
 
 end module hecmw_precond_SAAMG_verify
