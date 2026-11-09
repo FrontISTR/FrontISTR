@@ -1255,6 +1255,10 @@ contains
     call hecmw_saamg_blockdiag_free(lev%D)
     call hecmw_saamg_blockdiag_setup(lev%A, lev%D)
     lambda = hecmw_saamg_lambda_max(lev%A, lev%cmt, lev%D, prm%lanczos_iter)
+    if (.not. (lambda > 0.0d0)) then
+      write(*,'(a,es12.4)') 'hecmw_saamg level_smoother: lambda_max(D^{-1}A) estimate=', lambda
+      call hecmw_saamg_abort('level_smoother: operator or its block diagonal is not positive definite')
+    end if
     lambda_hat = prm%safety * lambda
     call hecmw_saamg_cheb_setup(lambda_hat, prm%cheb_deg, prm%cheb_alpha, lev%cheb)
     omega = (4.0d0/3.0d0) / lambda_hat

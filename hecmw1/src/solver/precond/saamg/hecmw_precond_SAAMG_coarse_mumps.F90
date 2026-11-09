@@ -262,7 +262,7 @@ contains
       else
         if (myrank == 0) write(*,'(a,i0,a,i0)') &
              ' #### SA-AMG MUMPS error: INFOG(1)=', istat, ' INFOG(2)=', id%INFOG(2)
-        exit
+        call hecmw_saamg_abort('MUMPS coarsest: analysis, factorization or solve failed')
       end if
     end do
   end subroutine mumps_run
