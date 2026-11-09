@@ -93,7 +93,6 @@ module hecmw_precond_SAAMG_core
     type(hecmwST_saamg_bcsr)      :: P       !< prolongator to the next level
     type(hecmwST_saamg_bcsr)      :: Pt      !< P^T
     type(hecmwST_saamg_bcsr)      :: phat_ext!< tentative prolongator (kept for refresh)
-    type(hecmwST_saamg_comm)      :: cmt_c   !< 1-ring coarse table from coarsen_struct (refresh)
     type(hecmwST_saamg_gplan)     :: gplan   !< cached Galerkin routing for numeric refresh
     integer(kind=kint) :: nb_l = 0, naggr_local = 0, ncnode = 0, my_off = 0
     integer(kind=kint), allocatable :: chalo_gid(:)  !< global id per P halo coarse node
@@ -1277,6 +1276,7 @@ contains
     real(kind=kreal),   allocatable :: bcoarse(:,:)
     integer(kind=kint) :: na_glob, nf_glob, i, nint, lmax_size, my_off
     real(kind=kreal) :: ts
+    type(hecmwST_saamg_comm) :: cmt_c
     ts = saamg_wtime()
     my_off = dh%lev(l)%my_off
     ! Coarsening taper (levels >= 2): cap the effective max_size so each level
@@ -1294,8 +1294,10 @@ contains
     end if
     call hecmw_saamg_coarsen_struct(dh%lev(l)%A, dh%lev(l)%cmt, dh%prm%min_size, &
          lmax_size, dh%prm%theta, m, aggr, dh%lev(l)%naggr_local, agg_loc, &
-         dh%lev(l)%ncnode, dh%lev(l)%cmt_c, dh%lev(l)%my_off, dh%lev(l)%chalo_gid, &
+         dh%lev(l)%ncnode, cmt_c, dh%lev(l)%my_off, dh%lev(l)%chalo_gid, &
          agg_order=dh%prm%agg_order)
+    ! the next level communicates through the operator table built by the Galerkin
+    call hecmw_saamg_comm_free(cmt_c)
     ! capture the finest aggregation (global coarse-node id per internal node) for VTK
     if (l == 1 .and. dh%prm%dump_vtk) then
       nint = dh%lev(1)%A%n / dh%lev(1)%A%nb
@@ -1633,7 +1635,6 @@ contains
         call hecmw_saamg_bcsr_free(dh%lev(l)%P)
         call hecmw_saamg_bcsr_free(dh%lev(l)%Pt)
         call hecmw_saamg_bcsr_free(dh%lev(l)%phat_ext)
-        call hecmw_saamg_comm_free(dh%lev(l)%cmt_c)
         call hecmw_saamg_gplan_free(dh%lev(l)%gplan)
         if (allocated(dh%lev(l)%chalo_gid)) deallocate(dh%lev(l)%chalo_gid)
         if (allocated(dh%lev(l)%x))   deallocate(dh%lev(l)%x)
