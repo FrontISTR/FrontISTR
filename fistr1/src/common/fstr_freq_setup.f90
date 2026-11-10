@@ -23,6 +23,28 @@ module m_fstr_freq_setup
 
 contains
 
+  subroutine fstr_freqanalysis_finalize( f )
+    implicit none
+    type( fstr_freqanalysis ), intent(inout) :: f
+    if(associated(f%FLOAD_ngrp_GRPID)) deallocate(f%FLOAD_ngrp_GRPID)
+    if(associated(f%FLOAD_ngrp_ID)) deallocate(f%FLOAD_ngrp_ID)
+    if(associated(f%FLOAD_ngrp_TYPE)) deallocate(f%FLOAD_ngrp_TYPE)
+    if(associated(f%FLOAD_ngrp_DOF)) deallocate(f%FLOAD_ngrp_DOF)
+    if(associated(f%FLOAD_ngrp_valre)) deallocate(f%FLOAD_ngrp_valre)
+    if(associated(f%FLOAD_ngrp_valim)) deallocate(f%FLOAD_ngrp_valim)
+    if(associated(f%FACC_ngrp_ID)) deallocate(f%FACC_ngrp_ID)
+    if(associated(f%FACC_ngrp_type)) deallocate(f%FACC_ngrp_type)
+    if(associated(f%FACC_ngrp_valre)) deallocate(f%FACC_ngrp_valre)
+    if(associated(f%FACC_ngrp_valim)) deallocate(f%FACC_ngrp_valim)
+  end subroutine fstr_freqanalysis_finalize
+
+  subroutine fstr_freqanalysis_data_finalize( f )
+    implicit none
+    type( fstr_freqanalysis_data ), intent(inout) :: f
+    if(associated(f%eigOmega)) deallocate(f%eigOmega)
+    if(associated(f%eigVector)) deallocate(f%eigVector)
+  end subroutine fstr_freqanalysis_data_finalize
+
   !-----------------------------------------------------------------------------!
   !> Read in !FLOAD                                                             !
   !-----------------------------------------------------------------------------!

@@ -39,7 +39,7 @@ module m_fstr
   integer(kind=kint), parameter :: kstEIGEN    = 2
   integer(kind=kint), parameter :: kstHEAT     = 3
   integer(kind=kint), parameter :: kstDYNAMIC  = 4
-  !integer(kind=kint), parameter :: kstNLSTATIC  =   5
+  !integer(kind=kint), parameter :: kstNLSTATIC  = 5
   integer(kind=kint), parameter :: kstSTATICEIGEN = 6
   integer(kind=kint), parameter :: kstNZPROF      = 7
 
@@ -63,8 +63,8 @@ module m_fstr
   integer(kind=kint), parameter :: kcaALagrange = 2
 
   !> boundary condition file type (bcf)
-  integer(kind=kint), parameter :: kbcfFSTR     =   0  ! BC described in fstr control file (default)
-  integer(kind=kint), parameter :: kbcfNASTRAN  =   1  ! nastran file
+  integer(kind=kint), parameter :: kbcfFSTR     =  0  ! BC described in fstr control file (default)
+  integer(kind=kint), parameter :: kbcfNASTRAN  =  1  ! nastran file
 
   integer(kind=kint), parameter :: kbcInitial   =  1
   integer(kind=kint), parameter :: kbcTransit   =  2
@@ -131,8 +131,8 @@ module m_fstr
 
   type tInitialCondition
      character(len=HECMW_FILENAME_LEN)          :: cond_name
-     integer                    :: node_elem                    !< node =0;  element =1
-     integer                    :: grpid
+     integer                    :: node_elem = 0                !< node =0;  element =1
+     integer                    :: grpid = 0
      integer, pointer           :: intval(:)     => null()      !< if -1, not initialized, otherwise dof number
      real(kind=kreal), pointer  :: realval(:)    => null()      !< initial value
   end type
@@ -439,82 +439,82 @@ module m_fstr
   !> Data for HEAT ANSLYSIS  (fstrHEAT)
   type fstr_heat
     !> Crank-Nicolson parameter
-    integer(kind=kint) :: is_steady
-    real(kind=kreal)   :: beta
-    logical :: is_iter_max_limit
+    integer(kind=kint) :: is_steady=0
+    real(kind=kreal)   :: beta=0.d0
+    logical :: is_iter_max_limit=.false.
 
     !> TIME CONTROL
-    integer(kind=kint) :: STEPtot
-    integer(kind=kint) :: restart_nout
-    real(kind=kreal), pointer :: STEP_DLTIME(:), STEP_EETIME(:)
-    real(kind=kreal), pointer :: STEP_DELMIN(:), STEP_DELMAX(:)
-    integer(kind=kint) :: timepoint_id
+    integer(kind=kint) :: STEPtot=0
+    integer(kind=kint) :: restart_nout=0
+    real(kind=kreal), pointer :: STEP_DLTIME(:)=>null(), STEP_EETIME(:)=>null()
+    real(kind=kreal), pointer :: STEP_DELMIN(:)=>null(), STEP_DELMAX(:)=>null()
+    integer(kind=kint) :: timepoint_id=0
 
     !> MATERIAL
-    integer(kind=kint) :: MATERIALtot
-    integer(kind=kint), pointer :: RHOtab(:), CPtab(:), CONDtab(:)
-    real(kind=kreal), pointer :: RHO(:,:), RHOtemp (:,:)
-    real(kind=kreal), pointer :: CP(:,:),  CPtemp (:,:)
-    real(kind=kreal), pointer :: COND(:,:),CONDtemp (:,:)
+    integer(kind=kint) :: MATERIALtot=0
+    integer(kind=kint), pointer :: RHOtab(:)=>null(), CPtab(:)=>null(), CONDtab(:)=>null()
+    real(kind=kreal), pointer :: RHO(:,:)=>null(), RHOtemp(:,:)=>null()
+    real(kind=kreal), pointer :: CP(:,:)=>null(),  CPtemp(:,:)=>null()
+    real(kind=kreal), pointer :: COND(:,:)=>null(), CONDtemp(:,:)=>null()
 
-    real(kind=kreal), pointer :: RHOfuncA(:,:),  RHOfuncB(:,:)
-    real(kind=kreal), pointer :: CPfuncA (:,:),  CPfuncB(:,:)
-    real(kind=kreal), pointer :: CONDfuncA (:,:),CONDfuncB(:,:)
+    real(kind=kreal), pointer :: RHOfuncA(:,:)=>null(), RHOfuncB(:,:)=>null()
+    real(kind=kreal), pointer :: CPfuncA(:,:)=>null(), CPfuncB(:,:)=>null()
+    real(kind=kreal), pointer :: CONDfuncA(:,:)=>null(), CONDfuncB(:,:)=>null()
 
     !> AMPLITUDE
-    integer(kind=kint) :: AMPLITUDEtot
-    integer(kind=kint), pointer :: AMPLtab(:)
-    real(kind=kreal), pointer :: AMPL(:,:), AMPLtime (:,:)
-    real(kind=kreal), pointer :: AMPLfuncA(:,:),  AMPLfuncB(:,:)
+    integer(kind=kint) :: AMPLITUDEtot=0
+    integer(kind=kint), pointer :: AMPLtab(:)=>null()
+    real(kind=kreal), pointer :: AMPL(:,:)=>null(), AMPLtime (:,:)=>null()
+    real(kind=kreal), pointer :: AMPLfuncA(:,:)=>null(),  AMPLfuncB(:,:)=>null()
 
     !> VALUE
-    real(kind=kreal), pointer :: TEMP0(:)
-    real(kind=kreal), pointer :: TEMPC(:)
-    real(kind=kreal), pointer :: TEMP (:)
+    real(kind=kreal), pointer :: TEMP0(:)=>null()
+    real(kind=kreal), pointer :: TEMPC(:)=>null()
+    real(kind=kreal), pointer :: TEMP(:)=>null()
 
     !> ROTATIONAL DUMMY NODE OF 641/761/781, which carries no temperature
-    logical, pointer :: is_dummy_node(:)
+    logical, pointer :: is_dummy_node(:)=>null()
 
     !> FIXTEMP
-    integer(kind=kint) :: T_FIX_tot
-    integer(kind=kint), pointer :: T_FIX_node(:)
-    integer(kind=kint), pointer :: T_FIX_ampl(:)
-    real(kind=kreal), pointer :: T_FIX_val(:)
+    integer(kind=kint) :: T_FIX_tot=0
+    integer(kind=kint), pointer :: T_FIX_node(:)=>null()
+    integer(kind=kint), pointer :: T_FIX_ampl(:)=>null()
+    real(kind=kreal), pointer :: T_FIX_val(:)=>null()
 
     !> CFLUX
-    integer(kind=kint) :: Q_NOD_tot
-    integer(kind=kint), pointer :: Q_NOD_node(:)
-    integer(kind=kint), pointer :: Q_NOD_ampl(:)
-    real(kind=kreal), pointer :: Q_NOD_val(:)
+    integer(kind=kint) :: Q_NOD_tot=0
+    integer(kind=kint), pointer :: Q_NOD_node(:)=>null()
+    integer(kind=kint), pointer :: Q_NOD_ampl(:)=>null()
+    real(kind=kreal), pointer :: Q_NOD_val(:)=>null()
 
     !> DFLUX (not used)
-    integer(kind=kint) :: Q_VOL_tot
-    integer(kind=kint), pointer :: Q_VOL_elem(:)
-    integer(kind=kint), pointer :: Q_VOL_ampl(:)
-    real(kind=kreal), pointer :: Q_VOL_val(:)
+    integer(kind=kint) :: Q_VOL_tot=0
+    integer(kind=kint), pointer :: Q_VOL_elem(:)=>null()
+    integer(kind=kint), pointer :: Q_VOL_ampl(:)=>null()
+    real(kind=kreal), pointer :: Q_VOL_val(:)=>null()
 
     !> DFLUX, !SFLUX
-    integer(kind=kint) :: Q_SUF_tot
-    integer(kind=kint), pointer :: Q_SUF_elem(:)
-    integer(kind=kint), pointer :: Q_SUF_ampl(:)
-    integer(kind=kint), pointer :: Q_SUF_surf(:)
-    real(kind=kreal), pointer :: Q_SUF_val(:)
+    integer(kind=kint) :: Q_SUF_tot=0
+    integer(kind=kint), pointer :: Q_SUF_elem(:)=>null()
+    integer(kind=kint), pointer :: Q_SUF_ampl(:)=>null()
+    integer(kind=kint), pointer :: Q_SUF_surf(:)=>null()
+    real(kind=kreal), pointer :: Q_SUF_val(:)=>null()
 
     !> RADIATE, !SRADIATE
-    integer(kind=kint) :: R_SUF_tot
-    integer(kind=kint), pointer :: R_SUF_elem(:)
-    integer(kind=kint), pointer :: R_SUF_ampl(:,:)
-    integer(kind=kint), pointer :: R_SUF_surf(:)
-    real(kind=kreal), pointer :: R_SUF_val(:,:)
+    integer(kind=kint) :: R_SUF_tot=0
+    integer(kind=kint), pointer :: R_SUF_elem(:)=>null()
+    integer(kind=kint), pointer :: R_SUF_ampl(:,:)=>null()
+    integer(kind=kint), pointer :: R_SUF_surf(:)=>null()
+    real(kind=kreal), pointer :: R_SUF_val(:,:)=>null()
 
     !> FILM, SFILM
-    integer(kind=kint) :: H_SUF_tot
-    integer(kind=kint), pointer :: H_SUF_elem(:)
-    integer(kind=kint), pointer :: H_SUF_ampl(:,:)
-    integer(kind=kint), pointer :: H_SUF_surf(:)
-    real(kind=kreal), pointer :: H_SUF_val(:,:)
+    integer(kind=kint) :: H_SUF_tot=0
+    integer(kind=kint), pointer :: H_SUF_elem(:)=>null()
+    integer(kind=kint), pointer :: H_SUF_ampl(:,:)=>null()
+    integer(kind=kint), pointer :: H_SUF_surf(:)=>null()
+    real(kind=kreal), pointer :: H_SUF_val(:,:)=>null()
 
-    integer(kind=kint)  :: WL_tot
+    integer(kind=kint)  :: WL_tot=0
     type(tWeldLine), pointer :: weldline(:) => null()
 
     !> ELEMACT
@@ -524,43 +524,43 @@ module m_fstr
   !> Data for DYNAMIC ANSLYSIS  (fstrDYNAMIC)
   type fstr_dynamic
     !> ANALYSIS TYPE CONTROL
-    integer(kind=kint) :: idx_eqa       ! implicit or explicit
-    integer(kind=kint) :: idx_resp      ! time history or steady-state harmonic response analysis
+    integer(kind=kint) :: idx_eqa=0     ! implicit or explicit
+    integer(kind=kint) :: idx_resp=0    ! time history or steady-state harmonic response analysis
 
     !> TIME CONTROL
-    integer(kind=kint) :: n_step        ! total step number of analysis
-    real(kind=kreal)   :: t_start       ! start time of analysis
-    real(kind=kreal)   :: t_curr        ! current time of analysis
-    real(kind=kreal)   :: t_end         ! end time of analysis
-    real(kind=kreal)   :: t_delta       ! time increment
-    integer(kind=kint) :: restart_nout  ! output interval of restart file
+    integer(kind=kint) :: n_step=0      ! total step number of analysis
+    real(kind=kreal)   :: t_start=0.d0  ! start time of analysis
+    real(kind=kreal)   :: t_curr=0.d0   ! current time of analysis
+    real(kind=kreal)   :: t_end=0.d0    ! end time of analysis
+    real(kind=kreal)   :: t_delta=0.d0  ! time increment
+    integer(kind=kint) :: restart_nout=0! output interval of restart file
     ! (if  .gt.0) restart file write
     ! (if  .lt.0) restart file read and write
-    integer(kind=kint) :: restart_nin  !input number of restart file
+    integer(kind=kint) :: restart_nin=0 !input number of restart file
 
     !> Newmark-beta parameter
-    real(kind=kreal)   :: gamma         ! Newmark-beta parameter gamma
-    real(kind=kreal)   :: beta          ! Newmark-beta parameter beta
+    real(kind=kreal)   :: gamma=0.d0    ! Newmark-beta parameter gamma
+    real(kind=kreal)   :: beta=0.d0     ! Newmark-beta parameter beta
 
     !> HHT parameter
-    real(kind=kreal)   :: alpha         ! HHT parameter alpha
+    real(kind=kreal)   :: alpha=0.d0    ! HHT parameter alpha
 
     !> mass matrix control
-    integer(kind=kint) :: idx_mas       ! kMassLumped or kMassConsistent
+    integer(kind=kint) :: idx_mas=0     ! kMassLumped or kMassConsistent
 
     !> damping control
-    integer(kind=kint) :: idx_dmp      ! damping type
-    real(kind=kreal)   :: ray_m         ! Rayleigh damping parameter Rm
-    real(kind=kreal)   :: ray_k         ! Rayleigh damping parameter Rk
+    integer(kind=kint) :: idx_dmp=0     ! damping type
+    real(kind=kreal)   :: ray_m=0.d0    ! Rayleigh damping parameter Rm
+    real(kind=kreal)   :: ray_k=0.d0    ! Rayleigh damping parameter Rk
 
     !> initialization control
-    logical           :: VarInitialize  ! initialization flag
+    logical           :: VarInitialize=.false. ! initialization flag
 
     !> OUTPUT CONTROL
-    integer(kind=kint) :: nout           ! output interval of result
-    integer(kind=kint) :: ngrp_monit     ! node of monitoring result
-    integer(kind=kint) :: nout_monit     ! output interval of result monitoring
-    integer(kind=kint) :: iout_list(6)   ! 0:not output  1:output
+    integer(kind=kint) :: nout=0         ! output interval of result
+    integer(kind=kint) :: ngrp_monit=0   ! node of monitoring result
+    integer(kind=kint) :: nout_monit=0   ! output interval of result monitoring
+    integer(kind=kint) :: iout_list(6)=0 ! 0:not output  1:output
     ! iout_list(1): displacement
     ! iout_list(2): velocity
     ! iout_list(3): acceleration
@@ -569,19 +569,19 @@ module m_fstr
     ! iout_list(6): stress
 
     !> VALUE
-    real(kind=kreal), pointer :: DISP  (:,:)     !> Displacement, U(t+dt), U(t), U(t-dt)
-    real(kind=kreal), pointer :: VEL   (:,:)     !> Velocity
-    real(kind=kreal), pointer :: ACC   (:,:)     !> Acceleration
+    real(kind=kreal), pointer :: DISP  (:,:) => null()  !> Displacement, U(t+dt), U(t), U(t-dt)
+    real(kind=kreal), pointer :: VEL   (:,:) => null()  !> Velocity
+    real(kind=kreal), pointer :: ACC   (:,:) => null()  !> Acceleration
     real(kind=kreal), pointer :: HHT_FORCE(:) => null() !> HHT: force except inertia at t_n
 
-    real(kind=kreal) :: kineticEnergy
-    real(kind=kreal) :: strainEnergy
-    real(kind=kreal) :: totalEnergy
+    real(kind=kreal) :: kineticEnergy=0.d0
+    real(kind=kreal) :: strainEnergy=0.d0
+    real(kind=kreal) :: totalEnergy=0.d0
 
     !> temporary quantity
-    real(kind=kreal), pointer :: VEC1  (:)
-    real(kind=kreal), pointer :: VEC2  (:)
-    real(kind=kreal), pointer :: VEC3  (:)
+    real(kind=kreal), pointer :: VEC1  (:) => null()
+    real(kind=kreal), pointer :: VEC2  (:) => null()
+    real(kind=kreal), pointer :: VEC3  (:) => null()
 
     integer(kind=kint) :: dynamic_IW4        =   204
     integer(kind=kint) :: dynamic_IW5        =   205
@@ -593,7 +593,7 @@ module m_fstr
   end type fstr_dynamic
 
   type fstr_freqanalysis
-    integer(kind=kint)                :: FLOAD_ngrp_tot
+    integer(kind=kint)                :: FLOAD_ngrp_tot=0
     integer(kind=kint), pointer       :: FLOAD_ngrp_GRPID(:) => null()
     integer(kind=kint), pointer       :: FLOAD_ngrp_ID(:)    => null()
     integer(kind=kint), pointer       :: FLOAD_ngrp_TYPE(:)  => null()
@@ -601,86 +601,86 @@ module m_fstr
     real(kind=kreal), pointer         :: FLOAD_ngrp_valre(:) => null()
     real(kind=kreal), pointer         :: FLOAD_ngrp_valim(:) => null()
     !acceleration input given by !FACCELERATION (one entry per data line)
-    integer(kind=kint)                :: FACC_ngrp_tot                 !< number of entries
+    integer(kind=kint)                :: FACC_ngrp_tot=0                 !< number of entries
     integer(kind=kint), pointer       :: FACC_ngrp_ID(:)     => null() !< node group ID
     integer(kind=kint), pointer       :: FACC_ngrp_type(:)   => null() !< 10*dof_start + dof_end (same as !ACCELERATION)
     real(kind=kreal), pointer         :: FACC_ngrp_valre(:)  => null() !< real part of the acceleration amplitude (LOAD CASE=1)
     real(kind=kreal), pointer         :: FACC_ngrp_valim(:)  => null() !< imaginary part of the acceleration amplitude (LOAD CASE=2)
-    character(len=HECMW_FILENAME_LEN) :: eigenlog_filename
-    integer(kind=kint)                :: start_mode
-    integer(kind=kint)                :: end_mode
+    character(len=HECMW_FILENAME_LEN) :: eigenlog_filename = ""
+    integer(kind=kint)                :: start_mode=0
+    integer(kind=kint)                :: end_mode=0
   end type fstr_freqanalysis
 
   type fstr_freqanalysis_data
-    integer(kind=kint)        :: numMode
-    integer(kind=kint)        :: numNodeDOF
+    integer(kind=kint)        :: numMode=0
+    integer(kind=kint)        :: numNodeDOF=0
     real(kind=kreal), pointer :: eigOmega(:)    => null()
     real(kind=kreal), pointer :: eigVector(:,:) => null()
-    real(kind=kreal)           :: rayAlpha, rayBeta
+    real(kind=kreal)           :: rayAlpha=0.d0, rayBeta=0.d0
   end type fstr_freqanalysis_data
 
   !> Package of data used by Lanczos eigenvalue solver
   type fstr_eigen
     !> Allocatable array, used or Lanczos eigenvalue analysis
-    integer(kind=kint)  :: nget      ! Solved eigen value number (default:5)
-    integer(kind=kint)  :: maxiter   ! Max. Lcz iterations (default:60)
-    integer(kind=kint)  :: iter      ! Max. Lcz iterations (default:60)
-    real   (kind=kreal) :: sigma     ! 0.0
-    real   (kind=kreal) :: tolerance ! Lcz tolerance (default:1.0e-8)
-    real   (kind=kreal) :: totalmass
-    real   (kind=kreal), pointer :: eigval(:)
-    real   (kind=kreal), pointer :: eigvec(:,:)
-    real   (kind=kreal), pointer :: resid(:)
-    real   (kind=kreal), pointer :: filter(:)
-    real   (kind=kreal), pointer :: mass(:)
-    real   (kind=kreal), pointer :: effmass(:)
-    real   (kind=kreal), pointer :: partfactor(:)
+    integer(kind=kint)  :: nget=0    ! Solved eigen value number (default:5)
+    integer(kind=kint)  :: maxiter=0 ! Max. Lcz iterations (default:60)
+    integer(kind=kint)  :: iter=0    ! Max. Lcz iterations (default:60)
+    real   (kind=kreal) :: sigma=0.d0     ! 0.0
+    real   (kind=kreal) :: tolerance=0.d0 ! Lcz tolerance (default:1.0e-8)
+    real   (kind=kreal) :: totalmass=0.d0
+    real   (kind=kreal), pointer :: eigval(:) => null()
+    real   (kind=kreal), pointer :: eigvec(:,:) => null()
+    real   (kind=kreal), pointer :: resid(:) => null()
+    real   (kind=kreal), pointer :: filter(:) => null()
+    real   (kind=kreal), pointer :: mass(:) => null()
+    real   (kind=kreal), pointer :: effmass(:) => null()
+    real   (kind=kreal), pointer :: partfactor(:) => null()
     logical :: is_free = .false.
   end type fstr_eigen
 
   !> Data for coupling analysis
   type fstr_couple
     !> for revocap
-    integer( kind=kint )   :: dof              ! == 3
-    integer( kind=kint )   :: ndof             ! total dof (coupled_node_n*dof)
-    integer( kind=kint )   :: coupled_node_n
+    integer( kind=kint )   :: dof=0            ! == 3
+    integer( kind=kint )   :: ndof=0           ! total dof (coupled_node_n*dof)
+    integer( kind=kint )   :: coupled_node_n=0
     !> note) following types depend on revocap
-    integer, pointer       :: coupled_node(:)  ! local node id sent from revocap
-    real( kind=8 ),pointer :: trac(:)          ! input  (x,y,z,x,y,z ... )
-    real( kind=8 ),pointer :: disp(:)          ! output (x,y,z,x,y,z ... )
-    real( kind=8 ),pointer :: velo(:)          ! output (x,y,z,x,y,z ... )
-    real( kind=8 ),pointer :: accel(:)         ! output (x,y,z,x,y,z ... )
+    integer, pointer       :: coupled_node(:) => null()  ! local node id sent from revocap
+    real( kind=8 ),pointer :: trac(:) => null()          ! input  (x,y,z,x,y,z ... )
+    real( kind=8 ),pointer :: disp(:) => null()          ! output (x,y,z,x,y,z ... )
+    real( kind=8 ),pointer :: velo(:) => null()          ! output (x,y,z,x,y,z ... )
+    real( kind=8 ),pointer :: accel(:) => null()         ! output (x,y,z,x,y,z ... )
     !> for inner use
-    integer( kind=kint ),pointer :: index(:)   ! size:total node num.
+    integer( kind=kint ),pointer :: index(:) => null()   ! size:total node num.
     !>  -1:not relation, >1:index of coupled_node
   end type fstr_couple
 
   !> Data for weld line
   type tWeldLine
-    integer(kind=kint) :: egrpid
-    real( kind=kreal ) :: I
-    real( kind=kreal ) :: U
-    real( kind=kreal ) :: coe
-    real( kind=kreal ) :: v
-    integer(kind=kint) :: xyz
-    real(kind=kreal)   :: n1, n2
-    real(kind=kreal)   :: distol
-    real(kind=kreal)   :: tstart
+    integer(kind=kint) :: egrpid=0
+    real( kind=kreal ) :: I=0.d0
+    real( kind=kreal ) :: U=0.d0
+    real( kind=kreal ) :: coe=0.d0
+    real( kind=kreal ) :: v=0.d0
+    integer(kind=kint) :: xyz=0
+    real(kind=kreal)   :: n1=0.d0, n2=0.d0
+    real(kind=kreal)   :: distol=0.d0
+    real(kind=kreal)   :: tstart=0.d0
   end type tWeldLine
 
   !> Data for section control
   type tSection
-    !integer              :: mat_ID
-    !integer              :: iset
-    !integer              :: orien_ID
-    real(kind=kreal)     :: thickness
-    integer              :: elemopt341
-    !integer              :: elemopt342
-    !integer              :: elemopt351
-    !integer              :: elemopt352
-    integer              :: elemopt361
-    !integer              :: elemopt362
-    integer              :: elemopt611
+    !integer              :: mat_ID=0
+    !integer              :: iset=0
+    !integer              :: orien_ID=0
+    real(kind=kreal)     :: thickness=0.d0
+    integer              :: elemopt341=0
+    !integer              :: elemopt342=0
+    !integer              :: elemopt351=0
+    !integer              :: elemopt352=0
+    integer              :: elemopt361=0
+    !integer              :: elemopt362=0
+    integer              :: elemopt611=0
   end type tSection
 
 contains
@@ -699,6 +699,13 @@ contains
     endif
     call hecmw_abort( hecmw_comm_get_comm(), code )
   end subroutine fstr_abort
+
+  subroutine fstr_nullify_initial_condition( cond )
+    implicit none
+    type( tInitialCondition ) :: cond
+    nullify( cond%intval )
+    nullify( cond%realval )
+  end subroutine
 
   !> NULL POINTER SETTING TO AVOID RUNTIME ERROR
   subroutine fstr_nullify_fstr_param( P )
@@ -892,24 +899,24 @@ contains
     nullify( H%STEP_EETIME )
     nullify( H%STEP_DELMIN )
     nullify( H%STEP_DELMAX )
+    nullify( H%RHOtab )
+    nullify( H%CPtab )
+    nullify( H%CONDtab )
     nullify( H%RHO )
     nullify( H%RHOtemp  )
     nullify( H%CP )
     nullify( H%CPtemp  )
     nullify( H%COND )
     nullify( H%CONDtemp  )
-    nullify( H%RHOtab )
-    nullify( H%CPtab )
-    nullify( H%CONDtab )
     nullify( H%RHOfuncA )
     nullify( H%RHOfuncB )
     nullify( H%CPfuncA  )
     nullify( H%CPfuncB )
     nullify( H%CONDfuncA  )
     nullify( H%CONDfuncB )
+    nullify( H%AMPLtab )
     nullify( H%AMPL )
     nullify( H%AMPLtime  )
-    nullify( H%AMPLtab )
     nullify( H%AMPLfuncA )
     nullify( H%AMPLfuncB )
     nullify( H%TEMP0 )
@@ -937,6 +944,7 @@ contains
     nullify( H%H_SUF_ampl )
     nullify( H%H_SUF_surf )
     nullify( H%H_SUF_val )
+    nullify( H%weldline )
   end subroutine fstr_nullify_fstr_heat
 
   subroutine fstr_nullify_fstr_dynamic( DY )
@@ -946,6 +954,7 @@ contains
     nullify( DY%DISP )
     nullify( DY%VEL  )
     nullify( DY%ACC  )
+    nullify( DY%HHT_FORCE  )
     nullify( DY%VEC1 )
     nullify( DY%VEC2 )
     nullify( DY%VEC3 )
@@ -970,11 +979,23 @@ contains
     nullify( f%FACC_ngrp_valim )
   end subroutine fstr_nullify_fstr_freqanalysis
 
+  subroutine fstr_nullify_fstr_freqanalysis_data( f )
+    implicit none
+    type( fstr_freqanalysis_data ), intent(inout) :: f
+    nullify( f%eigOmega )
+    nullify( f%eigVector )
+  end subroutine fstr_nullify_fstr_freqanalysis_data
+
   subroutine fstr_nullify_fstr_eigen( E )
     implicit none
     type( fstr_eigen ) :: E
-
+    nullify( E%eigval )
+    nullify( E%eigvec )
+    nullify( E%resid )
+    nullify( E%filter )
     nullify( E%mass )
+    nullify( E%effmass )
+    nullify( E%partfactor )
   end subroutine fstr_nullify_fstr_eigen
 
   subroutine fstr_nullify_fstr_couple( C )
@@ -983,6 +1004,7 @@ contains
 
     nullify( C%coupled_node )
     nullify( C%trac )
+    nullify( C%disp )
     nullify( C%velo )
     nullify( C%index )
   end subroutine fstr_nullify_fstr_couple
@@ -1191,6 +1213,13 @@ contains
     end do
     call fstr_sort_index( fstrPARAM%global_local_ID, hecMESH%nn_internal )
   end subroutine fstr_param_init
+
+  subroutine fstr_initial_condition_finalize( cond )
+    implicit none
+    type( tInitialCondition ) :: cond
+    if(associated(cond%intval)) deallocate(cond%intval)
+    if(associated(cond%realval)) deallocate(cond%realval)
+  end subroutine fstr_initial_condition_finalize
 
   subroutine fstr_param_finalize( fstrPARAM )
     implicit none

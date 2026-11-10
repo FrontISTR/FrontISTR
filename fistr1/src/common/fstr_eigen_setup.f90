@@ -28,6 +28,18 @@ contains
     fstrEIG%totalmass   = 0.0d0
   end subroutine fstr_eigen_init
 
+  subroutine fstr_eigen_finalize( fstrEIG )
+    implicit none
+    type(fstr_eigen) :: fstrEIG
+    if(associated(fstrEIG%eigval)) deallocate(fstrEIG%eigval)
+    if(associated(fstrEIG%eigvec)) deallocate(fstrEIG%eigvec)
+    if(associated(fstrEIG%resid)) deallocate(fstrEIG%resid)
+    if(associated(fstrEIG%filter)) deallocate(fstrEIG%filter)
+    if(associated(fstrEIG%mass)) deallocate(fstrEIG%mass)
+    if(associated(fstrEIG%effmass)) deallocate(fstrEIG%effmass)
+    if(associated(fstrEIG%partfactor)) deallocate(fstrEIG%partfactor)
+  end subroutine fstr_eigen_finalize
+
   !-----------------------------------------------------------------------------!
   !> Read in !EIGEN                                                            !
   !-----------------------------------------------------------------------------!
