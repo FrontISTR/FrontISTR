@@ -29,14 +29,8 @@ class cntemp {
   cntemp(int id = -1, double v = 0) : nid(id), value(v) {}
 };
 
-inline bool operator==(const cntemp &a, const cntemp &b) {
-  return a.nid == b.nid;
-}
 inline bool operator<(const cntemp &a, const cntemp &b) {
   return a.nid < b.nid;
-}
-inline bool operator>(const cntemp &a, const cntemp &b) {
-  return a.nid > b.nid;
 }
 
 }  // of namespace

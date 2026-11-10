@@ -341,27 +341,6 @@ contains
   end function fstr_get_INITIAL_CONDITION
 
   !-----------------------------------------------------------------------------!
-  !> Read in !WRITE                                                          !
-  !-----------------------------------------------------------------------------!
-
-  subroutine fstr_setup_WRITE( ctrl, counter, P )
-    implicit none
-    integer(kind=kint) :: ctrl
-    integer(kind=kint) :: counter
-    type(fstr_param_pack) :: P
-    integer(kind=kint) :: res, visual, neutral
-
-    integer(kind=kint) :: rcode
-
-    rcode = fstr_ctrl_get_WRITE( ctrl, res, visual, neutral )
-    if( rcode /= 0 ) call fstr_ctrl_err_stop
-    if( res == 1 ) P%PARAM%fg_result = 1
-    if( visual == 1 ) P%PARAM%fg_visual = 1
-    if( neutral == 1 ) P%PARAM%fg_neutral = 1
-
-  end subroutine fstr_setup_WRITE
-
-  !-----------------------------------------------------------------------------!
   !> Read in !ECHO                                                            !
   !-----------------------------------------------------------------------------!
   subroutine fstr_setup_ECHO( ctrl, P )

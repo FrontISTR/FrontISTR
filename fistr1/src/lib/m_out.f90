@@ -249,14 +249,6 @@ contains
     if( mod( cstep, outctrl%frequency )==0 ) fstr_output_active=.true.
   end function
 
-  subroutine fstr_ctrl_get_filename( ctrl, ss )
-    integer(kind=kint), intent(in)             :: ctrl
-    character(len=HECMW_NAME_LEN), intent(out) :: ss
-    integer(kind=kint) :: rcode
-    ss = trim(OUTFILENAME)
-    rcode = fstr_ctrl_get_param_ex( ctrl, 'FILENAME ', '# ', 0, 'F', ss )
-  end subroutine
-
   subroutine fstr_ctrl_get_output( ctrl, outctrl, islog, res, visual, femap )
     integer(kind=kint), intent(in)     :: ctrl
     type(t_output_ctrl), intent(inout) :: outctrl
