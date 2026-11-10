@@ -1175,8 +1175,8 @@ contains
       if (prm%timelog >= 2) call report_time(dh%lev(l)%cmt, l, 'smoother      ', saamg_wtime()-ts)
       nglob = dh%lev(l)%A%n
       call hecmw_saamg_comm_allreduce_sum_int(dh%lev(l)%cmt, nglob)
-      ! coarsest when the global size is small (but always coarsen >=1 so the
-      ! coarsest is a coarse level with contiguous coarse offsets), or max depth.
+      ! coarsest when the global size is small (but always try to coarsen level 1: only
+      ! an aggregated level has the contiguous coarse offsets of a direct coarsest solve), or max depth.
       if ((nglob <= prm%coarse_size .and. l > 1) .or. l == prm%max_level) then
         ts = saamg_wtime()
         call make_coarsest(dh, l)
@@ -1266,7 +1266,8 @@ contains
 
   !> Coarsen level l -> level l+1 (distributed): uncoupled aggregation + tentative
   !! P-hat + smoothed P + distributed Galerkin.  Bnext = owned coarse near-kernel.
-  !! stalled = the coarsening barely reduced the size (treat l as the coarsest).
+  !! stalled = the coarsening barely reduced the size (treat l as the coarsest; level 1
+  !! is then solved by the smoother, see make_coarsest).
   !! nglob = global dof of level l (already allreduced by the setup loop).
   subroutine build_coarse_level(dh, l, B, m, omega, nglob, Bnext, stalled)
     type(hecmwST_saamg_hier), intent(inout) :: dh
@@ -1360,11 +1361,13 @@ contains
     ! reuse the level's Chebyshev smoother (D/cheb already built by level_smoother).
     ! Fully local+halo, so it scales like the smoother (no gather / host solve / factor).
     ! Accurate only when the coarsest is small; coarse_size default (100) keeps it so.
-    if (dh%prm%coarsest_solver == 1) then
+    ! Level 1 (coarsening stalled on it) has no coarse offsets, so it is always left to the smoother.
+    if (dh%prm%coarsest_solver == 1 .or. l == 1) then
+      if (l == 1 .and. dh%lev(l)%cmt%my_rank == 0) write(*,'(a)') &
+           '#### SA-AMG: level 1 does not coarsen (theta too large?) -- only the smoother is used'
       dh%coarse_is_smoother = .true.
       dh%coarse_is_mumps    = .false.
-      nown = dh%lev(l)%A%n / dh%m
-      dh%nc_coarsest = hecmw_saamg_nc_global(dh%lev(l)%cmt, nown) * dh%m
+      dh%nc_coarsest = hecmw_saamg_nc_global(dh%lev(l)%cmt, dh%lev(l)%A%n)
       return
     end if
     select case (dh%prm%coarsest_solver)
