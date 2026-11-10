@@ -8,6 +8,7 @@ module m_fstr_main
   use m_fstr
   use m_hecmw2fstr_mesh_conv
   use m_fstr_setup
+  use m_fstr_setup_inp
   use m_fstr_solve_heat
   use m_fstr_solve_nlgeom
   use m_fstr_solve_eigen
@@ -247,7 +248,12 @@ contains
 !    svRarray(:) = hecMAT%Rarray(:)
 !    svIarray(:) = hecMAT%Iarray(:)
 
-    call fstr_setup( cntfileNAME, hecMESH, hecMAT, fstrPARAM, fstrSOLID, fstrEIG, fstrHEAT, fstrDYNAMIC, fstrCPL, fstrFREQ )
+    if( fstr_ctrl_is_inp_file( cntfileNAME ) ) then
+      call fstr_setup_inp( cntfileNAME, hecMESH, hecMAT, fstrPARAM, fstrSOLID, fstrEIG, fstrHEAT, fstrDYNAMIC, fstrCPL, &
+        fstrFREQ )
+    else
+      call fstr_setup( cntfileNAME, hecMESH, hecMAT, fstrPARAM, fstrSOLID, fstrEIG, fstrHEAT, fstrDYNAMIC, fstrCPL, fstrFREQ )
+    endif
 
 !    hecMAT%Rarray(:) = svRarray(:)
 !    hecMAT%Iarray(:) = svIarray(:)
