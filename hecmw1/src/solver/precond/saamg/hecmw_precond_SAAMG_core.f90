@@ -1266,8 +1266,8 @@ contains
 
   !> Coarsen level l -> level l+1 (distributed): uncoupled aggregation + tentative
   !! P-hat + smoothed P + distributed Galerkin.  Bnext = owned coarse near-kernel.
-  !! stalled = the coarsening barely reduced the size (treat l as the coarsest; level 1
-  !! is then solved by the smoother, see make_coarsest).
+  !! stalled = the coarsening barely reduced the size or formed no aggregate (treat l
+  !! as the coarsest; level 1 is then solved by the smoother, see make_coarsest).
   !! nglob = global dof of level l (already allreduced by the setup loop).
   subroutine build_coarse_level(dh, l, B, m, omega, nglob, Bnext, stalled)
     type(hecmwST_saamg_hier), intent(inout) :: dh
@@ -1277,9 +1277,10 @@ contains
     logical,                     intent(out)   :: stalled
     integer(kind=kint), allocatable :: aggr(:), agg_loc(:)
     real(kind=kreal),   allocatable :: bcoarse(:,:)
-    integer(kind=kint) :: na_glob, nf_glob, i, nint, lmax_size
+    integer(kind=kint) :: na_glob, nf_glob, i, nint, lmax_size, my_off
     real(kind=kreal) :: ts
     ts = saamg_wtime()
+    my_off = dh%lev(l)%my_off
     ! Coarsening taper (levels >= 2): cap the effective max_size so each level
     ! keeps at least ~taper_k aggregates GLOBALLY.  Without it, phase-1 cores on
     ! the (Galerkin-densified) deep-level graphs swallow whole components and the
@@ -1314,7 +1315,9 @@ contains
     call hecmw_saamg_comm_allreduce_sum_int(dh%lev(l)%cmt, na_glob)
     nf_glob = dh%lev(l)%A%n / dh%lev(l)%A%nb
     call hecmw_saamg_comm_allreduce_sum_int(dh%lev(l)%cmt, nf_glob)
-    if (real(na_glob,kreal) > dh%prm%stagn * real(nf_glob,kreal)) then
+    if (na_glob == 0 .or. real(na_glob,kreal) > dh%prm%stagn * real(nf_glob,kreal)) then
+      ! coarsen_struct set my_off to the next level's offset; the coarsest needs its own
+      dh%lev(l)%my_off = my_off
       stalled = .true.; deallocate(aggr, agg_loc); return
     end if
     stalled = .false.
@@ -1378,8 +1381,8 @@ contains
     end select
     if (use_mumps) then
       dh%coarse_is_mumps = .true.
-      ! the coarsest level is never coarsened, so its naggr_local is unset; the
-      ! owned coarse-node count is A%n/m and its global offset is my_off (inherited).
+      ! naggr_local of the coarsest level is unset (or left from a stalled coarsening);
+      ! the owned coarse-node count is A%n/m and its global offset is my_off (inherited).
       nown = dh%lev(l)%A%n / dh%m
       dh%nc_coarsest = hecmw_saamg_nc_global(dh%lev(l)%cmt, nown) * dh%m
       call hecmw_saamg_cmumps_setup(dh%lev(l)%cmt, dh%lev(l)%A, dh%lev(l)%my_off, dh%m, &

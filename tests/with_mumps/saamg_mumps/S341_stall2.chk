@@ -1,0 +1,3 @@
+# level 2 must stall and be factored by MUMPS without an error
+SA-AMG setup: nlevel=2 +cycle
+no:MUMPS error
