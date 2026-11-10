@@ -1,0 +1,2 @@
+# the output request of the inp format is skipped with a warning
+Warning: \*NODE PRINT \(line:[0-9]+\) is skipped

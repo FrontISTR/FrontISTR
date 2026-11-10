@@ -81,6 +81,10 @@ for path in $(find . -not -path "./_archive/*" -type f \( -name "*.msh" -o -name
   rm -fr $dir/${res}*
   rm -fr $dir/${dres}*
 
+  # an inp file without a cnt file of the same name has the analysis data in itself
+  if [ ! -e $dir/$cnt ] && [ "${mesh##*.}" = "inp" ]; then
+    cnt=$mesh
+  fi
   if [ ! -e $dir/$cnt ]; then
     echo_err "*.cnt file for $path is not found. Skip this mesh file."
     continue
