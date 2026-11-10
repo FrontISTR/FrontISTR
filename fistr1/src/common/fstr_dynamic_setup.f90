@@ -138,7 +138,7 @@ contains
 
   end subroutine fstr_dynamic_alloc
 
-  !> Finalizer of fstr_solid
+  !> Finalizer of fstr_dynamic
   subroutine fstr_dynamic_finalize( fstrDYNAMIC )
     type(fstr_dynamic) :: fstrDYNAMIC
 
@@ -164,6 +164,14 @@ contains
       call flush(idbg)
       call hecmw_abort( hecmw_comm_get_comm())
     end if
+    if( associated(fstrDYNAMIC%HHT_FORCE) ) then
+      deallocate( fstrDYNAMIC%HHT_FORCE    ,stat=ierror )
+      if( ierror /= 0 ) then
+        write(idbg,*) 'stop due to deallocation error <fstr_solve_LINEAR_DYNAMIC, HHT_FORCE>'
+        call flush(idbg)
+        call hecmw_abort( hecmw_comm_get_comm())
+      end if
+    endif
     if( associated(fstrDYNAMIC%VEC1) )        &
       deallocate( fstrDYNAMIC%VEC1    ,stat=ierror )
     if( ierror /= 0 ) then
@@ -185,14 +193,6 @@ contains
       call flush(idbg)
       call hecmw_abort( hecmw_comm_get_comm())
     end if
-    if( associated(fstrDYNAMIC%HHT_FORCE) ) then
-      deallocate( fstrDYNAMIC%HHT_FORCE    ,stat=ierror )
-      if( ierror /= 0 ) then
-        write(idbg,*) 'stop due to deallocation error <fstr_solve_LINEAR_DYNAMIC, HHT_FORCE>'
-        call flush(idbg)
-        call hecmw_abort( hecmw_comm_get_comm())
-      end if
-    endif
 
   end subroutine
 

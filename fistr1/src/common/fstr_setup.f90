@@ -501,6 +501,17 @@ contains
 
   end subroutine fstr_setup
 
+  subroutine fstr_couple_finalize( C )
+    implicit none
+    type( fstr_couple ) :: C
+    if(associated(C%coupled_node)) deallocate(C%coupled_node)
+    if(associated(C%trac)) deallocate(C%trac)
+    if(associated(C%disp)) deallocate(C%disp)
+    if(associated(C%velo)) deallocate(C%velo)
+    if(associated(C%accel)) deallocate(C%accel)
+    if(associated(C%index)) deallocate(C%index)
+  end subroutine fstr_couple_finalize
+
   subroutine material_card_err_stop( header_name )
     implicit none
     character(len=*) :: header_name

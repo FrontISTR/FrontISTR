@@ -291,7 +291,7 @@ contains
     if( associated(temp) )      deallocate( temp )
     if( associated(dof) )       deallocate( dof )
     if( associated(grp_id_name) )    deallocate( grp_id_name )
-end function fstr_setup_INITIAL
+  end function fstr_setup_INITIAL
 
   !-----------------------------------------------------------------------------!
   !> Read in !WRITE                                                          !
