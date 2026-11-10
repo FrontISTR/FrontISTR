@@ -290,6 +290,10 @@ for mesh_path in $(find $target -type f \( -name "*.msh" -o -name "*.inp" \)); d
   dres=${mesh%.*}_dyna.res
   rst=${mesh%.*}.restart
 
+  # an inp file without a cnt file of the same name has the analysis data in itself
+  if [ ! -e $ref_dir/$cnt ] && [ "${mesh##*.}" = "inp" ]; then
+    cnt=$mesh
+  fi
   if [ ! -e $ref_dir/$cnt ]; then
     echo_err "*.cnt file for $mesh_path is not found. Skip this mesh file."
     continue
