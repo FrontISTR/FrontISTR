@@ -19,6 +19,7 @@ module m_fstr_solid_setup
     , hecmw_expand_real_array
   use fstr_setup_util, only &
     : fstr_param_pack &
+    , fstr_card_slot &
     , fstr_ctrl_err_stop &
     , amp_name_to_id &
     , dload_grp_name_to_id_ex &
@@ -915,10 +916,9 @@ contains
   !> Read in !STEP                                                             !
   !-----------------------------------------------------------------------------!
 
-  subroutine fstr_setup_STEP( ctrl, counter, P )
+  subroutine fstr_setup_STEP( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: counter
     type(fstr_param_pack) :: P
     character(HECMW_NAME_LEN) :: amp
     integer(kind=kint) :: amp_id
@@ -1007,8 +1007,22 @@ contains
     endif
   end subroutine fstr_setup_step_links
 
-  !> Read in !WRITE after fstr_setup_alloc and store the output controls.
-  !> fg_result and fg_visual are set by the caller before fstr_setup_alloc.
+  !> Read in !WRITE before fstr_setup_prepare and set fg_result and fg_visual.
+  subroutine fstr_setup_WRITE_flags( ctrl, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    type(fstr_param_pack) :: P
+
+    type(t_output_ctrl) :: outctrl
+    integer(kind=kint) :: islog, result, visual, femap
+
+    call fstr_ctrl_get_output( ctrl, outctrl, islog, result, visual, femap )
+    if( visual==1 ) P%PARAM%fg_visual= 1
+    if( result==1 ) P%PARAM%fg_result = 1
+  end subroutine fstr_setup_WRITE_flags
+
+  !> Read in !WRITE after fstr_setup_prepare and store the output controls.
+  !> fg_result and fg_visual are set by fstr_setup_WRITE_flags before fstr_setup_prepare.
   subroutine fstr_setup_WRITE_store( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
@@ -1054,10 +1068,9 @@ contains
   !> Read in !COUPLE                                                          !
   !-----------------------------------------------------------------------------!
 
-  subroutine fstr_setup_COUPLE( ctrl, counter, P )
+  subroutine fstr_setup_COUPLE( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: counter
     type(fstr_param_pack) :: P
     integer(kind=kint) :: rcode
     character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
@@ -1083,10 +1096,9 @@ contains
   end subroutine fstr_setup_COUPLE
 
   !> Read in !ELEMENT_ACTIVATION
-  subroutine fstr_setup_ELEMENT_ACTIVATION( ctrl, counter, P )
+  subroutine fstr_setup_ELEMENT_ACTIVATION( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: counter
     type(fstr_param_pack) :: P
 
     integer(kind=kint) :: rcode
@@ -1119,10 +1131,9 @@ contains
   !> Read in !STATIC(old)                                                           !
   !-----------------------------------------------------------------------------!
 
-  subroutine fstr_setup_STATIC( ctrl, counter, P )
+  subroutine fstr_setup_STATIC( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: counter
     type(fstr_param_pack) :: P
     integer(kind=kint) :: rcode
 
@@ -1131,8 +1142,10 @@ contains
     real(kind=kreal) :: sig_y0, h_dash
     real(kind=kreal) :: DT, ETIME, EPS ! dummy
     integer :: ITMAX ! dummy
+    type(fstr_card_slot) :: slot
 
-    if( counter > 1 ) then
+    slot = P%STATE%slot
+    if( slot%first > 1 ) then
       write(*,*)
     endif
 
@@ -1163,10 +1176,9 @@ contains
   !> Read in !BOUNDARY                                                    !
   !-----------------------------------------------------------------------------!
 
-  subroutine fstr_setup_BOUNDARY( ctrl, counter, P )
+  subroutine fstr_setup_BOUNDARY( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: counter
     type(fstr_param_pack) :: P
 
     integer(kind=kint) :: rcode
@@ -1224,10 +1236,9 @@ contains
   !> Read in !CLOAD                                                           !
   !-----------------------------------------------------------------------------!
 
-  subroutine fstr_setup_CLOAD( ctrl, counter, P )
+  subroutine fstr_setup_CLOAD( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: counter
     type(fstr_param_pack) :: P
 
     integer(kind=kint) :: rcode
@@ -1272,10 +1283,9 @@ contains
   end subroutine fstr_setup_CLOAD
 
   !> Read in !DLOAD
-  subroutine fstr_setup_DLOAD( ctrl, counter, P )
+  subroutine fstr_setup_DLOAD( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: counter
     type(fstr_param_pack) :: P
 
     integer(kind=kint) :: rcode
@@ -1320,10 +1330,9 @@ contains
   !> Read in !TEMPERATURE                                                  !
   !-----------------------------------------------------------------------------!
 
-  subroutine fstr_setup_TEMPERATURE( ctrl, counter, P )
+  subroutine fstr_setup_TEMPERATURE( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: counter
     type(fstr_param_pack) :: P
 
     integer(kind=kint) :: rcode, gid
@@ -1364,10 +1373,9 @@ contains
   !> Read in !SPRING                                                            !
   !-----------------------------------------------------------------------------!
 
-  subroutine fstr_setup_SPRING( ctrl, counter, P )
+  subroutine fstr_setup_SPRING( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: counter
     type(fstr_param_pack) :: P
 
     integer(kind=kint) :: rcode, incremental
@@ -1409,10 +1417,9 @@ contains
   !> Read in !VELOCITY                                                         !
   !-----------------------------------------------------------------------------!
 
-  subroutine fstr_setup_VELOCITY( ctrl, counter, P )
+  subroutine fstr_setup_VELOCITY( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: counter
     type(fstr_param_pack) :: P
 
     integer(kind=kint) :: rcode
@@ -1466,10 +1473,9 @@ contains
   !> Read in !ACCELERATION                                                     !
   !-----------------------------------------------------------------------------!
 
-  subroutine fstr_setup_ACCELERATION( ctrl, counter, P )
+  subroutine fstr_setup_ACCELERATION( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: counter
     type(fstr_param_pack) :: P
 
     integer(kind=kint) :: rcode
@@ -1524,24 +1530,25 @@ contains
   !-----------------------------------------------------------------------------!
   !> Read in !CONTACT                                                           !
   !-----------------------------------------------------------------------------!
-  !> c_contact is the number of the pairs already read, and the pairs of this card are added to it.
-  subroutine fstr_setup_CONTACT( ctrl, c_contact, P )
+  subroutine fstr_setup_CONTACT( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: c_contact
     type(fstr_param_pack) :: P
 
     type(fstr_param), pointer :: fstrPARAM
     type(fstr_solid), pointer :: fstrSOLID
-    integer(kind=kint) :: n, k
+    integer(kind=kint) :: c_contact, n, k
     real(kind=kreal) :: ee, pp, rho, alpha
     character(len=HECMW_FILENAME_LEN) :: mName
+    type(fstr_card_slot) :: slot
 
+    slot = P%STATE%slot
     fstrPARAM => P%PARAM
     fstrSOLID => P%SOLID
 
     n = fstr_ctrl_get_data_line_n( ctrl )
-    if( .not. fstr_ctrl_get_CONTACT( ctrl, n, fstrSOLID%contacts(c_contact+1:c_contact+n)   &
+    c_contact = slot%first - 1
+    if( .not. fstr_ctrl_get_CONTACT( ctrl, n, fstrSOLID%contacts(slot%first:slot%last)   &
         ,ee, pp, rho, alpha, mName, k ) ) then
       write(*,*) '### Error: Fail in read in contact condition : ', c_contact
       write(ILOG,*) '### Error: Fail in read in contact condition : ', c_contact
@@ -1551,44 +1558,42 @@ contains
     if( rho>0.d0 ) cgn = rho
     if( alpha>0.d0 ) cgt = alpha
     call fstr_solid_init_contacts( P%MESH, fstrSOLID, fstrPARAM, c_contact, n, mName, k )
-    c_contact = c_contact+n
   end subroutine fstr_setup_CONTACT
 
   !-----------------------------------------------------------------------------!
   !> Read in !EMBED                                                             !
   !-----------------------------------------------------------------------------!
-  !> c_embed is the number of the pairs already read, and the pairs of this card are added to it.
-  subroutine fstr_setup_EMBED( ctrl, c_embed, P )
+  subroutine fstr_setup_EMBED( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: c_embed
     type(fstr_param_pack) :: P
 
     type(fstr_param), pointer :: fstrPARAM
     type(fstr_solid), pointer :: fstrSOLID
-    integer(kind=kint) :: n, k
+    integer(kind=kint) :: c_embed, n, k
     character(len=HECMW_FILENAME_LEN) :: mName
+    type(fstr_card_slot) :: slot
 
+    slot = P%STATE%slot
     fstrPARAM => P%PARAM
     fstrSOLID => P%SOLID
 
     n = fstr_ctrl_get_data_line_n( ctrl )
-    if( .not. fstr_ctrl_get_EMBED( ctrl, n, fstrSOLID%embeds(c_embed+1:c_embed+n), mName, k ) ) then
+    c_embed = slot%first - 1
+    if( .not. fstr_ctrl_get_EMBED( ctrl, n, fstrSOLID%embeds(slot%first:slot%last), mName, k ) ) then
       write(*,*) '### Error: Fail in read in embed condition : ', c_embed
       write(ILOG,*) '### Error: Fail in read in embed condition : ', c_embed
       stop HECMW_EXIT_INPUT
     endif
     call fstr_solid_init_embeds( P%MESH, fstrSOLID, fstrPARAM, c_embed, n, mName, k )
-    c_embed = c_embed+n
   end subroutine fstr_setup_EMBED
 
   !-----------------------------------------------------------------------------!
   !> Read in !ISTEP                                                             !
   !-----------------------------------------------------------------------------!
-  subroutine fstr_setup_ISTEP( ctrl, c_istep, P )
+  subroutine fstr_setup_ISTEP( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: c_istep
     type(fstr_param_pack) :: P
 
     type(hecmwST_local_mesh), pointer :: hecMESH
@@ -1596,28 +1601,30 @@ contains
     type(fstr_solid), pointer :: fstrSOLID
     integer(kind=kint) :: i
     character(len=HECMW_FILENAME_LEN) :: mName, mName2, mName3
+    type(fstr_card_slot) :: slot
 
+    slot = P%STATE%slot
     hecMESH => P%MESH
     fstrPARAM => P%PARAM
     fstrSOLID => P%SOLID
 
-    if( .not. fstr_ctrl_get_ISTEP( ctrl, hecMESH, fstrSOLID%step_ctrl(c_istep), mName, mName2, mName3 ) ) then
-      write(*,*) '### Error: Fail in read in step definition : ' , c_istep
-      write(ILOG,*) '### Error: Fail in read in step definition : ', c_istep
+    if( .not. fstr_ctrl_get_ISTEP( ctrl, hecMESH, fstrSOLID%step_ctrl(slot%first), mName, mName2, mName3 ) ) then
+      write(*,*) '### Error: Fail in read in step definition : ' , slot%first
+      write(ILOG,*) '### Error: Fail in read in step definition : ', slot%first
       stop HECMW_EXIT_INPUT
     endif
-    call fstr_setup_step_convergence( fstrSOLID%step_ctrl(c_istep), mName3, fstrPARAM%cnvparam, c_istep )
+    call fstr_setup_step_convergence( fstrSOLID%step_ctrl(slot%first), mName3, fstrPARAM%cnvparam, slot%first )
     if( associated(fstrPARAM%timepoints) ) then
       do i=1,size(fstrPARAM%timepoints)
         if( hecmw_streqr( fstrPARAM%timepoints(i)%name, mName ) ) then
-          fstrSOLID%step_ctrl(c_istep)%timepoint_id = i; exit
+          fstrSOLID%step_ctrl(slot%first)%timepoint_id = i; exit
         endif
       enddo
     endif
     if( associated(fstrPARAM%ainc) ) then
       do i=1,size(fstrPARAM%ainc)-1
         if( hecmw_streqr( fstrPARAM%ainc(i)%name, mName2 ) ) then
-          fstrSOLID%step_ctrl(c_istep)%AincParam_id = i; exit
+          fstrSOLID%step_ctrl(slot%first)%AincParam_id = i; exit
         endif
       enddo
     endif
@@ -1626,11 +1633,10 @@ contains
   !-----------------------------------------------------------------------------!
   !> Read in !STEP                                                              !
   !-----------------------------------------------------------------------------!
-  !> Read in !STEP of !VERSION 1 or later after fstr_setup_alloc and store the step.
-  subroutine fstr_setup_STEP_store( ctrl, c_istep, P )
+  !> Read in !STEP of !VERSION 1 or later after fstr_setup_prepare and store the step.
+  subroutine fstr_setup_STEP_store( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: c_istep
     type(fstr_param_pack) :: P
 
     type(hecmwST_local_mesh), pointer :: hecMESH
@@ -1638,38 +1644,41 @@ contains
     type(fstr_solid), pointer :: fstrSOLID
     type(fstr_dynamic), pointer :: fstrDYNAMIC
     character(len=HECMW_FILENAME_LEN) :: mName, mName2, mName3
+    type(fstr_card_slot) :: slot
 
+    slot = P%STATE%slot
     hecMESH => P%MESH
     fstrPARAM => P%PARAM
     fstrSOLID => P%SOLID
     fstrDYNAMIC => P%DYN
 
-    if( .not. fstr_ctrl_get_ISTEP( ctrl, hecMESH, fstrSOLID%step_ctrl(c_istep), mName, mName2, mName3 ) ) then
-      write(*,*) '### Error: Fail in read in step definition : ' , c_istep
-      write(ILOG,*) '### Error: Fail in read in step definition : ', c_istep
+    if( .not. fstr_ctrl_get_ISTEP( ctrl, hecMESH, fstrSOLID%step_ctrl(slot%first), mName, mName2, mName3 ) ) then
+      write(*,*) '### Error: Fail in read in step definition : ' , slot%first
+      write(ILOG,*) '### Error: Fail in read in step definition : ', slot%first
       stop HECMW_EXIT_INPUT
     endif
-    call fstr_setup_step_links( fstrPARAM, fstrSOLID, fstrDYNAMIC, c_istep, mName, mName2, mName3 )
+    call fstr_setup_step_links( fstrPARAM, fstrSOLID, fstrDYNAMIC, slot%first, mName, mName2, mName3 )
   end subroutine fstr_setup_STEP_store
 
   !-----------------------------------------------------------------------------!
   !> Read in !SECTION                                                           !
   !-----------------------------------------------------------------------------!
-  subroutine fstr_setup_SECTION( ctrl, c_section, P )
+  subroutine fstr_setup_SECTION( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: c_section
     type(fstr_param_pack) :: P
 
     type(hecmwST_local_mesh), pointer :: hecMESH
     type(fstr_solid), pointer :: fstrSOLID
+    type(fstr_card_slot) :: slot
 
+    slot = P%STATE%slot
     hecMESH => P%MESH
     fstrSOLID => P%SOLID
 
     if( fstr_ctrl_get_SECTION( ctrl, hecMESH, fstrSOLID%sections )/=0 ) then
-      write(*,*) '### Error: Fail in read in SECTION definition : ' , c_section
-      write(ILOG,*) '### Error: Fail in read in SECTION definition : ', c_section
+      write(*,*) '### Error: Fail in read in SECTION definition : ' , slot%first
+      write(ILOG,*) '### Error: Fail in read in SECTION definition : ', slot%first
       stop HECMW_EXIT_INPUT
     endif
   end subroutine fstr_setup_SECTION
@@ -1677,19 +1686,20 @@ contains
   !-----------------------------------------------------------------------------!
   !> Read in !ELEMOPT                                                           !
   !-----------------------------------------------------------------------------!
-  subroutine fstr_setup_ELEMOPT( ctrl, c_elemopt, P )
+  subroutine fstr_setup_ELEMOPT( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: c_elemopt
     type(fstr_param_pack) :: P
 
     type(fstr_solid), pointer :: fstrSOLID
+    type(fstr_card_slot) :: slot
 
+    slot = P%STATE%slot
     fstrSOLID => P%SOLID
 
     if( fstr_ctrl_get_ELEMOPT( ctrl, fstrSOLID%elemopt361 )/=0 ) then
-      write(*,*) '### Error: Fail in read in ELEMOPT definition : ' , c_elemopt
-      write(ILOG,*) '### Error: Fail in read in ELEMOPT definition : ', c_elemopt
+      write(*,*) '### Error: Fail in read in ELEMOPT definition : ' , slot%first
+      write(ILOG,*) '### Error: Fail in read in ELEMOPT definition : ', slot%first
       stop HECMW_EXIT_INPUT
     endif
   end subroutine fstr_setup_ELEMOPT
@@ -1697,27 +1707,27 @@ contains
   !-----------------------------------------------------------------------------!
   !> Read in !MATERIAL                                                          !
   !-----------------------------------------------------------------------------!
-  !> cid is set to the material of this card, and cache to the material expected next.
-  subroutine fstr_setup_MATERIAL( ctrl, c_material, cache, cid, P )
+  !> P%STATE%cid is set to the material of this card, and P%STATE%cache to the material expected next.
+  subroutine fstr_setup_MATERIAL( ctrl, P )
     use mMaterial
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: c_material
-    integer(kind=kint) :: cache
-    integer(kind=kint) :: cid
     type(fstr_param_pack) :: P
 
     type(hecmwST_local_mesh), pointer :: hecMESH
     type(fstr_solid), pointer :: fstrSOLID
-    integer(kind=kint) :: i
+    integer(kind=kint) :: i, cid, cache
     character(len=HECMW_FILENAME_LEN) :: mName
+    type(fstr_card_slot) :: slot
 
+    slot = P%STATE%slot
     hecMESH => P%MESH
     fstrSOLID => P%SOLID
+    cache = P%STATE%cache
 
     if( fstr_ctrl_get_MATERIAL( ctrl, mName )/=0 ) then
-      write(*,*) '### Error: Fail in read in material definition : ' , c_material
-      write(ILOG,*) '### Error: Fail in read in material definition : ', c_material
+      write(*,*) '### Error: Fail in read in material definition : ' , slot%first
+      write(ILOG,*) '### Error: Fail in read in material definition : ', slot%first
       stop HECMW_EXIT_INPUT
     endif
     cid = 0
@@ -1737,25 +1747,45 @@ contains
       enddo
     endif
     if(cid == 0)then
-      write(*,*) '### Error: Fail in read in material definition : ' , c_material
-      write(ILOG,*) '### Error: Fail in read in material definition : ', c_material
+      write(*,*) '### Error: Fail in read in material definition : ' , slot%first
+      write(ILOG,*) '### Error: Fail in read in material definition : ', slot%first
       stop HECMW_EXIT_INPUT
     endif
     fstrSOLID%materials(cid)%name = hecMESH%material%mat_name(cid)
-    if(c_material>hecMESH%material%n_mat) call initMaterial( fstrSOLID%materials(cid) )
+    if(slot%first>hecMESH%material%n_mat) call initMaterial( fstrSOLID%materials(cid) )
+    P%STATE%cid = cid
+    P%STATE%cache = cache
   end subroutine fstr_setup_MATERIAL
+
+  !> Material of the last !MATERIAL, for a material card. Stops at a material card given before the first !MATERIAL.
+  integer(kind=kint) function fstr_setup_current_material( ctrl, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    type(fstr_param_pack) :: P
+
+    integer(kind=kint) :: rcode
+    character(len=HECMW_NAME_LEN) :: header_name
+
+    if( P%STATE%cid == 0 ) then
+      rcode = fstr_ctrl_get_c_h_name( ctrl, header_name, HECMW_NAME_LEN )
+      call fstr_setup_util_err_stop( '### Error: '//trim(header_name)// &
+        ' : given before the first !MATERIAL; put it after !MATERIAL, NAME=<material name>' )
+    endif
+    fstr_setup_current_material = P%STATE%cid
+  end function fstr_setup_current_material
 
   !-----------------------------------------------------------------------------!
   !> Read in !ELASTIC                                                           !
   !-----------------------------------------------------------------------------!
-  subroutine fstr_setup_ELASTIC( ctrl, cid, P )
+  subroutine fstr_setup_ELASTIC( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: cid
     type(fstr_param_pack) :: P
 
     type(fstr_solid), pointer :: fstrSOLID
+    integer(kind=kint) :: cid
 
+    cid = fstr_setup_current_material( ctrl, P )
     fstrSOLID => P%SOLID
 
     if( fstr_ctrl_get_ELASTICITY( ctrl,                                        &
@@ -1772,14 +1802,15 @@ contains
   !-----------------------------------------------------------------------------!
   !> Read in !PLASTIC                                                           !
   !-----------------------------------------------------------------------------!
-  subroutine fstr_setup_PLASTIC( ctrl, cid, P )
+  subroutine fstr_setup_PLASTIC( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: cid
     type(fstr_param_pack) :: P
 
     type(fstr_solid), pointer :: fstrSOLID
+    integer(kind=kint) :: cid
 
+    cid = fstr_setup_current_material( ctrl, P )
     fstrSOLID => P%SOLID
 
     if( fstr_ctrl_get_PLASTICITY( ctrl,                                        &
@@ -1796,14 +1827,15 @@ contains
   !-----------------------------------------------------------------------------!
   !> Read in !HYPERELASTIC                                                      !
   !-----------------------------------------------------------------------------!
-  subroutine fstr_setup_HYPERELASTIC( ctrl, cid, P )
+  subroutine fstr_setup_HYPERELASTIC( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: cid
     type(fstr_param_pack) :: P
 
     type(fstr_solid), pointer :: fstrSOLID
+    integer(kind=kint) :: cid
 
+    cid = fstr_setup_current_material( ctrl, P )
     fstrSOLID => P%SOLID
 
     if( fstr_ctrl_get_HYPERELASTIC( ctrl,                                        &
@@ -1819,14 +1851,15 @@ contains
   !-----------------------------------------------------------------------------!
   !> Read in !VISCOELASTIC                                                      !
   !-----------------------------------------------------------------------------!
-  subroutine fstr_setup_VISCOELASTIC( ctrl, cid, P )
+  subroutine fstr_setup_VISCOELASTIC( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: cid
     type(fstr_param_pack) :: P
 
     type(fstr_solid), pointer :: fstrSOLID
+    integer(kind=kint) :: cid
 
+    cid = fstr_setup_current_material( ctrl, P )
     fstrSOLID => P%SOLID
 
     if( fstr_ctrl_get_VISCOELASTICITY( ctrl,                                        &
@@ -1842,15 +1875,16 @@ contains
   !-----------------------------------------------------------------------------!
   !> Read in !TRS                                                               !
   !-----------------------------------------------------------------------------!
-  subroutine fstr_setup_TRS( ctrl, cid, P )
+  subroutine fstr_setup_TRS( ctrl, P )
     use mMaterial
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: cid
     type(fstr_param_pack) :: P
 
     type(fstr_solid), pointer :: fstrSOLID
+    integer(kind=kint) :: cid
 
+    cid = fstr_setup_current_material( ctrl, P )
     fstrSOLID => P%SOLID
 
     if( fstrSOLID%materials(cid)%mtype/=VISCOELASTIC ) then
@@ -1868,14 +1902,15 @@ contains
   !-----------------------------------------------------------------------------!
   !> Read in !CREEP                                                             !
   !-----------------------------------------------------------------------------!
-  subroutine fstr_setup_CREEP( ctrl, cid, P )
+  subroutine fstr_setup_CREEP( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: cid
     type(fstr_param_pack) :: P
 
     type(fstr_solid), pointer :: fstrSOLID
+    integer(kind=kint) :: cid
 
+    cid = fstr_setup_current_material( ctrl, P )
     fstrSOLID => P%SOLID
 
     if( fstr_ctrl_get_VISCOPLASTICITY( ctrl,                                        &
@@ -1891,14 +1926,15 @@ contains
   !-----------------------------------------------------------------------------!
   !> Read in !DENSITY                                                           !
   !-----------------------------------------------------------------------------!
-  subroutine fstr_setup_DENSITY( ctrl, cid, P )
+  subroutine fstr_setup_DENSITY( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: cid
     type(fstr_param_pack) :: P
 
     type(fstr_solid), pointer :: fstrSOLID
+    integer(kind=kint) :: cid
 
+    cid = fstr_setup_current_material( ctrl, P )
     fstrSOLID => P%SOLID
 
     if( fstr_ctrl_get_DENSITY( ctrl, fstrSOLID%materials(cid)%variables )/=0 ) then
@@ -1911,14 +1947,15 @@ contains
   !-----------------------------------------------------------------------------!
   !> Read in !EXPANSION_COEF                                                    !
   !-----------------------------------------------------------------------------!
-  subroutine fstr_setup_EXPANSION_COEFF( ctrl, cid, P )
+  subroutine fstr_setup_EXPANSION_COEFF( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: cid
     type(fstr_param_pack) :: P
 
     type(fstr_solid), pointer :: fstrSOLID
+    integer(kind=kint) :: cid
 
+    cid = fstr_setup_current_material( ctrl, P )
     fstrSOLID => P%SOLID
 
     if( fstr_ctrl_get_EXPANSION_COEFF( ctrl, fstrSOLID%materials(cid)%variables, &
@@ -1932,14 +1969,15 @@ contains
   !-----------------------------------------------------------------------------!
   !> Read in !DAMPING                                                           !
   !-----------------------------------------------------------------------------!
-  subroutine fstr_setup_DAMPING( ctrl, cid, P )
+  subroutine fstr_setup_DAMPING( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: cid
     type(fstr_param_pack) :: P
 
     type(fstr_solid), pointer :: fstrSOLID
+    integer(kind=kint) :: cid
 
+    cid = fstr_setup_current_material( ctrl, P )
     fstrSOLID => P%SOLID
 
     if( fstr_ctrl_get_RAYLEIGH_DAMPING( ctrl, fstrSOLID%materials(cid)%variables, &
@@ -1953,14 +1991,15 @@ contains
   !-----------------------------------------------------------------------------!
   !> Read in !FLUID                                                             !
   !-----------------------------------------------------------------------------!
-  subroutine fstr_setup_FLUID( ctrl, cid, P )
+  subroutine fstr_setup_FLUID( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: cid
     type(fstr_param_pack) :: P
 
     type(fstr_solid), pointer :: fstrSOLID
+    integer(kind=kint) :: cid
 
+    cid = fstr_setup_current_material( ctrl, P )
     fstrSOLID => P%SOLID
 
     if( fstr_ctrl_get_FLUID( ctrl,                                 &
@@ -1977,14 +2016,15 @@ contains
   !-----------------------------------------------------------------------------!
   !> Read in !SPRING_D                                                          !
   !-----------------------------------------------------------------------------!
-  subroutine fstr_setup_SPRING_D( ctrl, cid, P )
+  subroutine fstr_setup_SPRING_D( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: cid
     type(fstr_param_pack) :: P
 
     type(fstr_solid), pointer :: fstrSOLID
+    integer(kind=kint) :: cid
 
+    cid = fstr_setup_current_material( ctrl, P )
     fstrSOLID => P%SOLID
 
     if( fstr_ctrl_get_SPRING_D( ctrl,                                        &
@@ -2001,14 +2041,15 @@ contains
   !-----------------------------------------------------------------------------!
   !> Read in !SPRING_A                                                          !
   !-----------------------------------------------------------------------------!
-  subroutine fstr_setup_SPRING_A( ctrl, cid, P )
+  subroutine fstr_setup_SPRING_A( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: cid
     type(fstr_param_pack) :: P
 
     type(fstr_solid), pointer :: fstrSOLID
+    integer(kind=kint) :: cid
 
+    cid = fstr_setup_current_material( ctrl, P )
     fstrSOLID => P%SOLID
 
     if( fstr_ctrl_get_SPRING_A( ctrl,                                        &
@@ -2025,14 +2066,15 @@ contains
   !-----------------------------------------------------------------------------!
   !> Read in !DASHPOT_D                                                         !
   !-----------------------------------------------------------------------------!
-  subroutine fstr_setup_DASHPOT_D( ctrl, cid, P )
+  subroutine fstr_setup_DASHPOT_D( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: cid
     type(fstr_param_pack) :: P
 
     type(fstr_solid), pointer :: fstrSOLID
+    integer(kind=kint) :: cid
 
+    cid = fstr_setup_current_material( ctrl, P )
     fstrSOLID => P%SOLID
 
     if( fstr_ctrl_get_DASHPOT_D( ctrl,                                        &
@@ -2049,14 +2091,15 @@ contains
   !-----------------------------------------------------------------------------!
   !> Read in !DASHPOT_A                                                         !
   !-----------------------------------------------------------------------------!
-  subroutine fstr_setup_DASHPOT_A( ctrl, cid, P )
+  subroutine fstr_setup_DASHPOT_A( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: cid
     type(fstr_param_pack) :: P
 
     type(fstr_solid), pointer :: fstrSOLID
+    integer(kind=kint) :: cid
 
+    cid = fstr_setup_current_material( ctrl, P )
     fstrSOLID => P%SOLID
 
     if( fstr_ctrl_get_DASHPOT_A( ctrl,                                        &
@@ -2073,14 +2116,15 @@ contains
   !-----------------------------------------------------------------------------!
   !> Read in !USER_MATERIAL                                                     !
   !-----------------------------------------------------------------------------!
-  subroutine fstr_setup_USER_MATERIAL( ctrl, cid, P )
+  subroutine fstr_setup_USER_MATERIAL( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
-    integer(kind=kint) :: cid
     type(fstr_param_pack) :: P
 
     type(fstr_solid), pointer :: fstrSOLID
+    integer(kind=kint) :: cid
 
+    cid = fstr_setup_current_material( ctrl, P )
     fstrSOLID => P%SOLID
 
     if( fstr_ctrl_get_USERMATERIAL( ctrl, fstrSOLID%materials(cid)%mtype,   &
@@ -2157,9 +2201,10 @@ contains
   !-----------------------------------------------------------------------------!
   !> Read in !ULOAD                                                             !
   !-----------------------------------------------------------------------------!
-  subroutine fstr_setup_ULOAD( ctrl )
+  subroutine fstr_setup_ULOAD( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
+    type(fstr_param_pack) :: P
 
     if( fstr_ctrl_get_USERLOAD( ctrl )/=0 ) then
       write(*,*) '### Error: Fail in read in ULOAD definition : '
