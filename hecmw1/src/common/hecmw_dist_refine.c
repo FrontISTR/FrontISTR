@@ -1915,10 +1915,6 @@ static int *conv_index_ucd2hec(int etype)
   static int conv_index_ucd2hec_jtq1[] = {4, 5, 6, 7, 0, 1, 2, 3};
   static int conv_index_ucd2hec_jtq2[] = {4,  5,  6,  7,  0,  1,  2,  3,
                                           -1, -1, -1, -1, -1, -1, -1, -1};
-#if 0
-  static int conv_index_ucd2hec_bem1[] = {0, 1};
-  static int conv_index_ucd2hec_bem2[] = {0, -1, 1};
-#endif
   static int conv_index_ucd2hec_sht1[] = {0, 1, 2};
   static int conv_index_ucd2hec_sht2[] = {0, 1, 2, -1, -1, -1};
   static int conv_index_ucd2hec_shq1[] = {0, 1, 2, 3};
@@ -2279,10 +2275,6 @@ static int check_node_rank(const struct hecmwST_local_mesh *mesh,
       int *elem_nodes = ref_mesh->elem_node_item + ref_mesh->elem_node_index[eid - 1];
 
       for (k = 0; k < nn; k++) {
-#if 0  /* keep old nodes for plotting */
-        if (elem_nodes[k] <= mesh->n_node_gross) continue; /* skip old nodes */
-#endif
-
         HECMW_varray_int_append(shared_nodes + i, elem_nodes[k]);
       }
     }
@@ -3150,26 +3142,6 @@ static int rebuild_refine_origin(const struct hecmwST_local_mesh *mesh,
     ref_reforg->item_item[cnt + i] = ro_item_v[i];
   }
   HECMW_varray_int_finalize(&ro_item);
-#if 0
-	fprintf(stderr, "refine_origin->index:\n");
-	for( i=0; i <= n_refine; i++ ) {
-		fprintf(stderr, " %d", ref_reforg->index[i]);
-		if( i % 10 == 9 ) fprintf(stderr, "\n");
-	}
-	if( i % 10 != 0 ) fprintf(stderr, "\n");
-	fprintf(stderr, "refine_origin->item_index:\n");
-	for( i=0; i <= ref_reforg->index[n_refine]; i++) {
-		fprintf(stderr, " %d", ref_reforg->item_index[i]);
-		if( i % 10 == 9 ) fprintf(stderr, "\n");
-	}
-	if( i % 10 != 0 ) fprintf(stderr, "\n");
-	fprintf(stderr, "refine_origin->item_item:\n");
-	for( i=0; i < ref_reforg->item_index[ref_reforg->index[n_refine]]; i++ ) {
-		fprintf(stderr, " %d", ref_reforg->item_item[i]);
-		if( i % 10 == 9 ) fprintf(stderr, "\n");
-	}
-	if( i % 10 != 0 ) fprintf(stderr, "\n");
-#endif
   ref_mesh->refine_origin = ref_reforg;
   return HECMW_SUCCESS;
 }
@@ -3652,11 +3624,6 @@ static int copy_mpc_info(const struct hecmwST_mpc *mpc,
     return HECMW_SUCCESS;
   }
 
-#if 0
-  HECMW_log(HECMW_LOG_ERROR, "refinement of MPC information is not supported\n");
-  return HECMW_ERROR;
-
-#else
   HECMW_log(HECMW_LOG_WARN, "MPC information is not refined\n");
 
   /* mpc_index */
@@ -3710,7 +3677,6 @@ static int copy_mpc_info(const struct hecmwST_mpc *mpc,
   }
 
   return HECMW_SUCCESS;
-#endif
 }
 
 static int copy_amp_info(const struct hecmwST_amplitude *amp,

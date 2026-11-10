@@ -3640,39 +3640,6 @@ static int mask_elem_by_domain_mod(char *elem_flag, int current_domain) {
   return RTC_NORMAL;
 }
 
-#if 0
-/* For Additional overlap for explicit DOF elimination for MPC */
-/* NO LONGER NEEDED because node-migration implemented */
-static int mask_slave_node(const struct hecmwST_local_mesh *global_mesh,
-                           char *node_flag, int current_domain) {
-  int i;
-
-  for (i = 0; i < global_mesh->mpc->n_mpc; i++) {
-    int j0, je, slave, master, j, evalsum;
-    j0    = global_mesh->mpc->mpc_index[i];
-    je    = global_mesh->mpc->mpc_index[i + 1];
-    slave = global_mesh->mpc->mpc_item[j0];
-
-    /* mask all slave nodes */
-    MASK_BIT(node_flag[slave - 1], MASK);
-
-    /* mark slave nodes that have mpc-link across the boundary */
-    evalsum = 0;
-    for (j = j0 + 1; j < je; j++) {
-      master = global_mesh->mpc->mpc_item[j];
-      if (EVAL_BIT(node_flag[slave - 1], INTERNAL) ^ /* exclusive or */
-          EVAL_BIT(node_flag[master - 1], INTERNAL)) {
-        evalsum++;
-      }
-    }
-    if (evalsum) {
-      MASK_BIT(node_flag[slave - 1], MARK);
-    }
-  }
-  return RTC_NORMAL;
-}
-#endif
-
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
  * - - - - - - - - - */
 
@@ -3721,80 +3688,6 @@ static int mask_boundary_node_mod(const struct hecmwST_local_mesh *global_mesh,
 
   return RTC_NORMAL;
 }
-
-#if 0
-/* For Additional overlap for explicit DOF elimination for MPC */
-/* NO LONGER NEEDED because node-migration implemented */
-static int mask_boundary_elem_with_slave(
-    const struct hecmwST_local_mesh *global_mesh, const char *node_flag,
-    char *elem_flag, int *added) {
-  int node, evalsum;
-  int i, j;
-
-  *added = 0;
-
-  for (i = 0; i < global_mesh->n_elem; i++) {
-    if (EVAL_BIT(elem_flag[i], BOUNDARY)) continue;
-    if (HECMW_is_etype_link(global_mesh->elem_type[i]))
-      continue; /* skip link elements */
-
-    evalsum = 0;
-    for (j = global_mesh->elem_node_index[i];
-         j < global_mesh->elem_node_index[i + 1]; j++) {
-      node = global_mesh->elem_node_item[j];
-      /* check if the node is on boundary and a slave having mpc-link across the
-       * boundary */
-      if (EVAL_BIT(node_flag[node - 1], BOUNDARY) &&
-          EVAL_BIT(node_flag[node - 1], MASK) &&
-          EVAL_BIT(node_flag[node - 1], MARK)) {
-        evalsum++;
-      }
-    }
-
-    if (evalsum) {
-      MASK_BIT(elem_flag[i], OVERLAP);
-      MASK_BIT(elem_flag[i], BOUNDARY);
-      (*added)++;
-    }
-  }
-
-  return RTC_NORMAL;
-}
-
-static int mask_boundary_link_elem_with_slave(
-    const struct hecmwST_local_mesh *global_mesh, const char *node_flag,
-    char *elem_flag, int *added) {
-  int node, evalsum;
-  int i, j;
-
-  *added = 0;
-
-  for (i = 0; i < global_mesh->n_elem; i++) {
-    if (EVAL_BIT(elem_flag[i], BOUNDARY)) continue;
-    if (!HECMW_is_etype_link(global_mesh->elem_type[i]))
-      continue; /* check only link elements */
-
-    evalsum = 0;
-    for (j = global_mesh->elem_node_index[i];
-         j < global_mesh->elem_node_index[i + 1]; j++) {
-      node = global_mesh->elem_node_item[j];
-      /* check if the node is on boundary and a slave */
-      if (EVAL_BIT(node_flag[node - 1], BOUNDARY) &&
-          EVAL_BIT(node_flag[node - 1], MASK)) {
-        evalsum++;
-      }
-    }
-
-    if (evalsum) {
-      MASK_BIT(elem_flag[i], OVERLAP);
-      MASK_BIT(elem_flag[i], BOUNDARY);
-      (*added)++;
-    }
-  }
-
-  return RTC_NORMAL;
-}
-#endif
 
 static int mask_additional_overlap_elem(
     const struct hecmwST_local_mesh *global_mesh, const char *node_flag,
@@ -4207,41 +4100,6 @@ static int mask_mesh_status_nb(const struct hecmwST_local_mesh *global_mesh,
   rtc =
       mask_boundary_node_mod(global_mesh, node_flag, elem_flag, current_domain);
   if (rtc != RTC_NORMAL) goto error;
-
-#if 0
-  /* Additional overlap for explicit DOF elimination for MPC */
-  /* NO LONGER NEEDED because node-migration implemented */
-  if (global_mesh->mpc->n_mpc > 0) {
-    int added = 0;
-
-    rtc = mask_slave_node(global_mesh, node_flag, current_domain);
-    if (rtc != RTC_NORMAL) goto error;
-
-    rtc = mask_boundary_elem_with_slave(global_mesh, node_flag, elem_flag,
-                                        &added);
-    if (rtc != RTC_NORMAL) goto error;
-
-    if (added > 0) {
-      rtc = mask_boundary_node(global_mesh, node_flag, elem_flag);
-      if (rtc != RTC_NORMAL) goto error;
-    }
-
-    added = 0;
-    rtc = mask_boundary_link_elem_with_slave(global_mesh, node_flag, elem_flag,
-                                             &added);
-    if (rtc != RTC_NORMAL) goto error;
-
-    if (added > 0) {
-      rtc = mask_boundary_node(global_mesh, node_flag, elem_flag);
-      if (rtc != RTC_NORMAL) goto error;
-    }
-
-    for (i = 0; i < global_mesh->n_node; i++) {
-      CLEAR_BIT(node_flag[i], MASK);
-      CLEAR_BIT(node_flag[i], MARK);
-    }
-  }
-#endif
 
   for (i = 1; i < global_mesh->hecmw_flag_partdepth; i++) {
     rtc = mask_additional_overlap_elem(global_mesh, node_flag, elem_flag);

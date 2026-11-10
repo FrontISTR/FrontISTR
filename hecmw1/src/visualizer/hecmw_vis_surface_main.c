@@ -652,16 +652,6 @@ static void read_surface_equation(Surface *sff, struct surface_module *sf,
   return;
 }
 
-#if 0
-double cal_matrix(double a[3][3])
-{
-	double value;
-	value=a[0][0]*a[1][1]*a[2][2]+a[0][1]*a[1][2]*a[2][0]+a[0][2]*a[1][0]*a[2][1]
-	                                                                           -a[0][0]*a[1][2]*a[2][1]-a[0][1]*a[1][0]*a[2][2]-a[0][2]*a[1][1]*a[2][0];
-	return(value);
-}
-#endif
-
 #ifdef old
 int chk_gid(struct visual_buf *vol, int *bdflag, int *gid, int *over_elem_id) {
   int i;
@@ -677,29 +667,6 @@ int chk_gid(struct visual_buf *vol, int *bdflag, int *gid, int *over_elem_id) {
   }
 
   return count;
-}
-#endif
-
-#if 0
-int judge_box(double box[HEX_N_NODE*3], double cont_equ[10])
-{
-	int loopflag1,i,sum;
-	double x,y,z,f[HEX_N_NODE];
-	for(i=0;i<HEX_N_NODE;i++) {
-		x=box[i*3];
-		y=box[i*3+1];
-		z=box[i*3+2];
-		f[i]=x*cont_equ[0]+y*cont_equ[1]+z*cont_equ[2]+cont_equ[3];
-	}
-	sum=0;
-	for(i=0;i<HEX_N_NODE;i++) {
-		if(f[i]>0) sum++;
-		if(f[i]<0) sum--;
-	}
-	if((sum==-8) || (sum==8))
-		loopflag1=0;
-	else loopflag1=1;
-	return(loopflag1);
 }
 #endif
 

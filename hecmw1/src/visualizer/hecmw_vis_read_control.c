@@ -167,37 +167,6 @@ static int identify_surface(char *buf) {
   return (flag);
 }
 
-#if 0
-int identify_rendering(char *buf) {
-	int i,j, ii, len_tmp;
-	int flag;
-	char para[128];
-	i=0;
-	while(buf[i]==' ')
-		i++;
-	if(buf[i]!='!')
-		HECMW_vis_print_exit("ERROR: HEC-MW-VIS-E0002: The control parameter format error: should start from !");
-	i=i+1;  j=0;
-	while((buf[i]!=' ') && (buf[i]!=',') && (buf[i]!='\n')) {
-		para[j]=buf[i];
-		i++;
-		j++;
-	}
-	para[j]='\0';
-	flag=1;
-	len_tmp=strlen(para);
-	for(ii=0;ii<len_tmp;ii++) {
-		para[ii]=tolower(para[ii]);
-	}
-
-	if(strlen(para)>8)
-		flag=0;
-	else if((strncmp(para, "SURFACE", 7)!=0) && (strncmp(para, "surface", 7)!=0))
-		flag=0;
-	return (flag);
-}
-#endif
-
 static int get_keyword_visual(char *buf) {
   int i, j, ii, len_tmp;
   int flag;
@@ -2456,70 +2425,3 @@ on case\n");
   /* print some control information */
   return;
 }
-
-#if 0
-void set_default_vr( Parameter_vr *vr,int stat_para[NUM_CONTROL_PVR],  int pesize)
-{
-	int i;
-	stat_para[0]=stat_para[1]=stat_para[2]=0;
-	vr->max_level=64;
-	vr->xr=256;
-	vr->yr=256;
-	stat_para[3]=1;
-	vr->num_of_lights=1;
-	stat_para[4]=stat_para[5]=stat_para[6]=0;
-	stat_para[7]=1;
-	vr->up[0]=0.0;
-	vr->up[1]=1.0;
-	vr->up[2]=0.0;
-	stat_para[8]=stat_para[9]=stat_para[10]=1;
-	vr->k_ads[0]=0.5;
-	vr->k_ads[1]=0.8;
-	vr->k_ads[2]=0.6;
-	stat_para[11]=1;
-	/*	vr->surface_on=0;
-	 */	stat_para[12]=0;
-	 stat_para[13]=1;
-	 vr->color_mapping_style=1;
-	 stat_para[14]=stat_para[15]=0;
-	 stat_para[16]=stat_para[17]=1;
-	 stat_para[46]=0;
-	 vr->transfer_function_style=1;
-	 vr->opa_value=0.1;
-	 for(i=18;i<NUM_CONTROL_PVR;i++)
-		 stat_para[i]=0;
-	 vr->color_mapping_bar_on=0;
-	 vr->scale_marking_on=0;
-	 vr->rotate_style=0;
-	 vr->color_system_type=1;
-	 snprintf(vr->color_comp_name, sizeof(vr->color_comp_name), "%s", "NULL");
-	 snprintf(vr->color_subcomp_name, sizeof(vr->color_subcomp_name), "%s", "norm");
-	 vr->nv_xyz[0]=pesize;
-	 vr->nv_xyz[1]=1;
-	 vr->nv_xyz[2]=1;
-	 vr->font_size=1.0;
-	 vr->color_bar_style=2;
-	 vr->fixed_range_on=0;
-	 vr->num_of_scale=3;
-	 vr->mark_0_on=0;
-	 vr->remove_0_display_on=0;
-	 for(i=0;i<3;i++)
-		 vr->specified_level[i]=0;
-	 vr->histogram_on=0;
-	 return;
-}
-
-
-void read_lookup_table(Parameter_vr *vr, double *opa_table)
-{
-	int i;
-	FILE *opa_fp;
-	if((opa_fp=fopen(vr->name_lookup,"r"))== NULL) {
-		fprintf(stderr, "There is not such a opacity file:\n");
-		exit (0);
-	}
-	for(i=0;i<256;i++)
-		fscanf(opa_fp, "%lf", &(opa_table[i]));
-	return;
-}
-#endif

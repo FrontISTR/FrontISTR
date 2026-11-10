@@ -766,11 +766,6 @@ static int read_mesh_head_param_type(int *type) {
 
   } else if (token == HECMW_CTRLLEX_K_NASTRAN) {
     *type = HECMW_CTRL_FTYPE_NASTRAN;
-#if 0
-
-  } else  if (token == HECMW_CTRLLEX_K_FEMAP) {
-    *type = HECMW_CTRL_FTYPE_FEMAP;
-#endif
 
   } else {
     set_err_token(token, HECMW_UTIL_E0010, "Invalid TYPE");

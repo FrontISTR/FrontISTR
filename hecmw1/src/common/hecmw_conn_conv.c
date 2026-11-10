@@ -21,12 +21,6 @@ static struct conn_conv conn_conv_inp[] = {
     {-1, {-1}} /* terminator */
 };
 
-#if 0
-static struct conn_conv conn_conv_nastran[] = {
-  { -1,  { -1}} /* terminator */
-};
-#endif
-
 struct conn_order {
   int node;
   int hecmw_order;
@@ -61,12 +55,6 @@ int HECMW_convert_connectivity(int from, int hecmw_etype, int *conn) {
     case HECMW_CONNTYPE_INP:
       from_table = conn_conv_inp;
       break;
-#if 0
-
-  case HECMW_CONNTYPE_NASTRAN:
-    from_table = conn_conv_nastran;
-    break;
-#endif
 
     default:
       HECMW_set_error(HECMW_ALL_E0101,

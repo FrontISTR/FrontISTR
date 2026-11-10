@@ -62,16 +62,6 @@ static int conv_index_ucd2hec_jtq1[] = {4, 5, 6, 7, 0, 1, 2, 3};
 static int conv_index_ucd2hec_jtq2[] = {4,  5,  6,  7,  0,  1,  2,  3,
                                         -1, -1, -1, -1, -1, -1, -1, -1};
 
-#if 0
-static int conv_index_ucd2hec_bem1[] = {
-  0, 1
-};
-
-static int conv_index_ucd2hec_bem2[] = {
-  0, -1, 1
-};
-#endif
-
 static int conv_index_ucd2hec_sht1[] = {0, 1, 2};
 
 static int conv_index_ucd2hec_sht2[] = {0, 1, 2, -1, -1, -1};

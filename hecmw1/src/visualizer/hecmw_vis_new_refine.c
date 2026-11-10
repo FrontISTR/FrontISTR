@@ -755,27 +755,6 @@ fclose(fp);
   return;
 }
 
-#if 0
-static void free_headpatch(Head_surfacep_info *head_patch, int nx, int ny, int nz)
-{
-	int i;
-	Surfacep_info *p1, *p2;
-
-	for(i=0;i<nx*ny*nz;i++) {
-		if(head_patch[i].num_of_patch>0) {
-			p1=head_patch[i].next_patch;
-			while(p1!=NULL) {
-				p2=p1;
-				p1=p1->next_patch;
-				HECMW_free(p2);
-			}
-		}
-	}
-	HECMW_free(head_patch);
-	return;
-}
-#endif
-
 static void free_cubehead(Cube_head *cubehead, int voxn) {
   int i;
   Cube_point *p1, *p2;
