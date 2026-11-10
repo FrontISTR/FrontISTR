@@ -319,6 +319,356 @@ fstr_ctrl_data *c_fstr_ctrl_open(const char *filename) {
 }
 
 /*-----------------------------------------------------------------------------------*/
+/* inp format
+ *
+ * A keyword line starts with '*', and a comment line with '**'. A keyword line
+ * that ends with ',' continues on the next line, and the lines are joined into
+ * one record. The data lines of the mesh keywords and *HEADING are read by
+ * hecmw1, so they are not kept. The records have the same layout as those of a
+ * cnt file, so the functions for the parameters and the data lines are used as
+ * they are. They copy a record into a buffer of buffsize, so a longer record is
+ * an error.
+ */
+
+/* line_no == 0: the error is not of a line */
+static void set_inp_err_msg(const char *fname, int line_no, const char *msg) {
+  if (line_no > 0) {
+    snprintf(err_msg, sizeof(err_msg), "inp file error: %s, line:%d : %s\n",
+             fname, line_no, msg);
+
+  } else {
+    snprintf(err_msg, sizeof(err_msg), "inp file error: %s : %s\n", fname,
+             msg);
+  }
+}
+
+static int is_inp_comment_or_blank_line(const char *buff) {
+  const char *p = buff;
+
+  if (buff[0] == '*' && buff[1] == '*') {
+    return TRUE;
+  }
+
+  while (*p) {
+    if (*p != ' ') {
+      return FALSE;
+    }
+
+    p++;
+  }
+
+  return TRUE;
+}
+
+static int ends_with_comma(const char *s) {
+  const char *p = s + strlen(s);
+
+  while (p != s) {
+    p--;
+
+    if (*p != ' ') {
+      return *p == ',';
+    }
+  }
+
+  return FALSE;
+}
+
+/* The keyword of a keyword line in upper case, up to ','. The blanks between
+ * the words become one space ("*END  step" -> "*END STEP"). */
+static void get_inp_keyword(const char *line, char *keyword, size_t size) {
+  const char *p = line;
+  size_t n      = 0;
+  int blank     = FALSE;
+
+  while (*p && *p != ',' && n + 2 < size) {
+    if (*p == ' ') {
+      blank = TRUE;
+
+    } else {
+      if (blank && n > 0) {
+        keyword[n++] = ' ';
+      }
+
+      blank        = FALSE;
+      keyword[n++] = (char)toupper(*p);
+    }
+
+    p++;
+  }
+
+  keyword[n] = 0;
+}
+
+static int keeps_inp_data_lines(const char *keyword) {
+  const char *list[] = {"*NODE", "*ELEMENT", "*NSET", "*ELSET", "*HEADING", NULL};
+  int i;
+
+  for (i = 0; list[i]; i++) {
+    if (Strcmpi(keyword, list[i]) == 0) {
+      return FALSE;
+    }
+  }
+
+  return TRUE;
+}
+
+/* Reads a line without the line feed. The rest of a line that does not fit in
+ * buff is skipped, and *is_long is set. */
+static int read_whole_line(FILE *fp, char *buff, int size, int *is_long) {
+  char rest[buffsize];
+  size_t len;
+
+  if (!fgets(buff, size, fp)) {
+    return FALSE;
+  }
+
+  *is_long = FALSE;
+  len      = strlen(buff);
+
+  if (len > 0 && buff[len - 1] != '\n' && !feof(fp)) {
+    *is_long = TRUE;
+
+    while (fgets(rest, sizeof(rest), fp)) {
+      len = strlen(rest);
+
+      if (len > 0 && rest[len - 1] == '\n') {
+        break;
+      }
+    }
+  }
+
+  remove_cr(buff);
+  return TRUE;
+}
+
+/* Reads the next line other than comment lines and blank lines, with the tabs
+ * as blanks */
+static int next_inp_line(FILE *fp, char *buff, int size, int *line_no,
+                         int *is_long) {
+  char *p;
+
+  while (read_whole_line(fp, buff, size, is_long)) {
+    (*line_no)++;
+
+    for (p = buff; *p; p++) {
+      if (*p == '\t') {
+        *p = ' ';
+      }
+    }
+
+    if (!is_inp_comment_or_blank_line(buff)) {
+      return TRUE;
+    }
+  }
+
+  return FALSE;
+}
+
+static void store_inp_rec(fstr_ctrl_data *ctrl, int rec_index,
+                          const char *line, int line_no) {
+  size_t line_size = strlen(line) + 1;
+
+  ctrl->rec[rec_index].line_no = line_no;
+  ctrl->rec[rec_index].line    = HECMW_malloc(sizeof(char) * line_size);
+
+  if (ctrl->rec[rec_index].line == NULL) {
+    printf("Not enough memory\n");
+    exit(HECMW_EXIT_INTERNAL);
+  }
+
+  snprintf(ctrl->rec[rec_index].line, line_size, "%s", line);
+}
+
+/* fill == FALSE: counts the records and the headers into ctrl.
+ * fill == TRUE : stores them into the arrays allocated for the counts. */
+static int scan_inp_file(const char *fname, fstr_ctrl_data *ctrl, int fill) {
+  FILE *fp;
+  char buff[buffsize + 1];
+  char rec[buffsize * 2 + 1];
+  char keyword[buffsize];
+  char msg[buffsize];
+  int line_no   = 0;
+  int rec_line_no;
+  int rec_n     = 0;
+  int header_n  = 0;
+  int keep_data = FALSE;
+  int is_long, is_rec_long, has_line;
+  size_t len;
+
+  fp = fopen(fname, "r");
+
+  if (!fp) {
+    set_inp_err_msg(fname, 0, "cannot open the file");
+    return -1;
+  }
+
+  snprintf(msg, sizeof(msg), "the line is longer than %d characters",
+           buffsize - 1);
+  has_line = next_inp_line(fp, buff, sizeof(buff), &line_no, &is_long);
+
+  while (has_line) {
+    if (buff[0] != '*') {
+      /* data line */
+      if (keep_data && header_n > 0) {
+        if (is_long || strlen(buff) > buffsize - 1) {
+          set_inp_err_msg(fname, line_no, msg);
+          goto error;
+        }
+
+        if (fill) {
+          store_inp_rec(ctrl, rec_n, buff, line_no);
+          ctrl->data_line_n[header_n - 1]++;
+        }
+
+        rec_n++;
+      }
+
+      has_line = next_inp_line(fp, buff, sizeof(buff), &line_no, &is_long);
+      continue;
+    }
+
+    /* keyword line and its continuation lines */
+    rec_line_no = line_no;
+    is_rec_long = is_long;
+    snprintf(rec, sizeof(rec), "%s", buff);
+    has_line = next_inp_line(fp, buff, sizeof(buff), &line_no, &is_long);
+
+    while (has_line && buff[0] != '*' && ends_with_comma(rec)) {
+      len = strlen(rec);
+
+      if (is_long || len + strlen(buff) > buffsize - 1) {
+        is_rec_long = TRUE;
+      } else {
+        snprintf(rec + len, sizeof(rec) - len, "%s", buff);
+      }
+
+      has_line = next_inp_line(fp, buff, sizeof(buff), &line_no, &is_long);
+    }
+
+    if (is_rec_long || strlen(rec) > buffsize - 1) {
+      set_inp_err_msg(fname, rec_line_no, msg);
+      goto error;
+    }
+
+    get_inp_keyword(rec, keyword, sizeof(keyword));
+
+    if (Strcmpi(keyword, "*INCLUDE") == 0) {
+      set_inp_err_msg(fname, rec_line_no,
+                      "*INCLUDE is not supported in the analysis data yet");
+      goto error;
+    }
+
+    if (fill) {
+      ctrl->header_pos[header_n]  = rec_n;
+      ctrl->data_line_n[header_n] = 0;
+      store_inp_rec(ctrl, rec_n, rec, rec_line_no);
+    }
+
+    header_n++;
+    rec_n++;
+    keep_data = keeps_inp_data_lines(keyword);
+  }
+
+  fclose(fp);
+
+  if (!fill) {
+    ctrl->rec_n    = rec_n;
+    ctrl->header_n = header_n;
+  }
+
+  return 0;
+error:
+  fclose(fp);
+  return -1;
+}
+
+static int create_fstr_ctrl_data_inp(const char *fname, fstr_ctrl_data *ctrl) {
+  int i;
+  fstr_ctrl_data_init(ctrl);
+
+  if (scan_inp_file(fname, ctrl, FALSE)) {
+    return -1;
+  }
+
+  if (ctrl->header_n == 0) {
+    set_inp_err_msg(fname, 0, "no keyword line");
+    return -1;
+  }
+
+  ctrl->rec         = (ctrl_rec *)HECMW_malloc(sizeof(ctrl_rec) * ctrl->rec_n);
+  ctrl->header_pos  = (int *)HECMW_malloc(sizeof(int) * ctrl->header_n);
+  ctrl->data_line_n = (int *)HECMW_malloc(sizeof(int) * ctrl->header_n);
+
+  if (!ctrl->rec || !ctrl->header_pos || !ctrl->data_line_n) {
+    printf("Not enough memory\n");
+    exit(HECMW_EXIT_INTERNAL);
+  }
+
+  for (i = 0; i < ctrl->rec_n; i++) {
+    ctrl->rec[i].line    = NULL;
+    ctrl->rec[i].line_no = 0;
+  }
+
+  if (scan_inp_file(fname, ctrl, TRUE)) {
+    fstr_ctrl_data_finalize(ctrl);
+    return -1;
+  }
+
+  return 0;
+}
+
+fstr_ctrl_data *c_fstr_ctrl_open_inp(const char *filename) {
+  fstr_ctrl_data *ctrl;
+  ctrl = (fstr_ctrl_data *)HECMW_malloc(sizeof(fstr_ctrl_data));
+
+  if (!ctrl) {
+    return NULL;
+  }
+
+  if (create_fstr_ctrl_data_inp(filename, ctrl)) {
+    HECMW_free(ctrl);
+    return NULL;
+  }
+
+  return ctrl;
+}
+
+int c_fstr_ctrl_get_current_header_name_inp(fstr_ctrl_data *ctrl,
+                                            char *header_name, size_t size) {
+  int hp;
+
+  if (!ctrl) {
+    return -1;
+  }
+
+  hp = ctrl->header_pos[ctrl->current_header_index];
+  get_inp_keyword(ctrl->rec[hp].line, header_name, size);
+  return 0;
+}
+
+int c_fstr_ctrl_is_inp_file(const char *filename) {
+  FILE *fp;
+  char buff[buffsize];
+  int is_inp  = FALSE;
+  int line_no = 0;
+  int is_long;
+
+  fp = fopen(filename, "r");
+
+  if (!fp) {
+    return FALSE;
+  }
+
+  if (next_inp_line(fp, buff, sizeof(buff), &line_no, &is_long)) {
+    is_inp = (buff[0] == '*');
+  }
+
+  fclose(fp);
+  return is_inp;
+}
+
+/*-----------------------------------------------------------------------------------*/
 /* JP-2 */
 
 int c_fstr_ctrl_get_rec_number(fstr_ctrl_data *ctrl) {
@@ -1090,11 +1440,9 @@ void fstr_ctrl_get_err_msg(char *f_buff, int *len) {
 
 int is_first = 1; /* JP-19 */
 
-int fstr_ctrl_open(char *filename) {
+static int new_ctrl_index(void) {
   int i;
   int index;
-  char fname[FILE_NAME_SIZE];
-  strcpy_f2c(fname, filename, FILE_NAME_SIZE);
 
   if (is_first) {
     for (i = 0; i < ctrl_list_size; i++) {
@@ -1113,10 +1461,20 @@ int fstr_ctrl_open(char *filename) {
         break;
       }
     }
+  }
 
-    if (index < 0) {
-      return -1;
-    }
+  return index;
+}
+
+int fstr_ctrl_open(char *filename) {
+  int index;
+  char fname[FILE_NAME_SIZE];
+  strcpy_f2c(fname, filename, FILE_NAME_SIZE);
+
+  index = new_ctrl_index();
+
+  if (index < 0) {
+    return -1;
   }
 
   ctrl_list[index] = c_fstr_ctrl_open(fname);
@@ -1127,6 +1485,33 @@ int fstr_ctrl_open(char *filename) {
   } else {
     return index;
   }
+}
+
+int fstr_ctrl_open_inp(char *filename) {
+  int index;
+  char fname[FILE_NAME_SIZE];
+  strcpy_f2c(fname, filename, FILE_NAME_SIZE);
+
+  index = new_ctrl_index();
+
+  if (index < 0) {
+    return -1;
+  }
+
+  ctrl_list[index] = c_fstr_ctrl_open_inp(fname);
+
+  if (ctrl_list[index] == NULL) {
+    return -1;
+
+  } else {
+    return index;
+  }
+}
+
+int fstr_ctrl_is_inp_file(char *filename) {
+  char fname[FILE_NAME_SIZE];
+  strcpy_f2c(fname, filename, FILE_NAME_SIZE);
+  return c_fstr_ctrl_is_inp_file(fname);
 }
 
 /*-----------------------------------------------------------------------------------*/
@@ -1175,6 +1560,18 @@ int fstr_ctrl_get_c_h_name(int *ctrl, char *header_name, int *buff_size) {
   char c_buff[STR_SIZE] = { '\0' };
 
   if (c_fstr_ctrl_get_current_header_name(ctrl_list[*ctrl], c_buff)) {
+    return -1;
+  }
+
+  strcpy_c2f(header_name, *buff_size, c_buff);
+  return 0;
+}
+
+int fstr_ctrl_get_c_h_name_inp(int *ctrl, char *header_name, int *buff_size) {
+  char c_buff[STR_SIZE] = { '\0' };
+
+  if (c_fstr_ctrl_get_current_header_name_inp(ctrl_list[*ctrl], c_buff,
+                                              sizeof(c_buff))) {
     return -1;
   }
 

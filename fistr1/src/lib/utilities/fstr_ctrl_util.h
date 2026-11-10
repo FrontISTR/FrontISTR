@@ -81,6 +81,43 @@ fstr_ctrl_data* c_fstr_ctrl_open(const char* filename);
 /* =================================================================================
  */
 /**
+ * Open the analysis data of an inp file
+ * The data lines of *NODE, *ELEMENT, *NSET, *ELSET and *HEADING are not kept.
+ * Get the keyword with c_fstr_ctrl_get_current_header_name_inp.
+ * @param filename Specify inp file name (included path)
+ * @return fstr_ctrl_data* pointer or NULL
+ */
+
+fstr_ctrl_data* c_fstr_ctrl_open_inp(const char* filename);
+
+/* =================================================================================
+ */
+/**
+ * Obtaining the keyword of current header of an inp file
+ * in upper case and up to ','. The blanks between the words become one space.
+ * @param ctrl Specify fstr_ctrl_data* pointer obtained from c_fstr_ctrl_open_inp
+ * @param header_name Pointer to copy the keyword
+ * @param size Size of header_name
+ * @return 0:success, -1:fail
+ */
+
+int c_fstr_ctrl_get_current_header_name_inp(fstr_ctrl_data* ctrl,
+                                            char* header_name, size_t size);
+
+/* =================================================================================
+ */
+/**
+ * Checking the format of a file
+ * @param filename Specify file name (included path)
+ * @return 1 if the first line other than blank and comment lines starts with
+ * '*', otherwise 0
+ */
+
+int c_fstr_ctrl_is_inp_file(const char* filename);
+
+/* =================================================================================
+ */
+/**
  * Obtaining record number
  * @param ctrl Specify fstr_ctrl_data* pointer obtained from fstr_ctrl_open
  * @return record number without comment and blank lines
