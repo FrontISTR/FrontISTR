@@ -238,7 +238,7 @@ contains
     integer(kind=kint), intent(inout) :: total(:)
     type(fstr_param_pack) :: P
 
-    integer(kind=kint) :: ctrl_list(20), ictrl, rcode, ierror, k, s
+    integer(kind=kint) :: ctrl_list(20), ictrl, rcode, ierror, k
     integer(kind=kint) :: pos(size(total))
     character(len=HECMW_NAME_LEN) :: header_name
     character(len=HECMW_FILENAME_LEN) :: input_filename
@@ -265,22 +265,7 @@ contains
       end if
 
       k = fstr_card_find( T, header_name(2:), P%STATE%version )
-      if( k > 0 ) then
-        if( ipass == 1 .or. associated(T%card(k)%second) ) then
-          s = T%card(k)%seq
-          P%STATE%slot%first = pos(s) + 1
-          if( T%card(k)%by_line ) then
-            pos(s) = pos(s) + fstr_ctrl_get_data_line_n( ctrl )
-          else
-            pos(s) = pos(s) + 1
-          endif
-          P%STATE%slot%last = pos(s)
-          if( ipass == 2 .and. pos(s) > total(s) ) call fstr_setup_util_err_stop( '### Error: '// &
-            trim(header_name)//' : more than counted in the first reading of the control file' )
-          if( ipass == 1 .and. associated(T%card(k)%first) ) call T%card(k)%first( ctrl, P )
-          if( ipass == 2 ) call T%card(k)%second( ctrl, P )
-        endif
-      endif
+      if( k > 0 ) call fstr_card_read( ctrl, T, k, ipass, header_name, pos, total, P )
 
       ! next
       if( fstr_ctrl_seek_next_header(ctrl) == 0 )then

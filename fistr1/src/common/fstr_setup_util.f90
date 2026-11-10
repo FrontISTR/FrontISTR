@@ -229,6 +229,38 @@ contains
     fstr_card_total = total(i)
   end function fstr_card_total
 
+  !> Reads the card at the current header of ctrl by the row k of the table T in the reading ipass (1 or 2).
+  !> Counts the card in its sequence after the places pos(s) counted so far, sets its places to P%STATE%slot,
+  !> and calls the reader of the row. The second reading reads only the cards with a reader for it,
+  !> and stops if a sequence goes beyond total, its total in the first reading.
+  subroutine fstr_card_read( ctrl, T, k, ipass, header_name, pos, total, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    type(fstr_card_table), intent(in) :: T
+    integer(kind=kint), intent(in) :: k
+    integer(kind=kint), intent(in) :: ipass
+    character(len=*), intent(in) :: header_name
+    integer(kind=kint), intent(inout) :: pos(:)
+    integer(kind=kint), intent(in) :: total(:)
+    type(fstr_param_pack) :: P
+
+    integer(kind=kint) :: s
+
+    if( ipass == 2 .and. .not. associated(T%card(k)%second) ) return
+    s = T%card(k)%seq
+    P%STATE%slot%first = pos(s) + 1
+    if( T%card(k)%by_line ) then
+      pos(s) = pos(s) + fstr_ctrl_get_data_line_n( ctrl )
+    else
+      pos(s) = pos(s) + 1
+    endif
+    P%STATE%slot%last = pos(s)
+    if( ipass == 2 .and. pos(s) > total(s) ) call fstr_setup_util_err_stop( '### Error: '// &
+      trim(header_name)//' : more than counted in the first reading of the control file' )
+    if( ipass == 1 .and. associated(T%card(k)%first) ) call T%card(k)%first( ctrl, P )
+    if( ipass == 2 ) call T%card(k)%second( ctrl, P )
+  end subroutine fstr_card_read
+
   subroutine append_node_grp_from_surf_grp( hecMESH, sgrp_id, ngrp_id )
     use hecmw_setup_util, only : append_new_group
     use hecmw_array_util, only : hecmw_qsort_int_array, hecmw_uniq_int_array
