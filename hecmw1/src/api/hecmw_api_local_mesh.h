@@ -26,16 +26,16 @@ int hecmw_api_mesh_n_elem_node_item(const void* mesh);
 int hecmw_api_mesh_n_ngrp(const void* mesh);
 void hecmw_api_mesh_append_ngrp(void* mesh,const char* grp_name,int count,int* list);
 void hecmw_api_mesh_get_ngrp_name(const void* mesh,int i,char* name,int len);
-void hecmw_api_mesh_get_ngrp(const void* mesh,int i,int* array,int* count);
+void hecmw_api_mesh_get_ngrp(const void* mesh,int i,int** array,int* count);
 
 int hecmw_api_mesh_n_sgrp(const void* mesh);
 void hecmw_api_mesh_append_sgrp(void* mesh,const char* grp_name,int count,int* list);
 void hecmw_api_mesh_get_sgrp_name(const void* mesh,int i,char* name,int len);
-void hecmw_api_mesh_get_sgrp(const void* mesh,int i,int* array,int* count);
+void hecmw_api_mesh_get_sgrp(const void* mesh,int i,int** array,int* count);
 
 int hecmw_api_mesh_n_egrp(const void* mesh);
 void hecmw_api_mesh_append_egrp(void* mesh,const char* grp_name,int count,int* list);
 void hecmw_api_mesh_get_egrp_name(const void* mesh,int i,char* name,int len);
-void hecmw_api_mesh_get_egrp(const void* mesh,int i,int* array,int* count);
+void hecmw_api_mesh_get_egrp(const void* mesh,int i,int** array,int* count);
 
 #endif

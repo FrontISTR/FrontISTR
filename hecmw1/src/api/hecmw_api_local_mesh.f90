@@ -445,7 +445,7 @@ contains
   !! @param[in] mesh : Mesh handler
   !! @param[in] i : Surface group index (in order of addition)
   !! @param[out] array : Pointer to an array of element numbers and face numbers
-  !! @param[out] count : Array size
+  !! @param[out] count : Surface size (= half of array size)
   subroutine hecmw_api_mesh_get_sgrp(mesh,i,array,count) bind(C,name='hecmw_api_mesh_get_sgrp')
     implicit none
     type(c_ptr), value :: mesh

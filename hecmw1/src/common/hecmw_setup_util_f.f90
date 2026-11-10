@@ -271,7 +271,7 @@ contains
     integer(kind=kint), intent(in) :: count
     integer(kind=kint), intent(in) :: list(:)
     integer(kind=kint), intent(out) :: grp_id
-    integer(kind=kint) :: id, old_grp_number, new_grp_number, old_item_number, new_item_number, k
+    integer(kind=kint) :: id, old_grp_number, new_grp_number, old_item_number, new_item_number, k, item_count
 
     call set_group_pointers( hecMESH, grp_type_name )
     do id = 1, n_grp
@@ -281,11 +281,17 @@ contains
       endif
     enddo
 
+    if(grp_type_name=='surf_grp') then
+      item_count = 2*count
+    else
+      item_count = count
+    end if
+
     old_grp_number = n_grp
     new_grp_number = old_grp_number + 1
 
     old_item_number = grp_index(n_grp)
-    new_item_number = old_item_number + count
+    new_item_number = old_item_number + item_count
 
     call hecmw_expand_name_array( grp_name, old_grp_number, new_grp_number )
     call hecmw_expand_index_array( grp_index, old_grp_number + 1, new_grp_number + 1)
@@ -294,10 +300,12 @@ contains
     n_grp = new_grp_number
     grp_id = new_grp_number
     grp_name%s(grp_id) = name
-    do k = 1, count
+
+    do k = 1, item_count
       grp_item(old_item_number + k) = list(k)
     enddo
     grp_index(grp_id) = grp_index(grp_id-1) + count
+
     call backset_group_pointers( hecMESH, grp_type_name )
   end subroutine append_new_group
 
