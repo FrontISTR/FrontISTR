@@ -16,13 +16,20 @@
 #include "hecmw_vis_combine.h"
 #include "hecmw_fstr_endian.h"
 
+/* ParaView uses only 3-component arrays as vectors (e.g. in Warp By Vector), so a 2D displacement is padded with 0. */
+static int get_node_out_dof (struct hecmwST_result_data *data, int i)
+{
+	if (strcmp(data->node_label[i], "DISPLACEMENT") == 0 && data->nn_dof[i] == 2) return 3;
+	return data->nn_dof[i];
+}
+
 void vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *data, char *outfile, char *outfile1, HECMW_Comm VIS_COMM)
 {
 	int i, j, k;
 	long long jS, jE;
 	int myrank, petot;
 	int n_node, n_elem, shift;
-	int data_tot_n, data_tot_e;
+	int data_tot_n, data_tot_e, out_dof;
 	int table342[10] = {0, 1, 2, 3, 6, 4, 5, 7, 8, 9};
 	char file_pvtu[HECMW_FILENAME_LEN], file_vtu[HECMW_FILENAME_LEN], buf[HECMW_FILENAME_LEN];
 	char *p;
@@ -87,9 +94,9 @@ void vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *da
 				strcmp(data->node_label[i], "NodalPrincipalSTRAIN") == 0 ||
 				strcmp(data->node_label[i], "NodalPrincipalSTRESS") == 0
 			) {
-				fprintf (outfp, "<PDataArray type=\"Float32\" Name=\"%s\" NumberOfComponents=\"%d\" ComponentName0=\"1st\" ComponentName1=\"2nd\" ComponentName2=\"3rd\" format=\"ascii\"/>\n", data->node_label[i], data->nn_dof[i]);
+				fprintf (outfp, "<PDataArray type=\"Float32\" Name=\"%s\" NumberOfComponents=\"%d\" ComponentName0=\"1st\" ComponentName1=\"2nd\" ComponentName2=\"3rd\" format=\"ascii\"/>\n", data->node_label[i], get_node_out_dof(data, i));
 			} else {
-				fprintf (outfp, "<PDataArray type=\"Float32\" Name=\"%s\" NumberOfComponents=\"%d\" format=\"ascii\"/>\n", data->node_label[i], data->nn_dof[i]);
+				fprintf (outfp, "<PDataArray type=\"Float32\" Name=\"%s\" NumberOfComponents=\"%d\" format=\"ascii\"/>\n", data->node_label[i], get_node_out_dof(data, i));
 			}
 		}
 		fprintf (outfp, "</PPointData>\n");
@@ -193,22 +200,13 @@ void vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *da
 		for(j=0; j<i; j++){
 			shift += data->nn_dof[j];
 		}
-		if (strcmp(data->node_label[i], "DISPLACEMENT") == 0 && data->nn_dof[i] == 2) {
-			// Convert 2D displacement to 3D
-			fprintf (outfp, "<DataArray type=\"Float32\" Name=\"%s\" NumberOfComponents=\"3\" format=\"ascii\">\n", data->node_label[i]);
-			for(j=0; j<n_node; j++){
-				fprintf (outfp, "%e %e 0.0\n",
-					(float)data->node_val_item[j*data_tot_n+shift],
-					(float)data->node_val_item[j*data_tot_n+shift+1]);
+		out_dof = get_node_out_dof(data, i);
+		fprintf (outfp, "<DataArray type=\"Float32\" Name=\"%s\" NumberOfComponents=\"%d\" format=\"ascii\">\n", data->node_label[i], out_dof);
+		for(j=0; j<n_node; j++){
+			for(k=0; k<out_dof; k++){
+				fprintf (outfp, "%e ", k < data->nn_dof[i] ? (float)data->node_val_item[j*data_tot_n+k+shift] : 0.0f);
 			}
-		} else {
-			fprintf (outfp, "<DataArray type=\"Float32\" Name=\"%s\" NumberOfComponents=\"%d\" format=\"ascii\">\n", data->node_label[i], data->nn_dof[i]);
-			for(j=0; j<n_node; j++){
-				for(k=0; k<data->nn_dof[i]; k++){
-					fprintf (outfp, "%e ", (float)data->node_val_item[j*data_tot_n+k+shift]);
-				}
-				fprintf (outfp, "\n");
-			}
+			fprintf (outfp, "\n");
 		}
 		fprintf (outfp, "</DataArray>\n");
 	}
@@ -247,12 +245,11 @@ void bin_vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data
 	long long jS, jE;
 	int myrank, petot;
 	int n_node, n_elem, shift;
-	int data_tot_n, data_tot_e, in, ioffset;
+	int data_tot_n, data_tot_e, in, ioffset, out_dof;
 	int *offset;
-	int is_disp2d=0;
 	uint32_t uint32;
 	uint64_t uint64;
-	float val, val1, val2, val3;
+	float val;
 	char file_pvtu[HECMW_FILENAME_LEN], file_vtu[HECMW_FILENAME_LEN], buf[HECMW_FILENAME_LEN];
 	int table342[10] = {0, 1, 2, 3, 6, 4, 5, 7, 8, 9};
 	FILE *outfp;
@@ -311,9 +308,9 @@ void bin_vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data
 				strcmp(data->node_label[i], "NodalPrincipalSTRAIN") == 0 ||
 				strcmp(data->node_label[i], "NodalPrincipalSTRESS") == 0
 			) {
-				fprintf (outfp, "<PDataArray type=\"Float32\" Name=\"%s\" NumberOfComponents=\"%d\" ComponentName0=\"1st\" ComponentName1=\"2nd\" ComponentName2=\"3rd\" format=\"appended\"/>\n", data->node_label[i], data->nn_dof[i]);
+				fprintf (outfp, "<PDataArray type=\"Float32\" Name=\"%s\" NumberOfComponents=\"%d\" ComponentName0=\"1st\" ComponentName1=\"2nd\" ComponentName2=\"3rd\" format=\"appended\"/>\n", data->node_label[i], get_node_out_dof(data, i));
 			} else {
-				fprintf (outfp, "<PDataArray type=\"Float32\" Name=\"%s\" NumberOfComponents=\"%d\" format=\"appended\"/>\n", data->node_label[i], data->nn_dof[i]);
+				fprintf (outfp, "<PDataArray type=\"Float32\" Name=\"%s\" NumberOfComponents=\"%d\" format=\"appended\"/>\n", data->node_label[i], get_node_out_dof(data, i));
 			}
 		}
 		fprintf (outfp, "</PPointData>\n");
@@ -360,7 +357,7 @@ void bin_vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data
 	offset[3] = offset[2] + sizeof(int) + n_elem     *sizeof(int);
 	offset[4] = offset[3] + sizeof(int) + n_elem     *sizeof(int);
 	for(i=0; i<data->nn_component; i++){
-		offset[5+i] = offset[4+i] + sizeof(int) + data->nn_dof[i]*n_node*sizeof(int);
+		offset[5+i] = offset[4+i] + sizeof(int) + get_node_out_dof(data, i)*n_node*sizeof(int);
 	}
 	for(i=0; i<data->ne_component; i++){
 		offset[5+data->nn_component+i] = offset[4+data->nn_component+i] + sizeof(int) + data->ne_dof[i]*n_elem*sizeof(int);
@@ -404,13 +401,7 @@ void bin_vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data
 	fprintf (outfp, "<PointData>\n");
 
 	for(i=0; i<data->nn_component; i++){
-		if (strcmp(data->node_label[i], "DISPLACEMENT") == 0 && data->nn_dof[i] == 2) {
-			// Convert 2D displacement to 3D
-			is_disp2d = 1;
-			fprintf (outfp, "<DataArray type=\"Float32\" Name=\"%s\" NumberOfComponents=\"3\" format=\"appended\" offset=\"%d\">\n", data->node_label[i], offset[4+i]);
-		} else {
-			fprintf (outfp, "<DataArray type=\"Float32\" Name=\"%s\" NumberOfComponents=\"%d\" format=\"appended\" offset=\"%d\">\n", data->node_label[i], data->nn_dof[i], offset[4+i]);
-		}
+		fprintf (outfp, "<DataArray type=\"Float32\" Name=\"%s\" NumberOfComponents=\"%d\" format=\"appended\" offset=\"%d\">\n", data->node_label[i], get_node_out_dof(data, i), offset[4+i]);
 		fprintf (outfp, "</DataArray>\n");
 	}
 
@@ -484,7 +475,8 @@ void bin_vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data
 	}
 
 	for(i=0; i<data->nn_component; i++){
-		uint32 = (uint32_t)(data->nn_dof[i]*n_node*sizeof(int));
+		out_dof = get_node_out_dof(data, i);
+		uint32 = (uint32_t)(out_dof*n_node*sizeof(int));
 		fwrite (&uint32, sizeof(uint32), 1, outfp);
 
 		shift=0;
@@ -492,19 +484,9 @@ void bin_vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data
 			shift += data->nn_dof[j];
 		}
 		for(j=0; j<n_node; j++){
-			if (is_disp2d) {
-				// Convert 2D displacement to 3D
-				val1 = (float)data->node_val_item[j*data_tot_n+shift];
-				val2 = (float)data->node_val_item[j*data_tot_n+shift+1];
-				val3 = 0.0;
-				fwrite (&val1, sizeof(float), 1, outfp);
-				fwrite (&val2, sizeof(float), 1, outfp);
-				fwrite (&val3, sizeof(float), 1, outfp);
-			} else {
-				for(k=0; k<data->nn_dof[i]; k++){
-					val = (float)data->node_val_item[j*data_tot_n+k+shift];
-					fwrite (&val, sizeof(float), 1, outfp);
-				}
+			for(k=0; k<out_dof; k++){
+				val = k < data->nn_dof[i] ? (float)data->node_val_item[j*data_tot_n+k+shift] : 0.0f;
+				fwrite (&val, sizeof(float), 1, outfp);
 			}
 		}
 	}
