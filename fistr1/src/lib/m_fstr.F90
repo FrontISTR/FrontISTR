@@ -121,7 +121,6 @@ module m_fstr
   integer(kind=kint), parameter :: IMSG = 51 ! message (myrank == 0 only)
   integer(kind=kint), parameter :: IDBG = 52 ! debug
   integer(kind=kint), parameter :: IFVS = 53 ! visual.ini file
-  integer(kind=kint), parameter :: INEU = 54 ! neutral file (heat)
   integer(kind=kint), parameter :: IRESOUT = 100 ! ~110, keeping for result output file
 
   !> OUTPUT STRESS/STRAIN TYPE
@@ -162,7 +161,6 @@ module m_fstr
     integer(kind=kint) :: fg_visual=kOFF     !< visualization (kYES/kNO) (=IVISUAL)
 
     !> for heat ...
-    integer(kind=kint) :: fg_neutral=kOFF   !< write by neutral (=INEUTRAL)
     integer(kind=kint) :: fg_irres=kNO      !< restart read     (=IRRES)
     integer(kind=kint) :: fg_iwres=kNO      !< restart write    (=IWRES)
     integer(kind=kint) :: nrres=0           !< NRRES
@@ -1181,7 +1179,6 @@ contains
     fstrPARAM%fg_visual     = kOFF
 
     ! for heat ...
-    fstrPARAM%fg_neutral    = kOFF
     fstrPARAM%fg_irres      = kNO
     fstrPARAM%fg_iwres      = kNO
     fstrPARAM%nrres         = 1

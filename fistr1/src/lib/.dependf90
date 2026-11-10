@@ -1,12 +1,11 @@
 dynamic_mass.o : dynamic_mass.f90 m_fstr.o 
 eigen_LIB.o : eigen_LIB.f90 dynamic_mass.o solve_LINEQ.o 
 fstr_FiniteRotationKinematics.o : fstr_FiniteRotationKinematics.f90 m_fstr.o
-heat_LIB.o : heat_LIB.f90 heat_LIB_NEUTRAL.o heat_LIB_RADIATE.o heat_LIB_FILM.o heat_LIB_DFLUX.o heat_LIB_CAPACITY.o heat_LIB_CONDUCTIVITY.o 
+heat_LIB.o : heat_LIB.f90 heat_LIB_RADIATE.o heat_LIB_FILM.o heat_LIB_DFLUX.o heat_LIB_CAPACITY.o heat_LIB_CONDUCTIVITY.o 
 heat_LIB_CAPACITY.o : heat_LIB_CAPACITY.f90 dynamic_mass.o 
 heat_LIB_CONDUCTIVITY.o : heat_LIB_CONDUCTIVITY.f90 dynamic_mass.o 
 heat_LIB_DFLUX.o : heat_LIB_DFLUX.f90 
 heat_LIB_FILM.o : heat_LIB_FILM.f90 
-heat_LIB_NEUTRAL.o : heat_LIB_NEUTRAL.f90 m_fstr.o 
 heat_LIB_RADIATE.o : heat_LIB_RADIATE.f90 
 m_common_struct.o : m_common_struct.f90 
 m_element_activation.o : m_element_activation.f90 
