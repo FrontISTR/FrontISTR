@@ -262,35 +262,6 @@ void find_intersection_tetra(Tetra *tetra, double isovalue,
           count_plus++;
         }
       }
-#ifdef old
-      /*   judge the tetrahedra whether in the right rotation side */
-      for (i = 0; i < 4; i++)
-        for (j = 0; j < 3; j++) fp[i][j] = tetra->axis[v[i] * 3 + j];
-      n_f[0] = (fp[2][1] - fp[1][1]) * (fp[1][2] - fp[0][2]) -
-               (fp[1][1] - fp[0][1]) * (fp[2][2] - fp[1][2]);
-      n_f[1] = -(fp[2][0] - fp[1][0]) * (fp[1][2] - fp[0][2]) +
-               (fp[1][0] - fp[0][0]) * (fp[2][2] - fp[1][2]);
-      n_f[2] = (fp[2][0] - fp[1][0]) * (fp[1][1] - fp[0][1]) -
-               (fp[1][0] - fp[0][0]) * (fp[2][1] - fp[1][1]);
-      n_norm = sqrt(n_f[0] * n_f[0] + n_f[1] * n_f[1] + n_f[2] * n_f[2]);
-      if (fabs(n_norm) > EPSILON) {
-        for (j = 0; j < 3; j++) n_f[j] /= n_norm;
-      }
-      /*selce the direction point to inside the element */
-      for (j           = 0; j < 3; j++)
-        f_cen_point[j] = (fp[0][j] + fp[1][j] + fp[2][j]) / 3.0;
-      for (j = 0; j < 3; j++) c_c[j] = fp[3][j] - f_cen_point[j];
-      n_c = sqrt(c_c[0] * c_c[0] + c_c[1] * c_c[1] + c_c[2] * c_c[2]);
-      if (fabs(n_c) > EPSILON) {
-        for (j = 0; j < 3; j++) c_c[j] /= n_c;
-      }
-      sign_f = n_f[0] * c_c[0] + n_f[1] * c_c[1] + n_f[2] * c_c[2];
-      if (sign_f < -EPSILON) {
-        tmp_int = v[2];
-        v[2]    = v[3];
-        v[3]    = tmp_int;
-      }
-#endif
 
       for (i = 0; i < 4; i++) {
         if (i == 0) {

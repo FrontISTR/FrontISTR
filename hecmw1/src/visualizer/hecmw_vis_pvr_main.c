@@ -220,17 +220,6 @@ fclose(contfp);
     }
   }
 
-#ifdef slow
-  phi_x = (double *)HECMW_calloc(n_node, sizeof(double));
-  phi_y = (double *)HECMW_calloc(n_node, sizeof(double));
-  phi_z = (double *)HECMW_calloc(n_node, sizeof(double));
-  for (i = 0; i < n_node; i++) {
-    phi_x[i] = 0.0;
-    phi_y[i] = 0.0;
-    phi_z[i] = 0.0;
-  }
-
-#endif
   HECMW_Barrier(VIS_COMM);
   /*      t2=HECMW_Wtime();
 if (mynode == 0){
@@ -246,43 +235,14 @@ fprintf(stderr, "the time for reading file is %lf the total time up to now is
   t2 = t1;
 
   if (mynode == 0) fprintf(stderr, "calc_gradient\n");
-#ifdef slow
-  calc_gradient(n_node, n_internal, n_elem, node, elem, node1, n_neighbor_pe,
-                neighbor_pe, import_index, import_node, export_index,
-                export_node, phi_x, phi_y, phi_z, mynode, VIS_COMM);
-  t3 = HECMW_Wtime();
-  if (mynode == 0) {
-    fprintf(stderr,
-            "The time for computing gradient is %lf the total time up to now "
-            "is %lf\n",
-            t3 - t2, t3 - t1);
-    t2 = t3;
-  }
-  HECMW_Barrier(VIS_COMM);
-  fprintf(stderr, "refinement\n");
-#endif
   nx         = level[mynode * 3];
   ny         = level[mynode * 3 + 1];
   nz         = level[mynode * 3 + 2];
   empty_flag = (int *)HECMW_calloc((nx + 1) * (ny + 1) * (nz + 1), sizeof(int));
   var = (double *)HECMW_calloc((nx + 1) * (ny + 1) * (nz + 1), sizeof(double));
-#ifdef slow
-  grad_var = (double *)HECMW_calloc((nx + 1) * (ny + 1) * (nz + 1) * 3,
-                                    sizeof(double));
-  if ((grad_var == NULL) || (var == NULL) || (empty_flag == NULL)) {
-    fprintf(stderr, "There is no enough memory: empty_flag, var, gradient\n");
-    exit(0);
-  }
-
-#endif
   refinement(mesh, node1, n_voxel, voxel_dxyz, voxel_orig_xyz, level,
              voxel_n_neighbor_pe, voxel_neighbor_pe, extent, mynode, VIS_COMM,
              empty_flag, var);
-#ifdef slow
-  HECMW_free(phi_x);
-  HECMW_free(phi_y);
-  HECMW_free(phi_z);
-#endif
   HECMW_Barrier(VIS_COMM);
 
   t3 = HECMW_Wtime();
@@ -1192,9 +1152,6 @@ if(endj>vr->yr) endj=vr->yr;
                         }
   }
   HECMW_free(var);
-#ifdef slow
-  HECMW_free(grad_var);
-#endif
   HECMW_free(empty_flag);
   HECMW_free(image);
   HECMW_free(accum_opa);

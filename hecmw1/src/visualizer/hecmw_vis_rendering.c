@@ -578,42 +578,6 @@ endj=(int)((sscr_area[3]-scr_area[2])/yd)+start_y+1;
      */
 
     HECMW_Barrier(VIS_COMM);
-#ifdef later
-    grad_minmax[0] = 1.0E17;
-    grad_minmax[1] = -1.0E17;
-    if (transfer_function_style == 2) {
-    }
-    feap_minmax[0] = 1.0E17;
-    feap_minmax[1] = -1.0E17;
-    if (transfer_function_style == 3) {
-      find_feap_minmax(num_of_features, fea_point, tmincolor, tmaxcolor,
-                       feap_minmax);
-      HECMW_Barrier(VIS_COMM);
-      HECMW_Allreduce(&feap_minmax[0], &tfeap_minmax[0], 1, HECMW_DOUBLE,
-                      HECMW_MIN, VIS_COMM);
-      HECMW_Allreduce(&feap_minmax[1], &tfeap_minmax[1], 1, HECMW_DOUBLE,
-                      HECMW_MAX, VIS_COMM);
-      feap_minmax[0] = tfeap_minmax[0];
-      feap_minmax[1] = tfeap_minmax[1];
-    }
-    feai_minmax[0] = 1.0E17;
-    feai_minmax[1] = -1.0E17;
-    if (transfer_function_style == 4) {
-      /*	   find_feai_minmax(num_of_features, fea_point, tmincolor,
-tmaxcolor, feai_minmax);
-HECMW_Barrier(VIS_COMM);
-HECMW_Allreduce(&feai_minmax[0], &tfeai_minmax[0], 1, HECMW_DOUBLE, HECMW_MIN,
-VIS_COMM);
-HECMW_Allreduce(&feai_minmax[1], &tfeai_minmax[1], 1, HECMW_DOUBLE, HECMW_MAX,
-VIS_COMM);
-feai_minmax[0]=tfeai_minmax[0];  feai_minmax[1]=tfeai_minmax[1];
-       */
-    }
-    dis_minmax[0] = 1.0E17;
-    dis_minmax[1] = -1.0E17;
-    if ((transfer_function_style == 5) || (transfer_function_style == 6))
-      find_dis_minmax(view_point_d, vertex, dis_minmax);
-#endif
     /* Build hierarchical tree*/
     for (jjj = 0; jjj < sr->deform_num_of_frames; jjj++) {
       if (sr->deform_num_of_frames > 1)
