@@ -61,6 +61,12 @@ contains
 
     fstrPARAM%contact_algo = kcaALagrange
 
+    ! Defaults of an inp file: the linear solver is DIRECTmf unless *SOLVER is given,
+    ! with the solver type of a direct method as fstr_setup_SOLVER sets it, and the result file is written.
+    hecMAT%Iarray(2)  = 106
+    hecMAT%Iarray(99) = hecMAT%Iarray(2) - 99
+    fstrPARAM%fg_result = kON
+
     call fstr_setup_inp_cards( T )
 
     ctrl = fstr_ctrl_open_inp( inp_filename )
