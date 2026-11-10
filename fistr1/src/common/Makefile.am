@@ -107,6 +107,7 @@ OBJSF = \
 	fstr_param_setup.@f90objfilepostfix@ \
 	fstr_setup_finish.@f90objfilepostfix@ \
 	fstr_setup.@f90objfilepostfix@ \
+	fstr_setup_inp.@f90objfilepostfix@ \
 	fstr_rcap_io.@f90objfilepostfix@
 
 INCLUDESF = \

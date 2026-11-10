@@ -8,6 +8,7 @@ module m_fstr_main
   use m_fstr
   use m_hecmw2fstr_mesh_conv
   use m_fstr_setup
+  use m_fstr_setup_inp
   use m_fstr_solve_heat
   use m_fstr_solve_nlgeom
   use m_fstr_solve_eigen
@@ -241,7 +242,12 @@ contains
 
     ! loading boundary conditions etc. from fstr control file or nastran mesh file
     ! and setup parameters ...
-    call fstr_setup( cntfileNAME, hecMESH, hecMAT, fstrPARAM, fstrSOLID, fstrEIG, fstrHEAT, fstrDYNAMIC, fstrCPL, fstrFREQ )
+    if( fstr_ctrl_is_inp_file( cntfileNAME ) ) then
+      call fstr_setup_inp( cntfileNAME, hecMESH, hecMAT, fstrPARAM, fstrSOLID, fstrEIG, fstrHEAT, fstrDYNAMIC, fstrCPL, &
+        fstrFREQ )
+    else
+      call fstr_setup( cntfileNAME, hecMESH, hecMAT, fstrPARAM, fstrSOLID, fstrEIG, fstrHEAT, fstrDYNAMIC, fstrCPL, fstrFREQ )
+    endif
 
     call fstr_input_precheck( hecMESH, hecMAT, fstrSOLID, fstrPARAM )
 
