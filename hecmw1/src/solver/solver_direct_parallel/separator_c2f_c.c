@@ -7,8 +7,7 @@
 #include "separator.h"
 extern Separator_result *separator;
 
-void get_part_result(int *num_graph1, int *igraph1, int *num_graph2,
-                     int *igraph2, int *num_separator, int *iseparator) {
+void get_part_result(int *igraph1, int *igraph2, int *iseparator) {
   int i;
   /* FILE *fp; */
   /* char string1[4], filename[128]; */
@@ -60,20 +59,14 @@ void get_part_result(int *num_graph1, int *igraph1, int *num_graph2,
   return;
 }
 
-void get_part_result_(int *num_graph1, int *igraph1, int *num_graph2,
-                      int *igraph2, int *num_separator, int *iseparator) {
-  get_part_result(num_graph1, igraph1, num_graph2, igraph2, num_separator,
-                  iseparator);
+void get_part_result_(int *igraph1, int *igraph2, int *iseparator) {
+  get_part_result(igraph1, igraph2, iseparator);
 }
 
-void get_part_result__(int *num_graph1, int *igraph1, int *num_graph2,
-                       int *igraph2, int *num_separator, int *iseparator) {
-  get_part_result(num_graph1, igraph1, num_graph2, igraph2, num_separator,
-                  iseparator);
+void get_part_result__(int *igraph1, int *igraph2, int *iseparator) {
+  get_part_result(igraph1, igraph2, iseparator);
 }
 
-void GET_PART_RESULT(int *num_graph1, int *igraph1, int *num_graph2,
-                     int *igraph2, int *num_separator, int *iseparator) {
-  get_part_result(num_graph1, igraph1, num_graph2, igraph2, num_separator,
-                  iseparator);
+void GET_PART_RESULT(int *igraph1, int *igraph2, int *iseparator) {
+  get_part_result(igraph1, igraph2, iseparator);
 }
