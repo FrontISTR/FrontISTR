@@ -1,0 +1,22 @@
+# Check that !DLOAD names resolve to element groups when surface groups have
+# the same name; A/B/A exercises the full-search, cache-hit, full-search path.
+!VERSION
+ 3
+!SOLUTION, TYPE=STATIC
+!BOUNDARY
+ FIX, 1, 3, 0.0
+!DLOAD
+ A, BX, 1.0
+ B, BX, 1.0
+ A, BX, 1.0
+!STEP, SUBSTEPS=1, CONVERG=1.0E-8
+ BOUNDARY, 1
+ LOAD, 1
+!MATERIAL, NAME=M1
+!ELASTIC
+ 1.0E+05, 0.3
+!SOLVER, METHOD=CG, PRECOND=1, ITERLOG=NO, TIMELOG=NO
+ 10000, 1
+ 1.0E-8, 1.0, 0.0
+!WRITE, RESULT, FREQUENCY=1
+!END
