@@ -1,2 +1,5 @@
 # the output request of the inp format is skipped with a warning
 Warning: \*NODE PRINT \(line:[0-9]+\) is skipped
+no:HECMW-IO-INP-W0099
+no:Auto-generated cards
+no:NGRP=

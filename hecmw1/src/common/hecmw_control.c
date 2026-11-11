@@ -2440,6 +2440,30 @@ int HECMW_ctrl_is_exists_control(char *name_ID) {
   return get_ctrl_entry(name_ID) ? 1 : 0;
 }
 
+int HECMW_ctrl_is_control_file(const char *filename) {
+  const struct ctrl_entry *ctrl;
+  struct stat file_stat, control_stat;
+#if defined(__WIN32__) || defined(__WIN64__)
+  char path[HECMW_FILENAME_LEN + 1], control_path[HECMW_FILENAME_LEN + 1];
+#endif
+
+  if (filename == NULL || stat(filename, &file_stat)) return 0;
+#if defined(__WIN32__) || defined(__WIN64__)
+  if (_fullpath(path, filename, sizeof(path)) == NULL) return 0;
+#endif
+  for (ctrl = ctrl_ent; ctrl; ctrl = ctrl->next) {
+    if (stat(ctrl->filename, &control_stat)) continue;
+#if defined(__WIN32__) || defined(__WIN64__)
+    if (_fullpath(control_path, ctrl->filename, sizeof(control_path)) &&
+        _stricmp(path, control_path) == 0) return 1;
+#else
+    if (file_stat.st_dev == control_stat.st_dev &&
+        file_stat.st_ino == control_stat.st_ino) return 1;
+#endif
+  }
+  return 0;
+}
+
 int HECMW_ctrl_make_subdir(char *filename) {
   char fname[HECMW_FILENAME_LEN + 1];
   char dirname[HECMW_FILENAME_LEN + 1];

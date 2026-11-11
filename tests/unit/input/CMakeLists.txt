@@ -25,3 +25,21 @@ foreach(format cnt inp)
   set_tests_properties(test_serial_unit/input/solver_${format} PROPERTIES
     LABELS unit/input,serial)
 endforeach()
+
+add_executable(ctrl_file_query_test ctrl_file_query_test.c)
+target_link_libraries(ctrl_file_query_test PRIVATE hecmw)
+add_test(NAME test_serial_unit/input/control_file
+  COMMAND ctrl_file_query_test ${CMAKE_CURRENT_BINARY_DIR}/ctrl_query.inp)
+set_tests_properties(test_serial_unit/input/control_file PROPERTIES
+  LABELS unit/input,serial)
+
+if(WITH_METIS AND METIS_FOUND)
+  add_test(NAME test_serial_unit/input/partition_messages
+  COMMAND ${CMAKE_COMMAND}
+    -DPROGRAM=$<TARGET_FILE:hecmw_part1>
+    -DINPUT=${FrontISTR_SOURCE_DIR}/tests/analysis/inp/standalone_static/standalone_static.inp
+    -DWORK_DIR=${CMAKE_CURRENT_BINARY_DIR}/partition_messages
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/check_partition.cmake)
+  set_tests_properties(test_serial_unit/input/partition_messages PROPERTIES
+    LABELS unit/input,serial)
+endif()
