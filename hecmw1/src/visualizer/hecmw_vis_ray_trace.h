@@ -144,21 +144,16 @@ typedef struct _head_ray_volume_struct {
 } Head_ray_volume;
  */
 
-int find_first_inter(double point_o[3], double view_point_d[3], int r_level[3],
-                     double orig_xyz[3], double dxyz[3], double r_dxyz[3],
-                     double ray_direction[3], double first_p[3], int ijk[3]);
-void ray_trace(int remove_0_display_on, int color_mapping_style,
-               double *interval_point, int transfer_function_style,
-               double opa_value, int num_of_features, double *fea_point,
-               double view_point_d[3], int interval_mapping_num,
-               int color_system_type, int num_of_lights, double *light_point,
-               double k_ads[3], double orig_xyz[3], double dxyz[3],
+int find_first_inter(double view_point_d[3], int r_level[3], double orig_xyz[3],
+                     double dxyz[3], double r_dxyz[3], double ray_direction[3],
+                     double first_p[3], int ijk[3]);
+void ray_trace(int color_mapping_style, double *interval_point,
+               int transfer_function_style, double opa_value,
+               int num_of_features, double *fea_point, int interval_mapping_num,
+               int color_system_type, double k_ads[3], double orig_xyz[3],
                double r_dxyz[3], int r_level[3], int *empty_flag, double *var,
-               double *grad_var, double first_p[3], int first_ijk[3],
-               double ray_direction[3], double mincolor, double maxcolor,
-               double accum_rgba[4], double grad_minmax[2],
-               double feap_minmax[2], double feai_minmax[2],
-               double dis_minmax[2], double *opa_table, double tav_length,
-               int time_step, int test_i, int test_j);
+               double first_p[3], int first_ijk[3], double ray_direction[3],
+               double mincolor, double maxcolor, double accum_rgba[4],
+               double tav_length);
 
 #endif /* HECMW_VIS_RAY_TRACE_H_INCLUDED */

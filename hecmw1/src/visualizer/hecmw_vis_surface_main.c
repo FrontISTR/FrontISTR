@@ -179,14 +179,14 @@ sff->surface_style, sff->display_way, sff->color_comp);
         mac = maxcolor[sff->color_comp];
         HECMW_vis_surface_compute(sff, mesh, data, bdflag, &sum_v, &sum_t,
                                   &tvertex, &tpatch, &mic, &mac, result, ii - 1,
-                                  mynode, VIS_COMM);
+                                  mynode);
 
         if (mic < minvalue[sff->color_comp]) minvalue[sff->color_comp] = mic;
         if (mac > maxvalue[sff->color_comp]) maxvalue[sff->color_comp] = mac;
       } else if (sff->display_way == 4)
         HECMW_vis_surface_compute(sff, mesh, data, bdflag, &sum_v, &sum_t,
                                   &tvertex, &tpatch, &mic, &mac, result, ii - 1,
-                                  mynode, VIS_COMM);
+                                  mynode);
     } else if (mesh->elem_type[0] > 300) {
       if (sff->surface_style == 1) {
         if (first_boundary == 1) {
@@ -226,14 +226,14 @@ sff->surface_style, sff->display_way, sff->color_comp);
           mac = maxcolor[sff->color_comp];
           HECMW_vis_surface_compute(sff, mesh, data, bdflag, &sum_v, &sum_t,
                                     &tvertex, &tpatch, &mic, &mac, result,
-                                    ii - 1, mynode, VIS_COMM);
+                                    ii - 1, mynode);
 
           if (mic < minvalue[sff->color_comp]) minvalue[sff->color_comp] = mic;
           if (mac > maxvalue[sff->color_comp]) maxvalue[sff->color_comp] = mac;
         } else if (sff->display_way == 4)
           HECMW_vis_surface_compute(sff, mesh, data, bdflag, &sum_v, &sum_t,
                                     &tvertex, &tpatch, &mic, &mac, result,
-                                    ii - 1, mynode, VIS_COMM);
+                                    ii - 1, mynode);
 
       } else if (sff->surface_style == 3) {
         /* get_onepoint_on_section(css, p);
@@ -255,14 +255,14 @@ loopnum++;*/
 
           HECMW_vis_surface_compute(sff, mesh, data, bdflag, &sum_v, &sum_t,
                                     &tvertex, &tpatch, &mic, &mac, result,
-                                    ii - 1, mynode, VIS_COMM);
+                                    ii - 1, mynode);
 
           if (mic < minvalue[sff->color_comp]) minvalue[sff->color_comp] = mic;
           if (mac > maxvalue[sff->color_comp]) maxvalue[sff->color_comp] = mac;
         } else if (sff->display_way == 4)
           HECMW_vis_surface_compute(sff, mesh, data, bdflag, &sum_v, &sum_t,
                                     &tvertex, &tpatch, &mic, &mac, result,
-                                    ii - 1, mynode, VIS_COMM);
+                                    ii - 1, mynode);
       }
     }
   }
@@ -287,9 +287,9 @@ loopnum++;*/
     HECMW_vis_combine(sf, mesh, data, tvertex, tpatch, color_list, minvalue,
                       maxvalue, result, outfile1, outfile1size, VIS_COMM);
   else if (sf[1].output_type == 3)
-    HECMW_vis_rendering_surface(sf, sr, mesh, data, tvertex, tpatch, color_list,
-                                minvalue, maxvalue, result, outfile1, stat_para,
-                                VIS_COMM, *timestep);
+    HECMW_vis_rendering_surface(sf, sr, mesh, data, color_list, minvalue,
+                                maxvalue, result, outfile1, stat_para, VIS_COMM,
+                                *timestep);
 
   if (mynode == 0) {
     fprintf(stderr, "surface module finish\n");

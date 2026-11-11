@@ -16,11 +16,10 @@
 
 void transform_ucd_pvr(struct hecmwST_result_data *data, double *node1,
                        struct hecmwST_local_mesh *mesh, Parameter_vr *vr,
-                       int my_rank, int pe_size, HECMW_Comm VIS_COMM,
-                       double *voxel_dxyz, double *voxel_orig_xyz, int *level,
-                       int *voxel_n_neighbor_pe, int **voxel_neighbor_pe,
-                       int voxel_on, int display_range_on, int init_flag,
-                       int num_of_pvr)
+                       int my_rank, HECMW_Comm VIS_COMM, double *voxel_dxyz,
+                       double *voxel_orig_xyz, int *voxel_n_neighbor_pe,
+                       int **voxel_neighbor_pe, int voxel_on,
+                       int display_range_on, int init_flag, int num_of_pvr)
 
 {
   int i, j;
@@ -177,7 +176,7 @@ fprintf(outfp, "%lf\n", 0.0);
     }
   }
 
-  voxel_gen(range, c_range, vr->nv_xyz, voxel_dxyz, voxel_orig_xyz, level,
+  voxel_gen(range, c_range, vr->nv_xyz, voxel_dxyz, voxel_orig_xyz,
             voxel_n_neighbor_pe, voxel_neighbor_pe, VIS_COMM, voxel_on,
             display_range_on, vr->display_range);
 

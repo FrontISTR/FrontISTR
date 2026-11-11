@@ -20,9 +20,8 @@ static int find_out_point(double orig_xyz[3], double r_dxyz[3], int ijk[3],
 static void find_next_cell(int ijkn[3], int current_ijk[3], int face_sect[3],
                            double vv[3], int next_ijk[3]);
 
-static int find_first_inter_point(double point_o[3], double view_p[3],
-                                  double ray_direction[3], double orig_xyz[3],
-                                  double dxyz[3], int r_level[3],
+static int find_first_inter_point(double view_p[3], double ray_direction[3],
+                                  double orig_xyz[3], double dxyz[3],
                                   double first_p[3]) {
   int i, j, mincomp;
   double minmax[6], t[6], mint;
@@ -71,15 +70,15 @@ static int find_first_inter_point(double point_o[3], double view_p[3],
   return (mincomp);
 }
 
-int find_first_inter(double point_o[3], double view_point_d[3], int r_level[3],
-                     double orig_xyz[3], double dxyz[3], double r_dxyz[3],
-                     double ray_direction[3], double first_p[3], int ijk[3]) {
+int find_first_inter(double view_point_d[3], int r_level[3], double orig_xyz[3],
+                     double dxyz[3], double r_dxyz[3], double ray_direction[3],
+                     double first_p[3], int ijk[3]) {
   int i;
   int ini_face, intersection, con1, next_ijk[3], face_sect[3];
   double out_point[3];
 
-  ini_face = find_first_inter_point(point_o, view_point_d, ray_direction,
-                                    orig_xyz, dxyz, r_level, first_p);
+  ini_face = find_first_inter_point(view_point_d, ray_direction, orig_xyz, dxyz,
+                                    first_p);
   if (ini_face == -1) { /*this ray has no intersection with dataset */
     intersection = 0;
   } else {
@@ -248,19 +247,14 @@ static int find_next_point(double orig_xyz[3], double r_dxyz[3], int r_level[3],
   return (flag);
 }
 
-void ray_trace(int remove_0_display_on, int color_mapping_style,
-               double *interval_point, int transfer_function_style,
-               double opa_value, int num_of_features, double *fea_point,
-               double view_point_d[3], int interval_mapping_num,
-               int color_system_type, int num_of_lights, double *light_point,
-               double k_ads[3], double orig_xyz[3], double dxyz[3],
+void ray_trace(int color_mapping_style, double *interval_point,
+               int transfer_function_style, double opa_value,
+               int num_of_features, double *fea_point, int interval_mapping_num,
+               int color_system_type, double k_ads[3], double orig_xyz[3],
                double r_dxyz[3], int r_level[3], int *empty_flag, double *var,
-               double *grad_var, double first_p[3], int first_ijk[3],
-               double ray_direction[3], double mincolor, double maxcolor,
-               double accum_rgba[4], double grad_minmax[2],
-               double feap_minmax[2], double feai_minmax[2],
-               double dis_minmax[2], double *opa_table, double tav_length,
-               int time_step, int test_i, int test_j)
+               double first_p[3], int first_ijk[3], double ray_direction[3],
+               double mincolor, double maxcolor, double accum_rgba[4],
+               double tav_length)
 
 /*void ray_trace(Parameter_vr *vr, VR_data *vd, Tree_pointer *root_tree,
    Tree_pointer *voxel_p,
@@ -276,7 +270,6 @@ void ray_trace(int remove_0_display_on, int color_mapping_style,
   int i, j;
   double in_point[3], out_point[3];
   int flag, single_empty_flag, value_flag, index, current_ijk[3], next_ijk[3];
-  int print_flag;
 
   for (i = 0; i < 4; i++) accum_rgba[i] = 0.0;
   flag                                  = 1;
@@ -338,12 +331,9 @@ if((empty_flag==1) && (value_flag==1))
     if ((single_empty_flag == 1) && (flag != 0) && (value_flag == 1))
       compute_color_vr(current_ijk, color_mapping_style, interval_point,
                        transfer_function_style, opa_value, num_of_features,
-                       fea_point, view_point_d, interval_mapping_num,
-                       color_system_type, num_of_lights, light_point, k_ads,
-                       r_level, orig_xyz, r_dxyz, var, grad_var, accum_rgba,
-                       mincolor, maxcolor, grad_minmax, feap_minmax,
-                       feai_minmax, dis_minmax, opa_table, in_point, out_point,
-                       tav_length, time_step, print_flag);
+                       fea_point, interval_mapping_num, color_system_type,
+                       k_ads, r_level, orig_xyz, r_dxyz, var, accum_rgba,
+                       mincolor, maxcolor, in_point, out_point, tav_length);
     if (flag == 1) {
       for (i = 0; i < 3; i++) in_point[i] = out_point[i];
       for (i = 0; i < 3; i++) current_ijk[i] = next_ijk[i];

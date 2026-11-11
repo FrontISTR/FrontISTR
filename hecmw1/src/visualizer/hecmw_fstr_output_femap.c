@@ -26,7 +26,7 @@ static void count_data_components(struct hecmwST_result_data *data,
   for (i = 0; i < data->ne_component; i++) *te_component += data->ne_dof[i];
 }
 
-static void femap_write_elem(FILE *outfp, int mynode, int n_elem, int n_node,
+static void femap_write_elem(FILE *outfp, int mynode, int n_elem,
                              int *global_elem_ID, int *elem_ID, int *elem_type,
                              int *section_ID, long long *elem_node_index,
                              int *elem_node_item, int *global_node_ID,
@@ -300,10 +300,10 @@ void HECMW_fstr_output_femap(struct hecmwST_local_mesh *mesh,
     fprintf(outfp, "   -1\n");
     fprintf(outfp, "   404\n");
 
-    femap_write_elem(
-        outfp, mynode, mesh->n_elem, mesh->n_node, mesh->global_elem_ID,
-        mesh->elem_ID, mesh->elem_type, mesh->section_ID, mesh->elem_node_index,
-        mesh->elem_node_item, mesh->global_node_ID, mesh->section->sect_opt);
+    femap_write_elem(outfp, mynode, mesh->n_elem, mesh->global_elem_ID,
+                     mesh->elem_ID, mesh->elem_type, mesh->section_ID,
+                     mesh->elem_node_index, mesh->elem_node_item,
+                     mesh->global_node_ID, mesh->section->sect_opt);
 
     for (j = 1; j < pesize; j++) {
       HECMW_Recv(&tmp_int, 1, HECMW_INT, j, HECMW_ANY_TAG, VIS_COMM, &stat);
@@ -340,10 +340,10 @@ void HECMW_fstr_output_femap(struct hecmwST_local_mesh *mesh,
         HECMW_Recv(tmp_node_global_ID, tmp_int2, HECMW_INT, j, HECMW_ANY_TAG,
                    VIS_COMM, &stat);
 
-        femap_write_elem(outfp, j, tmp_int, tmp_int2, tmp_elem_global_ID,
-                         tmp_elem_ID, tmp_elem_type, tmp_section_ID,
-                         tmp_elem_node_index, tmp_elem_node_item,
-                         tmp_node_global_ID, mesh->section->sect_opt);
+        femap_write_elem(outfp, j, tmp_int, tmp_elem_global_ID, tmp_elem_ID,
+                         tmp_elem_type, tmp_section_ID, tmp_elem_node_index,
+                         tmp_elem_node_item, tmp_node_global_ID,
+                         mesh->section->sect_opt);
 
         HECMW_free(tmp_elem_global_ID);
         HECMW_free(tmp_elem_ID);

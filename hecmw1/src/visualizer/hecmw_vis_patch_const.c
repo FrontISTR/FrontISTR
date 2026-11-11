@@ -13,8 +13,7 @@
 #include "hecmw_malloc.h"
 
 int merge_vol_iso(int iso_type, Cell *cell, double falpha,
-                  Cube_polygons *alpha_cube, double fbeta,
-                  Cube_polygons *beta_cube, int bdflag, int *sum_verts,
+                  Cube_polygons *alpha_cube, int bdflag, int *sum_verts,
                   Point **CS_verts_tail, Point **CS_verts_refer,
                   Point **CS_verts_head, Polygon **CS_polys_tail) {
   int i;
@@ -182,7 +181,7 @@ int get_vert_ident(int pindex, Cell *cell, double fvalue, int *sum_verts,
   double cdata;
   Fgeom pgeom;
 
-  get_point_geom(pindex, cell, fvalue, &pgeom, &cdata, 1);
+  get_point_geom(pindex, cell, fvalue, &pgeom, &cdata);
   table_no = 0;
 
   CS_verts_refer[table_no] = CS_verts_head[table_no];

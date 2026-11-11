@@ -16,8 +16,8 @@ int get_data(Surface *sff, struct hecmwST_local_mesh *mesh,
              int tn_component);
 double get_value_equ(double cont_equ[10], int cross_type, double x, double y,
                      double z);
-int make_tile(struct hecmwST_local_mesh *mesh, Cell *cell, double fvalue,
-              int CS_type, Cube_polygons *cube_polys, int disamb_flag);
+int make_tile(Cell *cell, double fvalue, int CS_type, Cube_polygons *cube_polys,
+              int disamb_flag);
 int get_config_info(int index);
 
 #endif /* HECMW_VIS_CASE_TABLE_H_INCLUDED */

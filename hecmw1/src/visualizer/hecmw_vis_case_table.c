@@ -182,8 +182,8 @@ double get_value_equ(double cont_equ[10], int cross_type, double x, double y,
 }
 
 /*  make the boundary patches of interval volumes in each cube  */
-int make_tile(struct hecmwST_local_mesh *mesh, Cell *cell, double fvalue,
-              int CS_type, Cube_polygons *cube_polys, int disamb_flag) {
+int make_tile(Cell *cell, double fvalue, int CS_type, Cube_polygons *cube_polys,
+              int disamb_flag) {
   int index, config;
 
   /*  decide the configuration of volume in cube  */
@@ -221,8 +221,7 @@ int make_tile(struct hecmwST_local_mesh *mesh, Cell *cell, double fvalue,
         case2_tiler_hex(index, cube_polys);
         break;
       case 3:
-        case3_tiler_hex(mesh, cell, fvalue, CS_type, index, cube_polys,
-                        disamb_flag);
+        case3_tiler_hex(cell, fvalue, CS_type, index, cube_polys, disamb_flag);
         break;
       case 4:
         case4_tiler_hex(index, cube_polys);
@@ -231,12 +230,10 @@ int make_tile(struct hecmwST_local_mesh *mesh, Cell *cell, double fvalue,
         case5_tiler_hex(index, cube_polys);
         break;
       case 6:
-        case6_tiler_hex(mesh, cell, fvalue, CS_type, index, cube_polys,
-                        disamb_flag);
+        case6_tiler_hex(cell, fvalue, CS_type, index, cube_polys, disamb_flag);
         break;
       case 7:
-        case7_tiler_hex(mesh, cell, fvalue, CS_type, index, cube_polys,
-                        disamb_flag);
+        case7_tiler_hex(cell, fvalue, CS_type, index, cube_polys, disamb_flag);
         break;
       case 8:
         case8_tiler_hex(index, cube_polys);
@@ -245,19 +242,16 @@ int make_tile(struct hecmwST_local_mesh *mesh, Cell *cell, double fvalue,
         case9_tiler_hex(index, cube_polys);
         break;
       case 10:
-        case10_tiler_hex(mesh, cell, fvalue, CS_type, index, cube_polys,
-                         disamb_flag);
+        case10_tiler_hex(cell, fvalue, CS_type, index, cube_polys, disamb_flag);
         break;
       case 11:
         case11_tiler_hex(index, cube_polys);
         break;
       case 12:
-        case12_tiler_hex(mesh, cell, fvalue, CS_type, index, cube_polys,
-                         disamb_flag);
+        case12_tiler_hex(cell, fvalue, CS_type, index, cube_polys, disamb_flag);
         break;
       case 13:
-        case13_tiler_hex(mesh, cell, fvalue, CS_type, index, cube_polys,
-                         disamb_flag);
+        case13_tiler_hex(cell, fvalue, CS_type, cube_polys, disamb_flag);
         break;
       case 14:
         case14_tiler_hex(index, cube_polys);
@@ -275,7 +269,7 @@ int make_tile(struct hecmwST_local_mesh *mesh, Cell *cell, double fvalue,
         case2opp_tiler_hex(index, cube_polys);
         break;
       case -3:
-        case3opp_tiler_hex(mesh, cell, fvalue, CS_type, index, cube_polys,
+        case3opp_tiler_hex(cell, fvalue, CS_type, index, cube_polys,
                            disamb_flag);
         break;
       case -4:
@@ -285,11 +279,11 @@ int make_tile(struct hecmwST_local_mesh *mesh, Cell *cell, double fvalue,
         case5opp_tiler_hex(index, cube_polys);
         break;
       case -6:
-        case6opp_tiler_hex(mesh, cell, fvalue, CS_type, index, cube_polys,
+        case6opp_tiler_hex(cell, fvalue, CS_type, index, cube_polys,
                            disamb_flag);
         break;
       case -7:
-        case7opp_tiler_hex(mesh, cell, fvalue, CS_type, index, cube_polys,
+        case7opp_tiler_hex(cell, fvalue, CS_type, index, cube_polys,
                            disamb_flag);
         break;
       case -8:
@@ -299,19 +293,18 @@ int make_tile(struct hecmwST_local_mesh *mesh, Cell *cell, double fvalue,
         case9opp_tiler_hex(index, cube_polys);
         break;
       case -10:
-        case10opp_tiler_hex(mesh, cell, fvalue, CS_type, index, cube_polys,
+        case10opp_tiler_hex(cell, fvalue, CS_type, index, cube_polys,
                             disamb_flag);
         break;
       case -11:
         case11opp_tiler_hex(index, cube_polys);
         break;
       case -12:
-        case12opp_tiler_hex(mesh, cell, fvalue, CS_type, index, cube_polys,
+        case12opp_tiler_hex(cell, fvalue, CS_type, index, cube_polys,
                             disamb_flag);
         break;
       case -13:
-        case13opp_tiler_hex(mesh, cell, fvalue, CS_type, index, cube_polys,
-                            disamb_flag);
+        case13opp_tiler_hex(cell, fvalue, CS_type, cube_polys, disamb_flag);
         break;
       case -14:
         case14opp_tiler_hex(index, cube_polys);

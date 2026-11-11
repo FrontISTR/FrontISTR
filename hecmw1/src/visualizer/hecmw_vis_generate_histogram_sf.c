@@ -232,8 +232,8 @@ void generate_histogram_graph_sf(struct surface_module *sf, int *color_list,
 void generate_interval_point_sf(struct surface_module *sf, int *color_list,
                                 struct hecmwST_result_data *data,
                                 double *mivalue, double *mavalue,
-                                Result *result, int mynode, int pesize,
-                                HECMW_Comm VIS_COMM, double *interval_point) {
+                                Result *result, int pesize, HECMW_Comm VIS_COMM,
+                                double *interval_point) {
   int i, j, ii;
   double delta;
   int count[500], t_count[500], tmp_count[500], sum_count, interv_count, sum,
@@ -353,8 +353,7 @@ void output_histogram_sf(struct surface_module *sf, int *color_list,
   return;
 }
 
-void find_minmax_sf(struct hecmwST_local_mesh *mesh, int mynode,
-                    double range[6]) {
+void find_minmax_sf(struct hecmwST_local_mesh *mesh, double range[6]) {
   int i;
   for (i = 0; i < 3; i++) {
     range[i * 2]     = 1.0E17;

@@ -27,8 +27,8 @@ int ms, ns;
 void HECMW_vis_rendering_surface(struct surface_module *sf,
                                  Parameter_rendering *sr,
                                  struct hecmwST_local_mesh *mesh,
-                                 struct hecmwST_result_data *data, int tvertex,
-                                 int tpatch, int *color_list, double *minvalue,
+                                 struct hecmwST_result_data *data,
+                                 int *color_list, double *minvalue,
                                  double *maxvalue, Result *result,
                                  char *outfile, int stat_para[NUM_CONTROL_PSF],
                                  HECMW_Comm VIS_COMM, int timestep)
@@ -139,11 +139,11 @@ end_timestep=1000;
     sr->interval_mapping_num = 10;
     sr->interval_point       = (double *)HECMW_calloc(22, sizeof(double));
     generate_interval_point_sf(sf, color_list, data, mivalue, mavalue, result,
-                               mynode, pesize, VIS_COMM, sr->interval_point);
+                               pesize, VIS_COMM, sr->interval_point);
   }
   if (stat_para[70] == 0) {
     if (sr->boundary_line_on == 1)
-      find_minmax_sf(mesh, mynode, range);
+      find_minmax_sf(mesh, range);
     else
       find_patch_minmax_sf(result, sf, range);
     for (i = 0; i < 6; i++) trange[i] = 0.0;
@@ -301,9 +301,9 @@ sr->rotate_num_of_frames);
     for (ii = 0; ii < num_img; ii++) {
       /*	   if(ii!=0)
        */
-      view1_parameter_define(
-          ii, sr->rotate_num_of_frames, sr->rotate_style, sr->view_point_d,
-          sr->screen_point, sr->num_of_lights, sr->light_point, sr->up, trange);
+      view1_parameter_define(ii, sr->rotate_num_of_frames, sr->rotate_style,
+                             sr->view_point_d, sr->screen_point, sr->up,
+                             trange);
       for (i      = 0; i < 3; i++)
         view_n[i] = sr->screen_point[i] - sr->view_point_d[i];
       nview_n     = sqrt(SQR(view_n[0]) + SQR(view_n[1]) + SQR(view_n[2]));

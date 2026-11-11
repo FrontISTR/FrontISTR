@@ -22,7 +22,7 @@ int HECMW_vis_surface_compute(Surface *sff, struct hecmwST_local_mesh *mesh,
                               struct hecmwST_result_data *data, int *bdflag,
                               int *sum_v, int *sum_t, int *tvertex, int *tpatch,
                               double *minc, double *maxc, Result *result,
-                              int sf_i, int mynode, HECMW_Comm VIS_COMM)
+                              int sf_i, int mynode)
 
 {
   /* in_volume */
@@ -119,15 +119,15 @@ for(i = 0; i < mesh->ne_internal; i++) {
           }
           get_data(sff, mesh, data, tmp_int, cell, tn_component);
           if (sff->surface_style == 2) {
-            alpha_index = make_tile(mesh, cell, sff->iso_value, 0, &alpha_cube,
-                                    disamb_flag);
-            beta_index = make_tile(mesh, cell, sff->iso_value, 1, &beta_cube,
-                                   disamb_flag);
+            alpha_index =
+                make_tile(cell, sff->iso_value, 0, &alpha_cube, disamb_flag);
+            beta_index =
+                make_tile(cell, sff->iso_value, 1, &beta_cube, disamb_flag);
             if (alpha_index && beta_index) {
               if ((alpha_index + beta_index) == HEX_NODE_INDEX) {
-                if (!merge_vol_iso(0, cell, sff->iso_value, &alpha_cube, 0,
-                                   &beta_cube, bdflag[i], &sum_verts,
-                                   CS_verts_tail, CS_verts_refer, CS_verts_head,
+                if (!merge_vol_iso(0, cell, sff->iso_value, &alpha_cube,
+                                   bdflag[i], &sum_verts, CS_verts_tail,
+                                   CS_verts_refer, CS_verts_head,
                                    CS_polys_tail)) {
                   return 0;
                 }
@@ -135,14 +135,13 @@ for(i = 0; i < mesh->ne_internal; i++) {
             }
 
           } else if (sff->surface_style == 3) {
-            alpha_index = make_tile(mesh, cell, 0, 0, &alpha_cube, disamb_flag);
-            beta_index  = make_tile(mesh, cell, 0, 1, &beta_cube, disamb_flag);
+            alpha_index = make_tile(cell, 0, 0, &alpha_cube, disamb_flag);
+            beta_index  = make_tile(cell, 0, 1, &beta_cube, disamb_flag);
             if (alpha_index && beta_index) {
               if ((alpha_index + beta_index) == HEX_NODE_INDEX) {
-                if (!merge_vol_iso(0, cell, 0, &alpha_cube, 0, &beta_cube,
-                                   bdflag[i], &sum_verts, CS_verts_tail,
-                                   CS_verts_refer, CS_verts_head,
-                                   CS_polys_tail)) {
+                if (!merge_vol_iso(0, cell, 0, &alpha_cube, bdflag[i],
+                                   &sum_verts, CS_verts_tail, CS_verts_refer,
+                                   CS_verts_head, CS_polys_tail)) {
                   return 0;
                 }
               }

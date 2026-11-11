@@ -128,8 +128,8 @@ int point_convert(int point_index, Rotation_info *rot_info) {
 }
 
 /*  decide the separation pattern on ambiguous face  */
-int separation_test(struct hecmwST_local_mesh *mesh, Cell *cell, int amb,
-                    double fvalue, int CS_type, int disamb_flag) {
+int separation_test(Cell *cell, int amb, double fvalue, int CS_type,
+                    int disamb_flag) {
   int sep;
 
   switch (amb) {
@@ -434,9 +434,8 @@ void case2opp_tiler_hex(int index, Cube_polygons *cube_polys) {
    */
 }
 
-void case3_tiler_hex(struct hecmwST_local_mesh *mesh, Cell *cell, double fvalue,
-                     int CS_type, int index, Cube_polygons *cube_polys,
-                     int disamb_flag) {
+void case3_tiler_hex(Cell *cell, double fvalue, int CS_type, int index,
+                     Cube_polygons *cube_polys, int disamb_flag) {
   int i;
   int amb_index;
   Rotation_info rot_info;
@@ -494,63 +493,51 @@ static int 	bounds_5[5] = {3, 6,4,0, -1};
   } else {
     switch (index) {
       case 5:
-        amb_index =
-            separation_test(mesh, cell, 0, fvalue, CS_type, disamb_flag);
+        amb_index = separation_test(cell, 0, fvalue, CS_type, disamb_flag);
         get_hex_rotation_info(0, &rot_info);
         break;
       case 10:
-        amb_index =
-            separation_test(mesh, cell, 1, fvalue, CS_type, disamb_flag);
+        amb_index = separation_test(cell, 1, fvalue, CS_type, disamb_flag);
         get_hex_rotation_info(10, &rot_info);
         break;
       case 18:
-        amb_index =
-            separation_test(mesh, cell, 10, fvalue, CS_type, disamb_flag);
+        amb_index = separation_test(cell, 10, fvalue, CS_type, disamb_flag);
         get_hex_rotation_info(4, &rot_info);
         break;
       case 24:
-        amb_index =
-            separation_test(mesh, cell, 6, fvalue, CS_type, disamb_flag);
+        amb_index = separation_test(cell, 6, fvalue, CS_type, disamb_flag);
         get_hex_rotation_info(11, &rot_info);
         break;
       case 33:
-        amb_index =
-            separation_test(mesh, cell, 11, fvalue, CS_type, disamb_flag);
+        amb_index = separation_test(cell, 11, fvalue, CS_type, disamb_flag);
         get_hex_rotation_info(1, &rot_info);
         break;
       case 36:
-        amb_index =
-            separation_test(mesh, cell, 3, fvalue, CS_type, disamb_flag);
+        amb_index = separation_test(cell, 3, fvalue, CS_type, disamb_flag);
         get_hex_rotation_info(6, &rot_info);
         break;
       case 66:
-        amb_index =
-            separation_test(mesh, cell, 2, fvalue, CS_type, disamb_flag);
+        amb_index = separation_test(cell, 2, fvalue, CS_type, disamb_flag);
         get_hex_rotation_info(18, &rot_info);
         break;
       case 72:
-        amb_index =
-            separation_test(mesh, cell, 8, fvalue, CS_type, disamb_flag);
+        amb_index = separation_test(cell, 8, fvalue, CS_type, disamb_flag);
         get_hex_rotation_info(9, &rot_info);
         break;
       case 80:
-        amb_index =
-            separation_test(mesh, cell, 5, fvalue, CS_type, disamb_flag);
+        amb_index = separation_test(cell, 5, fvalue, CS_type, disamb_flag);
         get_hex_rotation_info(13, &rot_info);
         break;
       case 129:
-        amb_index =
-            separation_test(mesh, cell, 7, fvalue, CS_type, disamb_flag);
+        amb_index = separation_test(cell, 7, fvalue, CS_type, disamb_flag);
         get_hex_rotation_info(22, &rot_info);
         break;
       case 132:
-        amb_index =
-            separation_test(mesh, cell, 9, fvalue, CS_type, disamb_flag);
+        amb_index = separation_test(cell, 9, fvalue, CS_type, disamb_flag);
         get_hex_rotation_info(21, &rot_info);
         break;
       case 160:
-        amb_index =
-            separation_test(mesh, cell, 4, fvalue, CS_type, disamb_flag);
+        amb_index = separation_test(cell, 4, fvalue, CS_type, disamb_flag);
         get_hex_rotation_info(15, &rot_info);
         break;
     }
@@ -577,8 +564,7 @@ static int 	bounds_5[5] = {3, 6,4,0, -1};
    */
 }
 
-void case3opp_tiler_hex(struct hecmwST_local_mesh *mesh, Cell *cell,
-                        double fvalue, int CS_type, int index,
+void case3opp_tiler_hex(Cell *cell, double fvalue, int CS_type, int index,
                         Cube_polygons *cube_polys, int disamb_flag) {
   int i;
   int amb_index;
@@ -637,63 +623,51 @@ static int 	bounds_5[7] = {5, 8,9,6,0,4, -1};
   } else {
     switch (index) {
       case 250:
-        amb_index =
-            separation_test(mesh, cell, 0, fvalue, CS_type, disamb_flag);
+        amb_index = separation_test(cell, 0, fvalue, CS_type, disamb_flag);
         get_hex_rotation_info(0, &rot_info);
         break;
       case 245:
-        amb_index =
-            separation_test(mesh, cell, 1, fvalue, CS_type, disamb_flag);
+        amb_index = separation_test(cell, 1, fvalue, CS_type, disamb_flag);
         get_hex_rotation_info(10, &rot_info);
         break;
       case 237:
-        amb_index =
-            separation_test(mesh, cell, 10, fvalue, CS_type, disamb_flag);
+        amb_index = separation_test(cell, 10, fvalue, CS_type, disamb_flag);
         get_hex_rotation_info(4, &rot_info);
         break;
       case 231:
-        amb_index =
-            separation_test(mesh, cell, 6, fvalue, CS_type, disamb_flag);
+        amb_index = separation_test(cell, 6, fvalue, CS_type, disamb_flag);
         get_hex_rotation_info(11, &rot_info);
         break;
       case 222:
-        amb_index =
-            separation_test(mesh, cell, 11, fvalue, CS_type, disamb_flag);
+        amb_index = separation_test(cell, 11, fvalue, CS_type, disamb_flag);
         get_hex_rotation_info(1, &rot_info);
         break;
       case 219:
-        amb_index =
-            separation_test(mesh, cell, 3, fvalue, CS_type, disamb_flag);
+        amb_index = separation_test(cell, 3, fvalue, CS_type, disamb_flag);
         get_hex_rotation_info(6, &rot_info);
         break;
       case 189:
-        amb_index =
-            separation_test(mesh, cell, 2, fvalue, CS_type, disamb_flag);
+        amb_index = separation_test(cell, 2, fvalue, CS_type, disamb_flag);
         get_hex_rotation_info(18, &rot_info);
         break;
       case 183:
-        amb_index =
-            separation_test(mesh, cell, 8, fvalue, CS_type, disamb_flag);
+        amb_index = separation_test(cell, 8, fvalue, CS_type, disamb_flag);
         get_hex_rotation_info(9, &rot_info);
         break;
       case 175:
-        amb_index =
-            separation_test(mesh, cell, 5, fvalue, CS_type, disamb_flag);
+        amb_index = separation_test(cell, 5, fvalue, CS_type, disamb_flag);
         get_hex_rotation_info(13, &rot_info);
         break;
       case 126:
-        amb_index =
-            separation_test(mesh, cell, 7, fvalue, CS_type, disamb_flag);
+        amb_index = separation_test(cell, 7, fvalue, CS_type, disamb_flag);
         get_hex_rotation_info(22, &rot_info);
         break;
       case 123:
-        amb_index =
-            separation_test(mesh, cell, 9, fvalue, CS_type, disamb_flag);
+        amb_index = separation_test(cell, 9, fvalue, CS_type, disamb_flag);
         get_hex_rotation_info(21, &rot_info);
         break;
       case 95:
-        amb_index =
-            separation_test(mesh, cell, 4, fvalue, CS_type, disamb_flag);
+        amb_index = separation_test(cell, 4, fvalue, CS_type, disamb_flag);
         get_hex_rotation_info(15, &rot_info);
         break;
     }
@@ -990,9 +964,8 @@ void case5opp_tiler_hex(int index, Cube_polygons *cube_polys) {
   }
 }
 
-void case6_tiler_hex(struct hecmwST_local_mesh *mesh, Cell *cell, double fvalue,
-                     int CS_type, int index, Cube_polygons *cube_polys,
-                     int disamb_flag) {
+void case6_tiler_hex(Cell *cell, double fvalue, int CS_type, int index,
+                     Cube_polygons *cube_polys, int disamb_flag) {
   int i;
   int amb_index;
   Rotation_info rot_info;
@@ -1092,126 +1065,102 @@ static int 	bounds_5[6] = {4, 8,7,4,5, -1};
     if (index < 82) {
       switch (index) {
         case 21:
-          amb_index =
-              separation_test(mesh, cell, 0, fvalue, CS_type, disamb_flag);
+          amb_index = separation_test(cell, 0, fvalue, CS_type, disamb_flag);
           get_hex_rotation_info(14, &rot_info);
           break;
         case 22:
-          amb_index =
-              separation_test(mesh, cell, 10, fvalue, CS_type, disamb_flag);
+          amb_index = separation_test(cell, 10, fvalue, CS_type, disamb_flag);
           get_hex_rotation_info(6, &rot_info);
           break;
         case 28:
-          amb_index =
-              separation_test(mesh, cell, 6, fvalue, CS_type, disamb_flag);
+          amb_index = separation_test(cell, 6, fvalue, CS_type, disamb_flag);
           get_hex_rotation_info(7, &rot_info);
           break;
         case 41:
-          amb_index =
-              separation_test(mesh, cell, 11, fvalue, CS_type, disamb_flag);
+          amb_index = separation_test(cell, 11, fvalue, CS_type, disamb_flag);
           get_hex_rotation_info(10, &rot_info);
           break;
         case 42:
-          amb_index =
-              separation_test(mesh, cell, 1, fvalue, CS_type, disamb_flag);
+          amb_index = separation_test(cell, 1, fvalue, CS_type, disamb_flag);
           get_hex_rotation_info(16, &rot_info);
           break;
         case 44:
-          amb_index =
-              separation_test(mesh, cell, 3, fvalue, CS_type, disamb_flag);
+          amb_index = separation_test(cell, 3, fvalue, CS_type, disamb_flag);
           get_hex_rotation_info(9, &rot_info);
           break;
         case 52:
-          amb_index =
-              separation_test(mesh, cell, 3, fvalue, CS_type, disamb_flag);
+          amb_index = separation_test(cell, 3, fvalue, CS_type, disamb_flag);
           get_hex_rotation_info(12, &rot_info);
           break;
         case 56:
-          amb_index =
-              separation_test(mesh, cell, 6, fvalue, CS_type, disamb_flag);
+          amb_index = separation_test(cell, 6, fvalue, CS_type, disamb_flag);
           get_hex_rotation_info(15, &rot_info);
           break;
         case 67:
-          amb_index =
-              separation_test(mesh, cell, 2, fvalue, CS_type, disamb_flag);
+          amb_index = separation_test(cell, 2, fvalue, CS_type, disamb_flag);
           get_hex_rotation_info(0, &rot_info);
           break;
         case 69:
-          amb_index =
-              separation_test(mesh, cell, 0, fvalue, CS_type, disamb_flag);
+          amb_index = separation_test(cell, 0, fvalue, CS_type, disamb_flag);
           get_hex_rotation_info(18, &rot_info);
           break;
         case 73:
-          amb_index =
-              separation_test(mesh, cell, 8, fvalue, CS_type, disamb_flag);
+          amb_index = separation_test(cell, 8, fvalue, CS_type, disamb_flag);
           get_hex_rotation_info(2, &rot_info);
           break;
         case 81:
-          amb_index =
-              separation_test(mesh, cell, 5, fvalue, CS_type, disamb_flag);
+          amb_index = separation_test(cell, 5, fvalue, CS_type, disamb_flag);
           get_hex_rotation_info(1, &rot_info);
           break;
       }
     } else {
       switch (index) {
         case 84:
-          amb_index =
-              separation_test(mesh, cell, 5, fvalue, CS_type, disamb_flag);
+          amb_index = separation_test(cell, 5, fvalue, CS_type, disamb_flag);
           get_hex_rotation_info(8, &rot_info);
           break;
         case 97:
-          amb_index =
-              separation_test(mesh, cell, 11, fvalue, CS_type, disamb_flag);
+          amb_index = separation_test(cell, 11, fvalue, CS_type, disamb_flag);
           get_hex_rotation_info(20, &rot_info);
           break;
         case 104:
-          amb_index =
-              separation_test(mesh, cell, 8, fvalue, CS_type, disamb_flag);
+          amb_index = separation_test(cell, 8, fvalue, CS_type, disamb_flag);
           get_hex_rotation_info(17, &rot_info);
           break;
         case 131:
-          amb_index =
-              separation_test(mesh, cell, 7, fvalue, CS_type, disamb_flag);
+          amb_index = separation_test(cell, 7, fvalue, CS_type, disamb_flag);
           get_hex_rotation_info(4, &rot_info);
           break;
         case 134:
-          amb_index =
-              separation_test(mesh, cell, 9, fvalue, CS_type, disamb_flag);
+          amb_index = separation_test(cell, 9, fvalue, CS_type, disamb_flag);
           get_hex_rotation_info(5, &rot_info);
           break;
         case 138:
-          amb_index =
-              separation_test(mesh, cell, 1, fvalue, CS_type, disamb_flag);
+          amb_index = separation_test(cell, 1, fvalue, CS_type, disamb_flag);
           get_hex_rotation_info(21, &rot_info);
           break;
         case 146:
-          amb_index =
-              separation_test(mesh, cell, 10, fvalue, CS_type, disamb_flag);
+          amb_index = separation_test(cell, 10, fvalue, CS_type, disamb_flag);
           get_hex_rotation_info(22, &rot_info);
           break;
         case 148:
-          amb_index =
-              separation_test(mesh, cell, 9, fvalue, CS_type, disamb_flag);
+          amb_index = separation_test(cell, 9, fvalue, CS_type, disamb_flag);
           get_hex_rotation_info(13, &rot_info);
           break;
         case 162:
-          amb_index =
-              separation_test(mesh, cell, 4, fvalue, CS_type, disamb_flag);
+          amb_index = separation_test(cell, 4, fvalue, CS_type, disamb_flag);
           get_hex_rotation_info(3, &rot_info);
           break;
         case 168:
-          amb_index =
-              separation_test(mesh, cell, 4, fvalue, CS_type, disamb_flag);
+          amb_index = separation_test(cell, 4, fvalue, CS_type, disamb_flag);
           get_hex_rotation_info(11, &rot_info);
           break;
         case 193:
-          amb_index =
-              separation_test(mesh, cell, 7, fvalue, CS_type, disamb_flag);
+          amb_index = separation_test(cell, 7, fvalue, CS_type, disamb_flag);
           get_hex_rotation_info(19, &rot_info);
           break;
         case 194:
-          amb_index =
-              separation_test(mesh, cell, 2, fvalue, CS_type, disamb_flag);
+          amb_index = separation_test(cell, 2, fvalue, CS_type, disamb_flag);
           get_hex_rotation_info(23, &rot_info);
           break;
       }
@@ -1240,8 +1189,7 @@ static int 	bounds_5[6] = {4, 8,7,4,5, -1};
    */
 }
 
-void case6opp_tiler_hex(struct hecmwST_local_mesh *mesh, Cell *cell,
-                        double fvalue, int CS_type, int index,
+void case6opp_tiler_hex(Cell *cell, double fvalue, int CS_type, int index,
                         Cube_polygons *cube_polys, int disamb_flag) {
   int i;
   int amb_index;
@@ -1342,126 +1290,102 @@ static int 	bounds_5[6] = {4, 9,10,5,4, -1};
     if (index > 173) {
       switch (index) {
         case 234:
-          amb_index =
-              separation_test(mesh, cell, 0, fvalue, CS_type, disamb_flag);
+          amb_index = separation_test(cell, 0, fvalue, CS_type, disamb_flag);
           get_hex_rotation_info(14, &rot_info);
           break;
         case 233:
-          amb_index =
-              separation_test(mesh, cell, 10, fvalue, CS_type, disamb_flag);
+          amb_index = separation_test(cell, 10, fvalue, CS_type, disamb_flag);
           get_hex_rotation_info(6, &rot_info);
           break;
         case 227:
-          amb_index =
-              separation_test(mesh, cell, 6, fvalue, CS_type, disamb_flag);
+          amb_index = separation_test(cell, 6, fvalue, CS_type, disamb_flag);
           get_hex_rotation_info(7, &rot_info);
           break;
         case 214:
-          amb_index =
-              separation_test(mesh, cell, 11, fvalue, CS_type, disamb_flag);
+          amb_index = separation_test(cell, 11, fvalue, CS_type, disamb_flag);
           get_hex_rotation_info(10, &rot_info);
           break;
         case 213:
-          amb_index =
-              separation_test(mesh, cell, 1, fvalue, CS_type, disamb_flag);
+          amb_index = separation_test(cell, 1, fvalue, CS_type, disamb_flag);
           get_hex_rotation_info(16, &rot_info);
           break;
         case 211:
-          amb_index =
-              separation_test(mesh, cell, 3, fvalue, CS_type, disamb_flag);
+          amb_index = separation_test(cell, 3, fvalue, CS_type, disamb_flag);
           get_hex_rotation_info(9, &rot_info);
           break;
         case 203:
-          amb_index =
-              separation_test(mesh, cell, 3, fvalue, CS_type, disamb_flag);
+          amb_index = separation_test(cell, 3, fvalue, CS_type, disamb_flag);
           get_hex_rotation_info(12, &rot_info);
           break;
         case 199:
-          amb_index =
-              separation_test(mesh, cell, 6, fvalue, CS_type, disamb_flag);
+          amb_index = separation_test(cell, 6, fvalue, CS_type, disamb_flag);
           get_hex_rotation_info(15, &rot_info);
           break;
         case 188:
-          amb_index =
-              separation_test(mesh, cell, 2, fvalue, CS_type, disamb_flag);
+          amb_index = separation_test(cell, 2, fvalue, CS_type, disamb_flag);
           get_hex_rotation_info(0, &rot_info);
           break;
         case 186:
-          amb_index =
-              separation_test(mesh, cell, 0, fvalue, CS_type, disamb_flag);
+          amb_index = separation_test(cell, 0, fvalue, CS_type, disamb_flag);
           get_hex_rotation_info(18, &rot_info);
           break;
         case 182:
-          amb_index =
-              separation_test(mesh, cell, 8, fvalue, CS_type, disamb_flag);
+          amb_index = separation_test(cell, 8, fvalue, CS_type, disamb_flag);
           get_hex_rotation_info(2, &rot_info);
           break;
         case 174:
-          amb_index =
-              separation_test(mesh, cell, 5, fvalue, CS_type, disamb_flag);
+          amb_index = separation_test(cell, 5, fvalue, CS_type, disamb_flag);
           get_hex_rotation_info(1, &rot_info);
           break;
       }
     } else {
       switch (index) {
         case 171:
-          amb_index =
-              separation_test(mesh, cell, 5, fvalue, CS_type, disamb_flag);
+          amb_index = separation_test(cell, 5, fvalue, CS_type, disamb_flag);
           get_hex_rotation_info(8, &rot_info);
           break;
         case 158:
-          amb_index =
-              separation_test(mesh, cell, 11, fvalue, CS_type, disamb_flag);
+          amb_index = separation_test(cell, 11, fvalue, CS_type, disamb_flag);
           get_hex_rotation_info(20, &rot_info);
           break;
         case 151:
-          amb_index =
-              separation_test(mesh, cell, 8, fvalue, CS_type, disamb_flag);
+          amb_index = separation_test(cell, 8, fvalue, CS_type, disamb_flag);
           get_hex_rotation_info(17, &rot_info);
           break;
         case 124:
-          amb_index =
-              separation_test(mesh, cell, 7, fvalue, CS_type, disamb_flag);
+          amb_index = separation_test(cell, 7, fvalue, CS_type, disamb_flag);
           get_hex_rotation_info(4, &rot_info);
           break;
         case 121:
-          amb_index =
-              separation_test(mesh, cell, 9, fvalue, CS_type, disamb_flag);
+          amb_index = separation_test(cell, 9, fvalue, CS_type, disamb_flag);
           get_hex_rotation_info(5, &rot_info);
           break;
         case 117:
-          amb_index =
-              separation_test(mesh, cell, 1, fvalue, CS_type, disamb_flag);
+          amb_index = separation_test(cell, 1, fvalue, CS_type, disamb_flag);
           get_hex_rotation_info(21, &rot_info);
           break;
         case 109:
-          amb_index =
-              separation_test(mesh, cell, 10, fvalue, CS_type, disamb_flag);
+          amb_index = separation_test(cell, 10, fvalue, CS_type, disamb_flag);
           get_hex_rotation_info(22, &rot_info);
           break;
         case 107:
-          amb_index =
-              separation_test(mesh, cell, 9, fvalue, CS_type, disamb_flag);
+          amb_index = separation_test(cell, 9, fvalue, CS_type, disamb_flag);
           get_hex_rotation_info(13, &rot_info);
           break;
         case 93:
-          amb_index =
-              separation_test(mesh, cell, 4, fvalue, CS_type, disamb_flag);
+          amb_index = separation_test(cell, 4, fvalue, CS_type, disamb_flag);
           get_hex_rotation_info(3, &rot_info);
           break;
         case 87:
-          amb_index =
-              separation_test(mesh, cell, 4, fvalue, CS_type, disamb_flag);
+          amb_index = separation_test(cell, 4, fvalue, CS_type, disamb_flag);
           get_hex_rotation_info(11, &rot_info);
           break;
         case 62:
-          amb_index =
-              separation_test(mesh, cell, 7, fvalue, CS_type, disamb_flag);
+          amb_index = separation_test(cell, 7, fvalue, CS_type, disamb_flag);
           get_hex_rotation_info(19, &rot_info);
           break;
         case 61:
-          amb_index =
-              separation_test(mesh, cell, 2, fvalue, CS_type, disamb_flag);
+          amb_index = separation_test(cell, 2, fvalue, CS_type, disamb_flag);
           get_hex_rotation_info(23, &rot_info);
           break;
       }
@@ -1490,9 +1414,8 @@ static int 	bounds_5[6] = {4, 9,10,5,4, -1};
    */
 }
 
-void case7_tiler_hex(struct hecmwST_local_mesh *mesh, Cell *cell, double fvalue,
-                     int CS_type, int index, Cube_polygons *cube_polys,
-                     int disamb_flag) {
+void case7_tiler_hex(Cell *cell, double fvalue, int CS_type, int index,
+                     Cube_polygons *cube_polys, int disamb_flag) {
   int i;
   int amb_index;
   Rotation_info rot_info;
@@ -1535,14 +1458,11 @@ void case7_tiler_hex(struct hecmwST_local_mesh *mesh, Cell *cell, double fvalue,
     amb_index = 0;
     switch (index) {
       case 26:
-        amb_index |=
-            separation_test(mesh, cell, 6, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 6, fvalue, CS_type, disamb_flag);
         amb_index <<= 1;
-        amb_index |=
-            separation_test(mesh, cell, 1, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 1, fvalue, CS_type, disamb_flag);
         amb_index <<= 1;
-        amb_index |=
-            separation_test(mesh, cell, 10, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 10, fvalue, CS_type, disamb_flag);
         switch (amb_index) {
           case 0:
           case 1:
@@ -1561,14 +1481,11 @@ void case7_tiler_hex(struct hecmwST_local_mesh *mesh, Cell *cell, double fvalue,
         }
         break;
       case 37:
-        amb_index |=
-            separation_test(mesh, cell, 3, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 3, fvalue, CS_type, disamb_flag);
         amb_index <<= 1;
-        amb_index |=
-            separation_test(mesh, cell, 11, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 11, fvalue, CS_type, disamb_flag);
         amb_index <<= 1;
-        amb_index |=
-            separation_test(mesh, cell, 0, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 0, fvalue, CS_type, disamb_flag);
         switch (amb_index) {
           case 0:
           case 1:
@@ -1587,14 +1504,11 @@ void case7_tiler_hex(struct hecmwST_local_mesh *mesh, Cell *cell, double fvalue,
         }
         break;
       case 74:
-        amb_index |=
-            separation_test(mesh, cell, 8, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 8, fvalue, CS_type, disamb_flag);
         amb_index <<= 1;
-        amb_index |=
-            separation_test(mesh, cell, 2, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 2, fvalue, CS_type, disamb_flag);
         amb_index <<= 1;
-        amb_index |=
-            separation_test(mesh, cell, 1, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 1, fvalue, CS_type, disamb_flag);
         switch (amb_index) {
           case 0:
           case 1:
@@ -1613,14 +1527,11 @@ void case7_tiler_hex(struct hecmwST_local_mesh *mesh, Cell *cell, double fvalue,
         }
         break;
       case 82:
-        amb_index |=
-            separation_test(mesh, cell, 5, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 5, fvalue, CS_type, disamb_flag);
         amb_index <<= 1;
-        amb_index |=
-            separation_test(mesh, cell, 10, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 10, fvalue, CS_type, disamb_flag);
         amb_index <<= 1;
-        amb_index |=
-            separation_test(mesh, cell, 2, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 2, fvalue, CS_type, disamb_flag);
         switch (amb_index) {
           case 0:
           case 1:
@@ -1639,14 +1550,11 @@ void case7_tiler_hex(struct hecmwST_local_mesh *mesh, Cell *cell, double fvalue,
         }
         break;
       case 88:
-        amb_index |=
-            separation_test(mesh, cell, 5, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 5, fvalue, CS_type, disamb_flag);
         amb_index <<= 1;
-        amb_index |=
-            separation_test(mesh, cell, 8, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 8, fvalue, CS_type, disamb_flag);
         amb_index <<= 1;
-        amb_index |=
-            separation_test(mesh, cell, 6, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 6, fvalue, CS_type, disamb_flag);
         switch (amb_index) {
           case 0:
           case 1:
@@ -1665,14 +1573,11 @@ void case7_tiler_hex(struct hecmwST_local_mesh *mesh, Cell *cell, double fvalue,
         }
         break;
       case 133:
-        amb_index |=
-            separation_test(mesh, cell, 9, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 9, fvalue, CS_type, disamb_flag);
         amb_index <<= 1;
-        amb_index |=
-            separation_test(mesh, cell, 0, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 0, fvalue, CS_type, disamb_flag);
         amb_index <<= 1;
-        amb_index |=
-            separation_test(mesh, cell, 7, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 7, fvalue, CS_type, disamb_flag);
         switch (amb_index) {
           case 0:
           case 1:
@@ -1691,14 +1596,11 @@ void case7_tiler_hex(struct hecmwST_local_mesh *mesh, Cell *cell, double fvalue,
         }
         break;
       case 161:
-        amb_index |=
-            separation_test(mesh, cell, 4, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 4, fvalue, CS_type, disamb_flag);
         amb_index <<= 1;
-        amb_index |=
-            separation_test(mesh, cell, 7, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 7, fvalue, CS_type, disamb_flag);
         amb_index <<= 1;
-        amb_index |=
-            separation_test(mesh, cell, 11, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 11, fvalue, CS_type, disamb_flag);
         switch (amb_index) {
           case 0:
           case 1:
@@ -1717,14 +1619,11 @@ void case7_tiler_hex(struct hecmwST_local_mesh *mesh, Cell *cell, double fvalue,
         }
         break;
       case 164:
-        amb_index |=
-            separation_test(mesh, cell, 4, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 4, fvalue, CS_type, disamb_flag);
         amb_index <<= 1;
-        amb_index |=
-            separation_test(mesh, cell, 3, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 3, fvalue, CS_type, disamb_flag);
         amb_index <<= 1;
-        amb_index |=
-            separation_test(mesh, cell, 9, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 9, fvalue, CS_type, disamb_flag);
         switch (amb_index) {
           case 0:
           case 1:
@@ -1785,8 +1684,7 @@ void case7_tiler_hex(struct hecmwST_local_mesh *mesh, Cell *cell, double fvalue,
   }
 }
 
-void case7opp_tiler_hex(struct hecmwST_local_mesh *mesh, Cell *cell,
-                        double fvalue, int CS_type, int index,
+void case7opp_tiler_hex(Cell *cell, double fvalue, int CS_type, int index,
                         Cube_polygons *cube_polys, int disamb_flag) {
   int i;
   int amb_index;
@@ -1831,14 +1729,11 @@ void case7opp_tiler_hex(struct hecmwST_local_mesh *mesh, Cell *cell,
     amb_index = 0;
     switch (index) {
       case 229:
-        amb_index |=
-            separation_test(mesh, cell, 6, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 6, fvalue, CS_type, disamb_flag);
         amb_index <<= 1;
-        amb_index |=
-            separation_test(mesh, cell, 1, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 1, fvalue, CS_type, disamb_flag);
         amb_index <<= 1;
-        amb_index |=
-            separation_test(mesh, cell, 10, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 10, fvalue, CS_type, disamb_flag);
         switch (amb_index) {
           case 0:
           case 1:
@@ -1857,14 +1752,11 @@ void case7opp_tiler_hex(struct hecmwST_local_mesh *mesh, Cell *cell,
         }
         break;
       case 218:
-        amb_index |=
-            separation_test(mesh, cell, 3, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 3, fvalue, CS_type, disamb_flag);
         amb_index <<= 1;
-        amb_index |=
-            separation_test(mesh, cell, 11, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 11, fvalue, CS_type, disamb_flag);
         amb_index <<= 1;
-        amb_index |=
-            separation_test(mesh, cell, 0, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 0, fvalue, CS_type, disamb_flag);
         switch (amb_index) {
           case 0:
           case 1:
@@ -1883,14 +1775,11 @@ void case7opp_tiler_hex(struct hecmwST_local_mesh *mesh, Cell *cell,
         }
         break;
       case 181:
-        amb_index |=
-            separation_test(mesh, cell, 8, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 8, fvalue, CS_type, disamb_flag);
         amb_index <<= 1;
-        amb_index |=
-            separation_test(mesh, cell, 2, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 2, fvalue, CS_type, disamb_flag);
         amb_index <<= 1;
-        amb_index |=
-            separation_test(mesh, cell, 1, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 1, fvalue, CS_type, disamb_flag);
         switch (amb_index) {
           case 0:
           case 1:
@@ -1909,14 +1798,11 @@ void case7opp_tiler_hex(struct hecmwST_local_mesh *mesh, Cell *cell,
         }
         break;
       case 173:
-        amb_index |=
-            separation_test(mesh, cell, 5, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 5, fvalue, CS_type, disamb_flag);
         amb_index <<= 1;
-        amb_index |=
-            separation_test(mesh, cell, 10, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 10, fvalue, CS_type, disamb_flag);
         amb_index <<= 1;
-        amb_index |=
-            separation_test(mesh, cell, 2, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 2, fvalue, CS_type, disamb_flag);
         switch (amb_index) {
           case 0:
           case 1:
@@ -1935,14 +1821,11 @@ void case7opp_tiler_hex(struct hecmwST_local_mesh *mesh, Cell *cell,
         }
         break;
       case 167:
-        amb_index |=
-            separation_test(mesh, cell, 5, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 5, fvalue, CS_type, disamb_flag);
         amb_index <<= 1;
-        amb_index |=
-            separation_test(mesh, cell, 8, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 8, fvalue, CS_type, disamb_flag);
         amb_index <<= 1;
-        amb_index |=
-            separation_test(mesh, cell, 6, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 6, fvalue, CS_type, disamb_flag);
         switch (amb_index) {
           case 0:
           case 1:
@@ -1961,14 +1844,11 @@ void case7opp_tiler_hex(struct hecmwST_local_mesh *mesh, Cell *cell,
         }
         break;
       case 122:
-        amb_index |=
-            separation_test(mesh, cell, 9, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 9, fvalue, CS_type, disamb_flag);
         amb_index <<= 1;
-        amb_index |=
-            separation_test(mesh, cell, 0, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 0, fvalue, CS_type, disamb_flag);
         amb_index <<= 1;
-        amb_index |=
-            separation_test(mesh, cell, 7, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 7, fvalue, CS_type, disamb_flag);
         switch (amb_index) {
           case 0:
           case 1:
@@ -1987,14 +1867,11 @@ void case7opp_tiler_hex(struct hecmwST_local_mesh *mesh, Cell *cell,
         }
         break;
       case 94:
-        amb_index |=
-            separation_test(mesh, cell, 4, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 4, fvalue, CS_type, disamb_flag);
         amb_index <<= 1;
-        amb_index |=
-            separation_test(mesh, cell, 7, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 7, fvalue, CS_type, disamb_flag);
         amb_index <<= 1;
-        amb_index |=
-            separation_test(mesh, cell, 11, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 11, fvalue, CS_type, disamb_flag);
         switch (amb_index) {
           case 0:
           case 1:
@@ -2013,14 +1890,11 @@ void case7opp_tiler_hex(struct hecmwST_local_mesh *mesh, Cell *cell,
         }
         break;
       case 91:
-        amb_index |=
-            separation_test(mesh, cell, 4, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 4, fvalue, CS_type, disamb_flag);
         amb_index <<= 1;
-        amb_index |=
-            separation_test(mesh, cell, 3, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 3, fvalue, CS_type, disamb_flag);
         amb_index <<= 1;
-        amb_index |=
-            separation_test(mesh, cell, 9, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 9, fvalue, CS_type, disamb_flag);
         switch (amb_index) {
           case 0:
           case 1:
@@ -2195,8 +2069,7 @@ void case9opp_tiler_hex(int index, Cube_polygons *cube_polys) {
   }
 }
 
-void case10_tiler_hex(struct hecmwST_local_mesh *mesh, Cell *cell,
-                      double fvalue, int CS_type, int index,
+void case10_tiler_hex(Cell *cell, double fvalue, int CS_type, int index,
                       Cube_polygons *cube_polys, int disamb_flag) {
   int i;
   int amb_index;
@@ -2226,27 +2099,21 @@ void case10_tiler_hex(struct hecmwST_local_mesh *mesh, Cell *cell,
     amb_index = 0;
     switch (index) {
       case 60:
-        amb_index |=
-            separation_test(mesh, cell, 6, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 6, fvalue, CS_type, disamb_flag);
         amb_index <<= 1;
-        amb_index |=
-            separation_test(mesh, cell, 3, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 3, fvalue, CS_type, disamb_flag);
         get_hex_rotation_info(10, &rot_info);
         break;
       case 85:
-        amb_index |=
-            separation_test(mesh, cell, 0, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 0, fvalue, CS_type, disamb_flag);
         amb_index <<= 1;
-        amb_index |=
-            separation_test(mesh, cell, 5, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 5, fvalue, CS_type, disamb_flag);
         get_hex_rotation_info(2, &rot_info);
         break;
       case 105:
-        amb_index |=
-            separation_test(mesh, cell, 11, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 11, fvalue, CS_type, disamb_flag);
         amb_index <<= 1;
-        amb_index |=
-            separation_test(mesh, cell, 8, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 8, fvalue, CS_type, disamb_flag);
         get_hex_rotation_info(0, &rot_info);
         break;
     }
@@ -2288,8 +2155,7 @@ void case10_tiler_hex(struct hecmwST_local_mesh *mesh, Cell *cell,
   }
 }
 
-void case10opp_tiler_hex(struct hecmwST_local_mesh *mesh, Cell *cell,
-                         double fvalue, int CS_type, int index,
+void case10opp_tiler_hex(Cell *cell, double fvalue, int CS_type, int index,
                          Cube_polygons *cube_polys, int disamb_flag) {
   int i;
   int amb_index;
@@ -2319,27 +2185,21 @@ void case10opp_tiler_hex(struct hecmwST_local_mesh *mesh, Cell *cell,
     amb_index = 0;
     switch (index) {
       case 195:
-        amb_index |=
-            separation_test(mesh, cell, 6, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 6, fvalue, CS_type, disamb_flag);
         amb_index <<= 1;
-        amb_index |=
-            separation_test(mesh, cell, 3, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 3, fvalue, CS_type, disamb_flag);
         get_hex_rotation_info(10, &rot_info);
         break;
       case 170:
-        amb_index |=
-            separation_test(mesh, cell, 0, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 0, fvalue, CS_type, disamb_flag);
         amb_index <<= 1;
-        amb_index |=
-            separation_test(mesh, cell, 5, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 5, fvalue, CS_type, disamb_flag);
         get_hex_rotation_info(2, &rot_info);
         break;
       case 150:
-        amb_index |=
-            separation_test(mesh, cell, 11, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 11, fvalue, CS_type, disamb_flag);
         amb_index <<= 1;
-        amb_index |=
-            separation_test(mesh, cell, 8, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 8, fvalue, CS_type, disamb_flag);
         get_hex_rotation_info(0, &rot_info);
         break;
     }
@@ -2453,8 +2313,7 @@ void case11opp_tiler_hex(int index, Cube_polygons *cube_polys) {
   }
 }
 
-void case12_tiler_hex(struct hecmwST_local_mesh *mesh, Cell *cell,
-                      double fvalue, int CS_type, int index,
+void case12_tiler_hex(Cell *cell, double fvalue, int CS_type, int index,
                       Cube_polygons *cube_polys, int disamb_flag) {
   int i;
   int amb_index;
@@ -2511,99 +2370,75 @@ void case12_tiler_hex(struct hecmwST_local_mesh *mesh, Cell *cell,
     amb_index = 0;
     switch (index) {
       case 30:
-        amb_index |=
-            separation_test(mesh, cell, 10, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 10, fvalue, CS_type, disamb_flag);
         amb_index <<= 1;
-        amb_index |=
-            separation_test(mesh, cell, 6, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 6, fvalue, CS_type, disamb_flag);
         get_hex_rotation_info(2, &rot_info);
         break;
       case 45:
-        amb_index |=
-            separation_test(mesh, cell, 3, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 3, fvalue, CS_type, disamb_flag);
         amb_index <<= 1;
-        amb_index |=
-            separation_test(mesh, cell, 11, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 11, fvalue, CS_type, disamb_flag);
         get_hex_rotation_info(4, &rot_info);
         break;
       case 53:
-        amb_index |=
-            separation_test(mesh, cell, 0, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 0, fvalue, CS_type, disamb_flag);
         amb_index <<= 1;
-        amb_index |=
-            separation_test(mesh, cell, 3, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 3, fvalue, CS_type, disamb_flag);
         get_hex_rotation_info(3, &rot_info);
         break;
       case 58:
-        amb_index |=
-            separation_test(mesh, cell, 6, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 6, fvalue, CS_type, disamb_flag);
         amb_index <<= 1;
-        amb_index |=
-            separation_test(mesh, cell, 1, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 1, fvalue, CS_type, disamb_flag);
         get_hex_rotation_info(0, &rot_info);
         break;
       case 75:
-        amb_index |=
-            separation_test(mesh, cell, 8, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 8, fvalue, CS_type, disamb_flag);
         amb_index <<= 1;
-        amb_index |=
-            separation_test(mesh, cell, 2, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 2, fvalue, CS_type, disamb_flag);
         get_hex_rotation_info(6, &rot_info);
         break;
       case 83:
-        amb_index |=
-            separation_test(mesh, cell, 2, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 2, fvalue, CS_type, disamb_flag);
         amb_index <<= 1;
-        amb_index |=
-            separation_test(mesh, cell, 5, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 5, fvalue, CS_type, disamb_flag);
         get_hex_rotation_info(15, &rot_info);
         break;
       case 86:
-        amb_index |=
-            separation_test(mesh, cell, 5, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 5, fvalue, CS_type, disamb_flag);
         amb_index <<= 1;
-        amb_index |=
-            separation_test(mesh, cell, 10, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 10, fvalue, CS_type, disamb_flag);
         get_hex_rotation_info(16, &rot_info);
         break;
       case 89:
-        amb_index |=
-            separation_test(mesh, cell, 5, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 5, fvalue, CS_type, disamb_flag);
         amb_index <<= 1;
-        amb_index |=
-            separation_test(mesh, cell, 8, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 8, fvalue, CS_type, disamb_flag);
         get_hex_rotation_info(21, &rot_info);
         break;
       case 92:
-        amb_index |=
-            separation_test(mesh, cell, 6, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 6, fvalue, CS_type, disamb_flag);
         amb_index <<= 1;
-        amb_index |=
-            separation_test(mesh, cell, 5, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 5, fvalue, CS_type, disamb_flag);
         get_hex_rotation_info(23, &rot_info);
         break;
       case 101:
-        amb_index |=
-            separation_test(mesh, cell, 11, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 11, fvalue, CS_type, disamb_flag);
         amb_index <<= 1;
-        amb_index |=
-            separation_test(mesh, cell, 0, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 0, fvalue, CS_type, disamb_flag);
         get_hex_rotation_info(5, &rot_info);
         break;
       case 106:
-        amb_index |=
-            separation_test(mesh, cell, 1, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 1, fvalue, CS_type, disamb_flag);
         amb_index <<= 1;
-        amb_index |=
-            separation_test(mesh, cell, 8, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 8, fvalue, CS_type, disamb_flag);
         get_hex_rotation_info(8, &rot_info);
         break;
       case 120:
-        amb_index |=
-            separation_test(mesh, cell, 8, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 8, fvalue, CS_type, disamb_flag);
         amb_index <<= 1;
-        amb_index |=
-            separation_test(mesh, cell, 6, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 6, fvalue, CS_type, disamb_flag);
         get_hex_rotation_info(22, &rot_info);
         break;
     }
@@ -2634,8 +2469,7 @@ void case12_tiler_hex(struct hecmwST_local_mesh *mesh, Cell *cell,
   }
 }
 
-void case12opp_tiler_hex(struct hecmwST_local_mesh *mesh, Cell *cell,
-                         double fvalue, int CS_type, int index,
+void case12opp_tiler_hex(Cell *cell, double fvalue, int CS_type, int index,
                          Cube_polygons *cube_polys, int disamb_flag) {
   int i;
   int amb_index;
@@ -2692,99 +2526,75 @@ void case12opp_tiler_hex(struct hecmwST_local_mesh *mesh, Cell *cell,
     amb_index = 0;
     switch (index) {
       case 225:
-        amb_index |=
-            separation_test(mesh, cell, 10, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 10, fvalue, CS_type, disamb_flag);
         amb_index <<= 1;
-        amb_index |=
-            separation_test(mesh, cell, 6, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 6, fvalue, CS_type, disamb_flag);
         get_hex_rotation_info(2, &rot_info);
         break;
       case 210:
-        amb_index |=
-            separation_test(mesh, cell, 3, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 3, fvalue, CS_type, disamb_flag);
         amb_index <<= 1;
-        amb_index |=
-            separation_test(mesh, cell, 11, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 11, fvalue, CS_type, disamb_flag);
         get_hex_rotation_info(4, &rot_info);
         break;
       case 202:
-        amb_index |=
-            separation_test(mesh, cell, 0, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 0, fvalue, CS_type, disamb_flag);
         amb_index <<= 1;
-        amb_index |=
-            separation_test(mesh, cell, 3, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 3, fvalue, CS_type, disamb_flag);
         get_hex_rotation_info(3, &rot_info);
         break;
       case 197:
-        amb_index |=
-            separation_test(mesh, cell, 6, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 6, fvalue, CS_type, disamb_flag);
         amb_index <<= 1;
-        amb_index |=
-            separation_test(mesh, cell, 1, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 1, fvalue, CS_type, disamb_flag);
         get_hex_rotation_info(0, &rot_info);
         break;
       case 180:
-        amb_index |=
-            separation_test(mesh, cell, 8, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 8, fvalue, CS_type, disamb_flag);
         amb_index <<= 1;
-        amb_index |=
-            separation_test(mesh, cell, 2, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 2, fvalue, CS_type, disamb_flag);
         get_hex_rotation_info(6, &rot_info);
         break;
       case 172:
-        amb_index |=
-            separation_test(mesh, cell, 2, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 2, fvalue, CS_type, disamb_flag);
         amb_index <<= 1;
-        amb_index |=
-            separation_test(mesh, cell, 5, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 5, fvalue, CS_type, disamb_flag);
         get_hex_rotation_info(15, &rot_info);
         break;
       case 169:
-        amb_index |=
-            separation_test(mesh, cell, 5, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 5, fvalue, CS_type, disamb_flag);
         amb_index <<= 1;
-        amb_index |=
-            separation_test(mesh, cell, 10, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 10, fvalue, CS_type, disamb_flag);
         get_hex_rotation_info(16, &rot_info);
         break;
       case 166:
-        amb_index |=
-            separation_test(mesh, cell, 5, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 5, fvalue, CS_type, disamb_flag);
         amb_index <<= 1;
-        amb_index |=
-            separation_test(mesh, cell, 8, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 8, fvalue, CS_type, disamb_flag);
         get_hex_rotation_info(21, &rot_info);
         break;
       case 163:
-        amb_index |=
-            separation_test(mesh, cell, 6, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 6, fvalue, CS_type, disamb_flag);
         amb_index <<= 1;
-        amb_index |=
-            separation_test(mesh, cell, 5, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 5, fvalue, CS_type, disamb_flag);
         get_hex_rotation_info(23, &rot_info);
         break;
       case 154:
-        amb_index |=
-            separation_test(mesh, cell, 11, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 11, fvalue, CS_type, disamb_flag);
         amb_index <<= 1;
-        amb_index |=
-            separation_test(mesh, cell, 0, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 0, fvalue, CS_type, disamb_flag);
         get_hex_rotation_info(5, &rot_info);
         break;
       case 149:
-        amb_index |=
-            separation_test(mesh, cell, 1, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 1, fvalue, CS_type, disamb_flag);
         amb_index <<= 1;
-        amb_index |=
-            separation_test(mesh, cell, 8, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 8, fvalue, CS_type, disamb_flag);
         get_hex_rotation_info(8, &rot_info);
         break;
       case 135:
-        amb_index |=
-            separation_test(mesh, cell, 8, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 8, fvalue, CS_type, disamb_flag);
         amb_index <<= 1;
-        amb_index |=
-            separation_test(mesh, cell, 6, fvalue, CS_type, disamb_flag);
+        amb_index |= separation_test(cell, 6, fvalue, CS_type, disamb_flag);
         get_hex_rotation_info(22, &rot_info);
         break;
     }
@@ -2815,8 +2625,7 @@ void case12opp_tiler_hex(struct hecmwST_local_mesh *mesh, Cell *cell,
   }
 }
 
-void case13_tiler_hex(struct hecmwST_local_mesh *mesh, Cell *cell,
-                      double fvalue, int CS_type, int index,
+void case13_tiler_hex(Cell *cell, double fvalue, int CS_type,
                       Cube_polygons *cube_polys, int disamb_flag) {
   int i;
   int amb_index;
@@ -2878,23 +2687,23 @@ static int 	not_sep_bd[6][8] = {{6, 12,0,1,13,2,3, -1},
     amb_index = 9;        /* isosurf_J */
   } else {
     amb_index = 0;
-    amb_index |= separation_test(mesh, cell, 11, fvalue, CS_type,
-                                 disamb_flag); /* bottom */
+    amb_index |=
+        separation_test(cell, 11, fvalue, CS_type, disamb_flag); /* bottom */
     amb_index <<= 1;
     amb_index |=
-        separation_test(mesh, cell, 9, fvalue, CS_type, disamb_flag); /* top */
+        separation_test(cell, 9, fvalue, CS_type, disamb_flag); /* top */
     amb_index <<= 1;
     amb_index |=
-        separation_test(mesh, cell, 7, fvalue, CS_type, disamb_flag); /* left */
+        separation_test(cell, 7, fvalue, CS_type, disamb_flag); /* left */
     amb_index <<= 1;
     amb_index |=
-        separation_test(mesh, cell, 4, fvalue, CS_type, disamb_flag); /* back */
+        separation_test(cell, 4, fvalue, CS_type, disamb_flag); /* back */
     amb_index <<= 1;
-    amb_index |= separation_test(mesh, cell, 3, fvalue, CS_type,
-                                 disamb_flag); /* right  */
+    amb_index |=
+        separation_test(cell, 3, fvalue, CS_type, disamb_flag); /* right  */
     amb_index <<= 1;
-    amb_index |= separation_test(mesh, cell, 0, fvalue, CS_type,
-                                 disamb_flag); /* front  */
+    amb_index |=
+        separation_test(cell, 0, fvalue, CS_type, disamb_flag); /* front  */
   }
   get_hex_rotation_info(cube_rotation[amb_index], &rot_info);
 
@@ -3003,8 +2812,7 @@ static int 	not_sep_bd[6][8] = {{6, 12,0,1,13,2,3, -1},
   }
 }
 
-void case13opp_tiler_hex(struct hecmwST_local_mesh *mesh, Cell *cell,
-                         double fvalue, int CS_type, int index,
+void case13opp_tiler_hex(Cell *cell, double fvalue, int CS_type,
                          Cube_polygons *cube_polys, int disamb_flag) {
   int i;
   int amb_index;
@@ -3066,23 +2874,23 @@ static int 	not_sep_bd[6][8] = {{6, 12,1,2,13,3,0, -1},
     amb_index = 9;
   } else {
     amb_index = 0;
-    amb_index |= separation_test(mesh, cell, 11, fvalue, CS_type,
-                                 disamb_flag); /* bottom */
+    amb_index |=
+        separation_test(cell, 11, fvalue, CS_type, disamb_flag); /* bottom */
     amb_index <<= 1;
     amb_index |=
-        separation_test(mesh, cell, 9, fvalue, CS_type, disamb_flag); /* top */
+        separation_test(cell, 9, fvalue, CS_type, disamb_flag); /* top */
     amb_index <<= 1;
     amb_index |=
-        separation_test(mesh, cell, 7, fvalue, CS_type, disamb_flag); /* left */
+        separation_test(cell, 7, fvalue, CS_type, disamb_flag); /* left */
     amb_index <<= 1;
     amb_index |=
-        separation_test(mesh, cell, 4, fvalue, CS_type, disamb_flag); /* back */
+        separation_test(cell, 4, fvalue, CS_type, disamb_flag); /* back */
     amb_index <<= 1;
-    amb_index |= separation_test(mesh, cell, 3, fvalue, CS_type,
-                                 disamb_flag); /* right  */
+    amb_index |=
+        separation_test(cell, 3, fvalue, CS_type, disamb_flag); /* right  */
     amb_index <<= 1;
-    amb_index |= separation_test(mesh, cell, 0, fvalue, CS_type,
-                                 disamb_flag); /* front  */
+    amb_index |=
+        separation_test(cell, 0, fvalue, CS_type, disamb_flag); /* front  */
   }
 
   get_hex_rotation_info(cube_rotation[amb_index], &rot_info);

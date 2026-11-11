@@ -18,11 +18,10 @@ void generate_face(int index_face_tetra[5], int face_tetra[12],
                    int index_face_prism[6], int face_prism[18],
                    int index_face_hexa[7], int face_hexa[24]);
 void add_to_hash(int elemID, int faceID, int hashID, Hash_table *h_table);
-void build_hash_table(struct hecmwST_local_mesh *mesh, int *index_connect,
-                      Hash_table *h_table, int index_face_tetra[5],
-                      int face_tetra[12], int index_face_prism[6],
-                      int face_prism[18], int index_face_hexa[7],
-                      int face_hexa[24]);
+void build_hash_table(struct hecmwST_local_mesh *mesh, Hash_table *h_table,
+                      int index_face_tetra[5], int face_tetra[12],
+                      int index_face_prism[6], int face_prism[18],
+                      int index_face_hexa[7], int face_hexa[24]);
 int is_equal_array(int n[4], int nn[4], int num);
 int is_connect(int elemID1, int faceID1, int elemID2, int faceID2,
                struct hecmwST_local_mesh *mesh, int index_face_tetra[5],

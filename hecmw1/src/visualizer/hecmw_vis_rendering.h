@@ -15,8 +15,8 @@
 void HECMW_vis_rendering_surface(struct surface_module *sf,
                                  Parameter_rendering *sr,
                                  struct hecmwST_local_mesh *mesh,
-                                 struct hecmwST_result_data *data, int tvertex,
-                                 int tpatch, int *color_list, double *minvalue,
+                                 struct hecmwST_result_data *data,
+                                 int *color_list, double *minvalue,
                                  double *maxvalue, Result *result,
                                  char *outfile, int stat_para[NUM_CONTROL_PSF],
                                  HECMW_Comm VIS_COMM, int timestep);

@@ -139,11 +139,10 @@ void add_to_hash(int elemID, int faceID, int hashID, Hash_table *h_table) {
   return;
 }
 
-void build_hash_table(struct hecmwST_local_mesh *mesh, int *index_connect,
-                      Hash_table *h_table, int index_face_tetra[5],
-                      int face_tetra[12], int index_face_prism[6],
-                      int face_prism[18], int index_face_hexa[7],
-                      int face_hexa[24]) {
+void build_hash_table(struct hecmwST_local_mesh *mesh, Hash_table *h_table,
+                      int index_face_tetra[5], int face_tetra[12],
+                      int index_face_prism[6], int face_prism[18],
+                      int index_face_hexa[7], int face_hexa[24]) {
   int i, j, k, n_elem, node[MAX_N_NODE], nodesum;
 
   n_elem = mesh->n_elem;
@@ -642,7 +641,7 @@ void HECMW_vis_find_boundary_surface(Surface *sff,
       HECMW_vis_memory_exit("connect");
     /*  i*3: elem_id; i*3+1: face_id   i*3+2: pe_id */
     for (i = 0; i < index_connect[mesh->n_elem] * 3; i++) connect[i] = -1;
-    build_hash_table(mesh, index_connect, h_table, index_face_tetra, face_tetra,
+    build_hash_table(mesh, h_table, index_face_tetra, face_tetra,
                      index_face_prism, face_prism, index_face_hexa, face_hexa);
 
     build_connectivity(mesh, h_table, index_connect, connect, index_face_tetra,
