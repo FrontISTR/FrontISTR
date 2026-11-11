@@ -206,10 +206,6 @@
 			<message>!SECTION: Missing EGRP</message>
 			<description>!SECTIONの必須パラメータEGRPが見つからない</description>
 		</define>
-		<define type="error" name="E1703">
-			<message>!SECTION: MATERIAL and COMPOSITE are mutually exclusive</message>
-			<description>互いに排他的なパラメータが同時に使用された</description>
-		</define>
 		<define type="error" name="E1704">
 			<message>!SECTION: COMPOSITE value must be positive integer</message>
 			<description>不正なCOMPOSITEの値を検出した</description>
