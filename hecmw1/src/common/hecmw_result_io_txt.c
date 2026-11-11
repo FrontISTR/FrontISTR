@@ -378,7 +378,7 @@ error:
 /*---------------------------------------------------------------------------*/
 
 
-static int output_result_header_ST(struct hecmwST_result_data *result, char *header, FILE *fp) {
+static int output_result_header_ST(char *header, FILE *fp) {
   size_t len;
   int rc;
   char *p,*q;
@@ -672,7 +672,7 @@ static int output_result_data_ST(struct hecmwST_result_data *result, int n_node,
                                  char *header, char *comment, FILE *fp) {
   HECMW_assert(fp);
 
-  if(output_result_header_ST(result, header, fp)) {
+  if (output_result_header_ST(header, fp)) {
     return -1;
   }
   if( HECMW_RESULT_FILEVER_MAJOR > 1 ){
@@ -745,7 +745,7 @@ static int get_line(char *buf, int bufsize, FILE *fp) {
 }
 
 
-static int input_result_header(struct hecmwST_result_data *result, FILE *fp) {
+static int input_result_header(FILE *fp) {
   char *ptr;
 
   /* header */
@@ -1189,7 +1189,7 @@ static struct hecmwST_result_data *input_result_data(FILE *fp) {
     HECMW_set_error(errno, "");
     return NULL;
   }
-  if(input_result_header(result, fp)) {
+  if (input_result_header(fp)) {
     return NULL;
   }
   if( HECMW_RESULT_FILEVER_MAJOR > 1 ){

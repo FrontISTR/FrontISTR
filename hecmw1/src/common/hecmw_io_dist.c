@@ -1838,7 +1838,7 @@ static int print_string(const char *item, FILE *fp) {
 /*----------------------------------------------------------------------------*/
 /*  print HECMW_Comm                                                          */
 /*----------------------------------------------------------------------------*/
-static int print_comm(HECMW_Comm item, FILE *fp) {
+static int print_comm(FILE *fp) {
   int rtc;
 
   /* rtc = fprintf( fp, "%d\n", (int)item ); */
@@ -2271,7 +2271,7 @@ static int print_comm_info(const struct hecmwST_local_mesh *mesh, FILE *fp) {
   }
 
   /* HECMW_COMM */
-  if (print_comm(mesh->HECMW_COMM, fp)) {
+  if (print_comm(fp)) {
     return -1;
   }
 

@@ -374,8 +374,7 @@ error:
 /*---------------------------------------------------------------------------*/
 
 
-static int bin_output_result_header_ST(struct hecmwST_result_data *result,
-                                       char *header, FILE *fp) {
+static int bin_output_result_header_ST(char *header, FILE *fp) {
   size_t len;
   int rc;
   char *p,*q;
@@ -620,7 +619,7 @@ static int bin_output_result_data_ST(struct hecmwST_result_data *result,
                                      char *comment, FILE *fp) {
   HECMW_assert(fp);
 
-  if(bin_output_result_header_ST(result, header, fp)) {
+  if (bin_output_result_header_ST(header, fp)) {
     return -1;
   }
   if( HECMW_RESULT_FILEVER_MAJOR > 1 ){
@@ -684,7 +683,7 @@ error:
 /*---------------------------------------------------------------------------*/
 
 
-static int bin_input_result_header(struct hecmwST_result_data *result, FILE *fp) {
+static int bin_input_result_header(FILE *fp) {
   char *ptr;
 
   /* header */
@@ -988,7 +987,7 @@ static struct hecmwST_result_data *bin_input_result_data(FILE *fp) {
     return NULL;
   }
 
-  if(bin_input_result_header(result, fp)) {
+  if (bin_input_result_header(fp)) {
     return NULL;
   }
 

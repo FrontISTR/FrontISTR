@@ -43,7 +43,7 @@ static const unsigned int hecmw_hashsize_template[] = {
     268435399, 536870909, 1073741789, 2147483647 /* Maximum integer */
 };
 
-hecmw_hash_p *hecmw_hash_p_new(unsigned int index) {
+hecmw_hash_p *hecmw_hash_p_new(void) {
   unsigned int i, size;
   Bin *bin;
   hecmw_hash_p *hash;

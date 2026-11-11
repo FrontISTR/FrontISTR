@@ -1296,7 +1296,7 @@ static int set_eqn_block_of_node(struct hecmwST_local_mesh *local_mesh,
 /*----------------------------------------------------------------------------*/
 static int create_eqn_block_index(struct hecmwST_local_mesh *local_mesh,
                                   struct equation_block *eqn_block,
-                                  int *mpc_node_flag, int *mpc_group2block) {
+                                  int *mpc_node_flag) {
   int *n_block;
   int i;
 
@@ -1486,8 +1486,7 @@ extern int HECMW_reorder_node_mpc(struct hecmwST_local_mesh *local_mesh) {
   }
 
   /* create EQUATION_BLOCK */
-  if (create_eqn_block_index(local_mesh, eqn_block, mpc_node_flag,
-                             mpc_group2block)) {
+  if (create_eqn_block_index(local_mesh, eqn_block, mpc_node_flag)) {
     return -1;
   }
 

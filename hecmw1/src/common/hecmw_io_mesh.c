@@ -4081,13 +4081,13 @@ int HECMW_hash_init(void) {
   extern hecmw_hash_p *hash_sg;
   extern hecmw_hash_p *hash_mat;
 
-  hash_ng = hecmw_hash_p_new(1);
+  hash_ng = hecmw_hash_p_new();
   if (hash_ng == NULL) return 1;
-  hash_eg = hecmw_hash_p_new(2);
+  hash_eg = hecmw_hash_p_new();
   if (hash_eg == NULL) return 1;
-  hash_sg = hecmw_hash_p_new(3);
+  hash_sg = hecmw_hash_p_new();
   if (hash_sg == NULL) return 1;
-  hash_mat = hecmw_hash_p_new(4);
+  hash_mat = hecmw_hash_p_new();
   if (hash_mat == NULL) return 1;
 
   return 0;
