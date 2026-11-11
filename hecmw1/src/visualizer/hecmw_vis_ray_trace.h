@@ -130,44 +130,6 @@ typedef struct _pvr_link_struct {
   int visual_interval_step;
 } PVR_link;
 
-typedef struct surface_info_struct {
-  int num;
-  double *surf_data;
-} Surface_info;
-
-typedef struct _data_structured_vr_struct {
-  double dxyz[3];
-  int leveltot;
-  int varnumtot;
-  char **varname;
-  int nxyz[3];
-  double xyz0[3];
-  int voxtotadd;
-  int voxtotall;
-  /*	int *rlevel;
-  int *parent;
-   */
-  int r_nxyz[3];
-  double r_dxyz[3];
-  int *empty_flag;
-  double *var;
-  double *grad_var;
-  Surface_info *surface;
-} VR_data;
-
-typedef struct _tree_pointer_struct {
-  int cell_id[8];
-  int surf_id;
-  int level;
-  double bound_box[6];
-  int local_child_no;
-  int local_face_in;
-  int local_face_out;
-  struct _tree_pointer_struct *child;
-  struct _tree_pointer_struct *parent;
-} Tree_pointer;
-
-typedef Tree_pointer *Tree_pointer_ptr;
 /*
 typedef struct _ray_volume_struct {
         Elem_no elem_id;

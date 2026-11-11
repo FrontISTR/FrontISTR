@@ -234,7 +234,6 @@ fprintf(stderr, "the time for reading file is %lf the total time up to now is
   }
   t2 = t1;
 
-  if (mynode == 0) fprintf(stderr, "calc_gradient\n");
   nx         = level[mynode * 3];
   ny         = level[mynode * 3 + 1];
   nz         = level[mynode * 3 + 2];
