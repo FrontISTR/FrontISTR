@@ -1,0 +1,25 @@
+if(FORMAT STREQUAL "inp")
+  set(card "*SOLVER")
+else()
+  set(card "!SOLVER")
+endif()
+set(input "${WORK_DIR}/solver_${FORMAT}.ctl")
+set(log "${WORK_DIR}/solver_${FORMAT}.log")
+file(WRITE "${input}" "${card}, METHOD=DIRECTmf\n${card}, METHOD=CG\n")
+execute_process(
+  COMMAND "${PROGRAM}" "${input}" "${log}"
+  RESULT_VARIABLE status
+  OUTPUT_VARIABLE output
+  ERROR_VARIABLE error)
+if(NOT status STREQUAL "2")
+  message(FATAL_ERROR "Expected input error 2, got ${status}: ${output}${error}")
+endif()
+if(NOT EXISTS "${log}")
+  message(FATAL_ERROR "No solver diagnostic was written")
+endif()
+file(READ "${log}" message)
+string(FIND "${message}" "${card} exists twice in FSTR control file." found)
+if(found EQUAL -1)
+  message(FATAL_ERROR "Wrong card name: ${message}")
+endif()
+message(STATUS "${FORMAT}: ${message}")

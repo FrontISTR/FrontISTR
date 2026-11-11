@@ -1193,6 +1193,7 @@ int c_fstr_ctrl_get_data_v(fstr_ctrl_data *ctrl, int line_no,
   char buff[buffsize * 2]  = { '\0' };
   format_conv(format, format_c, array_size);
   error_pos = -1;
+  error_line = line_no;
   err       = c_fstr_ctrl_copy_data_line(ctrl, line_no, data_line,
                                          sizeof(data_line));
 
@@ -1788,7 +1789,12 @@ static void set_param_err_msg(fstr_ctrl_data *ctrl, const char *param_name,
 
 static void set_data_err_msg(fstr_ctrl_data *ctrl, int line, int data_no,
                              const char *msg) {
-  line += c_fstr_ctrl_get_current_header_line_no(ctrl);
+  int header = ctrl->header_pos[ctrl->current_header_index];
+  if (line > 0 && line <= ctrl->data_line_n[ctrl->current_header_index]) {
+    line = ctrl->rec[header + line].line_no;
+  } else {
+    line = ctrl->rec[header].line_no;
+  }
   snprintf(err_msg, sizeof(err_msg), "fstr control file error(data): line:%d, column:%d : %s\n",
           line, data_no, msg);
 }

@@ -80,10 +80,13 @@ contains
 
     integer(kind=kint) :: rcode
     type(fstr_card_slot) :: slot
+    character(len=HECMW_NAME_LEN) :: header_name
 
     slot = P%STATE%slot
     if( slot%first > 1 ) then
-      write(ILOG,*) '### Error : !SOLVER exists twice in FSTR control file.'
+      rcode = fstr_ctrl_get_c_h_name( ctrl, header_name, HECMW_NAME_LEN )
+      if( rcode /= 0 ) call fstr_ctrl_err_stop
+      write(ILOG,*) '### Error : '//trim(header_name)//' exists twice in FSTR control file.'
       stop HECMW_EXIT_INPUT
     endif
 

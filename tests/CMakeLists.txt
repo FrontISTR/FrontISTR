@@ -109,3 +109,4 @@ if(WITH_LAPACK AND NOT WINDOWS)
 endif()
 
 add_subdirectory(api)
+add_subdirectory(unit/input)
