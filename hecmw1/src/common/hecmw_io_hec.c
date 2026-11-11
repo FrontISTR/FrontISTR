@@ -3451,7 +3451,6 @@ static int read_section(void) {
   union hecmw_io_section_item sect_item;
   int flag_type                     = 0; /* flag for TYPE */
   int flag_egrp                     = 0; /* flag for EGRP */
-  int flag_composite                = 0; /* flag for COMPOSITE */
   int flag_input                    = 0; /* flag for INPUT */
   char egrp[HECMW_NAME_LEN + 1]     = "";
   char material[HECMW_NAME_LEN + 1] = "ALL";
@@ -3484,10 +3483,6 @@ static int read_section(void) {
         flag_egrp = 1;
       } else if (token == HECMW_HECLEX_K_MATERIAL) {
         /* optional */
-        if (flag_composite) {
-          set_err(HECMW_IO_HEC_E1703, "");
-          return -1;
-        }
         if (read_section_param_material(material, sizeof(material))) return -1;
       } else if (token == HECMW_HECLEX_K_SECOPT) {
         /* optional */
@@ -3971,8 +3966,6 @@ static struct read_func_table {
     {HECMW_HECLEX_H_CONNECTIVITY, read_connectivity},
     {HECMW_HECLEX_H_CONTACT_PAIR, read_contact_pair},
     {HECMW_HECLEX_H_EMBED_PAIR, read_contact_pair},
-    /*	{ HECMW_HECLEX_H_ECOPY,     read_ecopy     }, */
-    /*	{ HECMW_HECLEX_H_EGEN,      read_egen      }, */
     {HECMW_HECLEX_H_EGROUP, read_egroup},
     {HECMW_HECLEX_H_ELEMENT, read_element},
     {HECMW_HECLEX_H_EQUATION, read_equation},
@@ -3980,14 +3973,10 @@ static struct read_func_table {
     {HECMW_HECLEX_H_INCLUDE, read_include},
     {HECMW_HECLEX_H_INITIAL, read_initial},
     {HECMW_HECLEX_H_MATERIAL, read_material},
-    /*	{ HECMW_HECLEX_H_NCOPY,     read_ncopy     }, */
-    /*	{ HECMW_HECLEX_H_NFILL,     read_nfill     }, */
-    /*	{ HECMW_HECLEX_H_NGEN,      read_ngen      }, */
     {HECMW_HECLEX_H_NGROUP, read_ngroup},
     {HECMW_HECLEX_H_NODE, read_node},
     {HECMW_HECLEX_H_SECTION, read_section},
     {HECMW_HECLEX_H_SGROUP, read_sgroup},
-    /*	{ HECMW_HECLEX_H_SYSTEM,    read_system    }, */
     {HECMW_HECLEX_H_ZERO, read_zero},
 };
 

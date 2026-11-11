@@ -3235,7 +3235,6 @@ static int read_shell_section(void) {
   int composite                     = -1;
   int flag_elset                    = 0; /* flag for ELSET */
   int flag_material                 = 0; /* flag for MATERIAL */
-  int flag_composite                = 0; /* flag for COMPOSITE */
   char elset[HECMW_NAME_LEN + 1]    = "";
   char material[HECMW_NAME_LEN + 1] = "ALL";
   enum { ST_FINISHED, ST_KEYWORD_LINE, ST_KEYWORD_LINE_PARAM, ST_DATA_LINE };
@@ -3253,10 +3252,6 @@ static int read_shell_section(void) {
         flag_elset = 1;
       } else if (token == HECMW_INPLEX_K_MATERIAL) {
         /* must */
-        if (flag_composite) {
-          set_err(HECMW_IO_INP_E1703, "");
-          return -1;
-        }
         if (read_shellsect_param_material(material, sizeof(material))) return -1;
         flag_material = 1;
       } else {
@@ -3462,7 +3457,6 @@ static int read_solid_section(void) {
   int composite                        = -1;
   int flag_elset                       = 0; /* flag for ELSET */
   int flag_material                    = 0; /* flag for MATERIAL */
-  int flag_composite                   = 0; /* flag for COMPOSITE */
   char elset[HECMW_NAME_LEN + 1]       = "";
   char material[HECMW_NAME_LEN + 1]    = "ALL";
   char orientation[HECMW_NAME_LEN + 1] = "";
@@ -3481,10 +3475,6 @@ static int read_solid_section(void) {
         flag_elset = 1;
       } else if (token == HECMW_INPLEX_K_MATERIAL) {
         /* must */
-        if (flag_composite) {
-          set_err(HECMW_IO_INP_E2103, "");
-          return -1;
-        }
         if (read_solidsect_param_material(material, sizeof(material))) return -1;
         flag_material = 1;
       } else if (token == HECMW_INPLEX_K_ORIENTATION) {
@@ -3902,8 +3892,6 @@ static struct read_func_table {
     {HECMW_INPLEX_H_CLOAD, read_cload},
     {HECMW_INPLEX_H_DLOAD, read_dload},
     {HECMW_INPLEX_H_DENSITY, read_density},
-    /*	{ HECMW_INPLEX_H_ECOPY,     read_ecopy     }, */
-    /*	{ HECMW_INPLEX_H_EGEN,      read_egen      }, */
     {HECMW_INPLEX_H_ELASTIC, read_elastic},
     {HECMW_INPLEX_H_ELEMENT, read_element},
     {HECMW_INPLEX_H_ELSET, read_elset},
@@ -3912,15 +3900,11 @@ static struct read_func_table {
     {HECMW_INPLEX_H_INCLUDE, read_include},
     {HECMW_INPLEX_H_INITIAL, read_initial},
     {HECMW_INPLEX_H_MATERIAL, read_material},
-    /*	{ HECMW_INPLEX_H_NCOPY,     read_ncopy     }, */
-    /*	{ HECMW_INPLEX_H_NFILL,     read_nfill     }, */
-    /*	{ HECMW_INPLEX_H_NGEN,      read_ngen      }, */
     {HECMW_INPLEX_H_NODE, read_node},
     {HECMW_INPLEX_H_NSET, read_nset},
     {HECMW_INPLEX_H_SHELL_SECTION, read_shell_section},
     {HECMW_INPLEX_H_SOLID_SECTION, read_solid_section},
     {HECMW_INPLEX_H_SPECIFIC_HEAT, read_specific_heat},
-    /*	{ HECMW_INPLEX_H_SYSTEM,    read_system    }, */
 };
 
 #define N_READ_FUNC (sizeof(read_func_table) / sizeof(read_func_table[0]))
