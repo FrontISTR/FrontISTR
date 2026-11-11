@@ -1,0 +1,4 @@
+# an inp mesh read with a separate cnt file keeps the messages about the cards to write in the cnt file;
+# hecmw_part1 reads the inp mesh of a parallel run, so they are checked in single-process runs only
+np1:HECMW-IO-INP-W0099: .*\(\*STEP\)
+np1:Auto-generated cards should be added
