@@ -291,23 +291,32 @@ cantilever, 20 x 2 x 2 C3D8 elements
 *Section, secnum=1,
  form361=FI
 *boundary
+
 FIX, 1
 ** a comment between the data lines
+
+   
 FIX, 2, 2, 0.0
 FIX,3,3
+
 *Step
 *Static
 *cload
+
 21, 2, -0.1
+
 42, 2, -0.1
 63, 2, -0.1
 ** a comment between the data lines
+
+	
 84, 2, -0.1
 105,	2,	-0.1
 126, 2, -0.1
 147, 2, -0.1
 168, 2, -0.1
 189, 2, -0.1
+
 *Node Print, nset=TIP
 U
 *End  Step

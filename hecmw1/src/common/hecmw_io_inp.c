@@ -3695,6 +3695,15 @@ static int read_boundary(void) {
       int *node;
 
       HECMW_assert(flag_boundary);
+      do {
+        token = HECMW_inplex_next_token();
+      } while (token == HECMW_INPLEX_NL);
+      if (token == 0) break;
+      if (HECMW_inplex_get_text()[0] == '*') {
+        HECMW_inplex_unput_token();
+        break;
+      }
+      HECMW_inplex_unput_token();
       if (read_boundary_data(&n, &node, HECMW_IO_INP_E2600)) return -1;
 
       if (n > 0) {
@@ -3706,14 +3715,6 @@ static int read_boundary(void) {
         HECMW_free(node);
       }
 
-      /* check next state */
-      token = HECMW_inplex_next_token();
-      if (token != HECMW_INPLEX_INT && token != HECMW_INPLEX_NAME) {
-        state = ST_FINISHED;
-      } else {
-        state = ST_DATA_LINE;
-      }
-      HECMW_inplex_unput_token();
     } else {
       HECMW_assert(0);
     }
@@ -3770,6 +3771,15 @@ static int read_cload(void) {
       int n, *node;
 
       HECMW_assert(flag_cload);
+      do {
+        token = HECMW_inplex_next_token();
+      } while (token == HECMW_INPLEX_NL);
+      if (token == 0) break;
+      if (HECMW_inplex_get_text()[0] == '*') {
+        HECMW_inplex_unput_token();
+        break;
+      }
+      HECMW_inplex_unput_token();
       if (read_boundary_data(&n, &node, HECMW_IO_INP_E2700)) return -1;
 
       /* add node to group */
@@ -3781,14 +3791,6 @@ static int read_cload(void) {
         HECMW_free(node);
       }
 
-      /* check next state */
-      token = HECMW_inplex_next_token();
-      if (token != HECMW_INPLEX_INT && token != HECMW_INPLEX_NAME) {
-        state = ST_FINISHED;
-      } else {
-        state = ST_DATA_LINE;
-      }
-      HECMW_inplex_unput_token();
     } else {
       HECMW_assert(0);
     }
@@ -3845,6 +3847,15 @@ static int read_dload(void) {
       int n, *elem;
 
       HECMW_assert(flag_dload);
+      do {
+        token = HECMW_inplex_next_token();
+      } while (token == HECMW_INPLEX_NL);
+      if (token == 0) break;
+      if (HECMW_inplex_get_text()[0] == '*') {
+        HECMW_inplex_unput_token();
+        break;
+      }
+      HECMW_inplex_unput_token();
       if (read_boundary_data(&n, &elem, HECMW_IO_INP_E2800)) return -1;
 
       if (n != 0) {
@@ -3855,14 +3866,6 @@ static int read_dload(void) {
         HECMW_free(elem);
       }
 
-      /* check next state */
-      token = HECMW_inplex_next_token();
-      if (token != HECMW_INPLEX_INT && token != HECMW_INPLEX_NAME) {
-        state = ST_FINISHED;
-      } else {
-        state = ST_DATA_LINE;
-      }
-      HECMW_inplex_unput_token();
     } else {
       HECMW_assert(0);
     }
