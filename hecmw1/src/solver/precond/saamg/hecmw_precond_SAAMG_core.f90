@@ -941,7 +941,13 @@ contains
       if (want(r+1) > 0 .or. recvwant(r+1) > 0) nnb = nnb + 1
     end do
     cmt_op%n_neighbor = nnb
-    if (nnb == 0) then; deallocate(want, recvwant); return; end if
+    if (nnb == 0) then
+      ! alltoallv_int is collective: join it with nothing to send (and nothing to receive)
+      allocate(scnt(nprocs), sbuf(1)); scnt = 0
+      call hecmw_saamg_comm_alltoallv_int(cmt, scnt, sbuf, ntot, rbuf)
+      deallocate(want, recvwant, scnt, sbuf, rbuf)
+      return
+    end if
 
     allocate(neigh(nnb), rank2nb(0:nprocs-1)); rank2nb = 0
     nb2 = 0
