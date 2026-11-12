@@ -33,8 +33,13 @@ module hecmw_precond_SAAMG_param
                                               !! gradually instead of collapsing into a few aggregates
                                               !! (weak coarse correction, worst at low rank counts --
                                               !! uncoupled aggregation floors the coarsest at ~1 aggregate
-                                              !! per rank).  Measured: Mold 3M np=1 W-cycle 740 -> 169
-                                              !! iters, total 3.7x; high np neutral.  0 = off (legacy).
+                                              !! per rank).  Measured (dense coarsest, W-cycle, natural
+                                              !! seed order): Mold 3M np=1 740 -> 169 iters, total 3.7x;
+                                              !! worse only on Mold np=8 (3M 218 -> 284, 162 after the
+                                              !! BFS default; 33M 206 -> 230).  With the MUMPS coarsest
+                                              !! and its default coarse_size the taper did not bind in
+                                              !! these measurements (coarsening stops first).
+                                              !! 0 = off (legacy).
     integer(kind=kint) :: agg_order  = 1      !< phase-1 seed-scan ordering of the aggregation
                                               !! (the seeds form a distance-2 MIS; the ordering decides
                                               !! WHICH admissible seed is taken first and thus the
@@ -48,9 +53,10 @@ module hecmw_precond_SAAMG_param
     logical            :: galerkin_lowmem = .false. !< Galerkin Ac = P^T A P memory/speed mode.
                                               !! .false. (default) = 2-stage at EVERY level: materialize
                                               !!   C = A*Pext then P^T*C.  Clean SpGEMM kernels + reuse ->
-                                              !!   fastest setup (Mold 3M np=8: 10.4 -> 5.0 s, iters
-                                              !!   unchanged), but C is the setup memory high-water mark
-                                              !!   (level 1: +1.4 GB peak on 3M).
+                                              !!   fastest setup (Mold 3M np=8 vs fusing all levels: setup
+                                              !!   9.9 -> 5.9 s, Galerkin 7.35 -> 2.45 s, iters and solution
+                                              !!   bit-identical), but C is the setup memory high-water
+                                              !!   mark (peak 1260 -> 1460 MB/rank on 3M np=8).
                                               !! .true. (low-memory) = FUSE THE FINEST LEVEL ONLY (l==1),
                                               !!   2-stage on the deep levels.  The finest level's C=A*P is
                                               !!   the memory peak; fusing just that level removes the peak

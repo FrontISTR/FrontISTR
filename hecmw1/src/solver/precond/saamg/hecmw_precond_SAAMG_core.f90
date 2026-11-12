@@ -458,18 +458,11 @@ contains
     deallocate(counts)
   end function hecmw_saamg_nc_global
 
-  !> Distributed Galerkin via redundant assembly: each rank forms its partial
-  !! contribution Ac_loc = (Pext_internal)^T (A Pext) in GLOBAL coarse-dof ids,
-  !! then all partials are Allgatherv'd and summed (duplicates added) into the
-  !! full global coarse operator Ac_global, identical on every rank.  This avoids
-  !! distributed coarse comm tables and row-owner routing: the 2-ring coarse
-  !! couplings enter through Pext's halo rows (columns of A*Pext) and the sum over
-  !! every rank's partial reconstructs each global entry exactly once.
   !> This rank's partial coarse-operator contributions Ac_loc=(Pext_internal)^T(A Pext)
   !! as GLOBAL coarse-dof triplets (gti,gtj,gtv)[1:nt].  Shared by the redundant gather
-  !! (galerkin_global, coarsest) and the distributed assembly (galerkin).  Rows are
-  !! EXTENDED coarse nodes (some owned by other ranks) -> caller gathers or routes by
-  !! row owner.
+  !! (galerkin_global, self-checks), the distributed assembly (galerkin) and its numeric
+  !! refresh (galerkin_refresh).  Rows are EXTENDED coarse nodes (some owned by other
+  !! ranks) -> caller gathers or routes by row owner.
   subroutine ac_global_triplets(A, cmt, P, naggr_local, my_off, chalo_gid, m, gti, gtj, gtv, nt, mem_level, fuse_this_level)
     type(hecmwST_saamg_bcsr), intent(in)  :: A, P
     type(hecmwST_saamg_comm), intent(in)  :: cmt
@@ -578,8 +571,8 @@ contains
     ! formed without an explicit Pint copy.  Two implementations (identical result
     ! up to rounding; see prm%galerkin_lowmem):
     !   2-stage (default): materialize C = A*Pext, then Pt*C.  Clean SpGEMM kernels
-    !     + reuse of A*Pext -> ~2x faster setup (Mold 3M np=8: 10.4 -> 5.0 s), at a
-    !     larger peak (C is the level-1 memory high-water mark).
+    !     + reuse of A*Pext -> ~3x faster Galerkin (Mold 3M np=8: 7.35 -> 2.45 s,
+    !     setup 9.9 -> 5.9 s), at a larger peak (C is the level-1 memory high-water mark).
     !   fused: triple product with no A*Pext intermediate -> lower peak memory; for
     !     memory-bound runs at scale.
     use_fused = .false.; if (present(fuse_this_level)) use_fused = fuse_this_level
