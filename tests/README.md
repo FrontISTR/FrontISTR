@@ -34,7 +34,10 @@ when REVOCAP_Refiner is enabled (`WITH_REFINER`). `unit/saamg` holds unit tests
 that check the building blocks of the SA-AMG preconditioner directly, without
 `fistr1`; they are registered only when LAPACK is enabled (`WITH_LAPACK`) and
 the build is not for Windows, and only in the `serial` and `openmp` modes since
-they run on a single process. Reconfigure after changing build options;
+they run on a single process. `unit/directmf` holds unit tests of the DIRECTmf
+solver under the same conditions; its MPI test `mpi` is registered in every
+mode of an MPI build, and `mpi_np4` runs it on 4 processes in the `mpi` mode.
+Reconfigure after changing build options;
 CTest uses the generated test list rather than detecting libraries at run time.
 
 | label | OpenMP | MPI |

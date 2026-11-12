@@ -106,6 +106,7 @@ endforeach()
 
 if(WITH_LAPACK AND NOT WINDOWS)
   add_subdirectory(unit/saamg)
+  add_subdirectory(unit/directmf)
 endif()
 
 add_subdirectory(api)
