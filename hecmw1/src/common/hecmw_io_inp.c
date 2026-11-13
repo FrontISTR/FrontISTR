@@ -4351,8 +4351,11 @@ static int parse(void) {
 /*----------------------------------------------------------------------------*/
 
 static int post_inp(void) {
+  if (elem_secopt == NULL) return 0;
+
   HECMW_map_int_finalize(elem_secopt);
   HECMW_free(elem_secopt);
+  elem_secopt = NULL;
   return 0;
 }
 
