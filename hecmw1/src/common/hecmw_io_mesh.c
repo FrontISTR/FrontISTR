@@ -3757,33 +3757,6 @@ static int post_equation_ngrp_to_node(void) {
   return 0;
 }
 
-/*
- * must be node(not allow ngrp)
- */
-static int post_equation_check_dup(void) {
-  int i;
-  struct hecmw_io_mpc *p, *q;
-
-  if (_mpc == NULL) return 0;
-
-  /* check duplication */
-  for (p = _mpc; p; p = p->next) {
-    int nod = p->item[0].node;
-    int dof = p->item[0].dof;
-    for (q = _mpc; q; q = q->next) {
-      HECMW_assert(q->neq >= 2);
-      for (i = 1; i < q->neq; i++) {
-        HECMW_assert(q->item[i].node != -1);
-        if (q->item[i].node == nod && q->item[i].dof == dof) {
-          set_err(HECMW_IO_E1022, "Node:%d and DOF:%d", nod, dof);
-          return -1;
-        }
-      }
-    }
-  }
-  return 0;
-}
-
 static int post_equation_add_elem(void) {
   int i, j, mpc_id, elem_id, dof1, dof2, type;
   int node[2];
@@ -3835,9 +3808,6 @@ static int post_equation(void) {
 
   if (post_equation_check_node_exists()) return -1;
   if (post_equation_ngrp_to_node()) return -1;
-  /* Delete because performance grow worse at large number of equations
-          if(post_equation_check_dup()) return -1;
-  */
   if (post_equation_add_elem()) return -1;
 
   return 0;
@@ -4111,13 +4081,13 @@ int HECMW_hash_init(void) {
   extern hecmw_hash_p *hash_sg;
   extern hecmw_hash_p *hash_mat;
 
-  hash_ng = hecmw_hash_p_new(1);
+  hash_ng = hecmw_hash_p_new();
   if (hash_ng == NULL) return 1;
-  hash_eg = hecmw_hash_p_new(2);
+  hash_eg = hecmw_hash_p_new();
   if (hash_eg == NULL) return 1;
-  hash_sg = hecmw_hash_p_new(3);
+  hash_sg = hecmw_hash_p_new();
   if (hash_sg == NULL) return 1;
-  hash_mat = hecmw_hash_p_new(4);
+  hash_mat = hecmw_hash_p_new();
   if (hash_mat == NULL) return 1;
 
   return 0;

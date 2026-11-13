@@ -130,44 +130,6 @@ typedef struct _pvr_link_struct {
   int visual_interval_step;
 } PVR_link;
 
-typedef struct surface_info_struct {
-  int num;
-  double *surf_data;
-} Surface_info;
-
-typedef struct _data_structured_vr_struct {
-  double dxyz[3];
-  int leveltot;
-  int varnumtot;
-  char **varname;
-  int nxyz[3];
-  double xyz0[3];
-  int voxtotadd;
-  int voxtotall;
-  /*	int *rlevel;
-  int *parent;
-   */
-  int r_nxyz[3];
-  double r_dxyz[3];
-  int *empty_flag;
-  double *var;
-  double *grad_var;
-  Surface_info *surface;
-} VR_data;
-
-typedef struct _tree_pointer_struct {
-  int cell_id[8];
-  int surf_id;
-  int level;
-  double bound_box[6];
-  int local_child_no;
-  int local_face_in;
-  int local_face_out;
-  struct _tree_pointer_struct *child;
-  struct _tree_pointer_struct *parent;
-} Tree_pointer;
-
-typedef Tree_pointer *Tree_pointer_ptr;
 /*
 typedef struct _ray_volume_struct {
         Elem_no elem_id;
@@ -182,21 +144,16 @@ typedef struct _head_ray_volume_struct {
 } Head_ray_volume;
  */
 
-int find_first_inter(double point_o[3], double view_point_d[3], int r_level[3],
-                     double orig_xyz[3], double dxyz[3], double r_dxyz[3],
-                     double ray_direction[3], double first_p[3], int ijk[3]);
-void ray_trace(int remove_0_display_on, int color_mapping_style,
-               double *interval_point, int transfer_function_style,
-               double opa_value, int num_of_features, double *fea_point,
-               double view_point_d[3], int interval_mapping_num,
-               int color_system_type, int num_of_lights, double *light_point,
-               double k_ads[3], double orig_xyz[3], double dxyz[3],
+int find_first_inter(double view_point_d[3], int r_level[3], double orig_xyz[3],
+                     double dxyz[3], double r_dxyz[3], double ray_direction[3],
+                     double first_p[3], int ijk[3]);
+void ray_trace(int color_mapping_style, double *interval_point,
+               int transfer_function_style, double opa_value,
+               int num_of_features, double *fea_point, int interval_mapping_num,
+               int color_system_type, double k_ads[3], double orig_xyz[3],
                double r_dxyz[3], int r_level[3], int *empty_flag, double *var,
-               double *grad_var, double first_p[3], int first_ijk[3],
-               double ray_direction[3], double mincolor, double maxcolor,
-               double accum_rgba[4], double grad_minmax[2],
-               double feap_minmax[2], double feai_minmax[2],
-               double dis_minmax[2], double *opa_table, double tav_length,
-               int time_step, int test_i, int test_j);
+               double first_p[3], int first_ijk[3], double ray_direction[3],
+               double mincolor, double maxcolor, double accum_rgba[4],
+               double tav_length);
 
 #endif /* HECMW_VIS_RAY_TRACE_H_INCLUDED */

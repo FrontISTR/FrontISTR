@@ -114,10 +114,6 @@
 			<message>EQUATION: # of node in node groups must be same, ignored</message>
 			<description>2つの節点グループに含まれる節点数は同じでなければならない</description>
 		</define>
-		<define type="error" name="E1022">
-			<message>EQUATION: Same pair of Node and DOF not allowed</message>
-			<description>同じ節点と自由度数の組み合わせは許されない</description>
-		</define>
 		<define type="error" name="E1023">
 			<message>No sections defined</message>
 			<description>セクションが定義されていない</description>

@@ -8,7 +8,6 @@ target_sources(neu2fstr PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/CConvMessage.cpp
   ${CMAKE_CURRENT_LIST_DIR}/conv_neu2hec.cpp
   ${CMAKE_CURRENT_LIST_DIR}/conv_neu2fstr_static.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/conv_neu2fstr_dynamic.cpp
   ${CMAKE_CURRENT_LIST_DIR}/conv_neu2fstr_heat.cpp
 )
 

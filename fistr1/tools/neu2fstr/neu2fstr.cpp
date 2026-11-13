@@ -13,7 +13,6 @@
 #include "CFSTRData.h"
 #include "conv_neu2hec.h"
 #include "conv_neu2fstr_static.h"
-#include "conv_neu2fstr_dynamic.h"
 #include "conv_neu2fstr_heat.h"
 
 #define VER "1.004"
@@ -312,7 +311,6 @@ int main(int argc, char **argv) {
     conv_neu2hec(nfdata, fstrdata, solution);
     cout << "converting to FrontSTR control data " << endl;
     conv_neu2fstr_static(nfdata, fstrdata);
-    conv_neu2fstr_dynamic(nfdata, fstrdata);
     conv_neu2fstr_heat(nfdata, fstrdata);
     set_solution(fstrdata, solution);
     set_solver(fstrdata, fg_direct);

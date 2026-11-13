@@ -104,7 +104,7 @@ void help(char *arg) {
 /**
  * \brief show build information
  */
-void print_buildinfo(int log_level) {
+void print_buildinfo(void) {
   int rank;
 #ifndef HECMW_SERIAL
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -190,7 +190,7 @@ void print_buildinfo(int log_level) {
 /**
  * \brief show execute environment information
  */
-void print_executeinfo(int log_level) {
+void print_executeinfo(void) {
   int rank=0;
   int proc, i, len, mpi_ver, mpi_subver;
   char *p; 
@@ -255,7 +255,7 @@ void version(char *arg) {
 #ifndef HECMW_SERIAL
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 #endif
-  print_buildinfo(9);
+  print_buildinfo();
   if (rank==0) printf("---\n");
   exit(0);    
 }
@@ -325,8 +325,8 @@ int main(int argc, char *argv[])
       }
     }
   }
-  print_buildinfo(1);
-  print_executeinfo(1);
+  print_buildinfo();
+  print_executeinfo();
 #ifndef HECMW_SERIAL
   MPI_Barrier( MPI_COMM_WORLD );
 #endif

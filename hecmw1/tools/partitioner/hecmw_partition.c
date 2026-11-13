@@ -1718,7 +1718,6 @@ error:
 /*================================================================================================*/
 
 static int create_node_graph_link_list(
-    const struct hecmwST_local_mesh *global_mesh,
     const struct hecmw_part_edge_data *edge_data, struct link_list **graph) {
   int node1, node2;
   long long int i;
@@ -1817,7 +1816,7 @@ static int create_node_graph(const struct hecmwST_local_mesh *global_mesh,
     }
   }
 
-  rtc = create_node_graph_link_list(global_mesh, edge_data, graph);
+  rtc = create_node_graph_link_list(edge_data, graph);
   if (rtc != RTC_NORMAL) goto error;
 
   rtc = create_node_graph_compress(global_mesh, graph, node_graph_index,
@@ -2265,91 +2264,6 @@ static int contact_agg_mark_node_group(int *mark,
   return RTC_NORMAL;
 }
 
-static int HECMW_get_num_surf_node(int etype, int sid) {
-  switch (etype) {
-    case HECMW_ETYPE_TET1:
-    case HECMW_ETYPE_PTT1:
-      return 3;
-    case HECMW_ETYPE_TET2:
-    case HECMW_ETYPE_PTT2:
-      return 6;
-    case HECMW_ETYPE_HEX1:
-    case HECMW_ETYPE_PTQ1:
-      return 4;
-    case HECMW_ETYPE_HEX2:
-    case HECMW_ETYPE_PTQ2:
-      return 8;
-    case HECMW_ETYPE_PRI1:
-      if (1 <= sid && sid <= 3) return 4;
-      if (4 <= sid && sid <= 5) return 3;
-    case HECMW_ETYPE_PRI2:
-      if (1 <= sid && sid <= 3) return 8;
-      if (4 <= sid && sid <= 5) return 6;
-    default:
-      fprintf(
-          stderr,
-          "ERROR: parallel contact analysis of elem type %d not supported\n",
-          etype);
-      return -1;
-  }
-  return -1;
-}
-
-static const int *HECMW_get_surf_node(int etype, int sid) {
-  HECMW_assert(0 < sid);
-
-  static const int elem_surf_tet1[4][3] = {
-      {1, 2, 3}, {0, 3, 2}, {0, 1, 3}, {0, 2, 1}};
-  static const int elem_surf_tet2[4][6] = {{1, 4, 2, 9, 3, 8},
-                                           {0, 7, 3, 9, 2, 5},
-                                           {0, 6, 1, 8, 3, 7},
-                                           {0, 5, 2, 4, 1, 6}};
-  static const int elem_surf_hex1[6][4] = {{3, 0, 4, 7}, {1, 2, 6, 5},
-                                           {0, 1, 5, 4}, {2, 3, 7, 6},
-                                           {3, 2, 1, 0}, {4, 5, 6, 7}};
-  static const int elem_surf_hex2[6][8] = {
-      {3, 11, 0, 16, 4, 15, 7, 19}, {1, 9, 2, 18, 6, 13, 5, 17},
-      {0, 8, 1, 17, 5, 12, 4, 16},  {2, 10, 3, 19, 7, 14, 6, 18},
-      {3, 10, 2, 9, 1, 8, 0, 11},   {4, 12, 5, 13, 6, 14, 7, 15}};
-  static const int elem_surf_pri1[5][4] = {
-      {1, 2, 5, 4}, {2, 0, 3, 5}, {0, 1, 4, 3}, {2, 1, 0, -1}, {3, 4, 5, -1}};
-  static const int elem_surf_pri2[5][8] = {{1, 6, 2, 14, 5, 9, 4, 13},
-                                           {2, 7, 0, 12, 3, 10, 5, 14},
-                                           {0, 8, 1, 13, 4, 11, 3, 12},
-                                           {2, 6, 1, 8, 0, 7, -1, -1},
-                                           {3, 11, 4, 9, 5, 10, -1, -1}};
-  static const int elem_surf_ptt1[3] = {0, 1, 2};
-  static const int elem_surf_ptt2[6] = {0, 1, 2, 3, 4, 5};
-  static const int elem_surf_ptq1[4] = {0, 1, 2, 3};
-  static const int elem_surf_ptq2[8] = {0, 1, 2, 3, 4, 5, 6, 7};
-  switch (etype) {
-    case HECMW_ETYPE_TET1:
-      return elem_surf_tet1[sid - 1];
-    case HECMW_ETYPE_TET2:
-      return elem_surf_tet2[sid - 1];
-    case HECMW_ETYPE_HEX1:
-      return elem_surf_hex1[sid - 1];
-    case HECMW_ETYPE_HEX2:
-      return elem_surf_hex2[sid - 1];
-    case HECMW_ETYPE_PRI1:
-      return elem_surf_pri1[sid - 1];
-    case HECMW_ETYPE_PRI2:
-      return elem_surf_pri2[sid - 1];
-    case HECMW_ETYPE_PTT1:
-      return elem_surf_ptt1;
-    case HECMW_ETYPE_PTT2:
-      return elem_surf_ptt2;
-    case HECMW_ETYPE_PTQ1:
-      return elem_surf_ptq1;
-    case HECMW_ETYPE_PTQ2:
-      return elem_surf_ptq2;
-  }
-  fprintf(stderr,
-          "ERROR: parallel contact analysis of element type %d not supported\n",
-          etype);
-  return NULL;
-}
-
 static int HECMW_fistr_get_num_surf_node(int etype, int sid) {
   switch (etype) {
     case HECMW_ETYPE_TET1:
@@ -2456,13 +2370,8 @@ static int mark_contact_master_nodes(struct hecmwST_local_mesh *global_mesh,
           global_mesh->elem_node_item + global_mesh->elem_node_index[eid];
       int etype = global_mesh->elem_type[eid];
 
-      /** IF HEC-MW NUMBERING **/
-      /* int num_snode = HECMW_get_num_surf_node(etype, sid); */
-      /* const int *snode = HECMW_get_surf_node(etype, sid); */
-      /** ELSE IF FrontISTR NUMBERING **/
       int num_snode    = HECMW_fistr_get_num_surf_node(etype, sid);
       const int *snode = HECMW_fistr_get_surf_node(etype, sid);
-      /** END IF **/
 
       if (num_snode < 0 || snode == NULL) return RTC_ERROR;
       for (k = 0; k < num_snode; k++) {
@@ -2491,13 +2400,8 @@ static int contact_agg_mark_surf_group(int *mark,
     int sid   = sgrp->grp_item[i * 2 + 1];
     int *nop  = global_mesh->elem_node_item + global_mesh->elem_node_index[eid];
     int etype = global_mesh->elem_type[eid];
-    /** IF HEC-WM NUMBERING **/
-    /* int num_snode = HECMW_get_num_surf_node(etype, sid); */
-    /* const int *snode = HECMW_get_surf_node(etype, sid); */
-    /** ELSE IF FrontISTR NUMBERING **/
     int num_snode    = HECMW_fistr_get_num_surf_node(etype, sid);
     const int *snode = HECMW_fistr_get_surf_node(etype, sid);
-    /** END IF **/
     if (num_snode < 0 || snode == NULL) return RTC_ERROR;
     for (j = 0; j < num_snode; j++) {
       int nid = nop[snode[j]] - 1;
@@ -3699,8 +3603,7 @@ error:
 
 ==================================================================================================*/
 
-static int mask_node_by_domain(const struct hecmwST_local_mesh *global_mesh,
-                               char *node_flag, int current_domain) {
+static int mask_node_by_domain(char *node_flag, int current_domain) {
   int i, node;
 
   for (i = 0; i < n_int_nlist[current_domain]; i++) {
@@ -3734,39 +3637,6 @@ static int mask_elem_by_domain_mod(char *elem_flag, int current_domain) {
 
   return RTC_NORMAL;
 }
-
-#if 0
-/* For Additional overlap for explicit DOF elimination for MPC */
-/* NO LONGER NEEDED because node-migration implemented */
-static int mask_slave_node(const struct hecmwST_local_mesh *global_mesh,
-                           char *node_flag, int current_domain) {
-  int i;
-
-  for (i = 0; i < global_mesh->mpc->n_mpc; i++) {
-    int j0, je, slave, master, j, evalsum;
-    j0    = global_mesh->mpc->mpc_index[i];
-    je    = global_mesh->mpc->mpc_index[i + 1];
-    slave = global_mesh->mpc->mpc_item[j0];
-
-    /* mask all slave nodes */
-    MASK_BIT(node_flag[slave - 1], MASK);
-
-    /* mark slave nodes that have mpc-link across the boundary */
-    evalsum = 0;
-    for (j = j0 + 1; j < je; j++) {
-      master = global_mesh->mpc->mpc_item[j];
-      if (EVAL_BIT(node_flag[slave - 1], INTERNAL) ^ /* exclusive or */
-          EVAL_BIT(node_flag[master - 1], INTERNAL)) {
-        evalsum++;
-      }
-    }
-    if (evalsum) {
-      MASK_BIT(node_flag[slave - 1], MARK);
-    }
-  }
-  return RTC_NORMAL;
-}
-#endif
 
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
  * - - - - - - - - - */
@@ -3803,9 +3673,7 @@ static int mask_boundary_node(const struct hecmwST_local_mesh *global_mesh,
   return RTC_NORMAL;
 }
 
-static int mask_boundary_node_mod(const struct hecmwST_local_mesh *global_mesh,
-                                  char *node_flag, char *elem_flag,
-                                  int domain) {
+static int mask_boundary_node_mod(char *node_flag, int domain) {
   int i, node;
 
   for (i = 0; i < n_bnd_nlist[2 * domain + 1]; i++) {
@@ -3816,80 +3684,6 @@ static int mask_boundary_node_mod(const struct hecmwST_local_mesh *global_mesh,
 
   return RTC_NORMAL;
 }
-
-#if 0
-/* For Additional overlap for explicit DOF elimination for MPC */
-/* NO LONGER NEEDED because node-migration implemented */
-static int mask_boundary_elem_with_slave(
-    const struct hecmwST_local_mesh *global_mesh, const char *node_flag,
-    char *elem_flag, int *added) {
-  int node, evalsum;
-  int i, j;
-
-  *added = 0;
-
-  for (i = 0; i < global_mesh->n_elem; i++) {
-    if (EVAL_BIT(elem_flag[i], BOUNDARY)) continue;
-    if (HECMW_is_etype_link(global_mesh->elem_type[i]))
-      continue; /* skip link elements */
-
-    evalsum = 0;
-    for (j = global_mesh->elem_node_index[i];
-         j < global_mesh->elem_node_index[i + 1]; j++) {
-      node = global_mesh->elem_node_item[j];
-      /* check if the node is on boundary and a slave having mpc-link across the
-       * boundary */
-      if (EVAL_BIT(node_flag[node - 1], BOUNDARY) &&
-          EVAL_BIT(node_flag[node - 1], MASK) &&
-          EVAL_BIT(node_flag[node - 1], MARK)) {
-        evalsum++;
-      }
-    }
-
-    if (evalsum) {
-      MASK_BIT(elem_flag[i], OVERLAP);
-      MASK_BIT(elem_flag[i], BOUNDARY);
-      (*added)++;
-    }
-  }
-
-  return RTC_NORMAL;
-}
-
-static int mask_boundary_link_elem_with_slave(
-    const struct hecmwST_local_mesh *global_mesh, const char *node_flag,
-    char *elem_flag, int *added) {
-  int node, evalsum;
-  int i, j;
-
-  *added = 0;
-
-  for (i = 0; i < global_mesh->n_elem; i++) {
-    if (EVAL_BIT(elem_flag[i], BOUNDARY)) continue;
-    if (!HECMW_is_etype_link(global_mesh->elem_type[i]))
-      continue; /* check only link elements */
-
-    evalsum = 0;
-    for (j = global_mesh->elem_node_index[i];
-         j < global_mesh->elem_node_index[i + 1]; j++) {
-      node = global_mesh->elem_node_item[j];
-      /* check if the node is on boundary and a slave */
-      if (EVAL_BIT(node_flag[node - 1], BOUNDARY) &&
-          EVAL_BIT(node_flag[node - 1], MASK)) {
-        evalsum++;
-      }
-    }
-
-    if (evalsum) {
-      MASK_BIT(elem_flag[i], OVERLAP);
-      MASK_BIT(elem_flag[i], BOUNDARY);
-      (*added)++;
-    }
-  }
-
-  return RTC_NORMAL;
-}
-#endif
 
 static int mask_additional_overlap_elem(
     const struct hecmwST_local_mesh *global_mesh, const char *node_flag,
@@ -4290,7 +4084,7 @@ static int mask_mesh_status_nb(const struct hecmwST_local_mesh *global_mesh,
   int rtc;
   int i;
 
-  rtc = mask_node_by_domain(global_mesh, node_flag, current_domain);
+  rtc = mask_node_by_domain(node_flag, current_domain);
   if (rtc != RTC_NORMAL) goto error;
 
   rtc = mask_elem_by_domain_mod(elem_flag, current_domain);
@@ -4299,44 +4093,8 @@ static int mask_mesh_status_nb(const struct hecmwST_local_mesh *global_mesh,
   rtc = mask_overlap_elem(elem_flag, current_domain);
   if (rtc != RTC_NORMAL) goto error;
 
-  rtc =
-      mask_boundary_node_mod(global_mesh, node_flag, elem_flag, current_domain);
+  rtc = mask_boundary_node_mod(node_flag, current_domain);
   if (rtc != RTC_NORMAL) goto error;
-
-#if 0
-  /* Additional overlap for explicit DOF elimination for MPC */
-  /* NO LONGER NEEDED because node-migration implemented */
-  if (global_mesh->mpc->n_mpc > 0) {
-    int added = 0;
-
-    rtc = mask_slave_node(global_mesh, node_flag, current_domain);
-    if (rtc != RTC_NORMAL) goto error;
-
-    rtc = mask_boundary_elem_with_slave(global_mesh, node_flag, elem_flag,
-                                        &added);
-    if (rtc != RTC_NORMAL) goto error;
-
-    if (added > 0) {
-      rtc = mask_boundary_node(global_mesh, node_flag, elem_flag);
-      if (rtc != RTC_NORMAL) goto error;
-    }
-
-    added = 0;
-    rtc = mask_boundary_link_elem_with_slave(global_mesh, node_flag, elem_flag,
-                                             &added);
-    if (rtc != RTC_NORMAL) goto error;
-
-    if (added > 0) {
-      rtc = mask_boundary_node(global_mesh, node_flag, elem_flag);
-      if (rtc != RTC_NORMAL) goto error;
-    }
-
-    for (i = 0; i < global_mesh->n_node; i++) {
-      CLEAR_BIT(node_flag[i], MASK);
-      CLEAR_BIT(node_flag[i], MARK);
-    }
-  }
-#endif
 
   for (i = 1; i < global_mesh->hecmw_flag_partdepth; i++) {
     rtc = mask_additional_overlap_elem(global_mesh, node_flag, elem_flag);
@@ -4462,7 +4220,7 @@ static int mask_mesh_status_eb(const struct hecmwST_local_mesh *global_mesh,
     CLEAR_BIT(elem_flag[i], BOUNDARY);
   }
 
-  rtc = mask_node_by_domain(global_mesh, node_flag, current_domain);
+  rtc = mask_node_by_domain(node_flag, current_domain);
   if (rtc != RTC_NORMAL) goto error;
 
   rtc = mask_elem_by_domain(global_mesh, elem_flag, current_domain);
@@ -4496,8 +4254,8 @@ static int mask_neighbor_domain_nb(const struct hecmwST_local_mesh *global_mesh,
 }
 
 static int mask_neighbor_domain_nb_mod(
-    const struct hecmwST_local_mesh *global_mesh, const char *node_flag,
-    char *domain_flag, int domain) {
+    const struct hecmwST_local_mesh *global_mesh, char *domain_flag,
+    int domain) {
   int i, node;
 
   for (i = n_bnd_nlist[2 * domain]; i < n_bnd_nlist[2 * domain + 1]; i++) {
@@ -4610,7 +4368,7 @@ static int mask_neighbor_domain_nb_contact_master_owner(
  * receives the replicated master surface. */
 static int mask_neighbor_domain_nb_contact_slave_owner(
     const struct hecmwST_local_mesh *global_mesh, const char *node_flag,
-    const char *elem_flag, char *domain_flag) {
+    char *domain_flag) {
   int i, j, rtc;
   long long k;
   int elem, node, selem, master_gid, slave_gid, jstart, jend;
@@ -4707,8 +4465,8 @@ static int mask_neighbor_domain_nb_contact_by_owner(
           global_mesh, node_flag, elem_flag, domain_flag);
 
     case HECMW_FLAG_PARTCONTACT_OWNER_SLAVE:
-      return mask_neighbor_domain_nb_contact_slave_owner(
-          global_mesh, node_flag, elem_flag, domain_flag);
+      return mask_neighbor_domain_nb_contact_slave_owner(global_mesh, node_flag,
+                                                         domain_flag);
 
     default:
       HECMW_set_error(HECMW_PART_E_INV_ARG,
@@ -4788,7 +4546,7 @@ static int create_neighbor_info(const struct hecmwST_local_mesh *global_mesh,
       if (rtc != RTC_NORMAL) goto error;
 
       if (is_spdup_available(global_mesh)) {
-        rtc = mask_neighbor_domain_nb_mod(global_mesh, node_flag, domain_flag,
+        rtc = mask_neighbor_domain_nb_mod(global_mesh, domain_flag,
                                           current_domain);
       } else {
         rtc = mask_neighbor_domain_nb(global_mesh, node_flag, domain_flag);
@@ -4870,8 +4628,7 @@ static int mask_comm_node(const struct hecmwST_local_mesh *global_mesh,
   return RTC_NORMAL;
 }
 
-static int mask_comm_node_mod(const struct hecmwST_local_mesh *global_mesh,
-                              char *node_flag_current, char *node_flag_neighbor,
+static int mask_comm_node_mod(char *node_flag_current, char *node_flag_neighbor,
                               int current_domain) {
   int i, node;
 
@@ -4899,8 +4656,7 @@ static int mask_comm_elem(const struct hecmwST_local_mesh *global_mesh,
   return RTC_NORMAL;
 }
 
-static int mask_comm_elem_mod(const struct hecmwST_local_mesh *global_mesh,
-                              char *elem_flag_current, char *elem_flag_neighbor,
+static int mask_comm_elem_mod(char *elem_flag_current, char *elem_flag_neighbor,
                               int current_domain) {
   int i, elem;
 
@@ -4914,8 +4670,7 @@ static int mask_comm_elem_mod(const struct hecmwST_local_mesh *global_mesh,
   return RTC_NORMAL;
 }
 
-static int count_masked_comm_node(const struct hecmwST_local_mesh *global_mesh,
-                                  const char *node_flag, int domain) {
+static int count_masked_comm_node(const char *node_flag, int domain) {
   int counter;
   int i, node;
 
@@ -4965,9 +4720,7 @@ static int count_masked_shared_elem(
   return counter;
 }
 
-static int count_masked_shared_elem_mod(
-    const struct hecmwST_local_mesh *global_mesh, const char *elem_flag,
-    int domain) {
+static int count_masked_shared_elem_mod(const char *elem_flag, int domain) {
   int counter;
   int i, elem;
 
@@ -4979,8 +4732,7 @@ static int count_masked_shared_elem_mod(
   return counter;
 }
 
-static int create_comm_node_pre(const struct hecmwST_local_mesh *global_mesh,
-                                const char *node_flag, int **comm_node,
+static int create_comm_node_pre(const char *node_flag, int **comm_node,
                                 int neighbor_idx, int domain) {
   int counter;
   int i, node;
@@ -5091,14 +4843,12 @@ static int create_comm_item(int n_neighbor_pe, int **comm_item_pre,
 
 /*------------------------------------------------------------------------------------------------*/
 
-static int create_import_info_nb(const struct hecmwST_local_mesh *global_mesh,
-                                 struct hecmwST_local_mesh *local_mesh,
+static int create_import_info_nb(struct hecmwST_local_mesh *local_mesh,
                                  const char *node_flag, int **import_node,
                                  int neighbor_idx, int neighbor_domain) {
   int n_import_node, rtc;
 
-  n_import_node =
-      count_masked_comm_node(global_mesh, node_flag, neighbor_domain);
+  n_import_node = count_masked_comm_node(node_flag, neighbor_domain);
   HECMW_assert(n_import_node >= 0);
 
   local_mesh->import_index[neighbor_idx + 1] =
@@ -5110,7 +4860,7 @@ static int create_import_info_nb(const struct hecmwST_local_mesh *global_mesh,
     goto error;
   }
 
-  rtc = create_comm_node_pre(global_mesh, node_flag, import_node, neighbor_idx,
+  rtc = create_comm_node_pre(node_flag, import_node, neighbor_idx,
                              neighbor_domain);
   HECMW_assert(rtc == n_import_node);
 
@@ -5120,15 +4870,12 @@ error:
   return RTC_ERROR;
 }
 
-static int create_export_info_nb(const struct hecmwST_local_mesh *global_mesh,
-                                 struct hecmwST_local_mesh *local_mesh,
+static int create_export_info_nb(struct hecmwST_local_mesh *local_mesh,
                                  const char *node_flag, int **export_node,
-                                 int neighbor_idx, int current_domain,
-                                 int neighbor_domain) {
+                                 int neighbor_idx, int current_domain) {
   int n_export_node, rtc;
 
-  n_export_node =
-      count_masked_comm_node(global_mesh, node_flag, current_domain);
+  n_export_node = count_masked_comm_node(node_flag, current_domain);
   HECMW_assert(n_export_node >= 0);
 
   local_mesh->export_index[neighbor_idx + 1] =
@@ -5140,7 +4887,7 @@ static int create_export_info_nb(const struct hecmwST_local_mesh *global_mesh,
     goto error;
   }
 
-  rtc = create_comm_node_pre(global_mesh, node_flag, export_node, neighbor_idx,
+  rtc = create_comm_node_pre(node_flag, export_node, neighbor_idx,
                              current_domain);
   HECMW_assert(rtc == n_export_node);
 
@@ -5157,8 +4904,7 @@ static int create_shared_info_nb(const struct hecmwST_local_mesh *global_mesh,
   int n_shared_elem, rtc;
 
   if (is_spdup_available(global_mesh)) {
-    n_shared_elem =
-        count_masked_shared_elem_mod(global_mesh, elem_flag, neighbor_domain);
+    n_shared_elem = count_masked_shared_elem_mod(elem_flag, neighbor_domain);
   } else {
     n_shared_elem = count_masked_shared_elem(global_mesh, elem_flag);
   }
@@ -5265,8 +5011,7 @@ static int create_comm_info_nb(const struct hecmwST_local_mesh *global_mesh,
     if (rtc != RTC_NORMAL) goto error;
 
     if (is_spdup_available(global_mesh)) {
-      rtc = mask_comm_node_mod(global_mesh, node_flag, node_flag_neighbor,
-                               current_domain);
+      rtc = mask_comm_node_mod(node_flag, node_flag_neighbor, current_domain);
     } else {
       rtc = mask_comm_node(global_mesh, node_flag, node_flag_neighbor);
     }
@@ -5274,20 +5019,19 @@ static int create_comm_info_nb(const struct hecmwST_local_mesh *global_mesh,
     if (rtc != RTC_NORMAL) goto error;
 
     if (is_spdup_available(global_mesh)) {
-      rtc = mask_comm_elem_mod(global_mesh, elem_flag, elem_flag_neighbor,
-                               current_domain);
+      rtc = mask_comm_elem_mod(elem_flag, elem_flag_neighbor, current_domain);
     } else {
       rtc = mask_comm_elem(global_mesh, elem_flag, elem_flag_neighbor);
     }
 
     if (rtc != RTC_NORMAL) goto error;
 
-    rtc = create_import_info_nb(global_mesh, local_mesh, node_flag, import_node,
-                                i, neighbor_domain);
+    rtc = create_import_info_nb(local_mesh, node_flag, import_node, i,
+                                neighbor_domain);
     if (rtc != RTC_NORMAL) goto error;
 
-    rtc = create_export_info_nb(global_mesh, local_mesh, node_flag, export_node,
-                                i, current_domain, neighbor_domain);
+    rtc = create_export_info_nb(local_mesh, node_flag, export_node, i,
+                                current_domain);
     if (rtc != RTC_NORMAL) goto error;
 
     rtc = create_shared_info_nb(global_mesh, local_mesh, elem_flag, shared_elem,
@@ -5445,8 +5189,7 @@ error:
 static int create_export_info_eb(const struct hecmwST_local_mesh *global_mesh,
                                  struct hecmwST_local_mesh *local_mesh,
                                  const char *elem_flag, int **export_elem,
-                                 int neighbor_idx, int current_domain,
-                                 int neighbor_domain) {
+                                 int neighbor_idx, int current_domain) {
   int n_export_elem, rtc;
 
   n_export_elem =
@@ -5475,7 +5218,7 @@ error:
 static int create_shared_info_eb(const struct hecmwST_local_mesh *global_mesh,
                                  struct hecmwST_local_mesh *local_mesh,
                                  const char *node_flag, int **shared_node,
-                                 int neighbor_idx, int neighbor_domain) {
+                                 int neighbor_idx) {
   int n_shared_node, rtc;
 
   n_shared_node = count_masked_shared_node(global_mesh, node_flag);
@@ -5604,12 +5347,12 @@ static int create_comm_info_eb(const struct hecmwST_local_mesh *global_mesh,
 
     /* create export element information (preliminary) */
     rtc = create_export_info_eb(global_mesh, local_mesh, elem_flag, export_elem,
-                                i, current_domain, neighbor_domain);
+                                i, current_domain);
     if (rtc != RTC_NORMAL) goto error;
 
     /* create shared node information (preliminary) */
     rtc = create_shared_info_eb(global_mesh, local_mesh, node_flag, shared_node,
-                                i, neighbor_domain);
+                                i);
     if (rtc != RTC_NORMAL) goto error;
   }
 
@@ -6198,22 +5941,6 @@ static int set_elem_global2local_all_mod(
   return RTC_NORMAL;
 }
 
-static int const_ne_internal(const struct hecmwST_local_mesh *global_mesh,
-                             struct hecmwST_local_mesh *local_mesh,
-                             const char *elem_flag) {
-  int counter;
-  int i;
-
-  HECMW_assert(global_mesh->n_elem > 0);
-
-  for (counter = 0, i = 0; i < global_mesh->n_elem; i++) {
-    if (EVAL_BIT(elem_flag[i], INTERNAL)) counter++;
-  }
-  local_mesh->ne_internal = counter;
-
-  return RTC_NORMAL;
-}
-
 static int const_elem_internal_list(
     const struct hecmwST_local_mesh *global_mesh,
     struct hecmwST_local_mesh *local_mesh, int *elem_global2local,
@@ -6595,7 +6322,7 @@ error:
 
 static int const_node_dof_index_mod(
     const struct hecmwST_local_mesh *global_mesh,
-    struct hecmwST_local_mesh *local_mesh, const char *node_flag, int domain) {
+    struct hecmwST_local_mesh *local_mesh, int domain) {
   int counter;
   int i, j, node;
 
@@ -6814,8 +6541,7 @@ static int const_node_info(const struct hecmwST_local_mesh *global_mesh,
 
   switch (global_mesh->hecmw_flag_parttype) {
     case HECMW_FLAG_PARTTYPE_NODEBASED:
-      rtc = const_node_dof_index_mod(global_mesh, local_mesh, node_flag,
-                                     current_domain);
+      rtc = const_node_dof_index_mod(global_mesh, local_mesh, current_domain);
       break;
     case HECMW_FLAG_PARTTYPE_ELEMBASED:
       rtc = const_node_dof_index(global_mesh, local_mesh, node_flag);
@@ -6926,8 +6652,7 @@ error:
 
 static int const_elem_type_index_mod(
     const struct hecmwST_local_mesh *global_mesh,
-    struct hecmwST_local_mesh *local_mesh, const int *elem_global2local,
-    int domain) {
+    struct hecmwST_local_mesh *local_mesh, int domain) {
   int counter;
   int i, j, idx1, idx2, elem_tmp, elem1, elem2, n_int, n_bnd, n_out, maxe;
 
@@ -7243,8 +6968,7 @@ static int const_elem_info(const struct hecmwST_local_mesh *global_mesh,
   if (rtc != RTC_NORMAL) goto error;
 
   if (is_spdup_available(global_mesh)) {
-    rtc = const_elem_type_index_mod(global_mesh, local_mesh, elem_global2local,
-                                    current_domain);
+    rtc = const_elem_type_index_mod(global_mesh, local_mesh, current_domain);
   } else {
     rtc = const_elem_type_index(global_mesh, local_mesh, elem_global2local);
   }
@@ -8281,8 +8005,8 @@ error:
 
 static int const_node_grp_index_mod(
     const struct hecmwST_local_mesh *global_mesh,
-    struct hecmwST_local_mesh *local_mesh, const int *node_global2local,
-    const int *n_eqn_item, int eqn_block_idx, int domain) {
+    struct hecmwST_local_mesh *local_mesh, const int *n_eqn_item,
+    int eqn_block_idx, int domain) {
   struct hecmwST_node_grp *node_group_global = global_mesh->node_group;
   struct hecmwST_node_grp *node_group_local  = local_mesh->node_group;
   int counter, diff;
@@ -8497,8 +8221,8 @@ static int const_node_grp_info(const struct hecmwST_local_mesh *global_mesh,
   if (rtc != RTC_NORMAL) goto error;
 
   if (is_spdup_available(global_mesh)) {
-    rtc = const_node_grp_index_mod(global_mesh, local_mesh, node_global2local,
-                                   n_eqn_item, eqn_block_idx, current_domain);
+    rtc = const_node_grp_index_mod(global_mesh, local_mesh, n_eqn_item,
+                                   eqn_block_idx, current_domain);
     if (rtc != RTC_NORMAL) goto error;
     rtc = const_node_grp_item_mod(global_mesh, local_mesh, node_global2local,
                                   n_eqn_item, eqn_block_idx, current_domain);
@@ -8573,8 +8297,7 @@ error:
 
 static int const_elem_grp_index_mod(
     const struct hecmwST_local_mesh *global_mesh,
-    struct hecmwST_local_mesh *local_mesh, const int *elem_global2local,
-    int domain) {
+    struct hecmwST_local_mesh *local_mesh, int domain) {
   struct hecmwST_elem_grp *elem_group_global = global_mesh->elem_group;
   struct hecmwST_elem_grp *elem_group_local  = local_mesh->elem_group;
   int counter;
@@ -8716,8 +8439,7 @@ static int const_elem_grp_info(const struct hecmwST_local_mesh *global_mesh,
   if (rtc != RTC_NORMAL) goto error;
 
   if (is_spdup_available(global_mesh)) {
-    rtc = const_elem_grp_index_mod(global_mesh, local_mesh, elem_global2local,
-                                   current_domain);
+    rtc = const_elem_grp_index_mod(global_mesh, local_mesh, current_domain);
     if (rtc != RTC_NORMAL) goto error;
     rtc = const_elem_grp_item_mod(global_mesh, local_mesh, elem_global2local,
                                   current_domain);
@@ -9010,7 +8732,6 @@ error:
 
 static int const_local_data(const struct hecmwST_local_mesh *global_mesh,
                             struct hecmwST_local_mesh *local_mesh,
-                            const struct hecmw_part_cont_data *cont_data,
                             const char *node_flag, const char *elem_flag,
                             int *node_global2local, int *elem_global2local,
                             int current_domain) {
@@ -9708,8 +9429,8 @@ extern struct hecmwST_local_mesh *HECMW_partition_inner(
         }
       }
 
-      rtc = const_local_data(global_mesh, local_mesh, cont_data, node_flag,
-                             elem_flag, node_global2local, elem_global2local,
+      rtc = const_local_data(global_mesh, local_mesh, node_flag, elem_flag,
+                             node_global2local, elem_global2local,
                              current_domain);
       if (rtc != RTC_NORMAL) {
         error_in_ompsection = 1;

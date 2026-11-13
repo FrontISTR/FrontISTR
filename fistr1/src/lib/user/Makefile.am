@@ -81,7 +81,6 @@ OBJS =
 OBJSF = \
 	umat.@f90objfilepostfix@  \
 	uyield.@f90objfilepostfix@  \
-	uhardening.@f90objfilepostfix@ \
 	uelastic.@f90objfilepostfix@ \
 	uload.@f90objfilepostfix@
 

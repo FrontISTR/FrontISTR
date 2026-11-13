@@ -639,7 +639,7 @@ static int add_ctrl_entry(struct ctrl_entry *ctrl) {
 
 /*----------------------------------------------------------------------------*/
 
-static void do_logging(int loglv, int msgno, int add_location, const char *fmt,
+static void do_logging(int msgno, int add_location, const char *fmt,
                        va_list ap) {
   char line[100] = "";
   char msg[HECMW_MSG_LEN + 1];
@@ -660,7 +660,7 @@ static void do_logging(int loglv, int msgno, int add_location, const char *fmt,
 static void set_err(int msgno, const char *fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
-  do_logging(HECMW_LOG_ERROR, msgno, 1, fmt, ap);
+  do_logging(msgno, 1, fmt, ap);
   va_end(ap);
 }
 
@@ -676,7 +676,7 @@ static void set_err_token(int token, int msgno, const char *fmt, ...) {
   }
 
   va_start(ap, fmt);
-  do_logging(HECMW_LOG_ERROR, msg_no, 1, fmt, ap);
+  do_logging(msg_no, 1, fmt, ap);
   va_end(ap);
 }
 
@@ -766,11 +766,6 @@ static int read_mesh_head_param_type(int *type) {
 
   } else if (token == HECMW_CTRLLEX_K_NASTRAN) {
     *type = HECMW_CTRL_FTYPE_NASTRAN;
-#if 0
-
-  } else  if (token == HECMW_CTRLLEX_K_FEMAP) {
-    *type = HECMW_CTRL_FTYPE_FEMAP;
-#endif
 
   } else {
     set_err_token(token, HECMW_UTIL_E0010, "Invalid TYPE");

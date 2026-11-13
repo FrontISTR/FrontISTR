@@ -80,7 +80,6 @@ OBJSP = \
 	CConvMessage.@cppobjfilepostfix@ \
 	conv_neu2hec.@cppobjfilepostfix@ \
 	conv_neu2fstr_static.@cppobjfilepostfix@ \
-	conv_neu2fstr_dynamic.@cppobjfilepostfix@ \
 	conv_neu2fstr_heat.@cppobjfilepostfix@
 
 OBJSF =
@@ -90,7 +89,6 @@ HEADERS = \
 	CConvMessage.h \
 	conv_neu2hec.h \
 	conv_neu2fstr_static.h \
-	conv_neu2fstr_dynamic.h \
 	conv_neu2fstr_heat.h \
 	conv_util.h
 

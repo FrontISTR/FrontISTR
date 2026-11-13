@@ -264,7 +264,6 @@ contains
 
   end function fstr_ctrl_get_SOLVER
 
-
   !> Read in !STEP
   function fstr_ctrl_get_STEP( ctrl, amp, iproc )
     integer(kind=kint) :: ctrl
@@ -471,26 +470,6 @@ contains
     fstr_ctrl_get_SECTION = 0
 
   end function fstr_ctrl_get_SECTION
-
-
-  !> Read in !WRITE
-  function fstr_ctrl_get_WRITE( ctrl, res, visual, femap )
-    integer(kind=kint) :: ctrl
-    integer(kind=kint) :: res
-    integer(kind=kint) :: visual
-    integer(kind=kint) :: femap
-    integer(kind=kint) :: fstr_ctrl_get_WRITE
-
-    fstr_ctrl_get_WRITE = -1
-
-    ! JP-6
-    if( fstr_ctrl_get_param_ex( ctrl, 'RESULT ',  '# ',    0,   'E',   res    )/= 0) return
-    if( fstr_ctrl_get_param_ex( ctrl, 'VISUAL ',  '# ',    0,   'E',   visual )/= 0) return
-    if( fstr_ctrl_get_param_ex( ctrl, 'FEMAP ',   '# ',    0,   'E',   femap  )/= 0) return
-
-    fstr_ctrl_get_WRITE = 0
-
-  end function fstr_ctrl_get_WRITE
 
   !> Read in !ECHO
   function fstr_ctrl_get_ECHO( ctrl, echo )
@@ -955,7 +934,6 @@ contains
 
   end function fstr_ctrl_get_ELEMOPT
 
-
   !> Read in !AUTOINC_PARAM                                                             !
   function fstr_get_AUTOINC( ctrl, aincparam )
     implicit none
@@ -1304,6 +1282,5 @@ contains
     fstr_ctrl_get_ELEMENT_ACTIVATION = 0
 
   end function fstr_ctrl_get_ELEMENT_ACTIVATION
-
 
 end module fstr_ctrl_common

@@ -1518,15 +1518,6 @@ contains
     nullify( val_ptr )
   end subroutine fstr_setup_ACCELERATION
 
-  subroutine fstr_setup_solid_nastran( ctrl, hecMESH, fstrSOLID )
-    implicit none
-    integer(kind=kint) :: ctrl
-    type (hecmwST_local_mesh) :: hecMESH
-    type (fstr_solid        ) :: fstrSOLID
-    write(ILOG,*) '### Error : In !BOUNDARY, TYPE=NASTRAN is not supported.'
-    call fstr_abort( HECMW_EXIT_MODEL )
-  end subroutine fstr_setup_solid_nastran
-
   !-----------------------------------------------------------------------------!
   !> Read in !CONTACT                                                           !
   !-----------------------------------------------------------------------------!

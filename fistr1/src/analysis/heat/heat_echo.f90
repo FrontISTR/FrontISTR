@@ -48,7 +48,6 @@ contains
     write(ILOG,*) 'fg_visual ', p%fg_visual
     write(ILOG,*)
     write(ILOG,*) 'for heat ...'
-    write(ILOG,*) 'fg_neutral ', p%fg_neutral
     write(ILOG,*) 'fg_irres   ', p%fg_irres
     write(ILOG,*) 'fg_iwres   ', p%fg_iwres
     write(ILOG,*) 'nrres   ',    p%nrres

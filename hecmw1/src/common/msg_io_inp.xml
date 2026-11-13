@@ -214,10 +214,6 @@
 			<message>*SHELL SECTION: Missing ELSET</message>
 			<description>*SHELL SECTIONの必須パラメータELSETが見つからない</description>
 		</define>
-		<define type="error" name="E1703">
-			<message>*SHELL SECTION: MATERIAL and COMPOSITE are mutually exclusive</message>
-			<description>互いに排他的なパラメータが同時に使用された</description>
-		</define>
 		<define type="error" name="E1704">
 			<message>*SHELL SECTION: COMPOSITE value must be positive integer</message>
 			<description>不正なCOMPOSITEの値を検出した</description>
@@ -261,10 +257,6 @@
 		<define type="error" name="E2102">
 			<message>*SOLID SECTION: Missing ELSET</message>
 			<description>*SOLID SECTIONの必須パラメータELSETが見つからない</description>
-		</define>
-		<define type="error" name="E2103">
-			<message>*SOLID SECTION: MATERIAL and COMPOSITE are mutually exclusive</message>
-			<description>互いに排他的なパラメータが同時に使用された</description>
 		</define>
 		<define type="error" name="E2104">
 			<message>*SOLID SECTION: COMPOSITE value must be positive integer</message>

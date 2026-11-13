@@ -41,21 +41,3 @@ int read_voxel_file(char *filename, int n_voxel, double *voxel_dxyz,
 
   return 1;
 }
-#ifdef later
-int write_voxel_file(Voxel_data *vox) {
-  int i, j;
-
-  for (i = 0; i < vox->n_voxel; i++) {
-    fprintf(stderr, "%d: %lf %lf %lf(%lf %lf %lf)\n", i, vox->info[i].dx,
-            vox->info[i].dy, vox->info[i].dz, vox->info[i].orig_x,
-            vox->info[i].orig_y, vox->info[i].orig_z);
-    for (j = 0; j < vox->info[i].n_neighbor_pe; j++) {
-      fprintf(stderr, "%d ", vox->info[i].neighbor_pe[j]);
-    }
-    fprintf(stderr, "\n");
-  }
-
-  return 1;
-}
-
-#endif

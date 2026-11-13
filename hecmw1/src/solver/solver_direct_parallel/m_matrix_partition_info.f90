@@ -198,7 +198,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       call hecmw_abort( hecmw_comm_get_comm())
     end if
 
-    call get_part_result(left%neqns_a, ip_left, right%neqns_a, ip_right, this%neqns_d, ip_d)
+    call get_part_result(ip_left, ip_right, ip_d)
 
     ! set belongings
     do i=1,left%neqns_a  ! left child

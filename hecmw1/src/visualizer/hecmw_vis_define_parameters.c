@@ -543,7 +543,6 @@ screen_point[0]=t[0]*cos(angle)+t[1]*sin(angle);
 
 void view1_parameter_define(int ii, int num_of_frames, int rotate_style,
                             double view_point_d[3], double screen_point[3],
-                            int num_of_lights, double *light_point,
                             double up[3], double trange[6])
 
 {

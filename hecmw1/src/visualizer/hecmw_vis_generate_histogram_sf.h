@@ -19,14 +19,13 @@ void generate_histogram_graph_sf(struct surface_module *sf, int *color_list,
 void generate_interval_point_sf(struct surface_module *sf, int *color_list,
                                 struct hecmwST_result_data *data,
                                 double *mivalue, double *mavalue,
-                                Result *result, int mynode, int pesize,
-                                HECMW_Comm VIS_COMM, double *interval_point);
+                                Result *result, int pesize, HECMW_Comm VIS_COMM,
+                                double *interval_point);
 void output_histogram_sf(struct surface_module *sf, int *color_list,
                          struct hecmwST_result_data *data, double *mivalue,
                          double *mavalue, Result *result, int mynode,
                          int pesize, HECMW_Comm VIS_COMM);
-void find_minmax_sf(struct hecmwST_local_mesh *mesh, int mynode,
-                    double range[6]);
+void find_minmax_sf(struct hecmwST_local_mesh *mesh, double range[6]);
 void find_patch_minmax_sf(Result *result, struct surface_module *sf,
                           double range[6]);
 void find_new_patch_minmax_sf(Result *result, struct surface_module *sf,

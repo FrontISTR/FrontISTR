@@ -22,7 +22,7 @@ int HECMW_vis_surface_compute(Surface *sff, struct hecmwST_local_mesh *mesh,
                               struct hecmwST_result_data *data, int *bdflag,
                               int *sum_v, int *sum_t, int *tvertex, int *tpatch,
                               double *minc, double *maxc, Result *result,
-                              int sf_i, int mynode, HECMW_Comm VIS_COMM);
+                              int sf_i, int mynode);
 int HECMW_vis_chk_bounds(struct hecmwST_local_mesh *mesh, int *bdflag);
 void find_isoline(int isomum, int sum_polys, double mincolor, double maxcolor,
                   double *vcoord, int *plist, double *vcolor, Isohead *isohead);

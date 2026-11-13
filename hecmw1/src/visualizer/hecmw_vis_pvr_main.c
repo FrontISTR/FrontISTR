@@ -36,7 +36,6 @@ void HECMW_vis_pvr_rendering(struct hecmwST_local_mesh *mesh,
 
   FILE *FP;
 
-  int time_step;
   double t1, t2, t3;
   int n_voxel;
   /*
@@ -66,9 +65,6 @@ display_range[6];
       sscr_area[4];
   int intersection;
   double accum_rgba[4];
-  double grad_minmax[2], dis_minmax[2], feap_minmax[2], feai_minmax[2];
-  double tfeap_minmax[2];
-  double *opa_table;
   extern void HECMW_vis_memory_exit(char *var);
   extern void HECMW_vis_print_exit(char *var);
   double *accum_opa;
@@ -110,7 +106,7 @@ int		**voxel_neighbor_pe;
   int x_specified_l, y_specified_l, z_specified_l;
 
   int nx, ny, nz, *empty_flag;
-  double *var, *grad_var;
+  double *var;
   int r_level[3];
   double r_dxyz[3], dxyz[3], orig_xyz[3];
   double org_mincolor, org_maxcolor;
@@ -179,10 +175,9 @@ fclose(contfp);
 
   node1 = (double *)HECMW_calloc(mesh->n_node, sizeof(double));
 
-  transform_ucd_pvr(data, node1, mesh, vr, mynode, pesize, VIS_COMM, voxel_dxyz,
-                    voxel_orig_xyz, level, voxel_n_neighbor_pe,
-                    voxel_neighbor_pe, stat_para[22], stat_para[46], *init_flag,
-                    num_of_pvr);
+  transform_ucd_pvr(data, node1, mesh, vr, mynode, VIS_COMM, voxel_dxyz,
+                    voxel_orig_xyz, voxel_n_neighbor_pe, voxel_neighbor_pe,
+                    stat_para[22], stat_para[46], *init_flag, num_of_pvr);
   if (*init_flag == 1) {
     extent = (double *)HECMW_calloc(mesh->n_elem * 6, sizeof(double));
     if (extent == NULL) HECMW_vis_memory_exit("extent");
@@ -220,17 +215,6 @@ fclose(contfp);
     }
   }
 
-#ifdef slow
-  phi_x = (double *)HECMW_calloc(n_node, sizeof(double));
-  phi_y = (double *)HECMW_calloc(n_node, sizeof(double));
-  phi_z = (double *)HECMW_calloc(n_node, sizeof(double));
-  for (i = 0; i < n_node; i++) {
-    phi_x[i] = 0.0;
-    phi_y[i] = 0.0;
-    phi_z[i] = 0.0;
-  }
-
-#endif
   HECMW_Barrier(VIS_COMM);
   /*      t2=HECMW_Wtime();
 if (mynode == 0){
@@ -245,44 +229,14 @@ fprintf(stderr, "the time for reading file is %lf the total time up to now is
   }
   t2 = t1;
 
-  if (mynode == 0) fprintf(stderr, "calc_gradient\n");
-#ifdef slow
-  calc_gradient(n_node, n_internal, n_elem, node, elem, node1, n_neighbor_pe,
-                neighbor_pe, import_index, import_node, export_index,
-                export_node, phi_x, phi_y, phi_z, mynode, VIS_COMM);
-  t3 = HECMW_Wtime();
-  if (mynode == 0) {
-    fprintf(stderr,
-            "The time for computing gradient is %lf the total time up to now "
-            "is %lf\n",
-            t3 - t2, t3 - t1);
-    t2 = t3;
-  }
-  HECMW_Barrier(VIS_COMM);
-  fprintf(stderr, "refinement\n");
-#endif
   nx         = level[mynode * 3];
   ny         = level[mynode * 3 + 1];
   nz         = level[mynode * 3 + 2];
   empty_flag = (int *)HECMW_calloc((nx + 1) * (ny + 1) * (nz + 1), sizeof(int));
   var = (double *)HECMW_calloc((nx + 1) * (ny + 1) * (nz + 1), sizeof(double));
-#ifdef slow
-  grad_var = (double *)HECMW_calloc((nx + 1) * (ny + 1) * (nz + 1) * 3,
-                                    sizeof(double));
-  if ((grad_var == NULL) || (var == NULL) || (empty_flag == NULL)) {
-    fprintf(stderr, "There is no enough memory: empty_flag, var, gradient\n");
-    exit(0);
-  }
-
-#endif
   refinement(mesh, node1, n_voxel, voxel_dxyz, voxel_orig_xyz, level,
              voxel_n_neighbor_pe, voxel_neighbor_pe, extent, mynode, VIS_COMM,
              empty_flag, var);
-#ifdef slow
-  HECMW_free(phi_x);
-  HECMW_free(phi_y);
-  HECMW_free(phi_z);
-#endif
   HECMW_Barrier(VIS_COMM);
 
   t3 = HECMW_Wtime();
@@ -325,8 +279,7 @@ fprintf(stderr, "the time for reading file is %lf the total time up to now is
                                 vr->color_system_type);
   if (vr->color_mapping_style == 4)
     generate_interval_point_vr(tmincolor, tmaxcolor, var, empty_flag, nx, ny,
-                               nz, mynode, pesize, VIS_COMM,
-                               vr->interval_point);
+                               nz, pesize, VIS_COMM, vr->interval_point);
 
   find_minmax_vr(voxel_dxyz, voxel_orig_xyz, mynode, range);
   for (i = 0; i < 6; i++) trange[i] = 0.0;
@@ -402,8 +355,7 @@ Define the sampling and projection parameters
     for (ii = 0; ii < num_img; ii++) {
       if (ii != 0)
         view1_parameter_define(ii, vr->num_of_frames, vr->rotate_style,
-                               vr->view_point_d, vr->screen_point,
-                               vr->num_of_lights, vr->light_point, vr->up,
+                               vr->view_point_d, vr->screen_point, vr->up,
                                trange);
       for (i      = 0; i < 3; i++)
         view_n[i] = vr->screen_point[i] - vr->view_point_d[i];
@@ -619,104 +571,59 @@ if(endj>vr->yr) endj=vr->yr;
     endj   = (int)((sscr_area[3] - scr_area[2]) / yd) + start_y + 1;
 
     HECMW_Barrier(VIS_COMM);
-    grad_minmax[0] = 1.0E17;
-    grad_minmax[1] = -1.0E17;
-    if (vr->transfer_function_style == 2) {
-                        /*	   find_grad_minmax(vr, grad_var, nx, ny, nz, grad_minmax);
-	   HECMW_Barrier(VIS_COMM);
-   HECMW_Allreduce(&grad_minmax[0], &tgrad_minmax[0], 1, HECMW_DOUBLE, HECMW_MIN, VIS_COMM);
-   HECMW_Allreduce(&grad_minmax[1], &tgrad_minmax[1], 1, HECMW_DOUBLE, HECMW_MAX, VIS_COMM);
-   grad_minmax[0]=tgrad_minmax[0]; grad_minmax[1]=tgrad_minmax[1];
-			 */   }
-                        feap_minmax[0] = 1.0E17;
-                        feap_minmax[1] = -1.0E17;
-                        if (vr->transfer_function_style == 3) {
-                          find_feap_minmax(vr->num_of_features, vr->fea_point,
-                                           tmincolor, tmaxcolor, feap_minmax);
-                          HECMW_Barrier(VIS_COMM);
-                          HECMW_Allreduce(&feap_minmax[0], &tfeap_minmax[0], 1,
-                                          HECMW_DOUBLE, HECMW_MIN, VIS_COMM);
-                          HECMW_Allreduce(&feap_minmax[1], &tfeap_minmax[1], 1,
-                                          HECMW_DOUBLE, HECMW_MAX, VIS_COMM);
-                          feap_minmax[0] = tfeap_minmax[0];
-                          feap_minmax[1] = tfeap_minmax[1];
-                        }
-                        feai_minmax[0] = 1.0E17;
-                        feai_minmax[1] = -1.0E17;
-                        if (vr->transfer_function_style == 4) {
-                          /*	   find_feai_minmax(num_of_features, fea_point,
-         tmincolor, tmaxcolor, feai_minmax);
-             HECMW_Barrier(VIS_COMM);
-         HECMW_Allreduce(&feai_minmax[0], &tfeai_minmax[0], 1, HECMW_DOUBLE,
-         HECMW_MIN, VIS_COMM);
-         HECMW_Allreduce(&feai_minmax[1], &tfeai_minmax[1], 1, HECMW_DOUBLE,
-         HECMW_MAX, VIS_COMM);
-             feai_minmax[0]=tfeai_minmax[0];  feai_minmax[1]=tfeai_minmax[1];
-                           */
-                        }
-                        dis_minmax[0] = 1.0E17;
-                        dis_minmax[1] = -1.0E17;
-                        if ((vr->transfer_function_style == 5) ||
-                            (vr->transfer_function_style == 6))
-                          find_dis_minmax(vr->view_point_d, vertex, dis_minmax);
-                        /*       HECMW_Allreduce(&dis_minmax[0], &dis_minmax[0],
-        1, HECMW_DOUBLE, HECMW_MIN, VIS_COMM);
-                   if(time_step==0) {
+    /*       HECMW_Allreduce(&dis_minmax[0], &dis_minmax[0],
+1, HECMW_DOUBLE, HECMW_MIN, VIS_COMM);
+if(time_step==0) {
 
-           if(transfer_function_style==7) {
-                   opa_table=(double *)HECMW_calloc(256, sizeof(double));
-                   if(opa_table==NULL) {
-                           fprintf(stderr, " There is no enough memory:
-        opa_table\n");
-                           exit(0);
-                   }
-                   if(mynode==0)
-                           read_lookup_table(name_lookup, opa_table);
-               HECMW_Bcast(opa_table, 256, HECMW_DOUBLE, 0, VIS_COMM);
-           }
+if(transfer_function_style==7) {
+opa_table=(double *)HECMW_calloc(256, sizeof(double));
+if(opa_table==NULL) {
+       fprintf(stderr, " There is no enough memory:
+opa_table\n");
+       exit(0);
+}
+if(mynode==0)
+       read_lookup_table(name_lookup, opa_table);
+HECMW_Bcast(opa_table, 256, HECMW_DOUBLE, 0, VIS_COMM);
+}
 
-        } */
-                        /*if(time_step==0) {
-              num_refine=1;
-           for(i=0;i<vd->leveltot;i++)
-                   num_refine*=2;
-                         */
-                        av_length = sqrt(SQR(voxel_dxyz[mynode * 3] / nx) +
-                                         SQR(voxel_dxyz[mynode * 3 + 1] / ny) +
-                                         SQR(voxel_dxyz[mynode * 3 + 2] / nz));
+} */
+    /*if(time_step==0) {
+num_refine=1;
+for(i=0;i<vd->leveltot;i++)
+num_refine*=2;
+     */
+    av_length = sqrt(SQR(voxel_dxyz[mynode * 3] / nx) +
+                     SQR(voxel_dxyz[mynode * 3 + 1] / ny) +
+                     SQR(voxel_dxyz[mynode * 3 + 2] / nz));
 
-                        HECMW_Barrier(VIS_COMM);
-                        if (pesize > 1)
-                          HECMW_Allreduce(&av_length, &tav_length, 1,
-                                          HECMW_DOUBLE, HECMW_MAX, VIS_COMM);
-                        else
-                          tav_length = av_length;
+    HECMW_Barrier(VIS_COMM);
+    if (pesize > 1)
+      HECMW_Allreduce(&av_length, &tav_length, 1, HECMW_DOUBLE, HECMW_MAX,
+                      VIS_COMM);
+    else
+      tav_length = av_length;
 
-                        /* Build hierarchical tree*/
-                        image = (double *)HECMW_calloc(vr->xr * vr->yr * 3,
-                                                       sizeof(double));
-                        if (image == NULL) HECMW_vis_memory_exit("image");
-                        accum_opa = (double *)HECMW_calloc(vr->xr * vr->yr,
-                                                           sizeof(double));
-                        if (accum_opa == NULL)
-                          HECMW_vis_memory_exit("accum_opa");
-                        /*}
-                         */
-                        /*---------new change for vec ---------*/
-                        for (j     = 0; j < vr->yr * vr->xr * 3; j++)
-                          image[j] = 0.0;
-                        for (j         = 0; j < vr->yr * vr->xr; j++)
-                          accum_opa[j] = 0.0;
+    /* Build hierarchical tree*/
+    image = (double *)HECMW_calloc(vr->xr * vr->yr * 3, sizeof(double));
+    if (image == NULL) HECMW_vis_memory_exit("image");
+    accum_opa = (double *)HECMW_calloc(vr->xr * vr->yr, sizeof(double));
+    if (accum_opa == NULL) HECMW_vis_memory_exit("accum_opa");
+    /*}
+     */
+    /*---------new change for vec ---------*/
+    for (j = 0; j < vr->yr * vr->xr * 3; j++) image[j] = 0.0;
+    for (j = 0; j < vr->yr * vr->xr; j++) accum_opa[j] = 0.0;
 
-                        HECMW_Barrier(VIS_COMM);
-                        t3 = HECMW_Wtime();
-                        if (mynode == 0) {
-                          fprintf(stderr,
-                                  "The time for preprocessing of pvr is %lf, "
-                                  "the total time up to now is %lf\n",
-                                  t3 - t2, t3 - t1);
-                          t2 = t3;
-                        }
+    HECMW_Barrier(VIS_COMM);
+    t3 = HECMW_Wtime();
+    if (mynode == 0) {
+      fprintf(stderr,
+              "The time for preprocessing of pvr is %lf, "
+              "the total time up to now is %lf\n",
+              t3 - t2, t3 - t1);
+      t2 = t3;
+    }
                         find_inverse_matrix(coff_matrix, inv_matrix);
                         for (i = 0; i < 3; i++) {
                           r_level[i]  = level[mynode * 3 + i];
@@ -799,23 +706,18 @@ if(endj>vr->yr) endj=vr->yr;
          opa_table, tav_length,time_step);
                                */
                               intersection = find_first_inter(
-                                  point_o, vr->view_point_d, r_level, orig_xyz,
-                                  dxyz, r_dxyz, ray_direction, first_p,
-                                  first_ijk);
+                                  vr->view_point_d, r_level, orig_xyz, dxyz,
+                                  r_dxyz, ray_direction, first_p, first_ijk);
                               if (intersection == 1) {
                                 ray_trace(
-                                    vr->remove_0_display_on,
                                     vr->color_mapping_style, vr->interval_point,
                                     vr->transfer_function_style, vr->opa_value,
                                     vr->num_of_features, vr->fea_point,
-                                    vr->view_point_d, vr->interval_mapping_num,
-                                    vr->color_system_type, vr->num_of_lights,
-                                    vr->light_point, vr->k_ads, orig_xyz, dxyz,
-                                    r_dxyz, r_level, empty_flag, var, grad_var,
-                                    first_p, first_ijk, ray_direction, mincolor,
-                                    maxcolor, accum_rgba, grad_minmax,
-                                    feap_minmax, feai_minmax, dis_minmax,
-                                    opa_table, tav_length, time_step, i, j);
+                                    vr->interval_mapping_num,
+                                    vr->color_system_type, vr->k_ads, orig_xyz,
+                                    r_dxyz, r_level, empty_flag, var, first_p,
+                                    first_ijk, ray_direction, mincolor,
+                                    maxcolor, accum_rgba, tav_length);
 
                                 for (m = 0; m < 3; m++)
                                   image[(j * vr->xr + i) * 3 + m] =
@@ -1192,9 +1094,6 @@ if(endj>vr->yr) endj=vr->yr;
                         }
   }
   HECMW_free(var);
-#ifdef slow
-  HECMW_free(grad_var);
-#endif
   HECMW_free(empty_flag);
   HECMW_free(image);
   HECMW_free(accum_opa);

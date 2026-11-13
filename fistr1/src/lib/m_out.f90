@@ -249,20 +249,11 @@ contains
     if( mod( cstep, outctrl%frequency )==0 ) fstr_output_active=.true.
   end function
 
-  subroutine fstr_ctrl_get_filename( ctrl, ss )
-    integer(kind=kint), intent(in)             :: ctrl
-    character(len=HECMW_NAME_LEN), intent(out) :: ss
-    integer(kind=kint) :: rcode
-    ss = trim(OUTFILENAME)
-    rcode = fstr_ctrl_get_param_ex( ctrl, 'FILENAME ', '# ', 0, 'F', ss )
-  end subroutine
-
   subroutine fstr_ctrl_get_output( ctrl, outctrl, islog, res, visual, femap )
     integer(kind=kint), intent(in)     :: ctrl
     type(t_output_ctrl), intent(inout) :: outctrl
     integer(kind=kint), intent(out)    :: islog, res, visual, femap
     integer(kind=kint) :: rcode, n
-    character(len=HECMW_NAME_LEN) :: ss
     islog=0; res=0; visual=0; femap=0
     if( fstr_ctrl_get_param_ex( ctrl, 'LOG ', '# ', 0, 'E', islog )/= 0 ) return
     if( fstr_ctrl_get_param_ex( ctrl, 'RESULT ', '# ', 0, 'E', res )/= 0 ) return
@@ -270,11 +261,6 @@ contains
     if( fstr_ctrl_get_param_ex( ctrl, 'UTABLE ', '# ', 0, 'E', femap  )/= 0 ) return
 
     call fstr_init_outctrl(outctrl)
-    ss = ""
-    rcode = fstr_ctrl_get_param_ex( ctrl, 'FILE ', '# ', 0, 'F', ss )
-    if( len(trim(ss))>0 ) then
-      outctrl%filename = trim(ss)
-    endif
     outctrl%frequency = 1
     n = 0
     rcode = fstr_ctrl_get_param_ex( ctrl, 'FREQUENCY ', '# ', 0, 'I', n )

@@ -16,12 +16,11 @@ part time in RIST
 
 /*  calculate the geometry at the point in cube  */
 int get_point_geom(int point_index, Cell *cell, double fvalue,
-                   Fgeom *point_geom, double *cdata, int disamb_flag) {
+                   Fgeom *point_geom, double *cdata) {
   if (point_index < 100) {
     get_edgepoint(point_index, cell, fvalue, point_geom, cdata);
   } else if (point_index < 200) {
-    get_insidepoint((point_index - 100), cell, fvalue, point_geom, cdata,
-                    disamb_flag);
+    get_insidepoint((point_index - 100), cell, fvalue, point_geom, cdata);
   } else {
     get_gridpoint((point_index - 200), cell, point_geom, cdata);
   }
@@ -144,7 +143,7 @@ void get_edgepoint(int edge_index, Cell *cell, double fvalue, Fgeom *vert_geom,
 
 /* return the geometry at the interpolate point in cube  */
 void get_insidepoint(int inside_index, Cell *cell, double fvalue,
-                     Fgeom *vert_geom, double *cdata, int disamb_flag) {
+                     Fgeom *vert_geom, double *cdata) {
   double ratio, flip_ratio;
 
   switch (inside_index) {

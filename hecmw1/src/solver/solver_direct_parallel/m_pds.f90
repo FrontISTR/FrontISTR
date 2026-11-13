@@ -1053,7 +1053,7 @@ integer :: i,j,k,l,m,n
 
 ! make partitioning array
 call bi_part_directive(neqns, nttbr, irow, jcol, neqns1, neqns2, neqnsd)
-call get_part_result(neqns1, ipart1, neqns2, ipart2, neqnsd, isp)
+call get_part_result(ipart1, ipart2, isp)
 
 do i=1,neqns1
    part(ipart1(i))=1

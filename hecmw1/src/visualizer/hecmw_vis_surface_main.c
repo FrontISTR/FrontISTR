@@ -179,14 +179,14 @@ sff->surface_style, sff->display_way, sff->color_comp);
         mac = maxcolor[sff->color_comp];
         HECMW_vis_surface_compute(sff, mesh, data, bdflag, &sum_v, &sum_t,
                                   &tvertex, &tpatch, &mic, &mac, result, ii - 1,
-                                  mynode, VIS_COMM);
+                                  mynode);
 
         if (mic < minvalue[sff->color_comp]) minvalue[sff->color_comp] = mic;
         if (mac > maxvalue[sff->color_comp]) maxvalue[sff->color_comp] = mac;
       } else if (sff->display_way == 4)
         HECMW_vis_surface_compute(sff, mesh, data, bdflag, &sum_v, &sum_t,
                                   &tvertex, &tpatch, &mic, &mac, result, ii - 1,
-                                  mynode, VIS_COMM);
+                                  mynode);
     } else if (mesh->elem_type[0] > 300) {
       if (sff->surface_style == 1) {
         if (first_boundary == 1) {
@@ -226,14 +226,14 @@ sff->surface_style, sff->display_way, sff->color_comp);
           mac = maxcolor[sff->color_comp];
           HECMW_vis_surface_compute(sff, mesh, data, bdflag, &sum_v, &sum_t,
                                     &tvertex, &tpatch, &mic, &mac, result,
-                                    ii - 1, mynode, VIS_COMM);
+                                    ii - 1, mynode);
 
           if (mic < minvalue[sff->color_comp]) minvalue[sff->color_comp] = mic;
           if (mac > maxvalue[sff->color_comp]) maxvalue[sff->color_comp] = mac;
         } else if (sff->display_way == 4)
           HECMW_vis_surface_compute(sff, mesh, data, bdflag, &sum_v, &sum_t,
                                     &tvertex, &tpatch, &mic, &mac, result,
-                                    ii - 1, mynode, VIS_COMM);
+                                    ii - 1, mynode);
 
       } else if (sff->surface_style == 3) {
         /* get_onepoint_on_section(css, p);
@@ -255,14 +255,14 @@ loopnum++;*/
 
           HECMW_vis_surface_compute(sff, mesh, data, bdflag, &sum_v, &sum_t,
                                     &tvertex, &tpatch, &mic, &mac, result,
-                                    ii - 1, mynode, VIS_COMM);
+                                    ii - 1, mynode);
 
           if (mic < minvalue[sff->color_comp]) minvalue[sff->color_comp] = mic;
           if (mac > maxvalue[sff->color_comp]) maxvalue[sff->color_comp] = mac;
         } else if (sff->display_way == 4)
           HECMW_vis_surface_compute(sff, mesh, data, bdflag, &sum_v, &sum_t,
                                     &tvertex, &tpatch, &mic, &mac, result,
-                                    ii - 1, mynode, VIS_COMM);
+                                    ii - 1, mynode);
       }
     }
   }
@@ -287,9 +287,9 @@ loopnum++;*/
     HECMW_vis_combine(sf, mesh, data, tvertex, tpatch, color_list, minvalue,
                       maxvalue, result, outfile1, outfile1size, VIS_COMM);
   else if (sf[1].output_type == 3)
-    HECMW_vis_rendering_surface(sf, sr, mesh, data, tvertex, tpatch, color_list,
-                                minvalue, maxvalue, result, outfile1, stat_para,
-                                VIS_COMM, *timestep);
+    HECMW_vis_rendering_surface(sf, sr, mesh, data, color_list, minvalue,
+                                maxvalue, result, outfile1, stat_para, VIS_COMM,
+                                *timestep);
 
   if (mynode == 0) {
     fprintf(stderr, "surface module finish\n");
@@ -651,145 +651,6 @@ static void read_surface_equation(Surface *sff, struct surface_module *sf,
   for (i = 0; i < 10; i++) sff->cont_equ[i] = coff[i];
   return;
 }
-
-#if 0
-double cal_matrix(double a[3][3])
-{
-	double value;
-	value=a[0][0]*a[1][1]*a[2][2]+a[0][1]*a[1][2]*a[2][0]+a[0][2]*a[1][0]*a[2][1]
-	                                                                           -a[0][0]*a[1][2]*a[2][1]-a[0][1]*a[1][0]*a[2][2]-a[0][2]*a[1][1]*a[2][0];
-	return(value);
-}
-#endif
-
-#ifdef old
-int chk_gid(struct visual_buf *vol, int *bdflag, int *gid, int *over_elem_id) {
-  int i;
-  int count;
-
-  count = 0;
-  for (i = 0; i < vol->mesh->n_elem; i++) {
-    gid[i] = vol->mesh->global_elem_id[i];
-    if ((bdflag[i] % 1024) != HEX_FACE_INDEX) {
-      over_elem_id[count] = i;
-      count++;
-    }
-  }
-
-  return count;
-}
-#endif
-
-#if 0
-int judge_box(double box[HEX_N_NODE*3], double cont_equ[10])
-{
-	int loopflag1,i,sum;
-	double x,y,z,f[HEX_N_NODE];
-	for(i=0;i<HEX_N_NODE;i++) {
-		x=box[i*3];
-		y=box[i*3+1];
-		z=box[i*3+2];
-		f[i]=x*cont_equ[0]+y*cont_equ[1]+z*cont_equ[2]+cont_equ[3];
-	}
-	sum=0;
-	for(i=0;i<HEX_N_NODE;i++) {
-		if(f[i]>0) sum++;
-		if(f[i]<0) sum--;
-	}
-	if((sum==-8) || (sum==8))
-		loopflag1=0;
-	else loopflag1=1;
-	return(loopflag1);
-}
-#endif
-
-#ifdef old_version
-void shell2hexa(struct hecmwST_local_mesh *mesh,
-                struct hecmwST_result_data *data) {
-  int i, j, k;
-  double *coord;
-  int *connect;
-  double thickness;
-  double *value;
-  int tn_component;
-  fprintf(stderr, "Start transforming...\n");
-  /*	thickness=1.0;
-   */
-  thickness = mesh->section->sect_R_item[0];
-  coord     = (double *)HECMW_calloc(2 * mesh->n_node * 3, sizeof(double));
-  if (coord == NULL) HECMW_vis_memory_exit("coord");
-
-  for (i = 0; i < mesh->n_node; i++) {
-    for (j = 0; j < 3; j++) coord[i * 2 * 3 + j] = mesh->node[i * 3 + j];
-    for (j = 0; j < 2; j++) coord[(i * 2 + 1) * 3 + j] = mesh->node[i * 3 + j];
-    coord[(i * 2 + 1) * 3 + 2] = mesh->node[i * 3 + 2] + thickness;
-  }
-  HECMW_free(mesh->node);
-
-  mesh->node = coord;
-  if ((mesh->elem_type[0] == 731) || (mesh->elem_type[0] == 732)) {
-    connect = (int *)HECMW_calloc(mesh->n_elem * 6, sizeof(int));
-    if (connect == NULL) HECMW_vis_memory_exit("connect");
-    for (i = 0; i < mesh->n_elem; i++) {
-      for (j = 0; j < 3; j++)
-        connect[i * 6 + j] =
-            (mesh->elem_node_item[mesh->elem_node_index[i] + j] - 1) * 2 + 1;
-      for (j = 0; j < 3; j++)
-        connect[i * 6 + 3 + j] =
-            (mesh->elem_node_item[mesh->elem_node_index[i] + j] - 1) * 2 + 1 +
-            1;
-    }
-    for (i = 0; i < mesh->n_elem; i++) mesh->elem_type[i] = 351;
-    for (i = 0; i < mesh->n_elem + 1; i++) mesh->elem_node_index[i] = 6 * i;
-    HECMW_free(mesh->elem_node_item);
-    mesh->elem_node_item = connect;
-  } else if ((mesh->elem_type[0] == 741) || (mesh->elem_type[0] == 742) ||
-             (mesh->elem_type[0] == 743)) {
-    connect = (int *)HECMW_calloc(mesh->n_elem * 8, sizeof(int));
-    if (connect == NULL) HECMW_vis_memory_exit("connect");
-    for (i = 0; i < mesh->n_elem; i++) {
-      for (j = 0; j < 4; j++)
-        connect[i * 8 + j] =
-            (mesh->elem_node_item[mesh->elem_node_index[i] + j] - 1) * 2 + 1;
-      for (j = 0; j < 4; j++)
-        connect[i * 8 + 4 + j] =
-            (mesh->elem_node_item[mesh->elem_node_index[i] + j] - 1) * 2 + 1 +
-            1;
-      /*			fprintf(stderr, "%d ", i);
-      for(j=0;j<8;j++)
-              fprintf(stderr, "%d ", connect[i*8+j]);
-      fprintf(stderr, "\n");
-       */
-    }
-    for (i = 0; i < mesh->n_elem; i++) mesh->elem_type[i] = 361;
-    for (i = 0; i < mesh->n_elem + 1; i++) mesh->elem_node_index[i] = 8 * i;
-    HECMW_free(mesh->elem_node_item);
-    mesh->elem_node_item = connect;
-  }
-  tn_component = 0;
-  for (i = 0; i < data->nn_component; i++) tn_component += data->nn_dof[i];
-  value =
-      (double *)HECMW_calloc(tn_component * mesh->n_node * 2, sizeof(double));
-  if (value == NULL) HECMW_vis_memory_exit("value");
-  for (i = 0; i < mesh->n_node; i++) {
-    for (j = 0; j < tn_component; j++)
-      value[i * 2 * tn_component + j] =
-          data->node_val_item[i * tn_component + j];
-    for (j = 0; j < tn_component; j++)
-      value[(i * 2 + 1) * tn_component + j] =
-          data->node_val_item[i * tn_component + j];
-  }
-  HECMW_free(data->node_val_item);
-  data->node_val_item = value;
-
-  fprintf(stderr, "It is ok to transform shell to solid\n");
-  mesh->n_node *= 2;
-  mesh->nn_internal *= 2;
-
-  return;
-}
-
-#endif
 
 static void shell2hexa(struct hecmwST_local_mesh *mesh,
                        struct hecmwST_result_data *data, HECMW_Comm VIS_COMM) {

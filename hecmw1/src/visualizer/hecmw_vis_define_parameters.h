@@ -31,7 +31,6 @@ void view_parameter_define(int ii, int num_of_frames, int rotate_style,
                            double trange[6]);
 void view1_parameter_define(int ii, int num_of_frames, int rotate_style,
                             double view_point_d[3], double screen_point[3],
-                            int num_of_lights, double *light_point,
                             double up[3], double trange[6]);
 
 #endif /* HECMW_VIS_DEFINE_PARAMETERS_H_INCLUDED */

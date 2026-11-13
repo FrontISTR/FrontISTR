@@ -15,8 +15,8 @@ based
 part time in RIST
 #---------------------------------------------------------------------- */
 
-int merge_vol_iso(int, Cell *, double, Cube_polygons *, double, Cube_polygons *,
-                  int, int *, Point **, Point **, Point **, Polygon **);
+int merge_vol_iso(int, Cell *, double, Cube_polygons *, int, int *, Point **,
+                  Point **, Point **, Polygon **);
 int get_edge_index(int bound_index, int vert_index);
 int get_vert_ident(int pindex, Cell *cell, double fvalue, int *sum_verts,
                    Point **CS_verts_tail, Point **CS_verts_refer,

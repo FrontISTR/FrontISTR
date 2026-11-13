@@ -45,18 +45,6 @@ struct equation_block {
 };
 
 /*----------------------------------------------------------------------------*/
-#if 0
-static int
-get_eqn_block_idx( struct hecmwST_local_mesh *local_mesh )
-{
-  int i;
-
-  for( i=0; i<local_mesh->node_group->n_grp; i++ )
-    if( !strcmp( local_mesh->node_group->grp_name[i], HECMW_COMMON_EQUATION_BLOCK_NAME ) ) return i;
-
-  return -1;
-}
-#endif
 
 /*                                                                            */
 /*  convert node id from old to new                                           */
@@ -587,66 +575,6 @@ static int old2new_elem_info(struct hecmwST_local_mesh *local_mesh,
 }
 
 /*                                                                            */
-/*  reorder member of EQUATION_BLOCK                                          */
-/*                                                                            */
-#if 0
-/*----------------------------------------------------------------------------*/
-/*  node group ( only EQUATION_BLOCK ) < node_group->grp_item >               */
-/*----------------------------------------------------------------------------*/
-static int
-old2new_eqn_block( struct hecmwST_local_mesh *local_mesh, int *eqn_block_old2new )
-{
-  struct hecmwST_node_grp *grp=local_mesh->node_group;
-  int n_eqn_block, eqn_block_idx;
-  int *new_item;
-  int counter;
-  int i, js;
-
-  /* index of EQUATION_BLOCK */
-  eqn_block_idx = get_eqn_block_idx( local_mesh );
-  HECMW_assert( eqn_block_idx >= 0 );
-
-  /* number of EQUATION_BLOCKs */
-  n_eqn_block = grp->grp_index[eqn_block_idx+1] - grp->grp_index[eqn_block_idx];
-  HECMW_assert( n_eqn_block > 0 );
-
-  /* order EQUATION_BLOCK */
-  new_item = (int *)HECMW_calloc( n_eqn_block, sizeof(int) );
-  if( new_item == NULL ) {
-    HECMW_set_error(HECMW_COMMON_E_ALLOCATION, "");
-    return -1;
-  }
-
-  for( js=0, i=grp->grp_index[eqn_block_idx]; i<grp->grp_index[eqn_block_idx+1]; i++ ) {
-    new_item[eqn_block_old2new[i-grp->grp_index[eqn_block_idx]]] = grp->grp_item[i] - js;
-    js = grp->grp_item[i];
-  }
-
-  for( counter=0, i=0; i<n_eqn_block; i++ ) {
-    counter += new_item[i];
-    grp->grp_item[grp->grp_index[eqn_block_idx]+i] = counter;
-  }
-
-  HECMW_free( new_item );
-
-  return 0;
-}
-
-/*============================================================================*/
-/*  reorder member of EQUATION_BLOCK                                          */
-/*============================================================================*/
-static int
-old2new_eqn_block_info( struct hecmwST_local_mesh *local_mesh, int *eqn_block_old2new )
-{
-  /* node group ( only EQUATION_BLOCK ) */
-  if(old2new_eqn_block( local_mesh, eqn_block_old2new )) return -1;
-
-  return 0;
-}
-#endif
-/*$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$*/
-
-/*                                                                            */
 /*  reorder element according to finite element type                          */
 /*                                                                            */
 
@@ -1039,172 +967,6 @@ static int reorder_node_dof(struct hecmwST_local_mesh *local_mesh,
 }
 
 /*----------------------------------------------------------------------------*/
-/*  reorder node according to DOF with EQUATION_BLOCK                         */
-/*----------------------------------------------------------------------------*/
-#if 0  /* commented out by K.Goto; begin */
-static int
-mask_eqn_block( struct hecmwST_local_mesh *local_mesh,
-                char *node_flag, char *block_flag, const int eqn_block_idx )
-{
-  struct hecmwST_node_grp *grp=local_mesh->node_group;
-  int dof_max;
-  int i, j, js;
-
-  for( js=0, i=grp->grp_index[eqn_block_idx]; i<grp->grp_index[eqn_block_idx+1]; i++ ) {
-    for( dof_max=0, j=js; j<grp->grp_item[i]; j++ ) {
-      if( EVAL_BIT( node_flag[j], BIT_DOF_TWO ) )   MASK_BIT( block_flag[i-grp->grp_index[eqn_block_idx]], BIT_DOF_TWO );
-      if( EVAL_BIT( node_flag[j], BIT_DOF_THREE ) ) MASK_BIT( block_flag[i-grp->grp_index[eqn_block_idx]], BIT_DOF_THREE );
-      if( EVAL_BIT( node_flag[j], BIT_DOF_SIX ) )   MASK_BIT( block_flag[i-grp->grp_index[eqn_block_idx]], BIT_DOF_SIX );
-      if( EVAL_BIT( node_flag[j], BIT_DOF_FOUR) )   MASK_BIT( block_flag[i-grp->grp_index[eqn_block_idx]], BIT_DOF_FOUR );
-    }
-    js = grp->grp_item[i];
-  }
-
-  return 0;
-}
-
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-static int
-reorder_node_dof_4mpc_inner( struct hecmwST_local_mesh *local_mesh,
-                             char *node_flag, char *block_flag,
-                             int *node_new2old, int *node_old2new, int *block_old2new,
-                             const int n_eqn_block, const int eqn_block_idx,
-                             char *dof_flag, int *n_dof_tot )
-{
-  struct hecmwST_node_grp *grp=local_mesh->node_group;
-  int idx=grp->grp_index[eqn_block_idx];
-  int counter=0, blocks=0;
-  int i, j, js;
-
-  /* six DOF */
-  for( js=0, i=0; i<n_eqn_block; i++ ) {
-    if( EVAL_BIT( block_flag[i], BIT_DOF_SIX ) ) {
-      block_old2new[i] = blocks++;
-
-      for( j=js; j<grp->grp_item[idx+i]; j++ ) {
-        node_old2new[j]       = counter+1;
-        node_new2old[counter] = j+1;
-        counter++;
-
-        (n_dof_tot[HECMW_MESH_DOF_SIX])++;
-      }
-      MASK_BIT( *dof_flag, BIT_DOF_SIX );
-      CLEAR_BIT( block_flag[i], BIT_DOF_ALL );
-    }
-    js = grp->grp_item[idx+i];
-  }
-
-  /* four DOF */
-  for( js=0, i=0; i<n_eqn_block; i++ ) {
-    if( EVAL_BIT( block_flag[i], BIT_DOF_FOUR ) ) {
-      block_old2new[i] = blocks++;
-
-      for( j=js; j<grp->grp_item[idx+i]; j++ ) {
-        node_old2new[j]       = counter+1;
-        node_new2old[counter] = j+1;
-        counter++;
-
-        (n_dof_tot[HECMW_MESH_DOF_FOUR])++;
-      }
-      MASK_BIT( *dof_flag, BIT_DOF_FOUR );
-      CLEAR_BIT( block_flag[i], BIT_DOF_ALL );
-    }
-    js = grp->grp_item[idx+i];
-  }
-
-  /* three DOF */
-  for( js=0, i=0; i<n_eqn_block; i++ ) {
-    if( EVAL_BIT( block_flag[i], BIT_DOF_THREE ) ) {
-      block_old2new[i] = blocks++;
-
-      for( j=js; j<grp->grp_item[idx+i]; j++ ) {
-        node_old2new[j]       = counter+1;
-        node_new2old[counter] = j+1;
-        counter++;
-
-        (n_dof_tot[HECMW_MESH_DOF_THREE])++;
-      }
-      MASK_BIT( *dof_flag, BIT_DOF_THREE );
-      CLEAR_BIT( block_flag[i], BIT_DOF_ALL );
-    }
-    js = grp->grp_item[idx+i];
-  }
-
-  /* two DOF */
-  for( js=0, i=0; i<n_eqn_block; i++ ) {
-    if( EVAL_BIT( block_flag[i], BIT_DOF_TWO ) ) {
-      block_old2new[i] = blocks++;
-
-      for( j=js; j<grp->grp_item[idx+i]; j++ ) {
-        node_old2new[j]       = counter+1;
-        node_new2old[counter] = j+1;
-        counter++;
-
-        (n_dof_tot[HECMW_MESH_DOF_TWO])++;
-      }
-      MASK_BIT( *dof_flag, BIT_DOF_TWO );
-      CLEAR_BIT( block_flag[i], BIT_DOF_ALL );
-    }
-    js = grp->grp_item[idx+i];
-  }
-
-  HECMW_assert( counter == local_mesh->n_node );
-
-  return 0;
-}
-
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-static int
-reorder_node_dof_4mpc( struct hecmwST_local_mesh *local_mesh,
-                       char *node_flag, int *node_new2old, int *node_old2new,
-                       char *dof_flag, int *n_dof_tot )
-{
-  struct hecmwST_node_grp *grp=local_mesh->node_group;
-  char *block_flag;
-  int *block_old2new;
-  int n_eqn_block, eqn_block_idx;
-
-  /* group id of EQUATION_BLOCK */
-  eqn_block_idx = get_eqn_block_idx( local_mesh );
-  if( eqn_block_idx < 0 ) {
-    HECMW_print_msg( HECMW_LOG_WARN, HECMW_COMMON_W_NO_EQN_BLOCK, "");
-    return 1;
-  }
-
-  /* number of EQUATION_BLOCKs */
-  n_eqn_block = grp->grp_index[eqn_block_idx+1] - grp->grp_index[eqn_block_idx];
-
-  /* allocation */
-  block_flag = (char *)HECMW_calloc( n_eqn_block, sizeof(char) );
-  if( block_flag == NULL ) {
-    HECMW_set_error(HECMW_COMMON_E_ALLOCATION, "");
-    return -1;
-  }
-
-  block_old2new = (int *)HECMW_malloc( sizeof(int)*n_eqn_block );
-  if( block_old2new == NULL ) {
-    HECMW_set_error(HECMW_COMMON_E_ALLOCATION, "");
-    return -1;
-  }
-
-  /* mask EQUATION_BLOCK according to DOF */
-  if(mask_eqn_block( local_mesh, node_flag, block_flag, eqn_block_idx )) return -1;
-
-  /* reorder nodes according to DOF with EQUATION_BLOCK */
-  if(reorder_node_dof_4mpc_inner( local_mesh, node_flag, block_flag, node_new2old, node_old2new, block_old2new, n_eqn_block, eqn_block_idx, dof_flag, n_dof_tot )) return -1;
-
-  /* reorder relevant arrays */
-  if(old2new_eqn_block_info( local_mesh, block_old2new )) return -1;
-
-  /* free */
-  HECMW_free( block_flag );
-  HECMW_free( block_old2new );
-
-  return 0;
-}
-#endif /* commented out by K.Goto; end */
-
-/*----------------------------------------------------------------------------*/
 /*  count number of DOF groups & set maximal number of DOF                    */
 /*----------------------------------------------------------------------------*/
 static int count_n_dof_grp(struct hecmwST_local_mesh *local_mesh,
@@ -1534,7 +1296,7 @@ static int set_eqn_block_of_node(struct hecmwST_local_mesh *local_mesh,
 /*----------------------------------------------------------------------------*/
 static int create_eqn_block_index(struct hecmwST_local_mesh *local_mesh,
                                   struct equation_block *eqn_block,
-                                  int *mpc_node_flag, int *mpc_group2block) {
+                                  int *mpc_node_flag) {
   int *n_block;
   int i;
 
@@ -1724,8 +1486,7 @@ extern int HECMW_reorder_node_mpc(struct hecmwST_local_mesh *local_mesh) {
   }
 
   /* create EQUATION_BLOCK */
-  if (create_eqn_block_index(local_mesh, eqn_block, mpc_node_flag,
-                             mpc_group2block)) {
+  if (create_eqn_block_index(local_mesh, eqn_block, mpc_node_flag)) {
     return -1;
   }
 

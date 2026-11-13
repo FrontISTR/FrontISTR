@@ -10,7 +10,6 @@ module m_heat_LIB
   use m_heat_lib_dflux
   use m_heat_lib_film
   use m_heat_lib_radiate
-  use m_heat_lib_neutral
 
 end module m_heat_LIB
 

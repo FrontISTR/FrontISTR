@@ -13,24 +13,18 @@
 #include "hecmw_malloc.h"
 
 int merge_vol_iso(int iso_type, Cell *cell, double falpha,
-                  Cube_polygons *alpha_cube, double fbeta,
-                  Cube_polygons *beta_cube, int bdflag, int *sum_verts,
+                  Cube_polygons *alpha_cube, int bdflag, int *sum_verts,
                   Point **CS_verts_tail, Point **CS_verts_refer,
                   Point **CS_verts_head, Polygon **CS_polys_tail) {
   int i;
-  int *alpha_verts, *beta_verts;
-  int *alpha_iso, *beta_iso;
-  int alpha_vident[VERTEX_KIND], beta_vident[VERTEX_KIND];
+  int *alpha_verts;
+  int *alpha_iso;
+  int alpha_vident[VERTEX_KIND];
 
   alpha_verts = alpha_cube->verts;
   alpha_iso   = *alpha_cube->isosurf;
   for (i = 0; i < VERTEX_KIND; i++) {
     alpha_vident[i] = 0;
-  }
-  beta_verts = beta_cube->verts;
-  beta_iso   = *beta_cube->isosurf;
-  for (i = 0; i < VERTEX_KIND; i++) {
-    beta_vident[i] = 0;
   }
 
   if (!iso_type) {
@@ -69,34 +63,6 @@ int merge_vol_iso(int iso_type, Cell *cell, double falpha,
         *CS_polys_tail = (*CS_polys_tail)->nextpolygon;
       } while (alpha_iso[i] != -1);
     }
-#ifdef BCUBE
-    if (beta_iso[0] != -1) {
-      for (i = 0; i < beta_cube->verts_num; i++) {
-        if (beta_verts[i] < 100) {
-          beta_vident[i] = alpha_vident[i];
-        }
-      }
-      i = 0;
-      do {
-        (*CS_polys_tail)->type       = 1;
-        (*CS_polys_tail)->plist      = (int *)HECMW_calloc(4, sizeof(int));
-        (*CS_polys_tail)->plist[0]   = 3;
-        (*CS_polys_tail)->plist[1]   = beta_vident[beta_iso[i++]];
-        (*CS_polys_tail)->plist[2]   = beta_vident[beta_iso[i++]];
-        (*CS_polys_tail)->plist[3]   = beta_vident[beta_iso[i++]];
-        (*CS_polys_tail)->bdflag     = bdflag;
-        (*CS_polys_tail)->elem_id[0] = cell->elem_id[0];
-        (*CS_polys_tail)->elem_id[1] = cell->elem_id[1];
-        if ((*CS_polys_tail)->nextpolygon == NULL) {
-          if (((*CS_polys_tail)->nextpolygon = alloc_polygons(POLYGON_PACK)) ==
-              NULL) {
-            return 0;
-          }
-        }
-        *CS_polys_tail = (*CS_polys_tail)->nextpolygon;
-      } while (beta_iso[i] != -1);
-    }
-#endif
     return 1;
   }
   return 1; /* *** 2007/12/26 S. Ito *** */
@@ -215,7 +181,7 @@ int get_vert_ident(int pindex, Cell *cell, double fvalue, int *sum_verts,
   double cdata;
   Fgeom pgeom;
 
-  get_point_geom(pindex, cell, fvalue, &pgeom, &cdata, 1);
+  get_point_geom(pindex, cell, fvalue, &pgeom, &cdata);
   table_no = 0;
 
   CS_verts_refer[table_no] = CS_verts_head[table_no];

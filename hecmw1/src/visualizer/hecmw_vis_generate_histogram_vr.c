@@ -231,7 +231,7 @@ void generate_histogram_graph_vr(double tmincolor, double tmaxcolor,
 
 void generate_interval_point_vr(double tmincolor, double tmaxcolor, double *var,
                                 int *empty_flag, int nx, int ny, int nz,
-                                int mynode, int pesize, HECMW_Comm VIS_COMM,
+                                int pesize, HECMW_Comm VIS_COMM,
                                 double *interval_point) {
   int i, j;
   double delta;
@@ -335,66 +335,5 @@ void find_minmax_vr(double *voxel_dxyz, double *voxel_orig_xyz, int mynode,
   for (i     = 0; i < 6; i++)
     range[i] = voxel_orig_xyz[mynode * 3 + i / 2] +
                (i % 2) * voxel_dxyz[mynode * 3 + i / 2];
-  return;
-}
-
-void find_dis_minmax(double view_point_d[3], double vertex[24],
-                     double dis_minmax[2]) {
-  int i;
-  double dis;
-  dis_minmax[0] = dis_minmax[1] =
-      sqrt(SQR(vertex[0]) + SQR(vertex[1]) + SQR(vertex[2]));
-  for (i = 0; i < 8; i++) {
-    dis = sqrt(SQR(vertex[i * 3] - view_point_d[0]) +
-               SQR(vertex[i * 3 + 1] - view_point_d[1]) +
-               SQR(vertex[i * 3 + 2] - view_point_d[2]));
-    if (dis < dis_minmax[0]) dis_minmax[0] = dis;
-    if (dis > dis_minmax[1]) dis_minmax[1] = dis;
-  }
-  return;
-}
-
-void find_feap_minmax(int num_of_features, double *fea_point, double mincolor,
-                      double maxcolor, double feap_minmax[2]) {
-  int i, j;
-  double t, mint, color;
-
-  for (i = 0; i <= 255; i++) {
-    color = mincolor + (maxcolor - mincolor) * i / 255.0;
-    mint  = 1.0E17;
-    for (j = 0; j < num_of_features; j++) {
-      t                  = fabs(color - fea_point[j]);
-      if (t < mint) mint = t;
-    }
-    if (mint > feap_minmax[1]) feap_minmax[1] = mint;
-  }
-  feap_minmax[0] = 0.0;
-  return;
-}
-
-void find_feai_minmax(int num_of_features, double *fea_point, double mincolor,
-                      double maxcolor, double feai_minmax[2]) {
-  int i, j;
-  double t, t1, t2, mint, color;
-
-  for (i = 0; i <= 255; i++) {
-    color = mincolor + (maxcolor - mincolor) * i / 255.0;
-    mint  = 1.0E17;
-    for (j = 0; j < num_of_features; j++) {
-      if ((t >= fea_point[j * 2]) && (t <= fea_point[j * 2 + 1]))
-        t = 0.0;
-      else {
-        t1 = fabs(color - fea_point[j * 2]);
-        t2 = fabs(color - fea_point[j * 2 + 1]);
-        if (t1 < t2)
-          t = t1;
-        else
-          t = t2;
-      }
-      if (t < mint) mint = t;
-    }
-    if (mint > feai_minmax[1]) feai_minmax[1] = mint;
-  }
-  feai_minmax[0] = 0.0;
   return;
 }

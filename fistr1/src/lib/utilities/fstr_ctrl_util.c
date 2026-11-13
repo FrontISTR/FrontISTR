@@ -246,75 +246,11 @@ fstr_ctrl_data *c_fstr_ctrl_open(const char *filename) {
     return NULL;
   }
 
-#if 0 /* all PE reading fstr control */
-  /* #ifndef HECMW_SERIAL */
-  {
-    int i;
-    int myrank = HECMW_comm_get_rank();
-    HECMW_Comm comm = HECMW_comm_get_comm();
-    /* file ----------------------------------------------------------- */
-    int err;
-
-    if (myrank == 0) {
-      err = create_fstr_ctrl_data(filename, ctrl);
-    }
-
-    HECMW_Bcast(&err, 1, HECMW_INT, 0, comm);
-
-    if (err) {
-      HECMW_free(ctrl);
-      return NULL;
-    }
-
-    /* rec ------------------------------------------------------------ */
-    HECMW_Bcast(&ctrl->rec_n,    1, HECMW_INT, 0, comm);
-
-    if (myrank != 0) {
-      ctrl->rec = HECMW_malloc(sizeof(ctrl_rec) * ctrl->rec_n);
-    }
-
-    for (i = 0; i < ctrl->rec_n; i++) {
-      int line_size;
-
-      if (myrank == 0) {
-        line_size = strlen(ctrl->rec[i].line) + 1;
-      }
-
-      HECMW_Bcast(&line_size,  1, HECMW_INT, 0, comm);
-
-      if (myrank != 0) {
-        ctrl->rec[i].line = HECMW_malloc(sizeof(char) * line_size);
-      }
-
-      HECMW_Bcast(ctrl->rec[i].line,    line_size, HECMW_CHAR, 0, comm);
-      HECMW_Bcast(&ctrl->rec[i].line_no,        1, HECMW_INT,  0, comm);
-    }
-
-    /* header --------------------------------------------------------- */
-    HECMW_Bcast(&ctrl->header_n, 1, HECMW_INT, 0, comm);
-
-    if (myrank != 0) {
-      ctrl->header_pos = HECMW_malloc(sizeof(int) * ctrl->header_n);
-    }
-
-    HECMW_Bcast(ctrl->header_pos, ctrl->header_n, HECMW_INT, 0, comm);
-
-    /* data line  ----------------------------------------------------- */
-
-    if (myrank != 0) {
-      ctrl->data_line_n = HECMW_malloc(sizeof(int) * ctrl->header_n);
-    }
-
-    HECMW_Bcast(ctrl->data_line_n, ctrl->header_n, HECMW_INT, 0, comm);
-  }
-#else
-
   if (create_fstr_ctrl_data(filename, ctrl)) {
     HECMW_free(ctrl);
     return NULL;
   }
 
-#endif
   return ctrl;
 }
 

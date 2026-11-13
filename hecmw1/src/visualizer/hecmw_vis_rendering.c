@@ -27,8 +27,8 @@ int ms, ns;
 void HECMW_vis_rendering_surface(struct surface_module *sf,
                                  Parameter_rendering *sr,
                                  struct hecmwST_local_mesh *mesh,
-                                 struct hecmwST_result_data *data, int tvertex,
-                                 int tpatch, int *color_list, double *minvalue,
+                                 struct hecmwST_result_data *data,
+                                 int *color_list, double *minvalue,
                                  double *maxvalue, Result *result,
                                  char *outfile, int stat_para[NUM_CONTROL_PSF],
                                  HECMW_Comm VIS_COMM, int timestep)
@@ -139,11 +139,11 @@ end_timestep=1000;
     sr->interval_mapping_num = 10;
     sr->interval_point       = (double *)HECMW_calloc(22, sizeof(double));
     generate_interval_point_sf(sf, color_list, data, mivalue, mavalue, result,
-                               mynode, pesize, VIS_COMM, sr->interval_point);
+                               pesize, VIS_COMM, sr->interval_point);
   }
   if (stat_para[70] == 0) {
     if (sr->boundary_line_on == 1)
-      find_minmax_sf(mesh, mynode, range);
+      find_minmax_sf(mesh, range);
     else
       find_patch_minmax_sf(result, sf, range);
     for (i = 0; i < 6; i++) trange[i] = 0.0;
@@ -301,9 +301,9 @@ sr->rotate_num_of_frames);
     for (ii = 0; ii < num_img; ii++) {
       /*	   if(ii!=0)
        */
-      view1_parameter_define(
-          ii, sr->rotate_num_of_frames, sr->rotate_style, sr->view_point_d,
-          sr->screen_point, sr->num_of_lights, sr->light_point, sr->up, trange);
+      view1_parameter_define(ii, sr->rotate_num_of_frames, sr->rotate_style,
+                             sr->view_point_d, sr->screen_point, sr->up,
+                             trange);
       for (i      = 0; i < 3; i++)
         view_n[i] = sr->screen_point[i] - sr->view_point_d[i];
       nview_n     = sqrt(SQR(view_n[0]) + SQR(view_n[1]) + SQR(view_n[2]));
@@ -578,42 +578,6 @@ endj=(int)((sscr_area[3]-scr_area[2])/yd)+start_y+1;
      */
 
     HECMW_Barrier(VIS_COMM);
-#ifdef later
-    grad_minmax[0] = 1.0E17;
-    grad_minmax[1] = -1.0E17;
-    if (transfer_function_style == 2) {
-    }
-    feap_minmax[0] = 1.0E17;
-    feap_minmax[1] = -1.0E17;
-    if (transfer_function_style == 3) {
-      find_feap_minmax(num_of_features, fea_point, tmincolor, tmaxcolor,
-                       feap_minmax);
-      HECMW_Barrier(VIS_COMM);
-      HECMW_Allreduce(&feap_minmax[0], &tfeap_minmax[0], 1, HECMW_DOUBLE,
-                      HECMW_MIN, VIS_COMM);
-      HECMW_Allreduce(&feap_minmax[1], &tfeap_minmax[1], 1, HECMW_DOUBLE,
-                      HECMW_MAX, VIS_COMM);
-      feap_minmax[0] = tfeap_minmax[0];
-      feap_minmax[1] = tfeap_minmax[1];
-    }
-    feai_minmax[0] = 1.0E17;
-    feai_minmax[1] = -1.0E17;
-    if (transfer_function_style == 4) {
-      /*	   find_feai_minmax(num_of_features, fea_point, tmincolor,
-tmaxcolor, feai_minmax);
-HECMW_Barrier(VIS_COMM);
-HECMW_Allreduce(&feai_minmax[0], &tfeai_minmax[0], 1, HECMW_DOUBLE, HECMW_MIN,
-VIS_COMM);
-HECMW_Allreduce(&feai_minmax[1], &tfeai_minmax[1], 1, HECMW_DOUBLE, HECMW_MAX,
-VIS_COMM);
-feai_minmax[0]=tfeai_minmax[0];  feai_minmax[1]=tfeai_minmax[1];
-       */
-    }
-    dis_minmax[0] = 1.0E17;
-    dis_minmax[1] = -1.0E17;
-    if ((transfer_function_style == 5) || (transfer_function_style == 6))
-      find_dis_minmax(view_point_d, vertex, dis_minmax);
-#endif
     /* Build hierarchical tree*/
     for (jjj = 0; jjj < sr->deform_num_of_frames; jjj++) {
       if (sr->deform_num_of_frames > 1)

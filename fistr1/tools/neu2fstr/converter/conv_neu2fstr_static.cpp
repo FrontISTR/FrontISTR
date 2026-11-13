@@ -110,8 +110,7 @@ CHECDB_NGroup* create_new_ngrp( CHECData& hec, const char* name )
 */
 
 static void set_boundary_node_by_506(set<cbitem> *bitem, int dof_n,
-                                     vector<CNFDB_506::cconst_item> &item,
-                                     CHECData &hec) {
+                                     vector<CNFDB_506::cconst_item> &item) {
   vector<CNFDB_506::cconst_item>::iterator iter;
 
   for (iter = item.begin(); iter != item.end(); iter++) {
@@ -126,8 +125,7 @@ static void set_boundary_node_by_506(set<cbitem> *bitem, int dof_n,
 // execute after all executing set_boundary_node_by_506
 
 static void set_boundary_node_by_507(
-    set<cbitem> *bitem, vector<CNFDB_507::cstructural_load_rec> &item,
-    CHECData &hec) {
+    set<cbitem> *bitem, vector<CNFDB_507::cstructural_load_rec> &item) {
   const int load_dof               = 3;
   const int FEA_load_nDisplacement = 3;
   vector<cbitem> new_bitem[load_dof];
@@ -172,7 +170,7 @@ static void SetBoundary(CNFData &neu, CHECData &hec) {
 
     for (iter = neu.DB_506.begin(); iter != neu.DB_506.end(); iter++) {
       CNFDB_506 *p = *iter;
-      set_boundary_node_by_506(bitem, dof_n, p->const_nodes, hec);
+      set_boundary_node_by_506(bitem, dof_n, p->const_nodes);
     }
   }
   // search 507
@@ -181,7 +179,7 @@ static void SetBoundary(CNFData &neu, CHECData &hec) {
 
     for (iter = neu.DB_507.begin(); iter != neu.DB_507.end(); iter++) {
       CNFDB_507 *p = *iter;
-      set_boundary_node_by_507(bitem, p->structural_load_list, hec);
+      set_boundary_node_by_507(bitem, p->structural_load_list);
     }
   }
   // registration

@@ -128,7 +128,6 @@ OBJSF = \
         heat_LIB_CONDUCTIVITY.@f90objfilepostfix@ \
         heat_LIB_DFLUX.@f90objfilepostfix@ \
         heat_LIB_FILM.@f90objfilepostfix@ \
-        heat_LIB_NEUTRAL.@f90objfilepostfix@ \
         heat_LIB_RADIATE.@f90objfilepostfix@ \
         solve_LINEQ.@f90objfilepostfix@ \
         static_LIB.@f90objfilepostfix@ \
