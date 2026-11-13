@@ -2776,7 +2776,7 @@ YY_RULE_SETUP
 case 98:
 YY_RULE_SETUP
 #line 160 "src/common/hecmw_inplex.l"
-{ set_flag_header(0); return HECMW_INPLEX_E_C3D8; }
+{ set_flag_header(0); return HECMW_INPLEX_E_C3D8R; }
 	YY_BREAK
 case 99:
 YY_RULE_SETUP

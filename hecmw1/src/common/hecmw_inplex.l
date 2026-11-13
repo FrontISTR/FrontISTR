@@ -157,7 +157,7 @@ B32		{ set_flag_header(0); return HECMW_INPLEX_E_B32; }
 C3D4	{ set_flag_header(0); return HECMW_INPLEX_E_C3D4; }
 C3D6	{ set_flag_header(0); return HECMW_INPLEX_E_C3D6; }
 C3D8	{ set_flag_header(0); return HECMW_INPLEX_E_C3D8; }
-C3D8R	{ set_flag_header(0); return HECMW_INPLEX_E_C3D8; }
+C3D8R	{ set_flag_header(0); return HECMW_INPLEX_E_C3D8R; }
 C3D8I	{ set_flag_header(0); return HECMW_INPLEX_E_C3D8I; }
 C3D10	{ set_flag_header(0); return HECMW_INPLEX_E_C3D10; }
 C3D15	{ set_flag_header(0); return HECMW_INPLEX_E_C3D15; }
