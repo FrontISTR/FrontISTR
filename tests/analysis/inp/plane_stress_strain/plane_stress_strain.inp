@@ -1,0 +1,34 @@
+*HEADING
+ Two strips of 2 x 1, 2 CPS4 and 2 CPE4 elements in their own element sets
+*NODE, NSET=NALL
+ 1, 0.0, 0.0, 0.0
+ 2, 1.0, 0.0, 0.0
+ 3, 2.0, 0.0, 0.0
+ 4, 0.0, 1.0, 0.0
+ 5, 1.0, 1.0, 0.0
+ 6, 2.0, 1.0, 0.0
+11, 0.0, 2.0, 0.0
+12, 1.0, 2.0, 0.0
+13, 2.0, 2.0, 0.0
+14, 0.0, 3.0, 0.0
+15, 1.0, 3.0, 0.0
+16, 2.0, 3.0, 0.0
+*ELEMENT, TYPE=CPS4, ELSET=PSTRESS
+ 1,  1,  2,  5,  4
+ 2,  2,  3,  6,  5
+*ELEMENT, TYPE=CPE4, ELSET=PSTRAIN
+11, 11, 12, 15, 14
+12, 12, 13, 16, 15
+*NSET, NSET=LEFT
+ 1, 4, 11, 14
+*NSET, NSET=BOTTOM
+ 1, 11
+*NSET, NSET=RIGHT
+ 3, 6, 13, 16
+*MATERIAL, NAME=M
+*ELASTIC
+ 1000.0, 0.3
+*SOLID SECTION, ELSET=PSTRESS, MATERIAL=M
+ 1.0
+*SOLID SECTION, ELSET=PSTRAIN, MATERIAL=M
+ 1.0
