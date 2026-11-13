@@ -3585,6 +3585,7 @@ static int read_section(void) {
       sect.secopt    = secopt;
       sect.type      = type;
       sect.sect      = sect_item;
+      sect.split_from = NULL;
       sect.next      = NULL;
 
       /* add */
