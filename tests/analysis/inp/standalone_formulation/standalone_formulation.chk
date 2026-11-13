@@ -1,0 +1,5 @@
+# C3D8R elements are computed with full integration, with a warning for each *SOLID SECTION,
+# by the number of the card also for the section split from it
+Warning: C3D8R elements of the section 3 are computed without reduced integration, with FORM361=FI$
+Warning: C3D8R elements of the section 6 are computed without reduced integration, with FORM361=FI$
+no:C3D8R elements of the section 8 are

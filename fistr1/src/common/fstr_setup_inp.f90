@@ -80,10 +80,12 @@ contains
 
     ! ----- counts stay 0, since no card of the table is stored in the arrays that fstr_setup_prepare allocates
     call fstr_setup_prepare( P, counts )
+    call fstr_setup_inp_formulation( P )
 
     ! -----
     rcode = fstr_ctrl_rewind( ctrl )
     call fstr_setup_inp_read_cards( ctrl, T, 2, total, P )
+    call fstr_setup_inp_warn_formulation( P )
 
     call fstr_setup_finish( P, counts )
     rcode = fstr_ctrl_close( ctrl )
@@ -312,5 +314,42 @@ contains
     write(*,'(a,a,a,i0,a)') ' Warning: ', trim(header_name), ' (line:', fstr_ctrl_get_c_h_line_no( ctrl ), &
       ') is skipped. The results are written to the result file of FrontISTR'
   end subroutine fstr_setup_inp_output_request
+
+  !> Sets the formulation of 361 of the sections by the inp element names, which hecmw1 keeps in sect_opt:
+  !> C3D8 and C3D8R are computed with FI, and C3D8I with IC. Called after the defaults by the analysis type
+  !> are set and before *SECTION is read, which overrides it.
+  subroutine fstr_setup_inp_formulation( P )
+    implicit none
+    type(fstr_param_pack) :: P
+
+    integer(kind=kint) :: i
+
+    do i = 1, P%MESH%section%n_sect
+      select case( P%MESH%section%sect_opt(i) )
+      case( HECMW_SECT_OPT_SOLID_FI, HECMW_SECT_OPT_SOLID_RI_AS_FI )
+        P%SOLID%sections(i)%elemopt361 = kel361FI
+      case( HECMW_SECT_OPT_SOLID_IC )
+        P%SOLID%sections(i)%elemopt361 = kel361IC
+      end select
+    enddo
+  end subroutine fstr_setup_inp_formulation
+
+  !> Warns that the C3D8R elements are computed without the reduced integration, with the formulation of 361
+  !> given in the end, once for each *SOLID SECTION
+  subroutine fstr_setup_inp_warn_formulation( P )
+    implicit none
+    type(fstr_param_pack) :: P
+
+    integer(kind=kint) :: i
+    ! in the order of the values of elemopt361, as FORM361 of *SECTION
+    character(len=4), parameter :: form361(5) = (/ 'FI  ', 'BBAR', 'IC  ', 'FBAR', 'UP  ' /)
+
+    if( P%MESH%my_rank /= 0 ) return
+    do i = 1, P%MESH%section%n_sect
+      if( P%MESH%section%sect_opt(i) /= HECMW_SECT_OPT_SOLID_RI_AS_FI ) cycle
+      write(*,'(a,i0,a,a)') ' Warning: C3D8R elements of the section ', get_original_section( P%MESH, i ), &
+        ' are computed without reduced integration, with FORM361=', trim(form361(P%SOLID%sections(i)%elemopt361))
+    enddo
+  end subroutine fstr_setup_inp_warn_formulation
 
 end module m_fstr_setup_inp
