@@ -853,7 +853,7 @@ struct hecmw_io_id_array *HECMW_io_get_elem_in_egrp(const char *name) {
   egrp = HECMW_io_get_egrp(name);
   if (egrp == NULL) goto error;
 
-  nval = HECMW_set_int_nval(_egrp->elem);
+  nval = HECMW_set_int_nval(egrp->elem);
   HECMW_assert(nval > 0);
 
   id = HECMW_malloc(sizeof(*id));
@@ -870,8 +870,8 @@ struct hecmw_io_id_array *HECMW_io_get_elem_in_egrp(const char *name) {
 
   id->n = nval;
 
-  HECMW_set_int_iter_init(_egrp->elem);
-  for (i = 0; HECMW_set_int_iter_next(_egrp->elem, &eid); i++) {
+  HECMW_set_int_iter_init(egrp->elem);
+  for (i = 0; HECMW_set_int_iter_next(egrp->elem, &eid); i++) {
     id->id[i] = eid;
   }
 

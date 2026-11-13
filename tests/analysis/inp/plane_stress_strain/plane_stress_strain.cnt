@@ -1,0 +1,18 @@
+# Two strips of length 2, height 1 and thickness 1 with E = 1000 and nu = 0.3,
+# each pulled by 1 at its right end. The element set PSTRESS (CPS4) is in plane
+# stress and PSTRAIN (CPE4) in plane strain, each by its own *SOLID SECTION, so
+# the right end moves by 2.0E-03 in PSTRESS and by 2.0E-03*(1 - nu^2) = 1.82E-03
+# in PSTRAIN.
+!VERSION
+ 3
+!SOLUTION, TYPE=STATIC
+!BOUNDARY
+ LEFT, 1, 1, 0.0
+ BOTTOM, 2, 2, 0.0
+!CLOAD
+ RIGHT, 1, 0.5
+!SOLVER, METHOD=CG, PRECOND=1, ITERLOG=NO, TIMELOG=NO
+ 10000, 1
+ 1.0e-10, 1.0, 0.0
+!WRITE, RESULT
+!END

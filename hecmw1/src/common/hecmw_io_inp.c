@@ -553,7 +553,7 @@ static int get_secopt_inp(int inp_etype) {
   return -1;
 }
 
-static int get_secopt(char *elset, int msgno) {
+static int get_secopt(char *elset) {
   int i, secopt_prev;
   struct hecmw_io_id_array *elem = NULL;
 
@@ -563,11 +563,10 @@ static int get_secopt(char *elset, int msgno) {
   secopt_prev = -1;
   for (i = 0; i < elem->n; i++) {
     Integer *secopt = HECMW_map_int_get(elem_secopt, elem->id[i]);
-    if (secopt == NULL) {
-      set_err_noloc(msgno, "");
-      goto error;
-    }
-    if (i == 0) {
+    /* skip elements not defined yet; undefined ones are removed from the
+     * group with a warning in the post process */
+    if (secopt == NULL) continue;
+    if (secopt_prev == -1) {
       secopt_prev = secopt->i;
     } else {
       if (secopt_prev != secopt->i) goto error;
@@ -575,7 +574,7 @@ static int get_secopt(char *elset, int msgno) {
   }
   HECMW_free(elem->id);
   HECMW_free(elem);
-  return secopt_prev;
+  return secopt_prev == -1 ? 0 : secopt_prev;
 error:
   if (elem) {
     HECMW_free(elem->id);
@@ -3581,7 +3580,7 @@ static int read_solid_section(void) {
 
       if (read_solidsect_data(&thickness)) return -1;
 
-      secopt = get_secopt(elset, HECMW_IO_INP_E2107);
+      secopt = get_secopt(elset);
       if (secopt < 0) {
         set_err_noloc(HECMW_IO_E1026, "Two or more secopt found in %s", elset);
         return -1;
