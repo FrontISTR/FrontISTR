@@ -132,7 +132,7 @@ int HECMW_map_int_add(struct hecmw_map_int *map, int key, void *value) {
   map->pairs[map->n_val].local = map->n_val;
 
   if (map->n_val > 0 && map->sorted) {
-    int key_prev = map->vals[map->n_val - 1].key;
+    int key_prev = map->pairs[map->n_val - 1].key;
 
     if (key_prev > key) map->sorted = map->checked = 0;
 
