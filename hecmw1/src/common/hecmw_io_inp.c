@@ -3515,6 +3515,11 @@ static int read_solid_section(void) {
 
       if (read_solidsect_data(&thickness)) return -1;
 
+      if (HECMW_io_get_egrp(elset) == NULL) {
+        set_err_noloc(HECMW_IO_E1024, "Element group %s not found", elset);
+        return -1;
+      }
+
       secopt = get_secopt(elset);
       if (secopt < 0) {
         set_err_noloc(HECMW_IO_E1026, "Two or more secopt found in %s", elset);
