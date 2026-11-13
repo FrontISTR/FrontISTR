@@ -1,0 +1,19 @@
+# The element numbers of the inp file are not in ascending order: 12, 11, 10
+# and 1 in the first *ELEMENT, and 2 in the second, which comes after the
+# *SOLID SECTION of the first. With E = 1000 and nu = 0.3, the strip PSTRESS
+# (length 4, plane stress) and the square PSTRAIN (length 1, plane strain) are
+# each pulled by 1 at their right end, which moves by 4.0E-03 in PSTRESS and by
+# 1.0E-03*(1 - nu^2) = 9.1E-04 in PSTRAIN.
+!VERSION
+ 3
+!SOLUTION, TYPE=STATIC
+!BOUNDARY
+ LEFT, 1, 1, 0.0
+ BOTTOM, 2, 2, 0.0
+!CLOAD
+ RIGHT, 1, 0.5
+!SOLVER, METHOD=CG, PRECOND=1, ITERLOG=NO, TIMELOG=NO
+ 10000, 1
+ 1.0e-10, 1.0, 0.0
+!WRITE, RESULT
+!END

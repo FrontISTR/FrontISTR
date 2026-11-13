@@ -1,0 +1,37 @@
+*HEADING
+ A strip of 4 x 1 (CPS4) and a square of 1 x 1 (CPE4), the elements not in ascending order
+*NODE, NSET=NALL
+ 1, 0.0, 0.0, 0.0
+ 2, 1.0, 0.0, 0.0
+ 3, 2.0, 0.0, 0.0
+ 4, 3.0, 0.0, 0.0
+ 5, 4.0, 0.0, 0.0
+ 6, 0.0, 1.0, 0.0
+ 7, 1.0, 1.0, 0.0
+ 8, 2.0, 1.0, 0.0
+ 9, 3.0, 1.0, 0.0
+10, 4.0, 1.0, 0.0
+21, 0.0, 2.0, 0.0
+22, 1.0, 2.0, 0.0
+23, 1.0, 3.0, 0.0
+24, 0.0, 3.0, 0.0
+*NSET, NSET=LEFT
+ 1, 6, 21, 24
+*NSET, NSET=BOTTOM
+ 1, 21
+*NSET, NSET=RIGHT
+ 5, 10, 22, 23
+*MATERIAL, NAME=M
+*ELASTIC
+ 1000.0, 0.3
+*ELEMENT, TYPE=CPS4, ELSET=PSTRESS
+12,  4,  5, 10,  9
+11,  3,  4,  9,  8
+10,  2,  3,  8,  7
+ 1,  1,  2,  7,  6
+*SOLID SECTION, ELSET=PSTRESS, MATERIAL=M
+ 1.0
+*ELEMENT, TYPE=CPE4, ELSET=PSTRAIN
+ 2, 21, 22, 23, 24
+*SOLID SECTION, ELSET=PSTRAIN, MATERIAL=M
+ 1.0
