@@ -558,6 +558,8 @@ static int get_secopt(char *elset) {
   elem = HECMW_io_get_elem_in_egrp(elset);
   if (elem == NULL) return -1;
 
+  HECMW_map_int_check_dup(elem_secopt);
+
   secopt_prev = -1;
   for (i = 0; i < elem->n; i++) {
     Integer *secopt = HECMW_map_int_get(elem_secopt, elem->id[i]);
