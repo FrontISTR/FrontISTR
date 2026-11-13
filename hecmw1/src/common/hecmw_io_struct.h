@@ -147,6 +147,7 @@ struct hecmw_io_section {
       double gaprad2;
     } interface;
   } sect;
+  struct hecmw_io_section *split_from; /* NULL unless split from another */
   struct hecmw_io_section *next;
 };
 

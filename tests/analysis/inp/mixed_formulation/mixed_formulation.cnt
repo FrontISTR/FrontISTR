@@ -1,0 +1,18 @@
+# Two cantilevers of the same shape, BEAM1 and BEAM2, each with C3D8 and C3D8I
+# elements in its element set. hecmw1 puts the elements of each set in two
+# sections by their element names, and !SECTION, SECNUM=1 gives FORM361=FI to
+# all the elements of BEAM1, while all those of BEAM2 take IC, the default of
+# a linear static analysis, so the tip of BEAM1 moves less than that of BEAM2.
+!VERSION
+ 3
+!SOLUTION, TYPE=STATIC
+!SECTION, SECNUM=1, FORM361=FI
+!BOUNDARY
+ FIX, 1, 3, 0.0
+!CLOAD
+ TIP, 2, -0.01
+!SOLVER, METHOD=CG, PRECOND=1, ITERLOG=NO, TIMELOG=NO
+ 10000, 1
+ 1.0e-10, 1.0, 0.0
+!WRITE, RESULT
+!END

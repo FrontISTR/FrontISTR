@@ -2578,8 +2578,11 @@ static int setup_elem_check_sectid(struct hecmwST_local_mesh *mesh) {
   return 0;
 }
 
+/* The elements of a section split from the section split_from (0 if none)
+ * are taken over from that section. */
 static int setup_sect_set_sectid(struct hecmwST_local_mesh *mesh,
-                                 const char *egrp_name, int sectid) {
+                                 const char *egrp_name, int sectid,
+                                 int split_from) {
   int i, eid, egid, start, end;
   struct hecmwST_elem_grp *egrp;
 
@@ -2598,7 +2601,8 @@ static int setup_sect_set_sectid(struct hecmwST_local_mesh *mesh,
   HECMW_assert(mesh->section_ID);
   for (i = start; i <= end; i++) {
     eid = egrp->grp_item[i];
-    if (mesh->section_ID[eid - 1] != -1) {
+    if (mesh->section_ID[eid - 1] != -1 &&
+        mesh->section_ID[eid - 1] != split_from) {
       set_err(HECMW_IO_E1012, "Element %d has already had section %d",
               mesh->global_elem_ID[eid - 1], mesh->section_ID[eid - 1]);
       return -1;
@@ -2638,6 +2642,7 @@ static int setup_sect(struct hecmwST_local_mesh *mesh) {
     nsect++;
     if (p->type == HECMW_SECT_TYPE_SOLID) {
       nreal++; /* thickness */
+      if (p->split_from) nint++; /* section split from */
     } else if (p->type == HECMW_SECT_TYPE_SHELL) {
       nreal++; /* thickness */
       nint++;  /* integpoints */
@@ -2751,12 +2756,21 @@ static int setup_sect(struct hecmwST_local_mesh *mesh) {
   for (i = 0, p = _sect; p; p = p->next, i++) {
     int iidx = sect->sect_I_index[i];
     int ridx = sect->sect_R_index[i];
-    int midx;
+    int midx, split_from = 0;
+    if (p->split_from) {
+      struct hecmw_io_section *q;
+      for (split_from = 1, q = _sect; q != p->split_from; q = q->next)
+        split_from++;
+    }
     if (p->type == HECMW_SECT_TYPE_SOLID) {
-      sect->sect_I_index[i + 1] = sect->sect_I_index[i] + 0;
+      sect->sect_I_index[i + 1] = sect->sect_I_index[i] + (split_from ? 1 : 0);
       sect->sect_R_index[i + 1] = sect->sect_R_index[i] + 1;
       HECMW_assert(ridx <= nreal);
       sect->sect_R_item[ridx] = p->sect.solid.thickness;
+      if (split_from) {
+        HECMW_assert(iidx <= nint);
+        sect->sect_I_item[iidx] = split_from;
+      }
     } else if (p->type == HECMW_SECT_TYPE_SHELL) {
       sect->sect_I_index[i + 1] = sect->sect_I_index[i] + 1;
       sect->sect_R_index[i + 1] = sect->sect_R_index[i] + 1;
@@ -2798,7 +2812,7 @@ static int setup_sect(struct hecmwST_local_mesh *mesh) {
 
     /* set mesh->section_id */
     /* depends on setup_egrp() */
-    if (setup_sect_set_sectid(mesh, p->egrp, i + 1)) return -1;
+    if (setup_sect_set_sectid(mesh, p->egrp, i + 1, split_from)) return -1;
   }
 
   mesh->section = sect;

@@ -695,6 +695,22 @@ contains
     end do
   end subroutine get_amp_id
 
+  !> Number of the section that hecmw1 split the section isect from by the solid formulations of the inp element
+  !> names, kept as the integer item of a SOLID section, or isect itself if it is not split from another section
+  function get_original_section( hecMESH, isect ) result( orig )
+    implicit none
+    type (hecmwST_local_mesh) :: hecMESH
+    integer(kind=kint) :: isect
+    integer(kind=kint) :: orig
+
+    integer(kind=kint) :: ihead
+
+    orig = isect
+    if( hecMESH%section%sect_type(isect) /= HECMW_SECT_TYPE_SOLID ) return
+    ihead = hecMESH%section%sect_I_index(isect-1)
+    if( hecMESH%section%sect_I_index(isect)-ihead == 1 ) orig = hecMESH%section%sect_I_item(ihead+1)
+  end function get_original_section
+
   !------------------------------------------------------------------------------
 
   subroutine reallocate_integer( array, n )

@@ -413,13 +413,14 @@ contains
   end function fstr_ctrl_get_ISTEP
 
   !> Read in !SECTION
+  !> The options are also given to the sections that hecmw1 split from the section SECNUM.
   integer function fstr_ctrl_get_SECTION( ctrl, hecMESH, sections )
     use fstr_setup_util
     integer(kind=kint), intent(in)           :: ctrl
     type (hecmwST_local_mesh), intent(inout) :: hecMESH   !< mesh information
     type (tSection), pointer, intent(inout)  :: sections(:)
 
-    integer(kind=kint)            :: j, k, sect_id, elemopt
+    integer(kind=kint)            :: i, j, k, sect_id, elemopt341, elemopt361, elemopt611, orien_id
     integer(kind=kint),save       :: cache = 1
     character(len=HECMW_NAME_LEN) :: sect_orien
     character(19) :: form341list = 'FI,SELECTIVE_ESNS '
@@ -431,20 +432,17 @@ contains
     if( fstr_ctrl_get_param_ex( ctrl, 'SECNUM ',  '# ',  1, 'I', sect_id )/= 0) return
     if( sect_id < 1 .or. sect_id > hecMESH%section%n_sect ) return
 
-    elemopt = 0
-    if( fstr_ctrl_get_param_ex( ctrl, 'FORM341 ',   form341list, 0, 'P', elemopt )/= 0) return
-    if( elemopt > 0 ) sections(sect_id)%elemopt341 = elemopt
+    elemopt341 = 0
+    if( fstr_ctrl_get_param_ex( ctrl, 'FORM341 ',   form341list, 0, 'P', elemopt341 )/= 0) return
 
-    elemopt = 0
-    if( fstr_ctrl_get_param_ex( ctrl, 'FORM361 ',   form361list, 0, 'P', elemopt )/= 0) return
-    if( elemopt > 0 ) sections(sect_id)%elemopt361 = elemopt
+    elemopt361 = 0
+    if( fstr_ctrl_get_param_ex( ctrl, 'FORM361 ',   form361list, 0, 'P', elemopt361 )/= 0) return
 
-    elemopt = 0
-    if( fstr_ctrl_get_param_ex( ctrl, 'FORM611 ', form611list, 0, 'P', elemopt )/= 0) return
-    if( elemopt > 0 ) sections(sect_id)%elemopt611 = elemopt
+    elemopt611 = 0
+    if( fstr_ctrl_get_param_ex( ctrl, 'FORM611 ', form611list, 0, 'P', elemopt611 )/= 0) return
 
     ! sectional orientation ID
-    hecMESH%section%sect_orien_ID(sect_id) = -1
+    orien_id = -1
     if( fstr_ctrl_get_param_ex( ctrl, 'ORIENTATION ',  '# ',  0, 'S', sect_orien )/= 0) return
 
     if( associated(g_LocalCoordSys) ) then
@@ -452,21 +450,29 @@ contains
 
       if(cache < k)then
         if( sect_orien == g_LocalCoordSys(cache)%sys_name ) then
-          hecMESH%section%sect_orien_ID(sect_id) = cache
+          orien_id = cache
           cache = cache + 1
-          fstr_ctrl_get_SECTION = 0
-          return
         endif
       endif
 
-      do j=1, k
-        if( sect_orien == g_LocalCoordSys(j)%sys_name ) then
-          hecMESH%section%sect_orien_ID(sect_id) = j
-          cache = j + 1
-          exit
-        endif
-      enddo
+      if( orien_id == -1 ) then
+        do j=1, k
+          if( sect_orien == g_LocalCoordSys(j)%sys_name ) then
+            orien_id = j
+            cache = j + 1
+            exit
+          endif
+        enddo
+      endif
     endif
+
+    do i = 1, hecMESH%section%n_sect
+      if( i /= sect_id .and. get_original_section( hecMESH, i ) /= sect_id ) cycle
+      if( elemopt341 > 0 ) sections(i)%elemopt341 = elemopt341
+      if( elemopt361 > 0 ) sections(i)%elemopt361 = elemopt361
+      if( elemopt611 > 0 ) sections(i)%elemopt611 = elemopt611
+      hecMESH%section%sect_orien_ID(i) = orien_id
+    enddo
 
     fstr_ctrl_get_SECTION = 0
 

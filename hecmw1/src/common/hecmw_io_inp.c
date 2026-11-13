@@ -107,7 +107,11 @@ static int skip_to_next_keyword(void) {
 
 typedef struct { int i; } Integer;
 
-static struct hecmw_map_int *elem_secopt;
+static struct hecmw_map_int *elem_type;
+
+/* sections split from a *SOLID SECTION, added after all the sections */
+static struct hecmw_io_section *split_sect;
+static int n_split_egrp;
 
 static void free_Integer(void *v) {
   Integer *i;
@@ -502,8 +506,8 @@ static struct etype_conv {
 } etype_conv[] = {
     {HECMW_INPLEX_E_B31, 611, 0},     {HECMW_INPLEX_E_B32, 612, 0},
     {HECMW_INPLEX_E_C3D4, 341, 0},    {HECMW_INPLEX_E_C3D6, 351, 0},
-    {HECMW_INPLEX_E_C3D8, 361, 0},    {HECMW_INPLEX_E_C3D8I, 361, 0},
-    {HECMW_INPLEX_E_C3D8R, 361, 0},
+    {HECMW_INPLEX_E_C3D8, 361, 20},   {HECMW_INPLEX_E_C3D8I, 361, 21},
+    {HECMW_INPLEX_E_C3D8R, 361, 22},
     {HECMW_INPLEX_E_C3D10, 342, 0},   {HECMW_INPLEX_E_C3D15, 352, 0},
     {HECMW_INPLEX_E_C3D20, 362, 0},   {HECMW_INPLEX_E_CAX3, 231, 2},
     {HECMW_INPLEX_E_CAX4, 241, 2},    {HECMW_INPLEX_E_CAX4I, 241, 2},
@@ -532,6 +536,8 @@ static struct etype_conv {
     {HECMW_INPLEX_E_T3D3, 112, 0},
 };
 
+#define N_ETYPE_CONV (sizeof(etype_conv) / sizeof(etype_conv[0]))
+
 static int get_HECMW_etype(int inp_etype) {
   int i;
 
@@ -554,35 +560,117 @@ static int get_secopt_inp(int inp_etype) {
   return -1;
 }
 
-static int get_secopt(char *elset) {
-  int i, secopt_prev;
+/* Returns the secopt of the elements of elset, or -1 if they have different
+ * ones. The solid formulations (HECMW_SECT_OPT_SOLID_*) of the elements are
+ * put in forms in the order of the element numbers and compared as 0. They are
+ * not used if elset has two-dimensional elements. */
+static int get_secopt(char *elset, int *forms, int *nform) {
+  int i, j, secopt, secopt_prev, has_2d;
   struct hecmw_io_id_array *elem = NULL;
 
   elem = HECMW_io_get_elem_in_egrp(elset);
   if (elem == NULL) return -1;
 
-  HECMW_map_int_check_dup(elem_secopt);
+  HECMW_map_int_check_dup(elem_type);
 
   secopt_prev = -1;
+  has_2d      = 0;
+  *nform      = 0;
   for (i = 0; i < elem->n; i++) {
-    Integer *secopt = HECMW_map_int_get(elem_secopt, elem->id[i]);
+    Integer *type = HECMW_map_int_get(elem_type, elem->id[i]);
     /* skip elements not defined yet; undefined ones are removed from the
      * group with a warning in the post process */
-    if (secopt == NULL) continue;
+    if (type == NULL) continue;
+    if (HECMW_is_etype_surface(get_HECMW_etype(type->i))) has_2d = 1;
+    secopt = get_secopt_inp(type->i);
+    if (secopt >= HECMW_SECT_OPT_SOLID_FI) {
+      for (j = 0; j < *nform && forms[j] != secopt; j++)
+        ;
+      if (j == *nform) forms[(*nform)++] = secopt;
+      secopt = 0;
+    }
     if (secopt_prev == -1) {
-      secopt_prev = secopt->i;
+      secopt_prev = secopt;
     } else {
-      if (secopt_prev != secopt->i) goto error;
+      if (secopt_prev != secopt) goto error;
     }
   }
   HECMW_free(elem->id);
   HECMW_free(elem);
+  if (has_2d) *nform = 0;
+  if (*nform > 0) return forms[0];
   return secopt_prev == -1 ? 0 : secopt_prev;
 error:
   if (elem) {
     HECMW_free(elem->id);
     HECMW_free(elem);
   }
+  return -1;
+}
+
+static char *make_split_egrp_name(int id, char *buf, int bufsize) {
+  const char *egrpname = "HECMW-SPLIT";
+
+  HECMW_assert(buf);
+  HECMW_assert(bufsize > 0);
+
+  snprintf(buf, bufsize, "%s%d", egrpname, id);
+
+  return buf;
+}
+
+/* Adds sect, of the solid formulation forms[0], and a section for each of the
+ * other formulations forms[1..nform-1] of its elements, which takes over the
+ * elements of the formulation from sect. The sections are added after all the
+ * sections of the file, so that the section numbers of the cards do not
+ * change, and get the elements by element groups of their own. */
+static int add_split_sect(struct hecmw_io_section *sect, const int *forms,
+                          int nform) {
+  int i, j, secopt;
+  char egrp[HECMW_NAME_LEN + 1];
+  struct hecmw_io_id_array *elem = NULL;
+  struct hecmw_io_section *orig, *p, **last;
+
+  elem = HECMW_io_get_elem_in_egrp(sect->egrp);
+  if (elem == NULL) return -1;
+
+  for (i = 0; i < elem->n; i++) {
+    Integer *type = HECMW_map_int_get(elem_type, elem->id[i]);
+    if (type == NULL) continue;
+    secopt = get_secopt_inp(type->i);
+    for (j = nform - 1; j > 0 && forms[j] != secopt; j--)
+      ;
+    if (j == 0) continue;
+    make_split_egrp_name(n_split_egrp + j, egrp, sizeof(egrp));
+    if (HECMW_io_add_egrp(egrp, 1, &elem->id[i]) < 0) goto error;
+  }
+  HECMW_free(elem->id);
+  HECMW_free(elem);
+
+  orig = HECMW_io_add_sect(sect);
+  if (orig == NULL) return -1;
+
+  for (last = &split_sect; *last; last = &(*last)->next)
+    ;
+  for (i = 1; i < nform; i++) {
+    p = HECMW_malloc(sizeof(*p));
+    if (p == NULL) {
+      set_err(errno, "");
+      return -1;
+    }
+    *p = *orig;
+    make_split_egrp_name(n_split_egrp + i, p->egrp, sizeof(p->egrp));
+    p->secopt     = forms[i];
+    p->split_from = orig;
+    p->next       = NULL;
+    *last         = p;
+    last          = &p->next;
+  }
+  n_split_egrp += nform - 1;
+  return 0;
+error:
+  HECMW_free(elem->id);
+  HECMW_free(elem);
   return -1;
 }
 
@@ -1443,7 +1531,7 @@ static int read_element(void) {
       if (read_element_data(&id, nnode, node)) return -1;
       state = ST_DATA_LINE_REGIST;
     } else if (state == ST_DATA_LINE_REGIST) {
-      Integer *secopt;
+      Integer *inp_type;
 
       HECMW_assert(flag_type);
 
@@ -1454,21 +1542,20 @@ static int read_element(void) {
       /* add element */
       if (HECMW_io_add_elem(id, hecmw_etype, node, 0, NULL) == NULL) return -1;
 
-      /* save secopt */
-      secopt = HECMW_malloc(sizeof(*secopt));
-      if (secopt == NULL) {
+      /* save inp element type for secopt */
+      inp_type = HECMW_malloc(sizeof(*inp_type));
+      if (inp_type == NULL) {
         set_err(errno, "");
         return -1;
       }
-      secopt->i = get_secopt_inp(type);
-      HECMW_assert(secopt->i != -1);
-      if (elem_secopt == NULL) {
-        elem_secopt =
+      inp_type->i = type;
+      if (elem_type == NULL) {
+        elem_type =
             (struct hecmw_map_int *)HECMW_malloc(sizeof(struct hecmw_map_int));
-        if (elem_secopt == NULL) return -1;
-        if (HECMW_map_int_init(elem_secopt, free_Integer)) return -1;
+        if (elem_type == NULL) return -1;
+        if (HECMW_map_int_init(elem_type, free_Integer)) return -1;
       }
-      if (HECMW_map_int_add(elem_secopt, id, secopt) < 0) return -1;
+      if (HECMW_map_int_add(elem_type, id, inp_type) < 0) return -1;
 
       /* add element to egroup */
       if (HECMW_io_add_egrp("ALL", 1, &id) < 0) return -1;
@@ -3362,6 +3449,7 @@ static int read_shell_section(void) {
       sect.secopt    = 0;
       sect.type      = HECMW_SECT_TYPE_SHELL;
       sect.sect      = sect_item;
+      sect.split_from = NULL;
       sect.next      = NULL;
 
       /* add */
@@ -3574,7 +3662,8 @@ static int read_solid_section(void) {
         return -1;
       }
     } else if (state == ST_DATA_LINE) {
-      int secopt;
+      int secopt, nform;
+      int forms[N_ETYPE_CONV];
       double thickness;
       struct hecmw_io_section sect;
       union hecmw_io_section_item sect_item;
@@ -3588,7 +3677,7 @@ static int read_solid_section(void) {
         return -1;
       }
 
-      secopt = get_secopt(elset);
+      secopt = get_secopt(elset, forms, &nform);
       if (secopt < 0) {
         set_err_noloc(HECMW_IO_E1026, "Two or more secopt found in %s", elset);
         return -1;
@@ -3602,10 +3691,15 @@ static int read_solid_section(void) {
       sect.secopt    = secopt;
       sect.type      = HECMW_SECT_TYPE_SOLID;
       sect.sect      = sect_item;
+      sect.split_from = NULL;
       sect.next      = NULL;
 
       /* add */
-      if (HECMW_io_add_sect(&sect) == NULL) return -1;
+      if (nform > 1) {
+        if (add_split_sect(&sect, forms, nform)) return -1;
+      } else {
+        if (HECMW_io_add_sect(&sect) == NULL) return -1;
+      }
 
       /* set next state */
       state = ST_FINISHED;
@@ -4357,11 +4451,21 @@ static int parse(void) {
 /*----------------------------------------------------------------------------*/
 
 static int post_inp(void) {
-  if (elem_secopt == NULL) return 0;
+  struct hecmw_io_section *p, *next;
 
-  HECMW_map_int_finalize(elem_secopt);
-  HECMW_free(elem_secopt);
-  elem_secopt = NULL;
+  for (p = split_sect; p; p = next) {
+    next = p->next;
+    if (HECMW_io_add_sect(p) == NULL) return -1;
+    HECMW_free(p);
+  }
+  split_sect   = NULL;
+  n_split_egrp = 0;
+
+  if (elem_type == NULL) return 0;
+
+  HECMW_map_int_finalize(elem_type);
+  HECMW_free(elem_type);
+  elem_type = NULL;
   return 0;
 }
 

@@ -24,6 +24,9 @@ struct hecmwST_section {
 #define HECMW_SECT_OPT_PSTRESS_RI 10   /* plane stress & reduced integral */
 #define HECMW_SECT_OPT_PSTRAIN_RI 11   /* plane strain & reduced integral */
 #define HECMW_SECT_OPT_ASYMMETRY_RI 12 /* axial symmetry & reduced integral */
+#define HECMW_SECT_OPT_SOLID_FI 20     /* solid: full integration */
+#define HECMW_SECT_OPT_SOLID_IC 21     /* solid: incompatible modes */
+#define HECMW_SECT_OPT_SOLID_RI_AS_FI 22 /* solid: RI given, computed with FI */
   int *sect_mat_ID_index;
   int *sect_mat_ID_item;
   int *sect_I_index;

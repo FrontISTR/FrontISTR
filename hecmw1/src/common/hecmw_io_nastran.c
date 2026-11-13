@@ -2377,6 +2377,7 @@ static int iff_bulk_parse_PROD(iff_bulk_t* bulk) {
   sect.type                 = HECMW_SECT_TYPE_SOLID;
   sect.sect.solid.thickness = A;
 
+  sect.split_from = NULL;
   sect.next = NULL;
 
   if (section_list_regist(&sect)) return -1;
@@ -2446,6 +2447,7 @@ static int iff_bulk_parse_PSHELL(iff_bulk_t* bulk) {
     sect.sect.shell.integpoints = 1; /* JP-329 */
   }
 
+  sect.split_from = NULL;
   sect.next = NULL;
 
   if (section_list_regist(&sect)) return -1;
@@ -2501,6 +2503,7 @@ static int iff_bulk_parse_PSOLID(iff_bulk_t* bulk) {
 
   sect.sect.solid.thickness = 1; /* JP-342 */
 
+  sect.split_from = NULL;
   sect.next = NULL;
 
   if (section_list_regist(&sect)) return -1;
@@ -2991,6 +2994,7 @@ static int iff_bulk_parse_CTRIAX6(iff_bulk_t* bulk) {
       sect.secopt               = HECMW_SECT_OPT_ASYMMETRY; /* JP-409 */
       sect.type                 = HECMW_SECT_TYPE_SOLID;
       sect.sect.solid.thickness = 1; /* JP-410 */
+      sect.split_from           = NULL;
       sect.next                 = NULL;
       if (HECMW_io_add_sect(&sect) == NULL) return -1;
     }
