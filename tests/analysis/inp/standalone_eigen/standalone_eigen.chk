@@ -1,0 +1,7 @@
+# the parameters and the frequency range of *FREQUENCY not used by FrontISTR are skipped with a warning
+Warning: \*FREQUENCY \(line:[0-9]+\) : SOLVER=SPOOLES is skipped
+Warning: \*FREQUENCY \(line:[0-9]+\) : STORAGE=YES is skipped
+Warning: \*FREQUENCY \(line:[0-9]+\) : the frequency range is skipped
+no:HECMW-IO-INP-W0099
+no:Auto-generated cards
+no:NGRP=
