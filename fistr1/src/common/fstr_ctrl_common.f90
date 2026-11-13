@@ -428,7 +428,7 @@ contains
     fstr_ctrl_get_SECTION = -1
 
     if( fstr_ctrl_get_param_ex( ctrl, 'SECNUM ',  '# ',  1, 'I', sect_id )/= 0) return
-    if( sect_id > hecMESH%section%n_sect ) return
+    if( sect_id < 1 .or. sect_id > hecMESH%section%n_sect ) return
 
     elemopt = 0
     if( fstr_ctrl_get_param_ex( ctrl, 'FORM341 ',   form341list, 0, 'P', elemopt )/= 0) return
