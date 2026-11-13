@@ -1,0 +1,2 @@
+# C3D8R and C3D20R are computed with the reduced integration, so reading this inp file writes no warning
+no:^ Warning:

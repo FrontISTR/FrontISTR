@@ -80,6 +80,7 @@ contains
 
     ! ----- counts stay 0, since no card of the table is stored in the arrays that fstr_setup_prepare allocates
     call fstr_setup_prepare( P, counts )
+    call fstr_setup_inp_formulation( P )
 
     ! -----
     rcode = fstr_ctrl_rewind( ctrl )
@@ -348,5 +349,28 @@ contains
     write(*,'(a,a,a,i0,a)') ' Warning: ', trim(header_name), ' (line:', fstr_ctrl_get_c_h_line_no( ctrl ), &
       ') is skipped. The results are written to the result file of FrontISTR'
   end subroutine fstr_setup_inp_output_request
+
+  !> Sets the formulation of 361 and 362 of the sections by the inp element names, which hecmw1 keeps in sect_opt:
+  !> C3D8 and C3D20 are computed with FI, C3D8I with IC, and C3D8R and C3D20R with RI. Called after the defaults
+  !> by the analysis type are set and before *SECTION is read, which overrides it.
+  subroutine fstr_setup_inp_formulation( P )
+    implicit none
+    type(fstr_param_pack) :: P
+
+    integer(kind=kint) :: i
+
+    do i = 1, P%MESH%section%n_sect
+      select case( P%MESH%section%sect_opt(i) )
+      case( HECMW_SECT_OPT_SOLID_FI )
+        P%SOLID%sections(i)%elemopt361 = kel361FI
+        P%SOLID%sections(i)%elemopt362 = kel362FI
+      case( HECMW_SECT_OPT_SOLID_IC )
+        P%SOLID%sections(i)%elemopt361 = kel361IC
+      case( HECMW_SECT_OPT_SOLID_RI )
+        P%SOLID%sections(i)%elemopt361 = kel361RI
+        P%SOLID%sections(i)%elemopt362 = kel362RI
+      end select
+    enddo
+  end subroutine fstr_setup_inp_formulation
 
 end module m_fstr_setup_inp
