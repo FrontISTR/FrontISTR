@@ -1,0 +1,2 @@
+# the mesh is read by hecmw_part1 in multi-process runs, so the warning is checked in single-process runs only
+np1:HECMW-IO-W1005: .*Node 5 doesn't exist
