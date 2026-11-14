@@ -194,7 +194,7 @@ contains
     real(kind=kreal) :: XX(*), YY(*), ZZ(*)
     real(kind=kreal) :: area_of_squre
     ! LOCAL VARIABLES
-    integer(kind=kint), parameter :: NN = 8
+    integer(kind=kint), parameter :: NN = 4
     integer(kind=kint), parameter :: NG = 2
     !parameter(NN=8, NG=2)
     real(kind=kreal)   :: H(NN), HR(NN), HS(NN)
