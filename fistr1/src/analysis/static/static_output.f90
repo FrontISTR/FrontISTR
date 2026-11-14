@@ -136,15 +136,19 @@ contains
     ndof = hecMESH%n_dof
 
     write( fnum, '(''#### Result step='',I6)') istep
+    mdof = 0
     select case (ndof)
       case (2)
         mdof = 3
         label(1)=11;label(2)=22
         label(3)=12
-      case (3,6)
+      case (3,4,6)
         mdof = 6
         label(1)=11;label(2)=22;label(3)=33;
         label(4)=12;label(5)=23;label(6)=31;
+      case default
+        write(*,*) '###ERROR### : Unsupported number of DOF per node: ', ndof
+        call hecmw_abort( hecmw_comm_get_comm() )
     end select
 
     j = hecMESH%global_node_ID(1)

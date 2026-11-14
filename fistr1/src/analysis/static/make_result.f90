@@ -104,8 +104,8 @@ contains
 
     is_dynamic = present(fstrDYNAMIC)
 
+    idx = 1
     if( is_dynamic ) then
-      idx = 1
       if( fstrDYNAMIC%idx_eqa/=11 .and. istep>0 ) idx = 2
     endif
 
@@ -753,8 +753,8 @@ contains
     mm = hecMESH%n_node
     if( hecMESH%n_elem>hecMESH%n_node ) mm = hecMESH%n_elem
 
+    idx = 1
     if( is_dynamic ) then
-      idx = 1
       if( fstrDYNAMIC%idx_eqa/=11 .and. istep>0 ) idx = 2
     endif
 
