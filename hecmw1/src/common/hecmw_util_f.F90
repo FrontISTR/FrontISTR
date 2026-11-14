@@ -77,7 +77,7 @@ module hecmw_util
   integer(kind=kint),parameter :: HECMW_SECT_OPT_PSTRESS_RI   = 10
   integer(kind=kint),parameter :: HECMW_SECT_OPT_PSTRAIN_RI   = 11
   integer(kind=kint),parameter :: HECMW_SECT_OPT_ASYMMETRY_RI = 12
-  integer(kind=kint),parameter :: HECMW_SECT_OPT_SOLID_FI     = 20
+  integer(kind=kint),parameter :: HECMW_SECT_OPT_SOLID_FBAR   = 20
   integer(kind=kint),parameter :: HECMW_SECT_OPT_SOLID_IC     = 21
   integer(kind=kint),parameter :: HECMW_SECT_OPT_SOLID_RI_AS_FI = 22
   !C===

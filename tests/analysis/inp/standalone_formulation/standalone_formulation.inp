@@ -1,12 +1,12 @@
 ** Six cantilevers of 4 x 1 x 1 read from this inp file alone. The formulation of the 8-node hexahedra
-** is given by the element names, C3D8 (FORM361=FI), C3D8I (IC) and C3D8R (FI with a warning), unless
+** is given by the element names, C3D8 (FORM361=FBAR), C3D8I (IC) and C3D8R (FI with a warning), unless
 ** *SECTION gives FORM361. An element set of two element names is put in two sections, and *SECTION
 ** of its number is given to both.
-**   BEAM1: C3D8, FI                     BEAM2: C3D8I, IC
-**   BEAM3: C3D8R, FI with a warning     BEAM4: C3D8 and C3D8I, FI and IC
+**   BEAM1: C3D8, FBAR                   BEAM2: C3D8I, IC
+**   BEAM3: C3D8R, FI with a warning     BEAM4: C3D8 and C3D8I, FBAR and IC
 **   BEAM5: C3D8 with FORM361=IC         BEAM6: C3D8I and C3D8R with FORM361=FI, with a warning
-** The tips of BEAM1, BEAM3 and BEAM6 move by the same amount, those of BEAM2 and BEAM5 by the same
-** larger amount, and that of BEAM4 by an amount between them.
+** BEAM1 and BEAM4 exercise FBAR from the element name, including a mixed element set.
+** The tips of BEAM3 and BEAM6 move by the same amount, as do those of BEAM2 and BEAM5.
 *HEADING
  Six cantilevers of 4 x 1 x 1, by the formulation of their 8-node hexahedra
 *NODE, NSET=NALL

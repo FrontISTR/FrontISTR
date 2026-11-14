@@ -583,7 +583,7 @@ static int get_secopt(char *elset, int *forms, int *nform) {
     if (type == NULL) continue;
     if (HECMW_is_etype_surface(get_HECMW_etype(type->i))) has_2d = 1;
     secopt = get_secopt_inp(type->i);
-    if (secopt >= HECMW_SECT_OPT_SOLID_FI) {
+    if (secopt >= HECMW_SECT_OPT_SOLID_FBAR) {
       for (j = 0; j < *nform && forms[j] != secopt; j++)
         ;
       if (j == *nform) forms[(*nform)++] = secopt;
