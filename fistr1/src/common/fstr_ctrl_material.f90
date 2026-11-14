@@ -470,6 +470,7 @@ contains
     integer :: ipt
     character(len=256) :: s
 
+    fstr_ctrl_get_TRS = -1
     ipt=1
     s = 'WLF,ARRHENIUS '
     if( fstr_ctrl_get_param_ex( ctrl, 'DEFINITION ',  s, 0, 'P',   ipt    ) /= 0 ) return
