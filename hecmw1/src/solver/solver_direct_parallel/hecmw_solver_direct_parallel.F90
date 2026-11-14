@@ -4671,7 +4671,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     implicit none
 
-    real(kind=kreal),   intent(inout) :: dsln(3)
+    real(kind=kreal),   intent(inout) :: dsln(:)
     integer(kind=kint), intent(out) :: ir
 
     real(kind=kreal) :: t

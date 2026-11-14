@@ -24,7 +24,7 @@ contains
 
   subroutine ShapeDeriv_tri6n(areacoord,func)
     real(kind=kreal), intent(in) :: areacoord(2)
-    real(kind=kreal) :: func(6,2)
+    real(kind=kreal), intent(out) :: func(6,2)
     real(kind=kreal) :: xi,et,st
     xi=areacoord(1);  et=areacoord(2); st=1.d0-xi-et
 
@@ -45,7 +45,7 @@ contains
   end subroutine
 
   subroutine Shape2ndDeriv_tri6n(func)
-    real(kind=kreal) :: func(6,2,2)
+    real(kind=kreal), intent(out) :: func(6,2,2)
     func(1,1,1) = 4.d0;  func(1,1,2) = 4.d0
     func(2,1,1) = 4.d0;  func(2,1,2) = 0.d0
     func(3,1,1) = 0.d0;  func(3,1,2) = 0.d0

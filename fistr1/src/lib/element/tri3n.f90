@@ -16,7 +16,7 @@ contains
   end subroutine
 
   subroutine ShapeDeriv_tri3n(func)
-    real(kind=kreal) :: func(3,2)
+    real(kind=kreal), intent(out) :: func(3,2)
     func(1,1) = 1.d0
     func(2,1) = 0.d0
     func(3,1) = -1.d0
@@ -27,7 +27,7 @@ contains
   end subroutine
 
   subroutine Shape2ndDeriv_tri3n(func)
-    real(kind=kreal) :: func(3,2,2)
+    real(kind=kreal), intent(out) :: func(3,2,2)
     func(:,:,:) = 0.d0
   end subroutine
 
