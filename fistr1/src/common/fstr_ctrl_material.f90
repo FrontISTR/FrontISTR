@@ -702,6 +702,9 @@ contains
             call init_table( mttable,1, 2, n-1, fval(1:2,2:n) )
             call dict_add_key( dict, MC_YIELD, mttable )
           endif
+        case default
+          print *, "Error in hardening definition!"
+          stop
         end select
         if( ipt==3 ) then     ! Drucker-Prager
           matval(M_PLCONST3) = 2.d0*sin(phi)/ ( sqrt(3.d0)*(3.d0+sin(phi)) ) ! eta

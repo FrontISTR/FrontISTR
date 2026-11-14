@@ -855,6 +855,8 @@ static unsigned short int transform_hex(char a) {
     case '9':
       aa = 9;
       break;
+    default:
+      HECMW_vis_print_exit("there is something wrong for the hexadecimal digit");
   }
   return (aa);
 }

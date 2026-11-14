@@ -4010,6 +4010,9 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     ierr=0
     allocate(temp(9,neqns),indx(neqns), stat=ierr)
+    if(ierr .ne. 0) then
+      call errtrp('stop due to allocation error.')
+    end if
     temp = 0.0d0
     indx = 0
 

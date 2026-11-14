@@ -464,6 +464,8 @@ contains
         elseif( isin==41 ) then; x=-lpos(2)
         else; stop "Error: cal_node_normal: invalid isin"
         endif
+       case default
+        stop "Error: cal_node_normal: invalid etype"
       end select
       ! find neighbor surf that includes cnode1 and cnode2
       nsurf = 0

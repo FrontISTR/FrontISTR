@@ -6,6 +6,7 @@
 #include "hecmw_vis_intersection_find.h"
 
 #include "hecmw_vis_calc_attr.h"
+#include "hecmw_vis_mem_util.h"
 
 /*  provide information for rotation of cube  */
 int get_hex_rotation_info(int rot_type, Rotation_info *rot_info) {
@@ -252,6 +253,8 @@ void case1_tiler_hex(int index, Cube_polygons *cube_polys) {
     case 128:
       get_hex_rotation_info(21, &rot_info);
       break;
+    default:
+      HECMW_vis_print_exit("ERROR: invalid cube index in case1_tiler_hex");
   }
 
   cube_polys->verts_num = 4;
@@ -540,6 +543,8 @@ static int 	bounds_5[5] = {3, 6,4,0, -1};
         amb_index = separation_test(cell, 4, fvalue, CS_type, disamb_flag);
         get_hex_rotation_info(15, &rot_info);
         break;
+      default:
+        HECMW_vis_print_exit("ERROR: invalid cube index in case3_tiler_hex");
     }
   }
 
@@ -670,6 +675,8 @@ static int 	bounds_5[7] = {5, 8,9,6,0,4, -1};
         amb_index = separation_test(cell, 4, fvalue, CS_type, disamb_flag);
         get_hex_rotation_info(15, &rot_info);
         break;
+      default:
+        HECMW_vis_print_exit("ERROR: invalid cube index in case3opp_tiler_hex");
     }
   }
 
@@ -3085,6 +3092,8 @@ int choice_disambiguation(int disamb_flag, double fvalue, int CS_type,
     case 2: /* facial average */
       field = facial_average(voxel0, voxel1, voxel2, voxel3);
       break;
+    default:
+      HECMW_vis_print_exit("ERROR: invalid disambiguation type");
   }
 
   if (!CS_type) {

@@ -412,7 +412,7 @@ void CNFData::ReadMultRec(char type, int n_in_rec, int val_n, void *val) {
       break;
 
     default:
-      assert(0);
+      throw CNFError(NFE_UNKNOWN_ERROR, line);
   }
 
   n  = val_n / n_in_rec;
