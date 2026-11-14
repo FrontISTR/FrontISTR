@@ -298,18 +298,18 @@ contains
           call NodalStress_INV3( ic_type, ni, fstrSOLID%elements(icel)%gausses, &
             inv_func, ndstrain(1:nn,1:6), ndstress(1:nn,1:6), &
             tdstrain(1:nn,1:6) )
-          call ElementStress_C3( ic_type, fstrSOLID%elements(icel)%gausses, estrain, estress )
+          call ElementStress_C3( fstrSOLID%elements(icel)%gausses, estrain, estress )
 
         else if ( ic_type == 881 .or. ic_type == 891 ) then  !for selective es/ns smoothed fem
           cycle
         else
           if( ic_type == 341 .and. fstrSOLID%sections(isect)%elemopt341 == kel341SESNS ) cycle
 
-          call NodalStress_C3( ic_type, nn, fstrSOLID%elements(icel)%gausses, &
+          call NodalStress_C3( nn, fstrSOLID%elements(icel)%gausses, &
             ndstrain(1:nn,1:6), ndstress(1:nn,1:6) )
           !call NodalStress_C3( ic_type, nn, fstrSOLID%elements(icel)%gausses, &
             !                     ndstrain(1:nn,1:6), ndstress(1:nn,1:6), tdstrain(1:nn,1:6) )
-          call ElementStress_C3( ic_type, fstrSOLID%elements(icel)%gausses, estrain, estress )
+          call ElementStress_C3( fstrSOLID%elements(icel)%gausses, estrain, estress )
 
         endif
 
