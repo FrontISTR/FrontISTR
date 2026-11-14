@@ -136,7 +136,7 @@ void CNFData::Load(const char *fname) {
       } while (fg_block_continue);
     }
 
-  } catch (CNFError e) {
+  } catch (CNFError &e) {
     fclose(fp);
     throw e;
   }
@@ -328,7 +328,7 @@ void CNFData::ReadRecord(char *buff, const char *fmt, ...) {
       }
     }
 
-  } catch (CNFError err) {
+  } catch (CNFError &err) {
     throw err;
   }
 }
@@ -522,7 +522,7 @@ void CNFData::WriteData(FILE *fp, const char *fmt, ...) {
       }
     }
 
-  } catch (CNFError err) {
+  } catch (CNFError &err) {
     va_end(va);
     throw err;
   }

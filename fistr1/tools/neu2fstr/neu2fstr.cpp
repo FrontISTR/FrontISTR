@@ -301,7 +301,7 @@ int main(int argc, char **argv) {
   try {
     nfdata.Load(neu_name);
 
-  } catch (CNFError e) {
+  } catch (CNFError &e) {
     fprintf(stderr, "NEU loading error : %s\n", e.Msg());
     return -1;
   }
