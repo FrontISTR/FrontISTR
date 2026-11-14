@@ -98,6 +98,8 @@ contains
       else if(LTYPE.EQ.3) then
         NOD(1)=3
         NOD(2)=1
+      else
+        stop "Error in getting subface"
       endif
     endif
     !** SURFACE LOAD
@@ -197,6 +199,8 @@ contains
         NOD(1)=3
         NOD(2)=1
         NOD(3)=6
+      else
+        stop "Error in getting subface"
       endif
     endif
     do I=1,NN
@@ -331,6 +335,8 @@ contains
       else if(LTYPE.EQ.4) then
         NOD(1)=4
         NOD(2)=1
+      else
+        stop "Error in getting subface"
       endif
     endif
     do I=1,NN
@@ -451,6 +457,8 @@ contains
         NOD(1)=4
         NOD(2)=1
         NOD(3)=8
+      else
+        stop "Error in getting subface"
       endif
     endif
     do I=1,NN
@@ -592,6 +600,8 @@ contains
         NOD(1)=4
         NOD(2)=1
         NOD(3)=3
+      else
+        stop "Error in getting subface"
       endif
     endif
     ! CLEAR VECT
@@ -752,6 +762,8 @@ contains
         NOD(4)=8
         NOD(5)=7
         NOD(6)=10
+      else
+        stop "Error in getting subface"
       endif
     endif
     ! CLEAR VECT
@@ -1024,6 +1036,8 @@ contains
         NOD(2) = 4
         NOD(3) = 1
         NOD(4) = 3
+      else
+        stop "Error in getting subface"
       endif
     endif
     do I=1,NN
@@ -1255,6 +1269,8 @@ contains
         NOD(6) = 13
         NOD(7) = 9
         NOD(8) = 15
+      else
+        stop "Error in getting subface"
       endif
     endif
     do I=1,NN
@@ -1570,6 +1586,8 @@ contains
         NOD(2) = 5
         NOD(3) = 1
         NOD(4) = 4
+      else
+        stop "Error in getting subface"
       endif
     endif
     ! CLEAR VECT
@@ -1821,6 +1839,8 @@ contains
         NOD(6) = 17
         NOD(7) = 12
         NOD(8) = 20
+      else
+        stop "Error in getting subface"
       endif
     endif
     ! CLEAR VECT
