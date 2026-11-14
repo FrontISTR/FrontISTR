@@ -1,0 +1,7 @@
+# *EXPANSION and *TEMPERATURE, which hecmw1 does not read, are read without the warnings of hecmw1
+no:HECMW-IO-INP-W0099
+no:Auto-generated cards
+no:NGRP=
+# a parameter not read is skipped with a warning, and those read or without effect are not warned of
+Warning: \*TEMPERATURE \(line:[0-9]+\) : unsupported parameter OP is skipped
+no:unsupported parameter (TYPE|ZERO)
