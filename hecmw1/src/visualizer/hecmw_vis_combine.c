@@ -478,7 +478,7 @@ plist[i*3+2]=v3;
         fprintf(outfp, "   -1\n");
         fprintf(outfp, "   451\n");
         fprintf(outfp, "1,1,1,\n");
-        fprintf(outfp, "%s\n", sf[ii].color_comp_name);
+        fprintf(outfp, "%s\n", sf[1].color_comp_name);
         tmp = fabs(mavalue[sf[1].color_comp]);
         if (fabs(mivalue[sf[1].color_comp]) > tmp)
           tmp = fabs(mivalue[sf[1].color_comp]);
