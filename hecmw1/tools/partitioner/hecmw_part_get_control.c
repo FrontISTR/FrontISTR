@@ -17,7 +17,7 @@
 #include "hecmw_part_struct.h"
 #include "hecmw_part_get_control.h"
 
-static char ctrl_file_name[HECMW_FILENAME_LEN] = "\0";
+static char ctrl_file_name[HECMW_FILENAME_LEN + 1] = "\0";
 static int  args_subdomain = 0;
 
 /*================================================================================================*/

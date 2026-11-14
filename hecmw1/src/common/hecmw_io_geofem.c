@@ -18,7 +18,7 @@ static char grid_filename[HECMW_FILENAME_LEN + 1] = "Unknown";
 
 static void do_logging(int loglv, int msgno, int add_location, const char *fmt,
                        va_list ap) {
-  char line[100] = "";
+  char line[HECMW_FILENAME_LEN + 16] = "";
   char msg[HECMW_MSG_LEN + 1];
 
   HECMW_vsnprintf(msg, sizeof(msg), fmt, ap);

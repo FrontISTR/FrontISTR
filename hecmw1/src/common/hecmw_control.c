@@ -641,7 +641,7 @@ static int add_ctrl_entry(struct ctrl_entry *ctrl) {
 
 static void do_logging(int msgno, int add_location, const char *fmt,
                        va_list ap) {
-  char line[100] = "";
+  char line[HECMW_FILENAME_LEN + 16] = "";
   char msg[HECMW_MSG_LEN + 1];
   HECMW_vsnprintf(msg, sizeof(msg), fmt, ap);
 
