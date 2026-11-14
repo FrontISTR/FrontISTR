@@ -57,8 +57,9 @@ void HECMW_vis_rendering_surface(struct surface_module *sf,
       tmaxz;
   int num_img, base_x, base_y;
   double o_v_point[3], m_scr[4];
-  double mincolor, maxcolor, *mivalue, *mavalue, color_iso[3], org_mincolor,
-      org_maxcolor;
+  double mincolor = 0.0, maxcolor = 0.0, *mivalue, *mavalue, color_iso[3],
+      org_mincolor, org_maxcolor;
+  int color_on;
 
   BITMAPFILEHEADER header; /* File header */
   unsigned char r, g, b;
@@ -110,8 +111,13 @@ end_timestep=1000;
     }
   }
 
+  /* Surfaces with display_method = 4 are drawn in a single color and do not
+   * enter color_list. If all surfaces are so, there is no range of values for
+   * the color bar and the histogram, and they are not drawn. */
+  color_on = 0;
   for (i = 0; i < data->nn_component; i++) {
     if (color_list[i] == 1) {
+      color_on     = 1;
       org_mincolor = tmincolor = mivalue[i];
       org_maxcolor = tmaxcolor = mavalue[i];
       if (mynode == 0)
@@ -128,14 +134,14 @@ end_timestep=1000;
     }
   }
 
-  if (sr->histogram_on == 1)
+  if (color_on && sr->histogram_on == 1)
     output_histogram_sf(sf, color_list, data, mivalue, mavalue, result, mynode,
                         pesize, VIS_COMM);
-  if (sr->histogram_on == 2)
+  if (color_on && sr->histogram_on == 2)
     generate_histogram_graph_sf(sf, color_list, data, mivalue, mavalue, result,
                                 mynode, pesize, VIS_COMM,
                                 sr->color_system_type);
-  if (sr->color_mapping_style == 4) {
+  if (color_on && sr->color_mapping_style == 4) {
     sr->interval_mapping_num = 10;
     sr->interval_point       = (double *)HECMW_calloc(22, sizeof(double));
     generate_interval_point_sf(sf, color_list, data, mivalue, mavalue, result,
@@ -2122,14 +2128,14 @@ for(i=xr-1;i>=0;i--)
   image[(j*xr+i)*3+2]);
 fclose(outfp);
          */
-        if (sr->fixed_scale_mark == 0)
+        if (color_on && sr->fixed_scale_mark == 0)
           generate_color_bar(
               sr->scale_marking_on, sr->font_size, sr->color_bar_style,
               sr->mark_0_on, sr->color_mapping_bar_on, sr->xr, sr->yr,
               sr->font_color, sr->color_system_type, sr->color_mapping_style,
               sr->interval_point, sr->interval_mapping_num, sr->num_of_scale,
               tmincolor, tmaxcolor, org_mincolor, org_maxcolor, image);
-        if (sr->fixed_scale_mark == 1)
+        if (color_on && sr->fixed_scale_mark == 1)
           generate_color_bar(
               sr->scale_marking_on, sr->font_size, sr->color_bar_style,
               sr->mark_0_on, sr->color_mapping_bar_on, sr->xr, sr->yr,
