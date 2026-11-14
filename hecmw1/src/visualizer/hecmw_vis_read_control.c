@@ -1450,6 +1450,8 @@ HECMW_vis_print_exit("Please re-input again");
                   "can be defined as 0 or 1\n");
           HECMW_vis_print_exit("Please re-input it and run again");
         }
+        /* the scale marks belong to the color mapping bar */
+        if (sr->color_mapping_bar_on == 0) sr->scale_marking_on = 0;
 
         if ((sr->color_mapping_bar_on == 1) && (sr->xr < 40)) {
           fprintf(stderr,
@@ -2236,6 +2238,8 @@ if((stat_para[12]==1) && (vr->surface_opacity<0.0)) {
                 "be defined as 0 or 1\n");
         HECMW_vis_print_exit("Please re-input it and run again");
       }
+      /* the scale marks belong to the color mapping bar */
+      if (vr->color_mapping_bar_on == 0) vr->scale_marking_on = 0;
 
       if ((vr->color_mapping_bar_on == 1) && (vr->xr < 40)) {
         fprintf(stderr,
