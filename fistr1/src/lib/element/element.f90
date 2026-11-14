@@ -108,6 +108,43 @@ module elementInfo
   integer, parameter :: fe_quad8n_patch   = 1042
   ! ---------------------------------------------
 
+  !-------------------------------------------
+  !     Following ID of quadrature rules
+  !-------------------------------------------
+  integer, parameter :: qr_none      =  0
+  integer, parameter :: qr_line_1    =  1   ! gauss1d1, weight1d1
+  integer, parameter :: qr_line_2    =  2   ! gauss1d2, weight1d2
+  integer, parameter :: qr_tri_1     =  3   ! gauss2d4, weight2d4
+  integer, parameter :: qr_tri_3     =  4   ! gauss2d5, weight2d5
+  integer, parameter :: qr_quad_2x2  =  5   ! gauss2d2, weight2d2
+  integer, parameter :: qr_quad_3x3  =  6   ! gauss2d3, weight2d3
+  integer, parameter :: qr_tet_1     =  7   ! gauss3d4, weight3d4
+  integer, parameter :: qr_tet_4     =  8   ! gauss3d5, weight3d5
+  integer, parameter :: qr_prism_2   =  9   ! gauss3d7, weight3d7
+  integer, parameter :: qr_prism_9   = 10   ! gauss3d8, weight3d8
+  integer, parameter :: qr_hex_2x2x2 = 11   ! gauss3d2, weight3d2
+  integer, parameter :: qr_hex_3x3x3 = 12   ! gauss3d3, weight3d3
+
+  !> Quadrature rule: the integration points and weights to integrate over an element.
+  !> A negative id is minus the element type, for the element types whose number of quadrature points
+  !> does not match the quadrature tables; their points and weights are obtained by the element type.
+  type tQuadRule
+    integer :: id = qr_none
+  end type tQuadRule
+
+  interface NumOfQuadPoints
+    module procedure NumOfQuadPoints_etype, NumOfQuadPoints_rule
+  end interface
+  interface getQuadPoint
+    module procedure getQuadPoint_etype, getQuadPoint_rule
+  end interface
+  interface getWeight
+    module procedure getWeight_etype, getWeight_rule
+  end interface
+  private :: NumOfQuadPoints_etype, NumOfQuadPoints_rule, legacy_NumOfQuadPoints
+  private :: getQuadPoint_etype, getQuadPoint_rule, legacy_getQuadPoint
+  private :: getWeight_etype, getWeight_rule, legacy_getWeight
+
 contains
 
   !************************************
@@ -446,40 +483,110 @@ contains
     end select
   end subroutine
 
+  !> Obtains the default quadrature rule of the element
+  type(tQuadRule) function default_rule( etype )
+    integer, intent(in) :: etype          !< element type
+
+    default_rule%id = qr_none
+    select case (etype)
+      case ( fe_line2n, fe_if_line2n )
+        default_rule%id = qr_line_1
+      case ( fe_line3n )
+        default_rule%id = qr_line_2
+      case ( fe_tri3n )
+        default_rule%id = qr_tri_1
+      case ( fe_tri6n, fe_mitc3_shell )
+        default_rule%id = qr_tri_3
+      case ( fe_quad4n, fe_mitc4_shell )
+        default_rule%id = qr_quad_2x2
+      case ( fe_quad8n, fe_mitc9_shell )
+        default_rule%id = qr_quad_3x3
+      case ( fe_tet4n, fe_beam341 )
+        default_rule%id = qr_tet_1
+      case ( fe_tet10n, fe_tet4n_pipi )
+        default_rule%id = qr_tet_4
+      case ( fe_prism6n )
+        default_rule%id = qr_prism_2
+      case ( fe_prism15n )
+        default_rule%id = qr_prism_9
+      case ( fe_hex8n )
+        default_rule%id = qr_hex_2x2x2
+      case ( fe_hex20n )
+        default_rule%id = qr_hex_3x3x3
+      case default
+        if( etype > 0 ) default_rule%id = -etype
+    end select
+  end function
+
   !> Obtains the number of quadrature points of the element
-  integer function NumOfQuadPoints( fetype )
+  integer function NumOfQuadPoints_etype( fetype )
+    integer, intent(in) :: fetype         !< element type
+    NumOfQuadPoints_etype = NumOfQuadPoints_rule( default_rule(fetype) )
+  end function
+
+  !> Obtains the number of quadrature points of the quadrature rule
+  integer function NumOfQuadPoints_rule( rule )
+    type(tQuadRule), intent(in) :: rule   !< quadrature rule
+    if( rule%id < 0 ) then
+      NumOfQuadPoints_rule = legacy_NumOfQuadPoints( -rule%id )
+      return
+    endif
+
+    select case (rule%id)
+      case ( qr_line_1, qr_tri_1, qr_tet_1 )
+        NumOfQuadPoints_rule = 1
+      case ( qr_line_2, qr_prism_2 )
+        NumOfQuadPoints_rule = 2
+      case ( qr_tri_3 )
+        NumOfQuadPoints_rule = 3
+      case ( qr_quad_2x2, qr_tet_4 )
+        NumOfQuadPoints_rule = 4
+      case ( qr_hex_2x2x2 )
+        NumOfQuadPoints_rule = 8
+      case ( qr_quad_3x3, qr_prism_9 )
+        NumOfQuadPoints_rule = 9
+      case ( qr_hex_3x3x3 )
+        NumOfQuadPoints_rule = 27
+      case default
+        NumOfQuadPoints_rule = -1
+        stop "quadrature rule not defined-np"
+    end select
+  end function
+
+  !> Obtains the number of quadrature points of the element whose default rule is negative
+  integer function legacy_NumOfQuadPoints( fetype )
     integer, intent(in) :: fetype         !< element type
     select case (fetype)
       case (fe_line2n, fe_tri3n, fe_tet4n, fe_beam2n , fe_beam341, fe_truss, fe_if_line2n )
-        NumOfQuadPoints = 1
+        legacy_NumOfQuadPoints = 1
       case ( fe_tri6n )
-        NumOfQuadPoints = 3
+        legacy_NumOfQuadPoints = 3
       case ( fe_tri6nc )
-        NumOfQuadPoints = 4
+        legacy_NumOfQuadPoints = 4
       case (fe_line3n )
-        NumOfQuadPoints = 2
+        legacy_NumOfQuadPoints = 2
       case ( fe_quad4n, fe_mitc4_shell, fe_mitc4_shell361 )
-        NumOfQuadPoints = 4
+        legacy_NumOfQuadPoints = 4
       case ( fe_quad8n, fe_mitc9_shell )
-        NumOfQuadPoints = 9
+        legacy_NumOfQuadPoints = 9
       case ( fe_hex8n )
-        NumOfQuadPoints = 8
+        legacy_NumOfQuadPoints = 8
       case ( fe_hex20n, fe_mitc8_shell )
-        NumOfQuadPoints = 27
+        legacy_NumOfQuadPoints = 27
       case ( fe_prism6n )
-        NumOfQuadPoints = 2
+        legacy_NumOfQuadPoints = 2
       case ( fe_mitc3_shell, fe_mitc3_shell361 )
-        NumOfQuadPoints = 3
+        legacy_NumOfQuadPoints = 3
       case ( fe_prism15n, fe_tri6n_shell )
-        NumOfQuadPoints = 9
+        legacy_NumOfQuadPoints = 9
       case ( fe_tet10n, fe_tet4n_pipi )
-        NumOfQuadPoints = 4
+        legacy_NumOfQuadPoints = 4
       case ( fe_tet10nc )
-        NumOfQuadPoints = 12
+        legacy_NumOfQuadPoints = 12
       case ( fe_nodesmooth_tet4n, fe_edgesmooth_tet4n )
-        NumOfQuadPoints = 1
+        legacy_NumOfQuadPoints = 1
       case default
-        NumOfQuadPoints = -1
+        legacy_NumOfQuadPoints = -1
         ! error message
         stop "element type not defined-np"
     end select
@@ -535,7 +642,56 @@ contains
   end function getShellThicknessWeight
 
   !> Fetch the coordinate of gauss point
-  subroutine getQuadPoint( fetype, np, pos )
+  subroutine getQuadPoint_etype( fetype, np, pos )
+    integer, intent(in)           :: fetype    !< element type
+    integer, intent(in)           :: np        !< number of curr quadrature point
+    real(kind=kreal), intent(out) :: pos(:)    !< natural coord of curr quadrature point
+    call getQuadPoint_rule( default_rule(fetype), np, pos )
+  end subroutine
+
+  !> Fetch the coordinate of gauss point of the quadrature rule
+  subroutine getQuadPoint_rule( rule, np, pos )
+    use Quadrature
+    type(tQuadRule), intent(in)   :: rule      !< quadrature rule
+    integer, intent(in)           :: np        !< number of curr quadrature point
+    real(kind=kreal), intent(out) :: pos(:)    !< natural coord of curr quadrature point
+    if( rule%id < 0 ) then
+      call legacy_getQuadPoint( -rule%id, np, pos )
+      return
+    endif
+
+    select case (rule%id)
+      case ( qr_line_1 )
+        pos(1:1)=gauss1d1(:,np)
+      case ( qr_line_2 )
+        pos(1:1)=gauss1d2(:,np)
+      case ( qr_tri_1 )
+        pos(1:2)=gauss2d4(:,np)
+      case ( qr_tri_3 )
+        pos(1:2)=gauss2d5(:,np)
+      case ( qr_quad_2x2 )
+        pos(1:2)=gauss2d2(:,np)
+      case ( qr_quad_3x3 )
+        pos(1:2)=gauss2d3(:,np)
+      case ( qr_tet_1 )
+        pos(1:3)=gauss3d4(:,np)
+      case ( qr_tet_4 )
+        pos(1:3)=gauss3d5(:,np)
+      case ( qr_prism_2 )
+        pos(1:3)=gauss3d7(:,np)
+      case ( qr_prism_9 )
+        pos(1:3)=gauss3d8(:,np)
+      case ( qr_hex_2x2x2 )
+        pos(1:3)=gauss3d2(:,np)
+      case ( qr_hex_3x3x3 )
+        pos(1:3)=gauss3d3(:,np)
+      case default
+        stop "quadrature rule not defined-qp"
+    end select
+  end subroutine
+
+  !> Fetch the coordinate of gauss point of the element whose default rule is negative
+  subroutine legacy_getQuadPoint( fetype, np, pos )
     use Quadrature
     integer, intent(in)           :: fetype    !< element type
     integer, intent(in)           :: np        !< number of curr quadrature point
@@ -581,7 +737,55 @@ contains
   end subroutine
 
   !> Fetch the weight value in given gauss point
-  real(kind=kreal) function getWeight( fetype, np )
+  real(kind=kreal) function getWeight_etype( fetype, np )
+    integer, intent(in)           :: fetype       !< element type
+    integer, intent(in)           :: np           !< number of curr quadrature point
+    getWeight_etype = getWeight_rule( default_rule(fetype), np )
+  end function
+
+  !> Fetch the weight value in given gauss point of the quadrature rule
+  real(kind=kreal) function getWeight_rule( rule, np )
+    use Quadrature
+    type(tQuadRule), intent(in)   :: rule         !< quadrature rule
+    integer, intent(in)           :: np           !< number of curr quadrature point
+    if( rule%id < 0 ) then
+      getWeight_rule = legacy_getWeight( -rule%id, np )
+      return
+    endif
+
+    select case (rule%id)
+      case ( qr_line_1 )
+        getWeight_rule = weight1d1(np)
+      case ( qr_line_2 )
+        getWeight_rule = weight1d2(np)
+      case ( qr_tri_1 )
+        getWeight_rule = weight2d4(np)
+      case ( qr_tri_3 )
+        getWeight_rule = weight2d5(np)
+      case ( qr_quad_2x2 )
+        getWeight_rule = weight2d2(np)
+      case ( qr_quad_3x3 )
+        getWeight_rule = weight2d3(np)
+      case ( qr_tet_1 )
+        getWeight_rule = weight3d4(np)
+      case ( qr_tet_4 )
+        getWeight_rule = weight3d5(np)
+      case ( qr_prism_2 )
+        getWeight_rule = weight3d7(np)
+      case ( qr_prism_9 )
+        getWeight_rule = weight3d8(np)
+      case ( qr_hex_2x2x2 )
+        getWeight_rule = weight3d2(np)
+      case ( qr_hex_3x3x3 )
+        getWeight_rule = weight3d3(np)
+      case default
+        getWeight_rule = 0.d0
+        stop "quadrature rule not defined-wt"
+    end select
+  end function
+
+  !> Fetch the weight value in given gauss point of the element whose default rule is negative
+  real(kind=kreal) function legacy_getWeight( fetype, np )
     use Quadrature
     integer, intent(in)           :: fetype       !< element type
     integer, intent(in)           :: np           !< number of curr quadrature point
@@ -591,31 +795,31 @@ contains
 
     select case (fetype)
       case (fe_tri3n)
-        getWeight = weight2d4(1)
+        legacy_getWeight = weight2d4(1)
       case ( fe_tri6n, fe_mitc3_shell )
-        getWeight = weight2d5(np)
+        legacy_getWeight = weight2d5(np)
       case ( fe_quad4n, fe_mitc4_shell )
-        getWeight = weight2d2(np)
+        legacy_getWeight = weight2d2(np)
       case ( fe_quad8n, fe_mitc9_shell )
-        getWeight = weight2d3(np)
+        legacy_getWeight = weight2d3(np)
       case ( fe_hex8n, fe_mitc4_shell361 )
-        getWeight = weight3d2(np)
+        legacy_getWeight = weight3d2(np)
       case ( fe_hex20n)
-        getWeight = weight3d3(np)
+        legacy_getWeight = weight3d3(np)
       case ( fe_prism6n, fe_mitc3_shell361 )
-        getWeight = weight3d7(np)
+        legacy_getWeight = weight3d7(np)
       case ( fe_prism15n )
-        getWeight = weight3d8(np)
+        legacy_getWeight = weight3d8(np)
       case ( fe_tet4n, fe_beam341 )
-        getWeight = weight3d4(1)
+        legacy_getWeight = weight3d4(1)
       case ( fe_tet10n, fe_tet4n_pipi )
-        getWeight = weight3d5(np)
+        legacy_getWeight = weight3d5(np)
       case ( fe_line2n, fe_if_line2n )
-        getWeight = weight1d1(1)
+        legacy_getWeight = weight1d1(1)
       case ( fe_line3n )
-        getWeight = weight1d2(np)
+        legacy_getWeight = weight1d2(np)
       case default
-        getWeight = 0.d0
+        legacy_getWeight = 0.d0
         ! error message
     end select
   end function
