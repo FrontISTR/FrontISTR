@@ -350,11 +350,14 @@ contains
       if( hecMESH%elem_type(i)==301 ) fstrSOLID%elements(i)%etype=111
       if (hecmw_is_etype_link(fstrSOLID%elements(i)%etype)) cycle
       if (hecmw_is_etype_patch(fstrSOLID%elements(i)%etype)) cycle
-      ng = NumOfQuadPoints( fstrSOLID%elements(i)%etype )
+      isect= hecMESH%section_ID(i)
+      if( isect<0 .or. isect>hecMESH%section%n_sect )   &
+        stop "Error in element's section definition"
+      fstrSOLID%elements(i)%qrule = default_rule( fstrSOLID%elements(i)%etype )
+      ng = NumOfQuadPoints( fstrSOLID%elements(i)%qrule )
       if( ng > fstrSOLID%maxn_gauss ) fstrSOLID%maxn_gauss = ng
       if(ng>0) allocate( fstrSOLID%elements(i)%gausses( ng ) )
 
-      isect= hecMESH%section_ID(i)
       ndof = getSpaceDimension( fstrSOLID%elements(i)%etype )
       if (ndof == 2) then              ! why do this???
         id=hecMESH%section%sect_opt(isect)
@@ -367,8 +370,6 @@ contains
         endif
       endif
 
-      if( isect<0 .or. isect>hecMESH%section%n_sect )   &
-        stop "Error in element's section definition"
       id = hecMESH%section%sect_mat_ID_item(isect)
       fstrSOLID%materials(id)%cdsys_ID = hecMESH%section%sect_orien_ID(isect)
       nn = hecMESH%elem_node_index(i)-hecMESH%elem_node_index(i-1)

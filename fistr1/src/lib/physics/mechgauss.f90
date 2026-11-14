@@ -7,7 +7,7 @@ module mMechGauss
   use hecmw_util
   use mMaterial
   use elementInfo, only: fe_mitc3_shell, fe_mitc4_shell, fe_mitc9_shell, NumOfShellThicknessQuadPoints, &
-    getShellThicknessQuadPoint, getShellThicknessWeight
+    getShellThicknessQuadPoint, getShellThicknessWeight, tQuadRule
   implicit none
 
   ! ----------------------------------------------------------------------------
@@ -33,6 +33,7 @@ module mMechGauss
   !> All data should be recorded in every elements
   type tElement
     integer                     :: etype                 !< element's type
+    type(tQuadRule)             :: qrule                 !< quadrature rule of the element
     integer                     :: iset                  !< plane strain, stress etc
     real(kind=kreal), pointer   :: equiForces(:) => null()  !< equivalent forces
     type(tGaussStatus), pointer :: gausses(:) => null()  !< info of qudrature points
