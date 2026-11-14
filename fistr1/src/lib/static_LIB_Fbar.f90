@@ -67,6 +67,9 @@ contains
     !---------------------------------------------------------------------
 
     stiff(:, :) = 0.0D0
+    ! Fbar and dstrain are set for TOTALLAG and UPDATELAG before they are used
+    Fbar(:, :) = 0.0D0
+    dstrain(:) = 0.0D0
     ! we suppose the same material type in the element
     flag = gausses(1)%pMaterial%nlgeom_flag
     if( .not. present(u) ) flag = INFINITESIMAL    ! enforce to infinitesimal deformation analysis

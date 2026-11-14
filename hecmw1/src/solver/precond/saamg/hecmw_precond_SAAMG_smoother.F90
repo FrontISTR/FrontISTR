@@ -392,6 +392,7 @@ contains
     integer(kind=8) :: seed
 
     allocate(q(A%n), qp(A%n), w(A%n), aq(A%n), dv(A%n), alpha(niter), beta(niter))
+    alpha = 0.0d0; beta = 0.0d0
 
     ! fixed-seed deterministic start (tiny LCG) mapped to (-1,1)
     seed = 88172645463325252_8

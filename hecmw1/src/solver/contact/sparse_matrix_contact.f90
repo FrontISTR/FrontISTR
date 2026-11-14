@@ -704,10 +704,6 @@ contains
       enddo
     endif
     !    print *,myrank,'spMAT%irn',ii,spMAT%offset, m,spMAT%NZ
-    if (spMAT%type == SPARSE_MATRIX_TYPE_CSR) then
-      if(spMAT%IRN(ii+1-spMAT%offset)/=m) &
-        stop "ERROR: sparse_matrix_contact_set_a"
-    endif
     if (m-1 /= spMAT%NZ) then
       write(*,*) 'ERROR: sparse_matrix_para_contact_set_vals on rank ',hecmw_comm_get_rank()
       write(*,*) 'm-1 = ',m-1,', NZ=',spMAT%NZ,',num_lagrange=',hecMAT%lagmat%num_lagrange

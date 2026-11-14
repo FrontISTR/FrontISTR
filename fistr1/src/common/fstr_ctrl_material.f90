@@ -638,6 +638,8 @@ contains
             stop
         end select
       case (2, 3)  ! Mohr-Coulomb, Drucker-Prager
+        phi = 0.d0
+        psi = 0.d0
         select case (hipt)
         case (1)  ! linear hardening
           allocate( fval(4,n) )

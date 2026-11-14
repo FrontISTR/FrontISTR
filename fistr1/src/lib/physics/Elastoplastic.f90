@@ -436,7 +436,7 @@ contains
     else ! EDGE
       if( istat==MC_PLASTIC_RIGHT ) then
         C2 = r2G*(1.d0+sinphi+sinpsi-sphsps/3.d0) + 4.d0*K*sphsps
-      else if( istat==MC_PLASTIC_LEFT ) then
+      else ! MC_PLASTIC_LEFT
         C2 = r2G*(1.d0-sinphi-sinpsi-sphsps/3.d0) + 4.d0*K*sphsps
       endif
       dum = r4cos2phi*harden

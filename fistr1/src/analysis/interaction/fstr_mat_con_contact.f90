@@ -40,7 +40,7 @@ contains
     integer(kind=kint) :: algtype !< current loading step
     if( algtype == CONTACTSSLID .or. algtype == CONTACTFSLID ) then
       fstr_get_num_lagrange_pernode = 1
-    else if( algtype == CONTACTTIED ) then
+    else ! CONTACTTIED
       fstr_get_num_lagrange_pernode = 3
     endif
   end function
