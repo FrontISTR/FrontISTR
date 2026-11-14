@@ -410,7 +410,7 @@ contains
     type(c_ptr), value, intent(in) :: mesh
     type(c_ptr), value, intent(in) :: grp_name
     integer(c_int), value, intent(in) :: count
-    integer(c_int), intent(in) :: list(count)
+    integer(c_int), intent(in) :: list(2*count)
     type(hecmwST_local_mesh), pointer :: hecMESH
     character(kind=c_char), pointer :: char_array(:) => null()
     character(len=HECMW_NAME_LEN) :: grp_name_f
@@ -437,7 +437,6 @@ contains
     character(kind=c_char), intent(inout) :: buf(*)
     integer(c_int), value, intent(in) :: buflen
     call c_f_pointer(cptr=mesh, fptr=hecMESH)
-    call c_f_pointer(cptr=mesh, fptr=hecMESH)
     call f_c_str_copy(hecMESH%surf_group%grp_name(i),buf,buflen)
   end subroutine
 
@@ -458,7 +457,7 @@ contains
     call c_f_pointer(cptr=mesh, fptr=hecMESH)
     is = hecMESH%surf_group%grp_index(i-1)+1
     ie = hecMESH%surf_group%grp_index(i)
-    array = c_loc(hecMESH%surf_group%grp_item(is))
+    array = c_loc(hecMESH%surf_group%grp_item(2*is-1))
     count = ie - is + 1
   end subroutine
 

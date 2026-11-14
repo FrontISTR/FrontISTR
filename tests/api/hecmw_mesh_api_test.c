@@ -121,14 +121,20 @@ int surface_group_test()
     assert(elem2[3]==4);
     assert(sectID2[0]==1);
 
-    int sgrp[] = {
+    int sgrp1[] = {
         1,1,1,2
     };
-    hecmw_api_mesh_append_sgrp(mesh,"S1",2,sgrp);
-    assert(hecmw_api_mesh_n_sgrp(mesh)==1);
+    hecmw_api_mesh_append_sgrp(mesh,"S1",2,sgrp1);
+    int sgrp2[] = {
+        1,3
+    };
+    hecmw_api_mesh_append_sgrp(mesh,"S2",1,sgrp2);
+    assert(hecmw_api_mesh_n_sgrp(mesh)==2);
     char buf[64];
     hecmw_api_mesh_get_sgrp_name(mesh,1,buf,64);
     assert(strcmp("S1",buf)==0);
+    hecmw_api_mesh_get_sgrp_name(mesh,2,buf,64);
+    assert(strcmp("S2",buf)==0);
     int* array;
     int count=0;
     hecmw_api_mesh_get_sgrp(mesh,1,&array,&count);
@@ -137,6 +143,10 @@ int surface_group_test()
     assert(array[1]==1);
     assert(array[2]==1);
     assert(array[3]==2);
+    hecmw_api_mesh_get_sgrp(mesh,2,&array,&count);
+    assert(count==1);
+    assert(array[0]==1);
+    assert(array[1]==3);
     hecmw_api_mesh_delete(mesh);
     return 0;
 }
@@ -174,14 +184,20 @@ int node_group_test()
     assert(hecmw_api_mesh_n_sgrp(mesh)==0);
     assert(hecmw_api_mesh_n_egrp(mesh)==0);
 
-    int ngrp[] = {
+    int ngrp1[] = {
         1,2,3,4,
     };
-    hecmw_api_mesh_append_ngrp(mesh,"N1",4,ngrp);
-    assert(hecmw_api_mesh_n_ngrp(mesh)==1);
+    hecmw_api_mesh_append_ngrp(mesh,"N1",4,ngrp1);
+    int ngrp2[] = {
+        5,6,
+    };
+    hecmw_api_mesh_append_ngrp(mesh,"N2",2,ngrp2);
+    assert(hecmw_api_mesh_n_ngrp(mesh)==2);
     char buf[64];
     hecmw_api_mesh_get_ngrp_name(mesh,1,buf,64);
     assert(strcmp("N1",buf)==0);
+    hecmw_api_mesh_get_ngrp_name(mesh,2,buf,64);
+    assert(strcmp("N2",buf)==0);
     int* array;
     int count=0;
     hecmw_api_mesh_get_ngrp(mesh,1,&array,&count);
@@ -190,6 +206,10 @@ int node_group_test()
     assert(array[1]==2);
     assert(array[2]==3);
     assert(array[3]==4);
+    hecmw_api_mesh_get_ngrp(mesh,2,&array,&count);
+    assert(count==2);
+    assert(array[0]==5);
+    assert(array[1]==6);
     hecmw_api_mesh_delete(mesh);
     return 0;
 }

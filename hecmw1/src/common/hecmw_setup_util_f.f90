@@ -281,16 +281,17 @@ contains
       endif
     enddo
 
-    if(grp_type_name=='surf_grp') then
-      item_count = 2*count
-    else
-      item_count = count
-    end if
-
     old_grp_number = n_grp
     new_grp_number = old_grp_number + 1
 
-    old_item_number = grp_index(n_grp)
+    if(grp_type_name=='surf_grp') then
+      item_count = 2*count
+      old_item_number = 2*grp_index(n_grp)
+    else
+      item_count = count
+      old_item_number = grp_index(n_grp)
+    end if
+
     new_item_number = old_item_number + item_count
 
     call hecmw_expand_name_array( grp_name, old_grp_number, new_grp_number )
