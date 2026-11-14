@@ -73,11 +73,11 @@ int HECMW_openlog(const char *logfile, int loglv, int options) {
     return -1;
   }
   snprintf(rank, sizeof(rank), ".%d", HECMW_comm_get_rank());
-  if ((strlen(logfile) + strlen(rank)) > HECMW_FILENAME_LEN) {
+  if (snprintf(logfilename, sizeof(logfilename), "%s%s", logfile, rank) >
+      HECMW_FILENAME_LEN) {
     HECMW_set_error(HECMW_UTIL_E9011, "Filename too long");
     return -1;
   }
-  snprintf(logfilename, sizeof(logfilename), "%s%s", logfile, rank);
 
   loglv &= HECMW_LOG_ALL;
   if (!loglv) {

@@ -255,6 +255,7 @@ void exodus_output(struct hecmwST_local_mesh *mesh,
 
     int ncid, stat;
     int old_fill_mode;
+    int len = 0;
     static int time_step_count = 0;
 
     /*
@@ -329,10 +330,10 @@ void exodus_output(struct hecmwST_local_mesh *mesh,
          *   parallel: {basename}.step{NNNN}.exo.{nprocs}.{rank}  (Nemesis)
          */
         if (petot == 1) {
-            snprintf(file_exo, sizeof(file_exo), "%s/%s.step%04d.exo",
+            len = snprintf(file_exo, sizeof(file_exo), "%s/%s.step%04d.exo",
                     dir_exo, basename_exo, time_step_count);
         } else {
-            snprintf(file_exo, sizeof(file_exo), "%s/%s.step%04d.exo.%d.%d",
+            len = snprintf(file_exo, sizeof(file_exo), "%s/%s.step%04d.exo.%d.%d",
                     dir_exo, basename_exo, time_step_count, petot, myrank);
         }
     } else {
@@ -343,14 +344,17 @@ void exodus_output(struct hecmwST_local_mesh *mesh,
          */
         if (time_step_count == 0) {
             if (petot == 1) {
-                snprintf(file_exo, sizeof(file_exo), "%s/%s.exo",
+                len = snprintf(file_exo, sizeof(file_exo), "%s/%s.exo",
                         dir_exo, basename_exo);
             } else {
-                snprintf(file_exo, sizeof(file_exo), "%s/%s.exo.%d.%d",
+                len = snprintf(file_exo, sizeof(file_exo), "%s/%s.exo.%d.%d",
                         dir_exo, basename_exo, petot, myrank);
             }
         }
         /* For subsequent calls, file_exo is already set (static) */
+    }
+    if (len >= (int)sizeof(file_exo)) {
+        HECMW_vis_print_exit("ERROR: HEC-MW-VIS-E0009: The file name for Exodus is too long");
     }
 
     /* Create the directory (needed on first call, or every call for per_step) */

@@ -178,11 +178,19 @@ bool set_params(int argc, char **argv) {
   }
 
   if (!fg_res_name) {
-    snprintf(res_name, sizeof(res_name), "%s.res", mesh_name);
+    if (snprintf(res_name, sizeof(res_name), "%s.res", mesh_name) >=
+        (int)sizeof(res_name)) {
+      fprintf(stderr, "##Error: mesh file name is too long\n");
+      return false;
+    }
   }
 
   if (!fg_vis_name) {
-    snprintf(vis_name, sizeof(vis_name), "%s.vis", mesh_name);
+    if (snprintf(vis_name, sizeof(vis_name), "%s.vis", mesh_name) >=
+        (int)sizeof(vis_name)) {
+      fprintf(stderr, "##Error: mesh file name is too long\n");
+      return false;
+    }
   }
 
   return true;
@@ -320,7 +328,7 @@ int main(int argc, char **argv) {
     return -1;
   }
 
-  char comment[256];
+  char comment[1024];
   cout << "saving HEC-MW mesh file..." << endl;
   create_comment(comment, sizeof(comment), true);
 

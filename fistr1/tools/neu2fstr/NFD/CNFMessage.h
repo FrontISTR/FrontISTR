@@ -32,7 +32,7 @@ enum { NFW_NON_SUPPORTED_DATA_BLOCK };
 
 class CNFMessage {
  protected:
-  static char msg[256];
+  static char msg[512];
 
  public:
   int no;

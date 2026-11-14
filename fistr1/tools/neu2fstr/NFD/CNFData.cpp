@@ -335,7 +335,8 @@ void CNFData::ReadRecord(char *buff, const char *fmt, ...) {
 
 int CNFData::ReadLine(char *buff, int size) {
   if (!fg_line_buff_empty) {
-    snprintf(buff, size, "%s", line_buff);
+    /* line_buff holds a line read by ReadLine with the same size */
+    snprintf(buff, size, "%.*s", size - 1, line_buff);
     fg_line_buff_empty = TRUE;
     return READLINE_SUCESS;
   }

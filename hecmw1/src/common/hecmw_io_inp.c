@@ -613,11 +613,11 @@ static int read_input(int msgno_invalid_token) {
     char separator[10];
     char *dname = HECMW_dirname(grid_filename);
     snprintf(separator, sizeof(separator), "%c", HECMW_get_path_separator());
-    if (strlen(dname) + strlen(separator) + strlen(p) > HECMW_FILENAME_LEN) {
+    if (snprintf(include_filename, sizeof(include_filename), "%s%s%s", dname,
+                 separator, p) > HECMW_FILENAME_LEN) {
       set_err(HECMW_IO_E0002, "");
       return -1;
     }
-    snprintf(include_filename, sizeof(include_filename), "%s%s%s", dname, separator, p);
   }
   return 0;
 }
