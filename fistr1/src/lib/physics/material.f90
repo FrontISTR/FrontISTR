@@ -141,6 +141,7 @@ module mMaterial
   ! Dictionary constants
   character(len=DICT_KEY_LENGTH) :: MC_ISOELASTIC= 'ISOELASTIC'      ! youngs modulus, poisson's ratio
   character(len=DICT_KEY_LENGTH) :: MC_ORTHOELASTIC= 'ORTHOELASTIC'  ! ortho elastic modulus
+  character(len=DICT_KEY_LENGTH) :: MC_HYPERELASTIC= 'HYPERELASTIC'  ! hyperelastic constants
   character(len=DICT_KEY_LENGTH) :: MC_YIELD = 'YIELD'               ! plastic strain, yield stress
   character(len=DICT_KEY_LENGTH) :: MC_THEMOEXP = 'THEMOEXP'         ! thermo expansion coefficient
   character(len=DICT_KEY_LENGTH) :: MC_ORTHOEXP = 'ORTHOEXP'         ! thermo expansion coefficient
