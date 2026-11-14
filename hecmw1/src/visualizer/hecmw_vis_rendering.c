@@ -1172,6 +1172,7 @@ t2=t3;
                   iso_p[j + 3] = f_disp[mmm1][j];
                 }
 
+                count_dash_num = -1;
                 transform_frame4(sr->screen_point, iso_p, coff_matrix, n_iso);
                 find_projection_range3(view_point, n_iso, pixel_d, iso_p);
                 for (j = 0; j < 2; j++) {
