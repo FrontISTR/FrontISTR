@@ -1419,6 +1419,12 @@ HECMW_vis_print_exit("Please re-input again");
           sr->rotate_style         = 0;
           sr->rotate_num_of_frames = 1;
         }
+        if ((sr->rotate_style < 0) || (sr->rotate_style > 4)) {
+          fprintf(stderr,
+                  "ERROR: HEC-MW-VIS-E1039: The rotate_style parameter is "
+                  "wrong. Please input one within (0, 4)\n");
+          HECMW_vis_print_exit("Please re-input and run again");
+        }
         if ((sr->rotate_style >= 1) && (sr->rotate_style <= 4)) {
           if (stat_para[37] == 0) sr->rotate_num_of_frames = 8;
           if (sr->rotate_num_of_frames <= 0) {

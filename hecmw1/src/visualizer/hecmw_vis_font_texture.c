@@ -453,7 +453,7 @@ void value2_to_rgb(double value, double color[3], int color_system_type) {
 static double rgb_to_value(double value_rgb, double mincolor, double maxcolor,
                            int color_mapping_style, double *interval_point,
                            int interval_mapping_num) {
-  double value;
+  double value = mincolor;
   int i;
 
   if (color_mapping_style == 1) {
@@ -462,6 +462,7 @@ static double rgb_to_value(double value_rgb, double mincolor, double maxcolor,
   } else if (color_mapping_style == 2) {
     mincolor = interval_point[0];
     maxcolor = interval_point[1];
+    value    = mincolor;
 
     if (fabs(maxcolor - mincolor) > EPSILON)
       value = value_rgb * (maxcolor - mincolor) + mincolor;

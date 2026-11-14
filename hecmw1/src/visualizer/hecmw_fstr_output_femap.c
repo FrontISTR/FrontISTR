@@ -183,6 +183,9 @@ static void femap_write_elem(FILE *outfp, int mynode, int n_elem,
       nnb[7]                          = nn[13];
       nnb[8]                          = nn[14];
       nnb[9]                          = nn[15];
+    } else {
+      fprintf(stderr, "WARNING: Unknown element type %d, skipping\n", ietyp);
+      continue;
     }
 
     fprintf(outfp, "%8d,%8d,%8d,%8d,%8d,1,0,0,0,0,0,0,0,\n", ielm, icol, isid,
@@ -1439,6 +1442,9 @@ void HECMW_bin_avs_output(struct hecmwST_local_mesh *mesh,
   } else if ((mesh->elem_type[0] == 361) || (mesh->elem_type[0] == 362)) {
     elem_type_bin = 7;
     node_num      = 8;
+  } else {
+    HECMW_vis_print_exit(
+        "ERROR: Element type not supported in binary AVS output");
   }
   if (pesize > 1) {
     HECMW_Allreduce(&mesh->nn_internal, &total_n_node, 1, HECMW_INT, HECMW_SUM,
