@@ -59,7 +59,7 @@ contains
       return
     endif
     ! calculate eigenvalues
-    LWORK=WORK(1)
+    LWORK=int(WORK(1))
     LIWORK=IWORK(1)
     deallocate(WORK,IWORK)
     allocate(WORK(LWORK),IWORK(LIWORK))
@@ -174,7 +174,7 @@ contains
       return
     endif
     ! calculate singular values
-    LWORK=WORK(1)
+    LWORK=int(WORK(1))
     deallocate(WORK)
     allocate(WORK(LWORK))
     call dgesdd(JOBZ,N,N,H1,LDH,WR,Z,LDZ,Z,LDZ,WORK,LWORK,IWORK,INFO)
