@@ -170,7 +170,7 @@ module mMaterial
     integer(kind=kint)         :: nlgeom_flag       !< type of constitutive relation
     integer(kind=kint)         :: mtype             !< material type
     integer(kind=kint)         :: nfstatus          !< number of status variables
-    character(len=30)          :: name              !< material name
+    character(len=HECMW_NAME_LEN) :: name           !< material name
     real(kind=kreal)           :: variables(200)    !< material properties
     integer(kind=kint)         :: variables_i(200)  !< material properties(integer)
     type(tshellmat), pointer   :: shell_var(:) => null() !< material properties for shell
