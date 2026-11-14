@@ -51,7 +51,7 @@ contains
     do i=1,size(fstrSOLID%elements)
       if (hecmw_is_etype_link( fstrSOLID%elements(i)%etype )) cycle
       if (hecmw_is_etype_patch( fstrSOLID%elements(i)%etype )) cycle
-      ng = NumOfQuadPoints( fstrSOLID%elements(i)%etype )
+      ng = size( fstrSOLID%elements(i)%gausses )
       allocate( fstrSOLID%elements_bkup(i)%gausses(ng) )
       do j=1,ng
         fstrSOLID%elements_bkup(i)%gausses(j)%pMaterial => fstrSOLID%elements(i)%gausses(j)%pMaterial
@@ -119,7 +119,7 @@ contains
     do i=1,size(fstrSOLID%elements)
       if (hecmw_is_etype_link( fstrSOLID%elements(i)%etype )) cycle
       if (hecmw_is_etype_patch( fstrSOLID%elements(i)%etype )) cycle
-      ng = NumOfQuadPoints( fstrSOLID%elements(i)%etype )
+      ng = size( fstrSOLID%elements_bkup(i)%gausses )
       do j=1,ng
         call fstr_finalize_gauss( fstrSOLID%elements_bkup(i)%gausses(j) )
       end do
@@ -197,7 +197,7 @@ contains
     do i=1,size(fstrSOLID%elements)
       if (hecmw_is_etype_link( fstrSOLID%elements(i)%etype )) cycle
       if (hecmw_is_etype_patch( fstrSOLID%elements(i)%etype )) cycle
-      ng = NumOfQuadPoints( fstrSOLID%elements(i)%etype )
+      ng = size( fstrSOLID%elements(i)%gausses )
       do j=1,ng
         call fstr_copy_gauss( fstrSOLID%elements(i)%gausses(j), fstrSOLID%elements_bkup(i)%gausses(j) )
       end do
@@ -284,7 +284,7 @@ contains
     do i=1,size(fstrSOLID%elements)
       if (hecmw_is_etype_link( fstrSOLID%elements(i)%etype )) cycle
       if (hecmw_is_etype_patch( fstrSOLID%elements(i)%etype )) cycle
-      ng = NumOfQuadPoints( fstrSOLID%elements(i)%etype )
+      ng = size( fstrSOLID%elements(i)%gausses )
       do j=1,ng
         call fstr_copy_gauss( fstrSOLID%elements_bkup(i)%gausses(j), fstrSOLID%elements(i)%gausses(j) )
       end do

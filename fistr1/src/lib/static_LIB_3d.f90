@@ -997,7 +997,7 @@ contains
   end subroutine UPDATE_C3
   !
   !----------------------------------------------------------------------*
-  subroutine NodalStress_C3(etype, nn, gausses, ndstrain, ndstress)
+  subroutine NodalStress_C3(nn, gausses, ndstrain, ndstress)
     !----------------------------------------------------------------------*
     !
     ! Calculate Strain and Stress increment of solid elements
@@ -1006,7 +1006,7 @@ contains
 
     !---------------------------------------------------------------------
 
-    integer(kind=kint), intent(in) :: etype, nn
+    integer(kind=kint), intent(in) :: nn
     type(tGaussStatus), intent(in) :: gausses(:)
     real(kind=kreal), intent(out)  :: ndstrain(nn,6)
     real(kind=kreal), intent(out)  :: ndstress(nn,6)
@@ -1020,7 +1020,7 @@ contains
 
     TEMP(:) = 0.0D0
 
-    IC = NumOfQuadPoints(etype)
+    IC = size(gausses)
 
     do i = 1, IC
       TEMP(1:6)  = TEMP(1:6) +gausses(i)%strain_out(1:6)
@@ -1038,7 +1038,7 @@ contains
 
 
   !----------------------------------------------------------------------*
-  subroutine ElementStress_C3(etype, gausses, strain, stress)
+  subroutine ElementStress_C3(gausses, strain, stress)
     !----------------------------------------------------------------------*
     !
     ! Calculate Strain and Stress increment of solid elements
@@ -1047,7 +1047,6 @@ contains
 
     !---------------------------------------------------------------------
 
-    integer(kind=kint), intent(in) :: etype
     type(tGaussStatus), intent(in) :: gausses(:)
     real(kind=kreal), intent(out)  :: strain(6)
     real(kind=kreal), intent(out)  :: stress(6)
@@ -1060,7 +1059,7 @@ contains
 
     strain(:) = 0.0D0; stress(:) = 0.0D0
 
-    IC = NumOfQuadPoints(etype)
+    IC = size(gausses)
 
     do i = 1, IC
       strain(:) = strain(:)+gausses(i)%strain_out(1:6)

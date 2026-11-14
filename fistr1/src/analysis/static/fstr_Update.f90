@@ -328,7 +328,7 @@ contains
     type(hecmwST_local_mesh) :: hecMESH     !< hecmw mesh
     type(fstr_solid) :: fstrSOLID   !< fstr_solid
     real(kind=kreal) :: tincr
-    integer(kind=kint) :: itype, is, iE, ic_type, icel, ngauss, i
+    integer(kind=kint) :: itype, is, iE, ic_type, icel, i
     integer(kind=kint) :: ishell
 
     if( associated( fstrSOLID%temperature ) ) then
@@ -345,9 +345,8 @@ contains
       if( hecmw_is_etype_link(ic_type) ) cycle
       if( hecmw_is_etype_patch(ic_type) ) cycle
 
-      ngauss = NumOfQuadPoints( ic_type )
       do icel = is, iE
-        do i = 1, ngauss
+        do i = 1, size( fstrSOLID%elements(icel)%gausses )
           call MatlStateUpdate( fstrSOLID%elements(icel)%gausses(i), tincr )
           fstrSOLID%elements(icel)%gausses(i)%strain_bak = fstrSOLID%elements(icel)%gausses(i)%strain
           fstrSOLID%elements(icel)%gausses(i)%stress_bak = fstrSOLID%elements(icel)%gausses(i)%stress
