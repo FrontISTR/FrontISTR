@@ -550,6 +550,20 @@ contains
 
       wg = getWeight( etype, lx )*det
 
+      epsth = 0.0D0
+
+      if( present( tt ) .and. present( t0 ) ) then
+        call getShapeFunc( etype, naturalcoord, spfunc )
+        ttc = dot_product( tt, spfunc )
+        tt0 = dot_product( t0, spfunc )
+        if( ( iter <= 1 ) .or. ( flag == TOTALLAG ) ) then
+          ina(1) = ttc
+          call fetch_TableData( MC_THEMOEXP, gausses(lx)%pMaterial%dict, outa, ierr, ina )
+          if( ierr ) outa(1) = gausses(lx)%pMaterial%variables(M_EXPANSION)
+          epsth(1:3) = outa(1)*( ttc-tt0 )
+        end if
+      end if
+
       ! Small (linear) strain
       dstrain(1) = gdispderiv(1, 1)
       dstrain(2) = gdispderiv(2, 2)
@@ -608,19 +622,8 @@ contains
       gausses(lx)%stress_out(1:6) = gausses(lx)%stress(1:6)
       gausses(lx)%strain_out(1:6) = gausses(lx)%strain(1:6)
 
-      epsth = 0.0D0
-
       if( present( tt ) .and. present( t0 ) ) then
-        call getShapeFunc( etype, naturalcoord, spfunc )
-        ttc = dot_product( tt, spfunc )
-        tt0 = dot_product( t0, spfunc )
         call MatlMatrix_up( gausses(lx), D3, d, d2, alpha_inv, g, time, tincr, coordsys, ttc )
-        if( ( iter <= 1 ) .or. ( flag == TOTALLAG ) ) then
-          ina(1) = ttc
-          call fetch_TableData( MC_THEMOEXP, gausses(lx)%pMaterial%dict, outa, ierr, ina )
-          if( ierr ) outa(1) = gausses(lx)%pMaterial%variables(M_EXPANSION)
-          epsth(1:3) = outa(1)*( ttc-tt0 )
-        end if
       else
         call MatlMatrix_up( gausses(lx), D3, d, d2, alpha_inv, g, time, tincr, coordsys )
       end if
