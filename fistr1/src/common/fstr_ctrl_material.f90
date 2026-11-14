@@ -809,7 +809,7 @@ contains
     integer(kind=kint), intent(in) :: ctrl
     real(kind=kreal),intent(inout) :: matval(:)
 
-    integer(kind=kint) :: i, rcode, depends
+    integer(kind=kint) :: rcode, depends
     real(kind=kreal), allocatable :: fval(:,:)
     character(len=HECMW_NAME_LEN) :: data_fmt
 
@@ -823,9 +823,6 @@ contains
 
     allocate( fval(1,depends+1) )
     fval =0.0d0
-    do i=2,1+depends
-      data_fmt = data_fmt //"R "
-    enddo
     block
       real(kind=kreal) :: fval1(depends+1)
       fval1 = fval(1,:)
@@ -869,9 +866,6 @@ contains
     if( ipt==1 ) then
       allocate( fval(depends+1, n) )
       fval =0.0d0
-      do i=2,1+depends
-        data_fmt = data_fmt //"R "
-      enddo
       if( depends==0 ) then
         block
           real(kind=kreal) :: fval1(n)
