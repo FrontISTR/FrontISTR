@@ -351,8 +351,8 @@ contains
   end subroutine fstr_setup_inp_output_request
 
   !> Sets the formulation of 361 and 362 of the sections by the inp element names, which hecmw1 keeps in sect_opt:
-  !> C3D8 and C3D20 are computed with FI, C3D8I with IC, and C3D8R and C3D20R with RI. Called after the defaults
-  !> by the analysis type are set and before *SECTION is read, which overrides it.
+  !> C3D8 is computed with FBAR, C3D8I with IC, C3D20 with FI, and C3D8R and C3D20R with RI. Called after the
+  !> defaults by the analysis type are set and before *SECTION is read, which overrides it.
   subroutine fstr_setup_inp_formulation( P )
     implicit none
     type(fstr_param_pack) :: P
@@ -369,6 +369,8 @@ contains
       case( HECMW_SECT_OPT_SOLID_RI )
         P%SOLID%sections(i)%elemopt361 = kel361RI
         P%SOLID%sections(i)%elemopt362 = kel362RI
+      case( HECMW_SECT_OPT_SOLID_FBAR )
+        P%SOLID%sections(i)%elemopt361 = kel361FBAR
       end select
     enddo
   end subroutine fstr_setup_inp_formulation

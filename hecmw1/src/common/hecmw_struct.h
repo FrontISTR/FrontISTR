@@ -27,6 +27,7 @@ struct hecmwST_section {
 #define HECMW_SECT_OPT_SOLID_FI 20     /* solid: full integration */
 #define HECMW_SECT_OPT_SOLID_IC 21     /* solid: incompatible modes */
 #define HECMW_SECT_OPT_SOLID_RI 22     /* solid: reduced integration */
+#define HECMW_SECT_OPT_SOLID_FBAR 23   /* solid: F-bar */
   int *sect_mat_ID_index;
   int *sect_mat_ID_item;
   int *sect_I_index;

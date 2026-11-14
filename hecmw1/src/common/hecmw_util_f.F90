@@ -80,6 +80,7 @@ module hecmw_util
   integer(kind=kint),parameter :: HECMW_SECT_OPT_SOLID_FI     = 20
   integer(kind=kint),parameter :: HECMW_SECT_OPT_SOLID_IC     = 21
   integer(kind=kint),parameter :: HECMW_SECT_OPT_SOLID_RI     = 22
+  integer(kind=kint),parameter :: HECMW_SECT_OPT_SOLID_FBAR   = 23
   !C===
 
   !C

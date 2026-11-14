@@ -1,18 +1,19 @@
 ** Nine cantilevers of 4 x 1 x 1 read from this inp file alone. The formulation of the hexahedra is
-** given by the element names, C3D8 (FORM361=FI), C3D8I (IC), C3D8R (RI), C3D20 (FORM362=FI) and
+** given by the element names, C3D8 (FORM361=FBAR), C3D8I (IC), C3D8R (RI), C3D20 (FORM362=FI) and
 ** C3D20R (RI), unless *SECTION gives FORM361 or FORM362. An element set of two element names is put
 ** in two sections, and *SECTION of its number is given to both. The elements of these sets are
 ** defined after their *SOLID SECTION, so that the sets are split after all the elements are read.
-**   BEAM1: C3D8, FI                     BEAM2: C3D8I, IC
-**   BEAM3: C3D8R, RI                    BEAM4: C3D8 and C3D8I, FI and IC
+**   BEAM1: C3D8, FBAR                   BEAM2: C3D8I, IC
+**   BEAM3: C3D8R, RI                    BEAM4: C3D8 and C3D8I, FBAR and IC
 **   BEAM5: C3D8 with FORM361=IC         BEAM6: C3D8I and C3D8R with FORM361=FI
 **   BEAM7: C3D20R, RI                   BEAM8: C3D20 and C3D20R, FI and RI
 **   BEAM9: C3D20 and C3D20R with FORM362=FI
 ** BEAM1 to BEAM6 are of 4 x 1 x 1 elements, and BEAM7 to BEAM9 of 2 x 2 x 2 elements, since the
 ** reduced integration of C3D20R leaves a zero energy mode in a column of one element. The 21 nodes of
 ** their tips (TIP20) carry smaller loads, so that no cantilever dominates the norms of the results.
-** The tips of BEAM1 and BEAM6 move by the same amount, as do those of BEAM2 and BEAM5. BEAM3 bends
-** much more, since an RI element has little bending stiffness with one element through the thickness.
+** BEAM1 and BEAM4 exercise FBAR from the element name, including a mixed element set. The tips of
+** BEAM2 and BEAM5 move by the same amount. BEAM3 bends much more, since an RI element has little
+** bending stiffness with one element through the thickness.
 *HEADING
  Nine cantilevers of 4 x 1 x 1, by the formulation of their hexahedra
 *NODE, NSET=NALL
