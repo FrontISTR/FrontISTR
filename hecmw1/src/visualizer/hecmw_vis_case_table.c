@@ -33,7 +33,7 @@ int get_data(Surface *sff, struct hecmwST_local_mesh *mesh,
              int tn_component) {
   int i, j;
   int nodeID;
-  int c_base, s_base;
+  int c_base, s_base = 0;
   double c[13], s[13];
   int tmp_int;
   double tmp_d;

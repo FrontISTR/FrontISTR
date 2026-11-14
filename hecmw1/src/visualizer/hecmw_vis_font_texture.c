@@ -408,7 +408,7 @@ void value2_to_rgb(double value, double color[3], int color_system_type) {
       r = (value - 0.5) * 4.0;
       g = 1.0;
       b = 0.0;
-    } else if (value > 0.75) {
+    } else {
       r = 1.0;
       g = (1.0 - value) * 4.0;
       b = 0.0;
@@ -434,12 +434,12 @@ void value2_to_rgb(double value, double color[3], int color_system_type) {
       r = (value - 0.6) * 5.0;
       g = 1.0;
       b = 0.0;
-    } else if (value > 0.0) {
+    } else {
       r = 1.0;
       g = 1.0 - (value - 0.8) * 5.0;
       b = 0.0;
     }
-  } else if (color_system_type == 3) {
+  } else { /* color_system_type is 3 */
     r = g = b = value;
   }
 
@@ -503,12 +503,10 @@ void generate_color_bar(int scale_marking_on, double font_size,
   char buf[128];
   int output5[5][5], output7[7][7], type;
 
-  if (scale_marking_on == 1) {
-    if ((font_size - (int)font_size) < 0.5 - EPSILON)
-      type = 1;
-    else
-      type = 2;
-  }
+  if ((font_size - (int)font_size) < 0.5 - EPSILON)
+    type = 1;
+  else
+    type = 2;
 
   if (color_bar_style == 1) {
     if (scale_marking_on == 0) {

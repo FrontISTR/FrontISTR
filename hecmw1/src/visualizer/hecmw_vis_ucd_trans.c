@@ -113,14 +113,9 @@ fprintf(outfp, "%lf\n", 0.0);
   if (vr->color_subcomp > data->nn_dof[vr->color_comp])
     HECMW_vis_print_exit(
         "ERROR: HEC-MW-VIS-E1055: color_subcomp is wrong: >dof");
-  if (data->nn_dof[vr->color_comp] == 1) {
-    c_base = 0;
-    for (i            = 0; i < vr->color_comp; i++) c_base += data->nn_dof[i];
-    vr->color_subcomp = 1;
-  } else if (data->nn_dof[vr->color_comp] > 1) {
-    c_base = 0;
-    for (i = 0; i < vr->color_comp; i++) c_base += data->nn_dof[i];
-  }
+  c_base = 0;
+  for (i = 0; i < vr->color_comp; i++) c_base += data->nn_dof[i];
+  if (data->nn_dof[vr->color_comp] == 1) vr->color_subcomp = 1;
   tn_component = 0;
   for (i = 0; i < data->nn_component; i++) tn_component += data->nn_dof[i];
 

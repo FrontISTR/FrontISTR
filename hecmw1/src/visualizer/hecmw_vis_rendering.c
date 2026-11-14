@@ -40,7 +40,7 @@ void HECMW_vis_rendering_surface(struct surface_module *sf,
   FILE *outfp;
   double view_n[3], nview_n, vertex[3 * 8];
   double point_s[3], point_o[3];
-  double range[6], xd, yd;
+  double range[6], xd = 0.0, yd = 0.0;
   double coff_matrix[3][3], n_vertex[3 * 8], inv_matrix[3][3];
   double view_point[3], scr_area[4], x, y;
   double tmincolor, tmaxcolor, trange[6], svertex[3 * 8], sn_vertex[3 * 8],
@@ -52,7 +52,7 @@ void HECMW_vis_rendering_surface(struct surface_module *sf,
   double *n_subimage, *n_subopa, *subimage, *subopa;
   double *subimage1, *subopa1;
   HECMW_Status stat;
-  int starti, startj, endi, endj, start_x, start_y;
+  int starti, startj, endi, endj, start_x = 0, start_y = 0;
   double minx, miny, minz, maxx, maxy, maxz, tminx, tminy, tminz, tmaxx, tmaxy,
       tmaxz;
   int num_img, base_x, base_y;
@@ -69,7 +69,7 @@ void HECMW_vis_rendering_surface(struct surface_module *sf,
   double *z_buffer, scr_f[4], f[3][3], n_f[3][3], inter_point[3], normal[9];
   double value, c_value[3], depth;
   double deltac, iso_p[6], isocolor, n_iso[6], pixel_d[2][2], slip_y;
-  double *iso_value, *iso_rgb;
+  double *iso_value = NULL, *iso_rgb = NULL;
   int pixel_i[2][2], flag, tmp_i, last_j, next_j;
   int normal_flag;
   double *v_normal;
@@ -293,16 +293,16 @@ sr->rotate_num_of_frames);
     fprintf(stderr, "rotate_style=%d num_of_frames=%d\n", sr->rotate_style,
             sr->rotate_num_of_frames);
   }
+  m_scr[0] = m_scr[2] = 1.0E+17;
+  m_scr[1] = m_scr[3] = -1.0E+17;
   if (sr->rotate_style == 0)
     num_img = 1;
-  else if ((sr->rotate_style >= 1) && (sr->rotate_style <= 4)) {
+  else { /* rotate_style is 1 to 4, checked in hecmw_vis_read_control.c */
     num_img = sr->rotate_num_of_frames;
     for (i                = 0; i < 3; i++)
       sr->screen_point[i] = (trange[i * 2] + trange[i * 2 + 1]) / 2.0;
     /*find the range of projection */
     for (i = 0; i < 3; i++) o_v_point[i] = sr->view_point_d[i];
-    m_scr[0] = m_scr[2] = 1.0E+17;
-    m_scr[1] = m_scr[3] = -1.0E+17;
 
     for (ii = 0; ii < num_img; ii++) {
       /*	   if(ii!=0)

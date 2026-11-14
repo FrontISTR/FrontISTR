@@ -27,8 +27,8 @@ int HECMW_vis_surface_compute(Surface *sff, struct hecmwST_local_mesh *mesh,
 {
   /* in_volume */
   int i, j, k, mm;
-  Point **CS_verts_head;
-  Polygon **CS_polys_head;
+  Point **CS_verts_head = NULL;
+  Polygon **CS_polys_head = NULL;
   int alpha_index, beta_index;
   int sum_verts;
   int sum_table;
@@ -49,12 +49,12 @@ int HECMW_vis_surface_compute(Surface *sff, struct hecmwST_local_mesh *mesh,
       num_nh_patch; /* vertex on patches generated in non-hexahedra */
   int flag_hexa, flag_tetra;
   Hash_vertex *vertex_hash_table;
-  Tetra_point *tetra_point;
-  Head_patch_tetra *head_patch_tetra;
+  Tetra_point *tetra_point = NULL;
+  Head_patch_tetra *head_patch_tetra = NULL;
   Tetra_point *p1, *p2;
   Patch_tetra *t1, *t2;
   Hash_vertex *h1, *h2;
-  int minus_patch;
+  int minus_patch = 0;
   double tmp_data[9];
   int tn_component, c_base;
   double tmp;

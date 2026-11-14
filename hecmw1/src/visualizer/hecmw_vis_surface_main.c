@@ -45,7 +45,7 @@ void HECMW_vis_psf_rendering(struct hecmwST_local_mesh *mesh,
   int sum_v, sum_t, tvertex, tpatch;
   int ii, j, find;
   int *color_list;
-  double t1, t2, t3;
+  double t1, t2 = 0.0, t3;
   Result *result;
   int name_len;
   static int first_boundary = 1;

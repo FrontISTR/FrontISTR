@@ -205,7 +205,7 @@ int is_connect(int elemID1, int faceID1, int elemID2, int faceID2,
                int face_tetra[12], int index_face_prism[6], int face_prism[18],
                int index_face_hexa[7], int face_hexa[24]) {
   int j, node1[MAX_N_NODE], node2[MAX_N_NODE], face1[4], face2[4], k, flag,
-      f_num1, f_num2;
+      f_num1 = 0, f_num2 = 0;
   flag = 0;
   for (j = 0;
        j < mesh->elem_node_index[elemID1 + 1] - mesh->elem_node_index[elemID1];
@@ -251,7 +251,8 @@ int is_connect(int elemID1, int faceID1, int elemID2, int faceID2,
       face2[k] = node2[face_hexa[index_face_hexa[faceID2] + k]];
   }
   flag                       = 1;
-  if (f_num1 != f_num2) flag = 0;
+  /* f_num is 0 for an element type that has no face table */
+  if ((f_num1 == 0) || (f_num1 != f_num2)) flag = 0;
   if (flag == 1) {
     if (!is_equal_array(face1, face2, f_num1)) {
       flag = 0;
@@ -427,7 +428,7 @@ void add_one_patch(Surface *sff, struct hecmwST_local_mesh *mesh,
                    (sff->color_subcomp != 0))
           c_data = data->node_val_item[(node[k] - 1) * tn_component + c_base +
                                        (sff->color_subcomp - 1)];
-        else if (data->nn_dof[sff->color_comp] == 1)
+        else /* nn_dof is 1 */
           c_data = data->node_val_item[(node[k] - 1) * tn_component + c_base];
 
         p1->cdata = c_data;
@@ -493,7 +494,7 @@ void add_two_patch(Surface *sff, struct hecmwST_local_mesh *mesh,
                  (sff->color_subcomp != 0))
         c_data = data->node_val_item[(node[k] - 1) * tn_component + c_base +
                                      (sff->color_subcomp - 1)];
-      else if (data->nn_dof[sff->color_comp] == 1)
+      else /* nn_dof is 1 */
         c_data = data->node_val_item[(node[k] - 1) * tn_component + c_base];
 
       p1->cdata = c_data;
@@ -561,9 +562,9 @@ void HECMW_vis_find_boundary_surface(Surface *sff,
   int pesize, mynode;
   Hash_table *h_table;
   int i, j, k, m;
-  int *export_no_element, *import_no_element, *export_elem, *flag,
-      *index_import_element;
-  int *global_id, *among_connect, **g_id, **a_connect, **index_a;
+  int *export_no_element = NULL, *import_no_element = NULL, *export_elem = NULL,
+      *flag, *index_import_element = NULL;
+  int *global_id = NULL, *among_connect = NULL, **g_id, **a_connect, **index_a;
   int flag1, nnode[MAX_N_NODE], pe_no, startnode;
   /*  Boundary_patch *b_patch, *p1, *p2;
    */
@@ -571,7 +572,7 @@ void HECMW_vis_find_boundary_surface(Surface *sff,
   int c_base;
   int index_face_tetra[5], face_tetra[12], index_face_prism[6], face_prism[18],
       index_face_hexa[7], face_hexa[24];
-  int *index_a_connect;
+  int *index_a_connect = NULL;
   int n_elem;
   int *node_hit;
   Tetra_point *b_point;
