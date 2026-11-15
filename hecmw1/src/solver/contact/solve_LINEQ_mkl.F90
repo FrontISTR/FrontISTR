@@ -52,12 +52,11 @@ contains
   end subroutine solve_LINEQ_MKL_contact_init
 
   !> \brief This subroutine executes the MKL solver
-  subroutine solve_LINEQ_MKL_contact(hecMESH,hecMAT,hecEBC,istat,conMAT)
+  subroutine solve_LINEQ_MKL_contact(hecMESH,hecMAT,hecEBC,istat)
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_matrix    ), intent(inout) :: hecMAT
     type (hecmwST_ebc), intent(inout) :: hecEBC !< prescribed displacements imposed after the MPC processing
     integer(kind=kint), intent(out) :: istat
-    type (hecmwST_matrix), intent(inout),optional :: conMAT
 
     integer(kind=kint)  :: phase_start
     real(kind=kreal)    :: t1,t2
@@ -77,11 +76,7 @@ contains
     endif
     call hecmw_mat_ass_equation(hecMESH, hecMAT)
     call hecmw_mat_ass_equation_rhs(hecMESH, hecMAT)
-    if(present(conMAT)) then
-      call hecmw_ebc_apply(hecMESH, hecMAT, hecEBC, conMAT)
-    else
-      call hecmw_ebc_apply(hecMESH, hecMAT, hecEBC)
-    endif
+    call hecmw_ebc_apply(hecMESH, hecMAT, hecEBC)
 
     call hecmw_mat_dump(hecMAT, hecMESH)
 
@@ -91,9 +86,9 @@ contains
     endif
 
     !  ----  For Parallel Contact with Multi-Partition Domains
-    if(present(conMAT)) then
-      call sparse_matrix_para_contact_set_vals(spMAT, hecMAT, conMAT)
-      call sparse_matrix_para_contact_set_rhs(spMAT, hecMAT, conMAT)
+    if(hecmw_comm_get_size() > 1) then
+      call sparse_matrix_para_contact_set_vals(spMAT, hecMAT)
+      call sparse_matrix_para_contact_set_rhs(spMAT, hecMAT)
     else
       call sparse_matrix_contact_set_vals(spMAT, hecMAT)
       call sparse_matrix_contact_set_rhs(spMAT, hecMAT)

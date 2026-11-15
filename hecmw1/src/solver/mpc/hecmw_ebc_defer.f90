@@ -72,17 +72,16 @@ contains
   !C*** hecmw_ebc_apply
   !C***
   !C
-  subroutine hecmw_ebc_apply(hecMESH, hecMAT, hecEBC, conMAT)
+  subroutine hecmw_ebc_apply(hecMESH, hecMAT, hecEBC)
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_matrix), intent(inout) :: hecMAT
     type (hecmwST_ebc), intent(inout) :: hecEBC
-    type (hecmwST_matrix), intent(inout), optional :: conMAT
 
     call hecmw_ebc_extend(hecMESH, hecMAT, hecEBC)
     call hecmw_ebc_convert_slave(hecMESH, hecMAT, hecEBC)
     call hecmw_ebc_impose(hecMAT, hecEBC, 1.d0)
-    if (present(conMAT)) call hecmw_ebc_impose(conMAT, hecEBC, 0.d0)
+    if (associated(hecMAT%conmat)) call hecmw_ebc_impose(hecMAT%conmat, hecEBC, 0.d0)
   end subroutine hecmw_ebc_apply
 
   !C

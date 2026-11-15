@@ -19,8 +19,7 @@ contains
   !C================================================================C
   subroutine fstr_solve_DYNAMIC(hecMESH,hecMAT,fstrSOLID,fstrEIG   &
       ,fstrDYNAMIC,fstrPARAM &
-      ,fstrCPL,fstrFREQ  &
-      ,conMAT )
+      ,fstrCPL,fstrFREQ )
     use m_fstr_setup
     implicit none
     type(hecmwST_local_mesh)             :: hecMESH
@@ -32,7 +31,6 @@ contains
     type(fstr_couple)                    :: fstrCPL !for COUPLE
     type(fstr_freqanalysis)              :: fstrFREQ
     type(fstr_info_contactChange)        :: infoCTChange !< type fstr_info_contactChange
-    type(hecmwST_matrix)                 :: conMAT
     integer(kind=kint) :: i, j, num_monit, ig, is, iE, ik, in, ing, iunitS, iunit, ierror, flag, limit
     character(len=HECMW_FILENAME_LEN) :: fname, header
     integer(kind=kint) :: restart_step_num, restart_substep_num, restart_step_count, ndof
@@ -206,7 +204,7 @@ contains
         call FSTR_SOLVE_NLGEOM_DYNAMIC_IMPLICIT_CONTACTSLAG(hecMESH,hecMAT,fstrSOLID,fstrEIG   &
           ,fstrDYNAMIC,fstrPARAM &
           ,fstrCPL,restart_step_num,restart_substep_num,infoCTChange   &
-          ,conMAT,restart_step_count )
+          ,restart_step_count )
 
       else if(fstrDYNAMIC%idx_eqa == 11) then  ! explicit dynamic analysis
         call fstr_solve_dynamic_nlexplicit(hecMESH,hecMAT,fstrSOLID,fstrEIG   &

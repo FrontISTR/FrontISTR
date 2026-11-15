@@ -494,10 +494,9 @@ contains
     if (m-1 /= spMAT%NZ) stop "ERROR: sparse_matrix_contact_set_a"
   end subroutine sparse_matrix_contact_set_vals
 
-  subroutine sparse_matrix_para_contact_set_vals(spMAT, hecMAT, conMAT)
+  subroutine sparse_matrix_para_contact_set_vals(spMAT, hecMAT)
     type(sparse_matrix), intent(inout) :: spMAT
     type(hecmwST_matrix), intent(in) :: hecMAT
-    type(hecmwST_matrix), intent(in) :: conMAT
     integer(kind=kint) :: ndof, ndof2
     integer(kind=kint) :: m, i, idof, i0, ii, ls, le, l, j, j0, jdof, jdofs
     integer(kind=kint) :: offset_l, offset_d, offset_u
@@ -530,7 +529,7 @@ contains
                   stop "ERROR: sparse_matrix_contact_set_a"
                 if (spMAT%JCN(m)/=j0+jdof)  &
                   stop "ERROR: sparse_matrix_contact_set_a"
-                spMAT%A(m)=hecMAT%AL(offset_l+jdof) + conMAT%AL(offset_l+jdof)
+                spMAT%A(m)=hecMAT%AL(offset_l+jdof) + hecMAT%conmat%AL(offset_l+jdof)
                 !                write(myrank+20,*)m,spMAT%IRN(m),spMAT%JCN(m),spMAT%A(m)
                 m=m+1
               enddo
@@ -544,8 +543,8 @@ contains
               stop "ERROR: sparse_matrix_contact_set_a"
             if (spMAT%JCN(m)/=i0+jdof)   &
               stop "ERROR: sparse_matrix_contact_set_a"
-            !            print *,myrank,'spMAT',size(spMAT%A),m,size(hecMAT%D),size(conMAT%D),offset_d,jdof
-            spMAT%A(m)=hecMAT%D(offset_d+jdof) + conMAT%D(offset_d+jdof)
+            !            print *,myrank,'spMAT',size(spMAT%A),m,size(hecMAT%D),size(hecMAT%conmat%D),offset_d,jdof
+            spMAT%A(m)=hecMAT%D(offset_d+jdof) + hecMAT%conmat%D(offset_d+jdof)
             !            write(myrank+20,*)m,spMAT%IRN(m),spMAT%JCN(m),spMAT%A(m)
             m=m+1
           enddo
@@ -566,7 +565,7 @@ contains
                 stop "ERROR: sparse_matrix_contact_set_a"
               if (spMAT%JCN(m)/=j0+jdof)  &
                 stop "ERROR: sparse_matrix_contact_set_a"
-              spMAT%A(m)=hecMAT%AU(offset_u+jdof) + conMAT%AU(offset_u+jdof)
+              spMAT%A(m)=hecMAT%AU(offset_u+jdof) + hecMAT%conmat%AU(offset_u+jdof)
               !              write(myrank+20,*)m,spMAT%IRN(m),spMAT%JCN(m),spMAT%A(m)
               m=m+1
             enddo
@@ -611,7 +610,7 @@ contains
                 stop "ERROR: sparse_matrix_contact_set_a"
               if (spMAT%JCN(m)/=j0+jdof)   &
                 stop "ERROR: sparse_matrix_contact_set_a"
-              spMAT%A(m) = conMAT%AL(offset_l+jdof)
+              spMAT%A(m) = hecMAT%conmat%AL(offset_l+jdof)
               !              write(myrank+20,*)m,spMAT%IRN(m),spMAT%JCN(m),spMAT%A(m)
               m=m+1
             enddo
@@ -627,7 +626,7 @@ contains
               stop "ERROR: sparse_matrix_contact_set_a"
             !            if (spMAT%type==SPARSE_MATRIX_TYPE_COO) spMAT%IRN(m)=ii
             !            spMAT%JCN(m)=i0+jdof
-            spMAT%A(m) = conMAT%D(offset_d+jdof)
+            spMAT%A(m) = hecMAT%conmat%D(offset_d+jdof)
             !            write(myrank+20,*)m,spMAT%IRN(m),spMAT%JCN(m),spMAT%A(m)
             m=m+1
           enddo
@@ -648,7 +647,7 @@ contains
               if (spMAT%type==SPARSE_MATRIX_TYPE_COO .and. spMAT%IRN(m)/=ii) &
                 stop "ERROR: sparse_matrix_contact_set_a"
               if (spMAT%JCN(m)/=j0+jdof) stop "ERROR: sparse_matrix_contact_set_a"
-              spMAT%A(m) = conMAT%AU(offset_u+jdof)
+              spMAT%A(m) = hecMAT%conmat%AU(offset_u+jdof)
               !              write(myrank+20,*)m,spMAT%IRN(m),spMAT%JCN(m),spMAT%A(m)
               m=m+1
             enddo
@@ -739,11 +738,10 @@ contains
     endif
   end subroutine sparse_matrix_contact_set_rhs
 
-  subroutine sparse_matrix_para_contact_set_rhs(spMAT, hecMAT, conMAT)
+  subroutine sparse_matrix_para_contact_set_rhs(spMAT, hecMAT)
     implicit none
     type (sparse_matrix), intent(inout) :: spMAT
     type (hecmwST_matrix), intent(in) :: hecMAT
-    type (hecmwST_matrix), intent(in) :: conMAT
     integer :: nndof,npndof,ierr,ndof,i,i0,j
     real(kind=kreal), allocatable :: rhs_con(:), rhs_con_sum(:)
 
@@ -755,8 +753,8 @@ contains
       i0=spMAT%conv_ext(ndof*(i-hecMAT%N))-ndof
       if((i0 < 0.or.i0 > spMAT%N)) then
         do j=1,ndof
-          if(conMAT%b((i-1)*ndof+j) /= 0.0D0) then
-            print *,hecmw_comm_get_rank(),'i0',i,spMAT%N,'conMAT%b',conMAT%b((i-1)*ndof+j)
+          if(hecMAT%conmat%b((i-1)*ndof+j) /= 0.0D0) then
+            print *,hecmw_comm_get_rank(),'i0',i,spMAT%N,'hecMAT%conmat%b',hecMAT%conmat%b((i-1)*ndof+j)
             stop
           endif
         enddo
@@ -765,8 +763,8 @@ contains
           print *,hecmw_comm_get_rank(),'ext out',hecMAT%N,hecMAT%NP,i,i0
         endif
         do j=1,ndof
-          if(conMAT%b((i-1)*ndof+j) /= 0.0D0) then
-            rhs_con(i0+j) = conMAT%b((i-1)*ndof+j)
+          if(hecMAT%conmat%b((i-1)*ndof+j) /= 0.0D0) then
+            rhs_con(i0+j) = hecMAT%conmat%b((i-1)*ndof+j)
           endif
         enddo
       endif
@@ -783,12 +781,12 @@ contains
     nndof=hecMAT%N*hecMAT%ndof
     npndof=hecMAT%NP*hecMAT%ndof
     do i=1,nndof
-      spMAT%rhs(i) = rhs_con_sum(spMAT%offset+i) + hecMAT%b(i) + conMAT%b(i)
+      spMAT%rhs(i) = rhs_con_sum(spMAT%offset+i) + hecMAT%b(i) + hecMAT%conmat%b(i)
     end do
     deallocate(rhs_con_sum)
     if (hecMAT%lagmat%num_lagrange > 0) then
       do i=1,hecMAT%lagmat%num_lagrange
-        spMAT%rhs(nndof+i) = conMAT%b(npndof+i)
+        spMAT%rhs(nndof+i) = hecMAT%conmat%b(npndof+i)
       end do
     endif
   end subroutine sparse_matrix_para_contact_set_rhs

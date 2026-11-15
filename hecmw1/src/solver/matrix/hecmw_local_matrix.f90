@@ -1151,7 +1151,7 @@ contains
     nn_int = hecMESH%nn_internal
     !
     if (FLG_CHECK_NONZERO_NUMERICALLY) then
-      ! efficient for assembling conMAT which has same non-zero profile as hecMAT
+      ! efficient for assembling hecMAT%conmat which has same non-zero profile as hecMAT
       ! but only dofs related to cntact are actually non-zero
       call check_external_nz_blocks(BTmat, nn_int, incl_nz)
     else
@@ -2510,7 +2510,7 @@ contains
     BKmat%nc = hecMAT%NP
     BKmat%ndof = ndof
     !
-    if (present(num_lagrange)) then       !!! TEMPORARY (DUE TO WRONG conMAT WHEN num_lagrange==0) !!!
+    if (present(num_lagrange)) then       !!! TEMPORARY (DUE TO WRONG hecMAT%conmat WHEN num_lagrange==0) !!!
       check_nonzero = .true.
     endif
     !

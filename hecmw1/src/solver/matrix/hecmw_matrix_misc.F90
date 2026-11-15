@@ -256,7 +256,7 @@ contains
     call hecmw_mat_set_solver_type( hecMAT, 1 )
   end subroutine hecmw_mat_init
 
-  subroutine hecmw_mat_finalize( hecMAT )
+  recursive subroutine hecmw_mat_finalize( hecMAT )
     type(hecmwST_matrix) :: hecMAT
     if (associated(hecMAT%D)) deallocate(hecMAT%D)
     if (associated(hecMAT%B)) deallocate(hecMAT%B)
@@ -280,6 +280,10 @@ contains
     if (associated(hecMAT%lagmat%AU_lagrange)) deallocate(hecMAT%lagmat%AU_lagrange)
     if (associated(hecMAT%lagmat%D_lagrange)) deallocate(hecMAT%lagmat%D_lagrange)
     if (associated(hecMAT%lagmat%Lagrange)) deallocate(hecMAT%lagmat%Lagrange)
+    if (associated(hecMAT%conmat)) then
+      call hecmw_mat_finalize(hecMAT%conmat)
+      deallocate(hecMAT%conmat)
+    endif
   end subroutine hecmw_mat_finalize
 
   subroutine hecmw_mat_copy_profile( hecMATorg, hecMAT )

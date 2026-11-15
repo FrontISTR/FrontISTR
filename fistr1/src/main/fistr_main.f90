@@ -20,7 +20,6 @@ module m_fstr_main
 
   type(hecmwST_local_mesh), save             :: hecMESH
   type(hecmwST_matrix), save                 :: hecMAT
-  type(hecmwST_matrix), save                 :: conMAT
   type(fstr_param), target, save             :: fstrPARAM
   type(fstr_solid), save                     :: fstrSOLID
   type(fstr_heat), save                      :: fstrHEAT
@@ -116,7 +115,6 @@ contains
 
     ! set pointer to null
     call hecmw_nullify_matrix     ( hecMAT      )
-    call hecmw_nullify_matrix     ( conMAT      )
     call hecmw_nullify_result_data( fstrRESULT  )
     call fstr_nullify_fstr_param  ( fstrPARAM   )
     call fstr_nullify_fstr_solid  ( fstrSOLID   )
@@ -280,7 +278,7 @@ contains
       if( myrank == 0 ) write(IMSG,*) ' ***   STAGE Linear static analysis   **'
     endif
 
-    call fstr_solve_NLGEOM( hecMESH, hecMAT, fstrSOLID, fstrPARAM, conMAT )
+    call fstr_solve_NLGEOM( hecMESH, hecMAT, fstrSOLID, fstrPARAM )
 
     call fstr_solid_finalize( fstrSOLID )
 
@@ -347,7 +345,7 @@ contains
     endif
 
     call fstr_solve_dynamic( hecMESH, hecMAT, fstrSOLID, fstrEIG, &
-      fstrDYNAMIC, fstrPARAM, fstrCPL, fstrFREQ, conMAT )
+      fstrDYNAMIC, fstrPARAM, fstrCPL, fstrFREQ )
 
   end subroutine fstr_dynamic_analysis
 
@@ -371,7 +369,7 @@ contains
       write(*,*) ' ***   Stage 1: Nonlinear static analysis   **'
     endif
 
-    call fstr_solve_NLGEOM( hecMESH, hecMAT, fstrSOLID, fstrPARAM, conMAT )
+    call fstr_solve_NLGEOM( hecMESH, hecMAT, fstrSOLID, fstrPARAM )
 
     if(myrank == 0) then
       write(IMSG,*)

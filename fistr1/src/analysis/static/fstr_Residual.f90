@@ -19,7 +19,7 @@ module m_fstr_Residual
 contains
 
   !C---------------------------------------------------------------------*
-  subroutine fstr_Update_NDForce(cstep,hecMESH,hecMAT,fstrSOLID,conMAT)
+  subroutine fstr_Update_NDForce(cstep,hecMESH,hecMAT,fstrSOLID)
     !C---------------------------------------------------------------------*
     !> In this subroutine, nodal force arising from prescribed displacement constraints
     !> are cleared and nodal force residual is calculated.
@@ -33,7 +33,6 @@ contains
     type(hecmwST_local_mesh), intent(in) :: hecMESH !< mesh information
     type(hecmwST_matrix), intent(inout)  :: hecMAT !< linear equation, its right side modified here
     type(fstr_solid), intent(inout)      :: fstrSOLID !< we need boundary conditions of curr step
-    type(hecmwST_matrix), intent(inout), optional  :: conMAT
     !    Local variables
     integer(kind=kint) :: ndof, idof
     real(kind=kreal)   :: factor
@@ -56,7 +55,7 @@ contains
 
     !    Consider SPC condition
     call fstr_Update_NDForce_SPC( cstep, hecMESH, fstrSOLID, hecMAT%B )
-    if(present(conMAT)) call fstr_Update_NDForce_SPC( cstep, hecMESH, fstrSOLID, conMAT%B )
+    if(associated(hecMAT%conmat)) call fstr_Update_NDForce_SPC( cstep, hecMESH, fstrSOLID, hecMAT%conmat%B )
 
     !
     call hecmw_update_R(hecMESH,hecMAT%B,hecMESH%n_node, ndof)
@@ -297,32 +296,31 @@ contains
     call hecmw_innerProduct_R(hecMESH, ndof, force, displacement, fstr_get_energy)
   end function
 
-  !> \brief Assemble contact residual vector (hecMAT%B + conMAT%B + Lagrange) into a single vector.
+  !> \brief Assemble contact residual vector (hecMAT%B + hecMAT%conmat%B + Lagrange) into a single vector.
   !>
-  !> conMAT holds the contact contribution on its own partition boundary, so it
+  !> hecMAT%conmat holds the contact contribution on its own partition boundary, so it
   !> has to be summed across subdomains before being added to hecMAT%B.
-  subroutine fstr_assemble_residual_contact(hecMAT, conMAT, hecMESH, resid_vec, nresid)
+  subroutine fstr_assemble_residual_contact(hecMAT, hecMESH, resid_vec, nresid)
     use m_fstr
     implicit none
     type(hecmwST_matrix), intent(in)          :: hecMAT
-    type(hecmwST_matrix), intent(in)          :: conMAT
     type(hecmwST_local_mesh), intent(in)      :: hecMESH
     real(kind=kreal), intent(out)             :: resid_vec(:)
     integer(kind=kint), intent(out)           :: nresid
 
     integer(kind=kint) :: i, ndof, nndof, npndof, num_lagrange
 
-    ndof = conMAT%ndof
-    nndof = conMAT%N * ndof
-    npndof = conMAT%NP * ndof
+    ndof = hecMAT%conmat%ndof
+    nndof = hecMAT%conmat%N * ndof
+    npndof = hecMAT%conmat%NP * ndof
     num_lagrange = hecMAT%lagmat%num_lagrange
     nresid = nndof + num_lagrange
 
-    ! Copy conMAT%B and assemble across MPI
+    ! Copy hecMAT%conmat%B and assemble across MPI
     do i = 1, npndof
-      resid_vec(i) = conMAT%B(i)
+      resid_vec(i) = hecMAT%conmat%B(i)
     enddo
-    call hecmw_assemble_R(hecMESH, resid_vec, conMAT%NP, conMAT%NDOF)
+    call hecmw_assemble_R(hecMESH, resid_vec, hecMAT%conmat%NP, hecMAT%conmat%NDOF)
 
     ! Add hecMAT%B (node DOFs only)
     do i = 1, nndof
@@ -331,7 +329,7 @@ contains
 
     ! Copy Lagrange multiplier residual
     do i = 1, num_lagrange
-      resid_vec(nndof + i) = conMAT%B(npndof + i)
+      resid_vec(nndof + i) = hecMAT%conmat%B(npndof + i)
     enddo
 
   end subroutine fstr_assemble_residual_contact

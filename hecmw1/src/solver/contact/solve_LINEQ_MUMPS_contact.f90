@@ -64,13 +64,12 @@ contains
     INITIALIZED = .true.
   end subroutine solve_LINEQ_MUMPS_contact_init
 
-  subroutine solve_LINEQ_MUMPS_contact(hecMESH,hecMAT,hecEBC,istat,conMAT)
+  subroutine solve_LINEQ_MUMPS_contact(hecMESH,hecMAT,hecEBC,istat)
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_matrix    ), intent(inout) :: hecMAT
     type (hecmwST_ebc), intent(inout) :: hecEBC !< prescribed displacements imposed after the MPC processing
     integer(kind=kint), intent(out) :: istat
-    type (hecmwST_matrix), intent(inout) :: conMAT
 
     integer(kind=kint) :: mumps_job, mpc_method
 
@@ -86,7 +85,7 @@ contains
     endif
     call hecmw_mat_ass_equation(hecMESH, hecMAT)
     call hecmw_mat_ass_equation_rhs(hecMESH, hecMAT)
-    call hecmw_ebc_apply(hecMESH, hecMAT, hecEBC, conMAT)
+    call hecmw_ebc_apply(hecMESH, hecMAT, hecEBC)
 
     call hecmw_mat_dump(hecMAT, hecMESH)
 
@@ -104,8 +103,8 @@ contains
     endif
 
     ! FACTORIZATION and SOLUTION
-    call sparse_matrix_para_contact_set_vals(spMAT, hecMAT, conMAT)
-    call sparse_matrix_para_contact_set_rhs(spMAT, hecMAT, conMAT)
+    call sparse_matrix_para_contact_set_vals(spMAT, hecMAT)
+    call sparse_matrix_para_contact_set_rhs(spMAT, hecMAT)
     mumps_job=5
     call hecmw_mumps_wrapper(spMAT, mumps_job, istat)
     if (istat < 0) then

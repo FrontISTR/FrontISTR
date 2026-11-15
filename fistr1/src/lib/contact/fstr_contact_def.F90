@@ -67,7 +67,7 @@ module mContactDef
   integer, parameter :: C_IF_MASTER = 2
 
   !> purpose flag for contact force calculation
-  integer, parameter :: kctForResidual = 1  !< compute contact force for residual (conMAT%B)
+  integer, parameter :: kctForResidual = 1  !< compute contact force for residual (hecMAT%conmat%B)
   integer, parameter :: kctForOutput   = 2  !< compute contact force for output (CONT_NFORCE/CONT_FRIC)
 
   !> This structure records contact status

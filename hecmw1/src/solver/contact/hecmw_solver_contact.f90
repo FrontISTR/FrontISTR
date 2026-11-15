@@ -89,11 +89,10 @@ contains
 
 
   !> \brief This subroutine
-  subroutine solve_LINEQ_contact(hecMESH,hecMAT,conMAT,hecEBC,istat,rf,is_contact_active)
+  subroutine solve_LINEQ_contact(hecMESH,hecMAT,hecEBC,istat,rf,is_contact_active)
 
     type (hecmwST_local_mesh)                :: hecMESH        !< hecmw mesh
     type (hecmwST_matrix)                    :: hecMAT         !< type hecmwST_matrix
-    type (hecmwST_matrix)                    :: conMAT
     type (hecmwST_ebc)                       :: hecEBC         !< prescribed displacements imposed after the MPC processing
     integer(kind=kint), intent(out)          :: istat
     real(kind=kreal), optional               :: rf
@@ -124,7 +123,7 @@ contains
     call hecmw_mat_set_flag_converged(hecMAT, 1)
     call hecmw_mat_set_flag_diverged(hecMAT, 0)
     if( contact_elim==1 )then
-      call solve_LINEQ_contact_elim(hecMESH,hecMAT,hecEBC,istat,conMAT,is_contact_active)
+      call solve_LINEQ_contact_elim(hecMESH,hecMAT,hecEBC,istat,is_contact_active)
     else
       if( solver_type==1 )then
         write(*,*) 'ERROR: iterative solver without elimination not available in contact analysis'
@@ -135,25 +134,21 @@ contains
               ' please use MUMPS or DIRECTmkl instead'
           call hecmw_abort(hecmw_comm_get_comm())
         else
-          call add_conMAT_to_hecMAT(hecMAT,conMAT)
+          call add_conMAT_to_hecMAT(hecMAT)
           call solve_LINEQ_serial_lag_hecmw(hecMESH,hecMAT,hecEBC)
         endif
       elseif( solver_type==3 )then
-        if( hecmw_comm_get_size() > 1) then
-          call solve_LINEQ_MKL_contact(hecMESH,hecMAT,hecEBC,istat,conMAT)
-        else
-          call add_conMAT_to_hecMAT(hecMAT,conMAT)
-          call solve_LINEQ_MKL_contact(hecMESH,hecMAT,hecEBC,istat)
-        endif
+        if( hecmw_comm_get_size() == 1 ) call add_conMAT_to_hecMAT(hecMAT)
+        call solve_LINEQ_MKL_contact(hecMESH,hecMAT,hecEBC,istat)
       elseif( solver_type==5 ) then
-        call solve_LINEQ_mumps_contact(hecMESH,hecMAT,hecEBC,istat,conMAT)
+        call solve_LINEQ_mumps_contact(hecMESH,hecMAT,hecEBC,istat)
       elseif( solver_type==7 ) then
         if( hecmw_comm_get_size() > 1) then
           write(*,*) 'ERROR: !SOLVER,METHOD=DIRECTmf not available in parallel contact analysis',&
               ' without elimination; specify CONTACT_ELIM=1 or use MUMPS or DIRECTmkl instead'
           call hecmw_abort(hecmw_comm_get_comm())
         else
-          call add_conMAT_to_hecMAT(hecMAT,conMAT)
+          call add_conMAT_to_hecMAT(hecMAT)
           call solve_LINEQ_mf_contact(hecMESH,hecMAT,hecEBC,istat)
         endif
       else
@@ -188,9 +183,8 @@ contains
   end function any_lagrange
 
 
-  subroutine add_conMAT_to_hecMAT(hecMAT,conMAT)
+  subroutine add_conMAT_to_hecMAT(hecMAT)
     type (hecmwST_matrix),          intent(inout) :: hecMAT
-    type (hecmwST_matrix),          intent(in)    :: conMAT
 
 
     integer(kind=kint) :: ndof,ndof2,i
@@ -199,19 +193,19 @@ contains
     ndof2 = ndof*ndof
 
     do i=1,hecMAT%NP*ndof + hecMAT%lagmat%num_lagrange
-      hecMAT%B(i) = hecMAT%B(i) + conMAT%B(i)
+      hecMAT%B(i) = hecMAT%B(i) + hecMAT%conmat%B(i)
     enddo
 
     do i=1,hecMAT%NP*ndof2
-      hecMAT%D(i) = hecMAT%D(i) + conMAT%D(i)
+      hecMAT%D(i) = hecMAT%D(i) + hecMAT%conmat%D(i)
     enddo
 
     do i=1,hecMAT%NPL*ndof2
-      hecMAT%AL(i) = hecMAT%AL(i) + conMAT%AL(i)
+      hecMAT%AL(i) = hecMAT%AL(i) + hecMAT%conmat%AL(i)
     enddo
 
     do i=1,hecMAT%NPU*ndof2
-      hecMAT%AU(i) = hecMAT%AU(i) + conMAT%AU(i)
+      hecMAT%AU(i) = hecMAT%AU(i) + hecMAT%conmat%AU(i)
     enddo
   end subroutine add_conMAT_to_hecMAT
 
