@@ -6,7 +6,7 @@
 #  specified, i.e. fstrPARAM%nlgeom = .false.).
 #
 #  In the dynamic implicit path the Lagrange multipliers must be accumulated
-#  before the nlgeom early-exit; otherwise hecLagMAT%lagrange stays zero and
+#  before the nlgeom early-exit; otherwise hecMAT%lagmat%lagrange stays zero and
 #  CONT_NFORCE/CONT_FRIC (computed from the multipliers) are always zero even
 #  though the contact constraint is enforced and reactions are correct.
 #

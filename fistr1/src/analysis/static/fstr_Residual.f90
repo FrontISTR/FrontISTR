@@ -301,11 +301,10 @@ contains
   !>
   !> conMAT holds the contact contribution on its own partition boundary, so it
   !> has to be summed across subdomains before being added to hecMAT%B.
-  subroutine fstr_assemble_residual_contact(hecMAT, hecLagMAT, conMAT, hecMESH, resid_vec, nresid)
+  subroutine fstr_assemble_residual_contact(hecMAT, conMAT, hecMESH, resid_vec, nresid)
     use m_fstr
     implicit none
     type(hecmwST_matrix), intent(in)          :: hecMAT
-    type(hecmwST_matrix_lagrange), intent(in) :: hecLagMAT
     type(hecmwST_matrix), intent(in)          :: conMAT
     type(hecmwST_local_mesh), intent(in)      :: hecMESH
     real(kind=kreal), intent(out)             :: resid_vec(:)
@@ -316,7 +315,7 @@ contains
     ndof = conMAT%ndof
     nndof = conMAT%N * ndof
     npndof = conMAT%NP * ndof
-    num_lagrange = hecLagMAT%num_lagrange
+    num_lagrange = hecMAT%lagmat%num_lagrange
     nresid = nndof + num_lagrange
 
     ! Copy conMAT%B and assemble across MPI

@@ -27,10 +27,9 @@ module m_solve_LINEQ_contact
 contains
 
   !> \brief This subroutine
-  subroutine solve_LINEQ_contact_init(hecMESH,hecMAT,hecLagMAT,is_sym)
+  subroutine solve_LINEQ_contact_init(hecMESH,hecMAT,is_sym)
     type (hecmwST_local_mesh)                :: hecMESH        !< hecmw mesh
     type (hecmwST_matrix)                    :: hecMAT         !< type hecmwST_matrix
-    type (hecmwST_matrix_lagrange)           :: hecLagMAT        !< type hecmwST_matrix_lagrange)
     logical :: is_sym
     integer(kind=kint) :: contact_elim, solver_type, loglevel, myrank
     logical :: writelog
@@ -56,30 +55,30 @@ contains
     ! distributed matrix as is. The stored CONTACT_ELIM is not changed, so the limitation
     ! still guards the solves after multipliers appear.
     if( contact_elim/=1 .and. solver_type==7 .and. hecmw_comm_get_size() > 1 )then
-      if( .not. any_lagrange(hecMESH, hecLagMAT) ) contact_elim = 1
+      if( .not. any_lagrange(hecMESH, hecMAT) ) contact_elim = 1
     endif
 
     if( contact_elim==1 )then
       if( writelog ) write(*,*) 'solve contact with elimination'
-      call solve_LINEQ_contact_elim_init(hecMESH,hecMAT,hecLagMAT,is_sym)
+      call solve_LINEQ_contact_elim_init(hecMESH,hecMAT,is_sym)
     else
       if( writelog ) write(*,*) 'solve contact without elimination'
       if( solver_type==1 )then
         write(*,*) 'ERROR: iterative solver without elimination not available in contact analysis'
         call hecmw_abort(hecmw_comm_get_comm())
       elseif( solver_type==2 )then
-        call solve_LINEQ_serial_lag_hecmw_init(hecMAT,hecLagMAT,is_sym)
+        call solve_LINEQ_serial_lag_hecmw_init(hecMAT,is_sym)
       else if( solver_type==3 )then
         call solve_LINEQ_MKL_contact_init(hecMESH,is_sym)
       elseif( solver_type==5 ) then
-        call solve_LINEQ_mumps_contact_init(hecMESH,hecMAT,hecLagMAT,is_sym)
+        call solve_LINEQ_mumps_contact_init(hecMESH,hecMAT,is_sym)
       elseif( solver_type==7 ) then
         if( hecmw_comm_get_size() > 1) then
           write(*,*) 'ERROR: !SOLVER,METHOD=DIRECTmf not available in parallel contact analysis',&
               ' without elimination; specify CONTACT_ELIM=1 or use MUMPS or DIRECTmkl instead'
           call hecmw_abort(hecmw_comm_get_comm())
         endif
-        call solve_LINEQ_mf_contact_init(hecMESH,hecMAT,hecLagMAT,is_sym)
+        call solve_LINEQ_mf_contact_init(hecMESH,hecMAT,is_sym)
       else
         write(*,*) 'ERROR: specified solver not available in contact analysis without elimination;',&
             ' please use MUMPS or DIRECTmkl instead'
@@ -90,11 +89,10 @@ contains
 
 
   !> \brief This subroutine
-  subroutine solve_LINEQ_contact(hecMESH,hecMAT,hecLagMAT,conMAT,hecEBC,istat,rf,is_contact_active)
+  subroutine solve_LINEQ_contact(hecMESH,hecMAT,conMAT,hecEBC,istat,rf,is_contact_active)
 
     type (hecmwST_local_mesh)                :: hecMESH        !< hecmw mesh
     type (hecmwST_matrix)                    :: hecMAT         !< type hecmwST_matrix
-    type (hecmwST_matrix_lagrange)           :: hecLagMAT        !< type hecmwST_matrix_lagrange)
     type (hecmwST_matrix)                    :: conMAT
     type (hecmwST_ebc)                       :: hecEBC         !< prescribed displacements imposed after the MPC processing
     integer(kind=kint), intent(out)          :: istat
@@ -111,7 +109,7 @@ contains
 
     ! the same bypass as the init: no multiplier anywhere means no saddle point part
     if( contact_elim/=1 .and. solver_type==7 .and. hecmw_comm_get_size() > 1 )then
-      if( .not. any_lagrange(hecMESH, hecLagMAT) ) contact_elim = 1
+      if( .not. any_lagrange(hecMESH, hecMAT) ) contact_elim = 1
     endif
 
     factor = 1.0d0
@@ -126,7 +124,7 @@ contains
     call hecmw_mat_set_flag_converged(hecMAT, 1)
     call hecmw_mat_set_flag_diverged(hecMAT, 0)
     if( contact_elim==1 )then
-      call solve_LINEQ_contact_elim(hecMESH,hecMAT,hecLagMAT,hecEBC,istat,conMAT,is_contact_active)
+      call solve_LINEQ_contact_elim(hecMESH,hecMAT,hecEBC,istat,conMAT,is_contact_active)
     else
       if( solver_type==1 )then
         write(*,*) 'ERROR: iterative solver without elimination not available in contact analysis'
@@ -137,26 +135,26 @@ contains
               ' please use MUMPS or DIRECTmkl instead'
           call hecmw_abort(hecmw_comm_get_comm())
         else
-          call add_conMAT_to_hecMAT(hecMAT,conMAT,hecLagMat)
-          call solve_LINEQ_serial_lag_hecmw(hecMESH,hecMAT,hecLagMAT,hecEBC)
+          call add_conMAT_to_hecMAT(hecMAT,conMAT)
+          call solve_LINEQ_serial_lag_hecmw(hecMESH,hecMAT,hecEBC)
         endif
       elseif( solver_type==3 )then
         if( hecmw_comm_get_size() > 1) then
-          call solve_LINEQ_MKL_contact(hecMESH,hecMAT,hecLagMAT,hecEBC,istat,conMAT)
+          call solve_LINEQ_MKL_contact(hecMESH,hecMAT,hecEBC,istat,conMAT)
         else
-          call add_conMAT_to_hecMAT(hecMAT,conMAT,hecLagMat)
-          call solve_LINEQ_MKL_contact(hecMESH,hecMAT,hecLagMAT,hecEBC,istat)
+          call add_conMAT_to_hecMAT(hecMAT,conMAT)
+          call solve_LINEQ_MKL_contact(hecMESH,hecMAT,hecEBC,istat)
         endif
       elseif( solver_type==5 ) then
-        call solve_LINEQ_mumps_contact(hecMESH,hecMAT,hecLagMAT,hecEBC,istat,conMAT)
+        call solve_LINEQ_mumps_contact(hecMESH,hecMAT,hecEBC,istat,conMAT)
       elseif( solver_type==7 ) then
         if( hecmw_comm_get_size() > 1) then
           write(*,*) 'ERROR: !SOLVER,METHOD=DIRECTmf not available in parallel contact analysis',&
               ' without elimination; specify CONTACT_ELIM=1 or use MUMPS or DIRECTmkl instead'
           call hecmw_abort(hecmw_comm_get_comm())
         else
-          call add_conMAT_to_hecMAT(hecMAT,conMAT,hecLagMat)
-          call solve_LINEQ_mf_contact(hecMESH,hecMAT,hecLagMAT,hecEBC,istat)
+          call add_conMAT_to_hecMAT(hecMAT,conMAT)
+          call solve_LINEQ_mf_contact(hecMESH,hecMAT,hecEBC,istat)
         endif
       else
         write(*,*) 'ERROR: specified solver not available in contact analysis without elimination;',&
@@ -179,21 +177,20 @@ contains
 
 
   !> a Lagrange multiplier exists on some rank (the saddle point part is present)
-  logical function any_lagrange(hecMESH, hecLagMAT)
+  logical function any_lagrange(hecMESH, hecMAT)
     type (hecmwST_local_mesh)      :: hecMESH
-    type (hecmwST_matrix_lagrange) :: hecLagMAT
+    type (hecmwST_matrix)          :: hecMAT
     integer(kind=kint) :: n
 
-    n = hecLagMAT%num_lagrange
+    n = hecMAT%lagmat%num_lagrange
     call hecmw_allreduce_I1(hecMESH, n, hecmw_max)
     any_lagrange = n > 0
   end function any_lagrange
 
 
-  subroutine add_conMAT_to_hecMAT(hecMAT,conMAT,hecLagMat)
+  subroutine add_conMAT_to_hecMAT(hecMAT,conMAT)
     type (hecmwST_matrix),          intent(inout) :: hecMAT
     type (hecmwST_matrix),          intent(in)    :: conMAT
-    type (hecmwST_matrix_lagrange), intent(in)    :: hecLagMAT
 
 
     integer(kind=kint) :: ndof,ndof2,i
@@ -201,7 +198,7 @@ contains
     ndof = hecMAT%NDOF
     ndof2 = ndof*ndof
 
-    do i=1,hecMAT%NP*ndof + hecLagMat%num_lagrange
+    do i=1,hecMAT%NP*ndof + hecMAT%lagmat%num_lagrange
       hecMAT%B(i) = hecMAT%B(i) + conMAT%B(i)
     enddo
 

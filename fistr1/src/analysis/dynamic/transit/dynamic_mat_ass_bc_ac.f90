@@ -11,7 +11,7 @@ contains
   !> This subrouitne set acceleration boundary condition in dynamic analysis
   !C***
 
-  subroutine DYNAMIC_MAT_ASS_BC_AC(cstep, hecMESH, hecMAT, fstrSOLID ,fstrDYNAMIC, fstrPARAM, hecLagMAT, hecEBC, &
+  subroutine DYNAMIC_MAT_ASS_BC_AC(cstep, hecMESH, hecMAT, fstrSOLID ,fstrDYNAMIC, fstrPARAM, hecEBC, &
       t_curr, iter, conMAT)
     use m_fstr
     use m_table_dyn
@@ -25,7 +25,6 @@ contains
     type(fstr_solid)                     :: fstrSOLID
     type(fstr_dynamic)                   :: fstrDYNAMIC
     type(fstr_param)                     :: fstrPARAM !< analysis control parameters
-    type(hecmwST_matrix_lagrange)        :: hecLagMAT !< type hecmwST_matrix_lagrange
     type(hecmwST_ebc)                    :: hecEBC !< prescribed displacements to be imposed after the MPC processing
     real(kind=kreal)                     :: t_curr
     integer, optional :: iter
@@ -92,9 +91,9 @@ contains
             if( fstr_is_contact_active() .and. fstrPARAM%contact_algo == kcaSLagrange  &
                 .and. fstrPARAM%nlgeom .and. fstrDYNAMIC%idx_resp == 1 ) then
               if(present(conMAT)) then
-                call hecmw_mat_ass_bc_contactlag(conMAT,hecLagMAT,in,idof,RHS)
+                call hecmw_mat_ass_bc_contactlag(conMAT,hecMAT%lagmat,in,idof,RHS)
               else
-                call hecmw_mat_ass_bc_contactlag(hecMAT,hecLagMAT,in,idof,RHS)
+                call hecmw_mat_ass_bc_contactlag(hecMAT,hecMAT%lagmat,in,idof,RHS)
               endif
             endif
           enddo

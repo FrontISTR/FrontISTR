@@ -25,7 +25,7 @@ module fstr_frequency_analysis
 contains
 
   subroutine fstr_solve_frequency_analysis(hecMESH, hecMAT, fstrSOLID, fstrEIG,  &
-      fstrDYNAMIC, fstrPARAM, fstrFREQ, hecLagMAT)
+      fstrDYNAMIC, fstrPARAM, fstrFREQ)
     !C
     !C-- global variable
     !C
@@ -36,7 +36,6 @@ contains
     type(fstr_param)                     :: fstrPARAM
     type(fstr_dynamic)                   :: fstrDYNAMIC
     type(fstr_freqanalysis)              :: fstrFREQ
-    type(hecmwST_matrix_lagrange)        :: hecLagMAT
 
     !C
     !C-- local variable
@@ -151,12 +150,12 @@ contains
       call checkAccelerationDOF(hecMESH, fstrFREQ, freqData)
       if( myrank == 0 ) write(*,*) "calc quasi-static displacement of acceleration input"
       !us for the real part (LOAD CASE=1) and the imaginary part (LOAD CASE=2) of the amplitude
-      call calcQuasiStaticDisp(hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrFREQ, hecLagMAT, kFLOADCASE_RE, usRe)
-      call calcQuasiStaticDisp(hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrFREQ, hecLagMAT, kFLOADCASE_IM, usIm)
+      call calcQuasiStaticDisp(hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrFREQ, kFLOADCASE_RE, usRe)
+      call calcQuasiStaticDisp(hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrFREQ, kFLOADCASE_IM, usIm)
     end if
 
     if( myrank == 0 ) write(*,*) "calc mass matrix"
-    call calcMassMatrix(fstrPARAM, hecMESH, hecMAT, fstrSOLID, fstrEIG, hecLagMAT)
+    call calcMassMatrix(fstrPARAM, hecMESH, hecMAT, fstrSOLID, fstrEIG)
     if( myrank == 0 ) write(*,*) "scale eigenvector"
     call scaleEigenVector(hecMESH, fstrEIG, ndof*numnode, nummode, freqData%eigVector)
 
@@ -743,14 +742,13 @@ contains
     return
   end subroutine
 
-  subroutine calcMassMatrix(fstrPARAM, hecMESH, hecMAT, fstrSOLID, fstrEIG, hecLagMAT)
+  subroutine calcMassMatrix(fstrPARAM, hecMESH, hecMAT, fstrSOLID, fstrEIG)
     !---- args
     type(fstr_param), intent(in)         :: fstrPARAM
     type(hecmwST_local_mesh), intent(in) :: hecMESH
     type(hecmwST_matrix), intent(inout)  :: hecMAT
     type(fstr_solid), intent(inout)      :: fstrSOLID
     type(fstr_eigen), intent(inout)      :: fstrEIG
-    type(hecmwST_matrix_lagrange), intent(inout) :: hecLagMAT
     !---- vals
     type(hecmwST_ebc) :: hecEBC
     !---- body
@@ -759,7 +757,7 @@ contains
     fstrSOLID%dunode = 0.d0
     call fstr_CreateMatrix_and_DampingForce( hecMESH, hecMAT, fstrSOLID, 0.d0, 0.d0 )
     call hecmw_ebc_init(hecMAT, hecEBC)
-    call fstr_AddBC(1, hecMESH, hecMAT, fstrSOLID, fstrPARAM, hecLagMAT, 2, hecEBC)
+    call fstr_AddBC(1, hecMESH, hecMAT, fstrSOLID, fstrPARAM, 2, hecEBC)
     call hecmw_ebc_apply(hecMESH, hecMAT, hecEBC)
     call hecmw_ebc_finalize(hecEBC)
 
@@ -773,14 +771,13 @@ contains
   ! constrained DOFs, plus the relative response expanded by the modes fixed at the
   ! excited DOFs. us is computed for the part of the amplitude selected by loadcase.
   !
-  subroutine calcQuasiStaticDisp(hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrFREQ, hecLagMAT, loadcase, us)
+  subroutine calcQuasiStaticDisp(hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrFREQ, loadcase, us)
     !---- args
     type(hecmwST_local_mesh)             :: hecMESH
     type(hecmwST_matrix)                 :: hecMAT
     type(fstr_solid)                     :: fstrSOLID
     type(fstr_param)                     :: fstrPARAM
     type(fstr_freqanalysis), intent(in)  :: fstrFREQ
-    type(hecmwST_matrix_lagrange)        :: hecLagMAT
     integer(kind=kint), intent(in)       :: loadcase
     real(kind=kreal), intent(inout)      :: us(:) !intend (numnodeDOF)
     !---- vals
@@ -816,7 +813,7 @@ contains
     call hecmw_mat_clear_b(hecMAT)
     !!BOUNDARY: iter=2 gives the constrained DOFs with zero displacement
     call hecmw_ebc_init(hecMAT, hecEBC)
-    call fstr_AddBC(1, hecMESH, hecMAT, fstrSOLID, fstrPARAM, hecLagMAT, 2, hecEBC)
+    call fstr_AddBC(1, hecMESH, hecMAT, fstrSOLID, fstrPARAM, 2, hecEBC)
     !!FACCELERATION: the amplitude is given as the displacement of the excited DOFs.
     !it overwrites the value of !BOUNDARY on the same DOF.
     do i=1, fstrFREQ%FACC_ngrp_tot

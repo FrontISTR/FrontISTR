@@ -58,13 +58,12 @@ contains
 
   !> \brief this subroutine reconstructs node-based (stiffness) matrix structure
   !> \corresponding to contact state
-  subroutine fstr_mat_con_contact(cstep,contact_algo,hecMAT,fstrSOLID,hecLagMAT,conMAT,is_contact_active_flag)
+  subroutine fstr_mat_con_contact(cstep,contact_algo,hecMAT,fstrSOLID,conMAT,is_contact_active_flag)
 
     integer(kind=kint)                   :: cstep !< current loading step
     integer(kind=kint)                   :: contact_algo !< current loading step
     type(hecmwST_matrix)                 :: hecMAT !< type hecmwST_matrix
     type(fstr_solid)                     :: fstrSOLID !< type fstr_solid
-    type(hecmwST_matrix_lagrange) :: hecLagMAT !< type hecmwST_matrix_lagrange
 
     integer(kind=kint)                   :: num_lagrange !< number of Lagrange multipliers
     integer(kind=kint)                   :: countNon0LU_node, countNon0LU_lagrange !< counter of node-based number of non-zero items
@@ -136,7 +135,7 @@ contains
         &  hecMAT%NP,fstrSOLID,countNon0LU_node,countNon0LU_lagrange,list_nodeRelated)
     endif
 
-    ! Construct new matrix structure(hecMAT&hecLagMAT)
+    ! Construct new matrix structure(hecMAT&hecMAT%lagmat)
     numNon0_node = countNon0LU_node/2
     numNon0_lagrange = countNon0LU_lagrange/2
     call hecmw_construct_hecMAT_from_nodeRelated(hecMAT%N, hecMAT%NP, hecMAT%NDOF, &
@@ -144,12 +143,12 @@ contains
     call hecmw_construct_hecMAT_from_nodeRelated(hecMAT%N, hecMAT%NP, hecMAT%NDOF, &
     & numNon0_node, num_lagrange, list_nodeRelated, conMAT)
     if( contact_algo == kcaSLagrange ) call hecmw_construct_hecLagMAT_from_nodeRelated(hecMAT%NP, &
-    & hecMAT%NDOF, num_lagrange, numNon0_lagrange, is_contact_active_flag, list_nodeRelated, hecLagMAT)
+    & hecMAT%NDOF, num_lagrange, numNon0_lagrange, is_contact_active_flag, list_nodeRelated, hecMAT)
     call hecmw_finalize_nodeRelated(list_nodeRelated)
 
     ! Copy Lagrange multipliers
     if( is_contact_active_flag .and. contact_algo == kcaSLagrange ) &
-      call fstr_copy_lagrange_contact(fstrSOLID,hecLagMAT)
+      call fstr_copy_lagrange_contact(fstrSOLID,hecMAT)
 
   end subroutine fstr_mat_con_contact
 
@@ -262,10 +261,10 @@ contains
   end subroutine getNewListOFrelatednodesANDLagrangeMultipliers
 
   !> Copy Lagrange multipliers
-  subroutine fstr_copy_lagrange_contact(fstrSOLID,hecLagMAT)
+  subroutine fstr_copy_lagrange_contact(fstrSOLID,hecMAT)
 
     type(fstr_solid)                        :: fstrSOLID                !< type fstr_solid
-    type(hecmwST_matrix_lagrange)          :: hecLagMAT            !< hecmwST_matrix_lagrange
+    type(hecmwST_matrix)                   :: hecMAT               !< type hecmwST_matrix
     integer (kind=kint)                    :: id_lagrange, algtype, i, j, k, nlag
 
     do i = 1, fstrSOLID%n_contacts
@@ -277,7 +276,7 @@ contains
         id_lagrange = fstrSOLID%contacts(i)%states(j)%id_lagrange
         if( id_lagrange == 0 ) cycle
         do k=1,nlag
-          hecLagMAT%Lagrange(id_lagrange+k-1)=fstrSOLID%contacts(i)%states(j)%multiplier(k)
+          hecMAT%lagmat%Lagrange(id_lagrange+k-1)=fstrSOLID%contacts(i)%states(j)%multiplier(k)
         enddo
       enddo
     enddo
@@ -288,7 +287,7 @@ contains
         id_lagrange = fstrSOLID%embeds(i)%states(j)%id_lagrange
         if( id_lagrange == 0 ) cycle
         do k=1,nlag
-          hecLagMAT%Lagrange(id_lagrange+k-1)=fstrSOLID%embeds(i)%states(j)%multiplier(k)
+          hecMAT%lagmat%Lagrange(id_lagrange+k-1)=fstrSOLID%embeds(i)%states(j)%multiplier(k)
         enddo
       enddo
     enddo
@@ -376,43 +375,43 @@ contains
   end function fstr_is_tangent_symmetric
 
   !> \brief Set diagonal component value for specified Lagrange multiplier
-  subroutine fstr_set_lagrange_diagonal(hecLagMAT, ilag, value)
-    type(hecmwST_matrix_lagrange), intent(inout) :: hecLagMAT !< hecmwST_matrix_lagrange
+  subroutine fstr_set_lagrange_diagonal(hecMAT, ilag, value)
+    type(hecmwST_matrix), intent(inout) :: hecMAT !< type hecmwST_matrix
     integer(kind=kint), intent(in) :: ilag !< Lagrange multiplier index (1-based)
     real(kind=kreal), intent(in) :: value !< diagonal component value to set
 
-    if (ilag < 1 .or. ilag > hecLagMAT%num_lagrange) then
+    if (ilag < 1 .or. ilag > hecMAT%lagmat%num_lagrange) then
       write(*,*) 'Error in fstr_set_lagrange_diagonal: invalid Lagrange multiplier index', ilag
       stop
     endif
 
-    if (.not. associated(hecLagMAT%D_lagrange)) then
+    if (.not. associated(hecMAT%lagmat%D_lagrange)) then
       write(*,*) 'Error in fstr_set_lagrange_diagonal: D_lagrange not allocated'
       stop
     endif
 
-    hecLagMAT%D_lagrange(ilag) = value
+    hecMAT%lagmat%D_lagrange(ilag) = value
 
   end subroutine fstr_set_lagrange_diagonal
 
   !> \brief Get diagonal component value for specified Lagrange multiplier
-  real(kind=kreal) function fstr_get_lagrange_diagonal(hecLagMAT, ilag)
-    type(hecmwST_matrix_lagrange), intent(in) :: hecLagMAT !< hecmwST_matrix_lagrange
+  real(kind=kreal) function fstr_get_lagrange_diagonal(hecMAT, ilag)
+    type(hecmwST_matrix), intent(in) :: hecMAT !< type hecmwST_matrix
     integer(kind=kint), intent(in) :: ilag !< Lagrange multiplier index (1-based)
 
-    if (ilag < 1 .or. ilag > hecLagMAT%num_lagrange) then
+    if (ilag < 1 .or. ilag > hecMAT%lagmat%num_lagrange) then
       write(*,*) 'Error in fstr_get_lagrange_diagonal: invalid Lagrange multiplier index', ilag
       fstr_get_lagrange_diagonal = 0.0d0
       return
     endif
 
-    if (.not. associated(hecLagMAT%D_lagrange)) then
+    if (.not. associated(hecMAT%lagmat%D_lagrange)) then
       write(*,*) 'Error in fstr_get_lagrange_diagonal: D_lagrange not allocated'
       fstr_get_lagrange_diagonal = 0.0d0
       return
     endif
 
-    fstr_get_lagrange_diagonal = hecLagMAT%D_lagrange(ilag)
+    fstr_get_lagrange_diagonal = hecMAT%lagmat%D_lagrange(ilag)
 
   end function fstr_get_lagrange_diagonal
 

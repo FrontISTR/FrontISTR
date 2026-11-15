@@ -479,10 +479,9 @@ contains
       fstr_is_matrixStructure_changed = .true.
   end function
 
-  subroutine fstr_update_contact_multiplier( cstep, hecMESH, hecLagMAT, fstrSOLID, ctchanged )
+  subroutine fstr_update_contact_multiplier( cstep, hecMESH, fstrSOLID, ctchanged )
     integer(kind=kint), intent(in)        :: cstep
     type( hecmwST_local_mesh ), intent(in) :: hecMESH
-    type(hecmwST_matrix_lagrange), intent(in) :: hecLagMAT
     type(fstr_solid), intent(inout)        :: fstrSOLID
     logical, intent(out)                   :: ctchanged
 
@@ -502,7 +501,7 @@ contains
         if( algtype == CONTACTSSLID .or. algtype == CONTACTFSLID ) then
           call update_contact_multiplier( fstrSOLID%contacts(i), hecMESH%node(:), fstrSOLID%unode(:), &
             fstrSOLID%dunode(:), fstrSOLID%contacts(i)%fcoeff, &
-            hecMESH, hecLagMAT, gnt, ctchanged )
+            hecMESH, gnt, ctchanged )
         else if( algtype == CONTACTTIED ) then
           call update_tied_multiplier( fstrSOLID%contacts(i), fstrSOLID%unode(:), fstrSOLID%dunode(:), &
           &  ctchanged )

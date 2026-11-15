@@ -474,6 +474,7 @@ module hecmw_util
     integer(kind=kint ), dimension(100) :: Iarray=0
     real   (kind=kreal), dimension(100) :: Rarray=0.0d0
     logical :: symmetric = .true.
+    type(hecmwST_matrix_lagrange) :: lagmat !< Lagrange multiplier-related part (contact analysis)
   end type hecmwST_matrix
 contains
 

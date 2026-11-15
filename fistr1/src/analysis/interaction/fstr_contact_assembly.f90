@@ -180,14 +180,13 @@ contains
   !> This subroutine update lagrangian multiplier and the
   !> distance between contacting nodes
   subroutine update_contact_multiplier( contact, coord, disp, ddisp, fcoeff, &
-    hecMESH, hecLagMAT, gnt, ctchanged )
+    hecMESH, gnt, ctchanged )
     type( tContact ), intent(inout)      :: contact        !< contact info
     real(kind=kreal), intent(in)         :: coord(:)       !< mesh coordinate
     real(kind=kreal), intent(in)         :: disp(:)        !< disp till current step
     real(kind=kreal), intent(in)         :: ddisp(:)       !< disp till current substep
     real(kind=kreal), intent(in)         :: fcoeff         !< frictional coeff
     type(hecmwST_local_mesh), intent(in) :: hecMESH        !< mesh for allreduce
-    type(hecmwST_matrix_lagrange), intent(in) :: hecLagMAT !< Lagrange matrix
     real(kind=kreal), intent(inout)      :: gnt(2)         !< convergency information
     logical, intent(inout)               :: ctchanged      !< if contact state changes
 

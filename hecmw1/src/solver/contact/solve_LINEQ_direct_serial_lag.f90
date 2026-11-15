@@ -14,22 +14,20 @@ module m_solve_LINEQ_direct_serial_lag
 
 contains
 
-  subroutine solve_LINEQ_serial_lag_hecmw_init(hecMAT,hecLagMAT,is_sym)
+  subroutine solve_LINEQ_serial_lag_hecmw_init(hecMAT,is_sym)
     implicit none
     type (hecmwST_matrix)                    :: hecMAT         !< type hecmwST_matrix
-    type (hecmwST_matrix_lagrange)           :: hecLagMAT        !< type hecmwST_matrix_lagrange
     logical                                  :: is_sym         !< symmetry of matrix
 
-    call set_pointersANDindices_directsolver(hecMAT,hecLagMAT,is_sym)
+    call set_pointersANDindices_directsolver(hecMAT,is_sym)
 
   end subroutine solve_LINEQ_serial_lag_hecmw_init
 
 
-  subroutine solve_LINEQ_serial_lag_hecmw(hecMESH,hecMAT,hecLagMAT,hecEBC)
+  subroutine solve_LINEQ_serial_lag_hecmw(hecMESH,hecMAT,hecEBC)
     implicit none
     type (hecmwST_local_mesh)                :: hecMESH        !< hecmw mesh
     type (hecmwST_matrix)                    :: hecMAT         !< type hecmwST_matrix
-    type (hecmwST_matrix_lagrange)           :: hecLagMAT        !< type hecmwST_matrix_lagrange
     type (hecmwST_ebc)                       :: hecEBC         !< prescribed displacements imposed after the MPC processing
     integer (kind=4)                         :: ntdf, ilag_sta
 
@@ -52,9 +50,9 @@ contains
 
     call hecmw_mat_dump(hecMAT, hecMESH)
 
-    call set_values_directsolver(hecMAT,hecLagMAT)
+    call set_values_directsolver(hecMAT)
 
-    ntdf = hecMAT%NP*hecMAT%NDOF + hecLagMAT%num_lagrange
+    ntdf = hecMAT%NP*hecMAT%NDOF + hecMAT%lagmat%num_lagrange
     ilag_sta = hecMAT%NP*hecMAT%NDOF + 1
 
     allocate(b(size(hecMAT%B)))

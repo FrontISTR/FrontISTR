@@ -8,7 +8,7 @@ contains
 
   !> solve eigenvalue probrem
   subroutine fstr_solve_eigen( hecMESH, hecMAT, fstrEIG, fstrSOLID, &
-      & fstrRESULT, fstrPARAM, hecLagMAT)
+      & fstrRESULT, fstrPARAM)
     use hecmw_util
     use m_fstr
     use m_fstr_CreateMatrix_and_DampingForce
@@ -29,7 +29,6 @@ contains
     type(hecmwST_result_data) :: fstrRESULT
     type(fstr_param)          :: fstrPARAM
     type(fstr_eigen)          :: fstrEIG
-    type(hecmwST_matrix_lagrange) :: hecLagMAT
 
     type(hecmwST_local_mesh), pointer :: hecMESHmpc
     type(hecmwST_matrix), pointer :: hecMATmpc
@@ -46,7 +45,7 @@ contains
     call fstr_AddSPRING(1, hecMESH, hecMAT, fstrSOLID)
 
     call hecmw_ebc_init(hecMAT, hecEBC)
-    call fstr_AddBC(1,  hecMESH, hecMAT, fstrSOLID, fstrPARAM, hecLagMAT, 2, hecEBC)
+    call fstr_AddBC(1,  hecMESH, hecMAT, fstrSOLID, fstrPARAM, 2, hecEBC)
     call hecmw_mpc_mat_ass(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
     call hecmw_mpc_trans_rhs(hecMESH, hecMAT, hecMATmpc)
     call hecmw_ebc_apply(hecMESHmpc, hecMATmpc, hecEBC)

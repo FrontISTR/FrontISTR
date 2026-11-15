@@ -24,11 +24,10 @@ module m_solve_LINEQ_MUMPS_contact
 
 contains
 
-  subroutine solve_LINEQ_MUMPS_contact_init(hecMESH,hecMAT,hecLagMAT,is_sym)
+  subroutine solve_LINEQ_MUMPS_contact_init(hecMESH,hecMAT,is_sym)
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_matrix    ), intent(inout) :: hecMAT
-    type (hecmwST_matrix_lagrange), intent(in) :: hecLagMAT !< type hecmwST_matrix_lagrange
     logical, intent(in) :: is_sym
     integer(kind=kint) :: spmat_type
     integer(kind=kint) :: spmat_symtype
@@ -65,11 +64,10 @@ contains
     INITIALIZED = .true.
   end subroutine solve_LINEQ_MUMPS_contact_init
 
-  subroutine solve_LINEQ_MUMPS_contact(hecMESH,hecMAT,hecLagMAT,hecEBC,istat,conMAT)
+  subroutine solve_LINEQ_MUMPS_contact(hecMESH,hecMAT,hecEBC,istat,conMAT)
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_matrix    ), intent(inout) :: hecMAT
-    type (hecmwST_matrix_lagrange), intent(inout) :: hecLagMAT !< type hecmwST_matrix_lagrange
     type (hecmwST_ebc), intent(inout) :: hecEBC !< prescribed displacements imposed after the MPC processing
     integer(kind=kint), intent(out) :: istat
     type (hecmwST_matrix), intent(inout) :: conMAT
@@ -94,7 +92,7 @@ contains
 
     ! ANALYSIS
     if (NEED_ANALYSIS) then
-      call sparse_matrix_contact_init_prof(spMAT, hecMAT, hecLagMAT, hecMESH )
+      call sparse_matrix_contact_init_prof(spMAT, hecMAT, hecMESH )
       mumps_job=1
       call hecmw_mumps_wrapper(spMAT, mumps_job, istat)
       if (istat < 0) then
@@ -106,15 +104,15 @@ contains
     endif
 
     ! FACTORIZATION and SOLUTION
-    call sparse_matrix_para_contact_set_vals(spMAT, hecMAT, hecLagMAT, conMAT)
-    call sparse_matrix_para_contact_set_rhs(spMAT, hecMAT, hecLagMAT, conMAT)
+    call sparse_matrix_para_contact_set_vals(spMAT, hecMAT, conMAT)
+    call sparse_matrix_para_contact_set_rhs(spMAT, hecMAT, conMAT)
     mumps_job=5
     call hecmw_mumps_wrapper(spMAT, mumps_job, istat)
     if (istat < 0) then
       write(*,*) 'ERROR: MUMPS returned with error', istat
       return
     endif
-    call sparse_matrix_contact_get_rhs(spMAT, hecMAT, hecLagMAT)
+    call sparse_matrix_contact_get_rhs(spMAT, hecMAT)
     if (hecmw_comm_get_rank()==0 .and. spMAT%loglevel > 0) write(*,*) ' [MUMPS]: Factorization and Solution completed.'
 
     call hecmw_mat_dump_solution(hecMAT)
