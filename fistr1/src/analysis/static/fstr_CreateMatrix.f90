@@ -459,7 +459,7 @@ contains
 
     elseif( ic_type==361 ) then
       if( fstrSOLID%sections(isect)%elemopt361 == kel361FI ) then ! full integration element
-        call STF_C3( ic_type, nn, ecoord(:,1:nn), fstrSOLID%elements(icel)%gausses(:), &
+        call STF_C3( ic_type, fstrSOLID%elements(icel)%qrule, nn, ecoord(:,1:nn), fstrSOLID%elements(icel)%gausses(:), &
           stiff_mat(1:nn*ndof,1:nn*ndof), cdsys_ID, coords, time, tincr, u(1:3,1:nn), tt(1:nn) )
       else if( fstrSOLID%sections(isect)%elemopt361 == kel361BBAR ) then ! B-bar element
         call STF_C3D8Bbar( ic_type, nn, ecoord(:,1:nn), fstrSOLID%elements(icel)%gausses(:), &
@@ -481,7 +481,7 @@ contains
       ! SESNS option: stiffness is assembled separately via ic_type==881/891;
       ! return stiff_mat = 0 here and still compute the element mass below.
       if( .not. (ic_type==341 .and. fstrSOLID%sections(isect)%elemopt341 == kel341SESNS) ) then
-        call STF_C3( ic_type, nn, ecoord(:,1:nn), fstrSOLID%elements(icel)%gausses(:), &
+        call STF_C3( ic_type, fstrSOLID%elements(icel)%qrule, nn, ecoord(:,1:nn), fstrSOLID%elements(icel)%gausses(:), &
           stiff_mat(1:nn*ndof,1:nn*ndof), cdsys_ID, coords, time, tincr, u(1:3,1:nn), tt(1:nn) )
       endif
 

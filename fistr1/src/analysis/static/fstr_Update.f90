@@ -184,8 +184,8 @@ contains
 
         else if( ic_type == 361 ) then
           if( fstrSOLID%sections(isect)%elemopt361 == kel361FI ) then ! full integration element
-            call UPDATE_C3( ic_type, nn, ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), cdsys_ID, coords, &
-              qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), time, tincr, &
+            call UPDATE_C3( ic_type, fstrSOLID%elements(icel)%qrule, nn, ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), &
+              cdsys_ID, coords, qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), time, tincr, &
               tt(1:nn), tt0(1:nn), ttn(1:nn), fstrPARAM%ref_temp  )
           else if( fstrSOLID%sections(isect)%elemopt361 == kel361BBAR ) then ! B-bar element
             call UPDATE_C3D8Bbar( ic_type, nn, ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), cdsys_ID, coords,    &
@@ -211,8 +211,8 @@ contains
           endif
         else if (ic_type == 341 .or. ic_type == 351 .or. ic_type == 342 .or. ic_type == 352 .or. ic_type == 362 ) then
           if( ic_type==341 .and. fstrSOLID%sections(isect)%elemopt341 == kel341SESNS ) cycle ! skip smoothed fem
-          call UPDATE_C3( ic_type, nn, ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), cdsys_ID, coords, &
-            qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), time, tincr, &
+          call UPDATE_C3( ic_type, fstrSOLID%elements(icel)%qrule, nn, ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), &
+            cdsys_ID, coords, qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), time, tincr, &
             tt(1:nn), tt0(1:nn), ttn(1:nn), fstrPARAM%ref_temp  )
 
         else if( ic_type == 511) then

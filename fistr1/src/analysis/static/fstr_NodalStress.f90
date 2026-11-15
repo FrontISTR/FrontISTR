@@ -69,6 +69,7 @@ contains
     integer(kind=kint) :: itype, icel, ic, is, iE, jS, i, j, ic_type, nn, ni, ID_area, nbase
     integer(kind=kint) :: nodlocal(20), ntemp
     integer(kind=kint), allocatable :: nnumber(:)
+    type(tQuadRule)    :: qrule
     real(kind=kreal)   :: estrain(6), estress(6), naturalCoord(3)
     real(kind=kreal)   :: enqm(12)
     real(kind=kreal)   :: ndstrain(20,6), ndstress(20,6), tdstrain(20,6)
@@ -115,19 +116,20 @@ contains
         & .or. ic_type == 761 .or. ic_type == fe_beam341 ) ) cycle
       !C** set number of nodes and shape function
       nn = hecmw_get_max_node( ic_type )
-      ni = NumOfQuadPoints( ic_type )
+      qrule = default_rule( ic_type )
+      ni = NumOfQuadPoints( qrule )
       allocate( func(ni,nn), inv_func(nn,ni) )
       tdstrain = 0.0d0
       if( ic_type == fe_tet10n ) then
         ic = hecmw_get_max_node( fe_tet4n )
         do i = 1, ni
-          call getQuadPoint( ic_type, i, naturalCoord )
+          call getQuadPoint( qrule, i, naturalCoord )
           call getShapeFunc( fe_tet4n, naturalCoord, func(i,1:ic) )
         enddo
         call inverse_func( ic, func, inv_func )
       else if( ic_type == fe_hex8n ) then
         do i = 1, ni
-          call getQuadPoint( ic_type, i, naturalCoord )
+          call getQuadPoint( qrule, i, naturalCoord )
           call getShapeFunc( ic_type, naturalCoord, func(i,1:nn) )
         enddo
         call inverse_func( ni, func, inv_func )
@@ -136,7 +138,7 @@ contains
         do i = 1, ni
           if( i==1 .or. i==2 .or. i==3 .or. i==7 .or. i==8 .or. i==9 ) then
             ic = ic + 1
-            call getQuadPoint( ic_type, i, naturalCoord )
+            call getQuadPoint( qrule, i, naturalCoord )
             call getShapeFunc( fe_prism6n, naturalCoord, func(ic,1:6) )
           endif
         enddo
@@ -148,7 +150,7 @@ contains
           if( i==1 .or. i==3 .or. i==7 .or. i==9 .or. &
               i==19 .or. i==21 .or. i==25 .or. i==27 ) then
             ic = ic + 1
-            call getQuadPoint( ic_type, i, naturalCoord )
+            call getQuadPoint( qrule, i, naturalCoord )
             call getShapeFunc( fe_hex8n, naturalCoord, func(ic,1:8) )
           endif
         enddo
@@ -295,7 +297,7 @@ contains
 
         else if( ic_type == fe_tet10n .or. ic_type == fe_hex8n .or. &
             ic_type == fe_prism15n .or. ic_type == fe_hex20n ) then
-          call NodalStress_INV3( ic_type, ni, fstrSOLID%elements(icel)%gausses, &
+          call NodalStress_INV3( ic_type, fstrSOLID%elements(icel)%qrule, ni, fstrSOLID%elements(icel)%gausses, &
             inv_func, ndstrain(1:nn,1:6), ndstress(1:nn,1:6), &
             tdstrain(1:nn,1:6) )
           call ElementStress_C3( fstrSOLID%elements(icel)%gausses, estrain, estress )
@@ -856,10 +858,11 @@ contains
   end subroutine NodalStress_ShellJ2
 
   !----------------------------------------------------------------------*
-  subroutine NodalStress_INV3( etype, ni, gausses, func, edstrain, edstress, tdstrain )
+  subroutine NodalStress_INV3( etype, qrule, ni, gausses, func, edstrain, edstress, tdstrain )
     !----------------------------------------------------------------------*
     use mMechGauss
     integer(kind=kint) :: etype, ni
+    type(tQuadRule)    :: qrule
     type(tGaussStatus) :: gausses(:)
     real(kind=kreal)   :: func(:, :), edstrain(:, :), edstress(:, :), tdstrain(:, :)
     integer :: i, j, k, ic
@@ -909,7 +912,7 @@ contains
     else if( etype == fe_prism15n ) then
       do i = 1, ni
         ic = 0
-        do j = 1, NumOfQuadPoints(etype)
+        do j = 1, NumOfQuadPoints(qrule)
           if( j==1 .or. j==2 .or. j==3 .or. j==7 .or. j==8 .or. j==9 ) then
             ic = ic + 1
             do k = 1, 6
@@ -950,7 +953,7 @@ contains
     else if( etype == fe_hex20n ) then
       do i = 1, ni
         ic = 0
-        do j = 1, NumOfQuadPoints(etype)
+        do j = 1, NumOfQuadPoints(qrule)
           if( j==1 .or. j==3 .or. j==7 .or. j==9 .or. &
               j==19 .or. j==21 .or. j==25 .or. j==27 ) then
             ic = ic + 1

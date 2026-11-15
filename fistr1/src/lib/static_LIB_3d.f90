@@ -48,7 +48,7 @@ contains
   !>  \version    0.00
   !----------------------------------------------------------------------*
   subroutine STF_C3                                                &
-      (etype, nn, ecoord, gausses, stiff, cdsys_ID, coords, &
+      (etype, qrule, nn, ecoord, gausses, stiff, cdsys_ID, coords, &
       time, tincr, u ,temperature)
     !----------------------------------------------------------------------*
 
@@ -59,6 +59,7 @@ contains
     !---------------------------------------------------------------------
 
     integer(kind=kint), intent(in)  :: etype                  !< element type
+    type(tQuadRule), intent(in)     :: qrule                  !< quadrature rule
     integer(kind=kint), intent(in)  :: nn                     !< number of elemental nodes
     real(kind=kreal),   intent(in)  :: ecoord(3,nn)           !< coordinates of elemental nodes
     type(tGaussStatus), intent(in)  :: gausses(:)             !< status of qudrature points
@@ -93,9 +94,9 @@ contains
     elem(:, :) = ecoord(:, :)
     if( flag == UPDATELAG ) elem(:, :) = ecoord(:, :)+u(:, :)
 
-    do LX = 1, NumOfQuadPoints(etype)
+    do LX = 1, NumOfQuadPoints(qrule)
 
-      call getQuadPoint( etype, LX, naturalCoord(:) )
+      call getQuadPoint( qrule, LX, naturalCoord(:) )
       call getGlobalDeriv(etype, nn, naturalcoord, elem, det, gderiv)
 
       if( cdsys_ID > 0 ) then
@@ -117,7 +118,7 @@ contains
         D(:, :) = D(:, :)-mat
       endif
 
-      wg = getWeight(etype, LX)*det
+      wg = getWeight(qrule, LX)*det
       B(1:6, 1:nn*ndof) = 0.0D0
       do j = 1, nn
         B(1, 3*j-2)=gderiv(j, 1)
@@ -386,7 +387,7 @@ contains
   !> This subroutien calculate thermal loading
   !----------------------------------------------------------------------*
   subroutine TLOAD_C3                                 &
-      (etype, nn, XX, YY, ZZ, TT, T0, reftemp, gausses, &
+      (etype, qrule, nn, XX, YY, ZZ, TT, T0, reftemp, gausses, &
       VECT, cdsys_ID, coords)
     !----------------------------------------------------------------------*
 
@@ -399,6 +400,7 @@ contains
 
     integer(kind=kint), parameter   :: ndof = 3
     integer(kind=kint), intent(in)  :: etype, nn
+    type(tQuadRule), intent(in)     :: qrule                  !< quadrature rule
     type(tGaussStatus), intent(in)  :: gausses(:)             !< status of qudrature points
     real(kind=kreal), intent(in)    :: XX(nn), YY(nn), ZZ(nn)
     real(kind=kreal), intent(in)    :: TT(nn),T0(nn)
@@ -435,9 +437,9 @@ contains
     ecoord(3, :) = ZZ(:)
 
     ! LOOP FOR INTEGRATION POINTS
-    do LX = 1, NumOfQuadPoints(etype)
+    do LX = 1, NumOfQuadPoints(qrule)
 
-      call getQuadPoint( etype, LX, naturalCoord(:) )
+      call getQuadPoint( qrule, LX, naturalCoord(:) )
       call getShapeFunc( ETYPE, naturalcoord, H(1:nn) )
       call getGlobalDeriv( etype, nn, naturalcoord, ecoord, det, gderiv )
 
@@ -450,7 +452,7 @@ contains
       end if
 
       ! WEIGHT VALUE AT GAUSSIAN POINT
-      wg = getWeight(etype, LX)*det
+      wg = getWeight(qrule, LX)*det
       B(1:6,1:nn*NDOF)=0.0D0
       do J=1,nn
         B(1,3*J-2)=gderiv(j,1)
@@ -789,7 +791,7 @@ contains
   !> Update strain and stress inside element
   !---------------------------------------------------------------------*
   subroutine UPDATE_C3                                       &
-      (etype,nn,ecoord, u, ddu, cdsys_ID, coords, qf, &
+      (etype,qrule,nn,ecoord, u, ddu, cdsys_ID, coords, qf, &
       gausses, time, tincr, TT, T0, TN, reftemp)
     !---------------------------------------------------------------------*
 
@@ -801,6 +803,7 @@ contains
     use m_utilities
 
     integer(kind=kint), intent(in)    :: etype         !< \param [in] element type
+    type(tQuadRule), intent(in)       :: qrule         !< \param [in] quadrature rule
     integer(kind=kint), intent(in)    :: nn            !< \param [in] number of elemental nodes
     real(kind=kreal), intent(in)      :: ecoord(3, nn) !< \param [in] coordinates of elemental nodes
     real(kind=kreal), intent(in)      :: u(3, nn)      !< \param [in] nodal dislplacements
@@ -845,9 +848,9 @@ contains
     call fetch_TableData( MC_ORTHOEXP, gausses(1)%pMaterial%dict, alpo(:), ierr, ina )
     if( .not. ierr ) matlaniso = .true.
 
-    do LX = 1, NumOfQuadPoints(etype)
+    do LX = 1, NumOfQuadPoints(qrule)
 
-      call getQuadPoint( etype, LX, naturalCoord(:) )
+      call getQuadPoint( qrule, LX, naturalCoord(:) )
       call getGlobalDeriv(etype, nn, naturalcoord, elem, det, gderiv)
 
       if( cdsys_ID > 0 ) then
@@ -986,7 +989,7 @@ contains
       end if
 
       ! calculate the Internal Force
-      WG=getWeight( etype, LX )*DET
+      WG=getWeight( qrule, LX )*DET
       qf(1:nn*ndof)                                                          &
         = qf(1:nn*ndof)+matmul( gausses(LX)%stress(1:6), B(1:6,1:nn*ndof) )*WG
 
