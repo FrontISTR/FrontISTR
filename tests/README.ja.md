@@ -38,6 +38,9 @@ ctest
 `unit/directmf` はDIRECTmfソルバの単体テストで、同じ条件で登録します。
 ただしMPIのテスト `mpi` はMPIありのビルドの全モードに登録し、
 `mpi` モードでは4プロセスで実行する `mpi_np4` も登録します。
+`unit/input` は `analysis/inp/standalone_static` のメッシュに解析条件を書き足した
+inpファイルで `fistr1` を実行し、停止すべき入力を含めて入力の診断を確かめるテストで、
+すべてのビルドの `serial` に登録します。
 CTestは実行時にライブラリを検出せず、生成済みのテスト一覧を使うため、
 ビルド設定を変更した場合はCMakeを再実行してください。
 

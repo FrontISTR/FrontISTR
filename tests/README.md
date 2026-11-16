@@ -37,6 +37,9 @@ the build is not for Windows, and only in the `serial` and `openmp` modes since
 they run on a single process. `unit/directmf` holds unit tests of the DIRECTmf
 solver under the same conditions; its MPI test `mpi` is registered in every
 mode of an MPI build, and `mpi_np4` runs it on 4 processes in the `mpi` mode.
+`unit/input` runs `fistr1` on inp files made from the mesh of
+`analysis/inp/standalone_static` to check the input diagnostics, including
+inputs that must stop, in the `serial` mode of every build.
 Reconfigure after changing build options;
 CTest uses the generated test list rather than detecting libraries at run time.
 
