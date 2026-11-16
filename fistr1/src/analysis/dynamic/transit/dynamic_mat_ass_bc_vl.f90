@@ -203,8 +203,9 @@ contains
         iE0 = hecMESH%node_group%grp_index(ig  )
         do ik = iS0, iE0
           in = hecMESH%node_group%grp_item(ik)
-          ! v = omega x (x_end - x_center), x_end = x + b2*VEL + b3*ACC + b4*v (closed form), so the radius does not drift
-          ! for gamma = 1/2, and shrinks slowly for gamma > 1/2 with 2*beta > gamma (e.g. HHT)
+          ! Solve v = omega x (x_end - x_center) with x_end = x + b2*VEL + b3*ACC + b4*v in closed form.
+          ! For constant omega about a fixed axis, the radius has no secular drift at gamma = 1/2, beta = 1/4;
+          ! HHT (alpha < 0) introduces a small numerical shrinkage.
           cdiff = 0.d0
           cdiff(1:NDOF) = hecMESH%node(NDOF*(in-1)+1:NDOF*in) &
             + fstrSOLID%unode(NDOF*(in-1)+1:NDOF*in) - ccoord(1:NDOF) &
