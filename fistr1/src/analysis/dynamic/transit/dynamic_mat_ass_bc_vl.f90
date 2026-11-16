@@ -204,6 +204,7 @@ contains
         do ik = iS0, iE0
           in = hecMESH%node_group%grp_item(ik)
           ! v = omega x (x_end - x_center), x_end = x + b2*VEL + b3*ACC + b4*v (closed form), so the radius does not drift
+          ! for gamma = 1/2, and shrinks slowly for gamma > 1/2 with 2*beta > gamma (e.g. HHT)
           cdiff = 0.d0
           cdiff(1:NDOF) = hecMESH%node(NDOF*(in-1)+1:NDOF*in) &
             + fstrSOLID%unode(NDOF*(in-1)+1:NDOF*in) - ccoord(1:NDOF) &
