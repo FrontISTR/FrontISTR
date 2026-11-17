@@ -79,9 +79,9 @@ contains
 
     if (INITIALIZED) then
       if (hecMAT%Iarray(98) == 1) then ! need symbolic and numerical setup
-        call hecmw_precond_SSOR_44_clear(hecMAT)
+        call hecmw_precond_SSOR_44_clear()
       else if (hecMAT%Iarray(97) == 1) then ! need numerical setup only
-        call hecmw_precond_SSOR_44_clear(hecMAT) ! TEMPORARY
+        call hecmw_precond_SSOR_44_clear() ! TEMPORARY
       else
         return
       endif
@@ -447,9 +447,8 @@ contains
 
   end subroutine hecmw_precond_SSOR_44_apply
 
-  subroutine hecmw_precond_SSOR_44_clear(hecMAT)
+  subroutine hecmw_precond_SSOR_44_clear()
     implicit none
-    type(hecmwST_matrix), intent(inout) :: hecMAT
     if (associated(COLORindex)) deallocate(COLORindex)
     if (associated(perm)) deallocate(perm)
     if (associated(iperm)) deallocate(iperm)

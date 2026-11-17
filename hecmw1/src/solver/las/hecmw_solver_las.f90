@@ -35,15 +35,14 @@ contains
   !C*** hecmw_matvec_setup
   !C***
   !C
-  subroutine hecmw_matvec_setup (hecMESH, hecMAT)
+  subroutine hecmw_matvec_setup (hecMAT)
     use hecmw_util
 
     implicit none
-    type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_matrix), intent(in), target :: hecMAT
     select case(hecMAT%NDOF)
       case (3)
-        call hecmw_matvec_33_setup(hecMESH, hecMAT)
+        call hecmw_matvec_33_setup(hecMAT)
       case default
     end select
 

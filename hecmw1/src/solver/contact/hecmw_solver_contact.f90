@@ -60,7 +60,7 @@ contains
 
     if( contact_elim==1 )then
       if( writelog ) write(*,*) 'solve contact with elimination'
-      call solve_LINEQ_contact_elim_init(hecMESH,hecMAT,is_sym)
+      call solve_LINEQ_contact_elim_init(hecMAT,is_sym)
     else
       if( writelog ) write(*,*) 'solve contact without elimination'
       if( solver_type==1 )then
@@ -71,14 +71,14 @@ contains
       else if( solver_type==3 )then
         call solve_LINEQ_MKL_contact_init(hecMESH,is_sym)
       elseif( solver_type==5 ) then
-        call solve_LINEQ_mumps_contact_init(hecMESH,hecMAT,is_sym)
+        call solve_LINEQ_mumps_contact_init(is_sym)
       elseif( solver_type==7 ) then
         if( hecmw_comm_get_size() > 1) then
           write(*,*) 'ERROR: !SOLVER,METHOD=DIRECTmf not available in parallel contact analysis',&
               ' without elimination; specify CONTACT_ELIM=1 or use MUMPS or DIRECTmkl instead'
           call hecmw_abort(hecmw_comm_get_comm())
         endif
-        call solve_LINEQ_mf_contact_init(hecMESH,hecMAT,is_sym)
+        call solve_LINEQ_mf_contact_init(is_sym)
       else
         write(*,*) 'ERROR: specified solver not available in contact analysis without elimination;',&
             ' please use MUMPS or DIRECTmkl instead'

@@ -234,6 +234,6 @@ subroutine hecmw_ML_smoother_ssor_clear_nn(id, ierr)
   type(hecmwST_matrix), pointer :: hecMAT
   type(hecmwST_local_mesh), pointer :: hecMESH
   call hecmw_mat_id_get(id, hecMAT, hecMESH)
-  call hecmw_precond_SSOR_nn_clear(hecMAT)
+  call hecmw_precond_SSOR_nn_clear()
   ierr = 0
 end subroutine hecmw_ML_smoother_ssor_clear_nn

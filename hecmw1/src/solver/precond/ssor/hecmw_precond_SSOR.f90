@@ -46,17 +46,17 @@ contains
 
     select case(hecMAT%NDOF)
       case(3)
-        call hecmw_precond_SSOR_33_clear(hecMAT)
+        call hecmw_precond_SSOR_33_clear()
       case(4)
-        call hecmw_precond_SSOR_44_clear(hecMAT)
+        call hecmw_precond_SSOR_44_clear()
       case(6)
-        call hecmw_precond_SSOR_66_clear(hecMAT)
+        call hecmw_precond_SSOR_66_clear()
       case(1)
-        call hecmw_precond_SSOR_11_clear(hecMAT)
+        call hecmw_precond_SSOR_11_clear()
       case(2)
-        call hecmw_precond_SSOR_22_clear(hecMAT)
+        call hecmw_precond_SSOR_22_clear()
       case default
-        call hecmw_precond_SSOR_nn_clear(hecMAT)
+        call hecmw_precond_SSOR_nn_clear()
     end select
   end subroutine hecmw_precond_SSOR_clear
 

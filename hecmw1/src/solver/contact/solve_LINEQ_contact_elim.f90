@@ -48,8 +48,7 @@ module m_solve_LINEQ_contact_elim
 
 contains
 
-  subroutine solve_LINEQ_contact_elim_init(hecMESH, hecMAT, is_sym)
-    type(hecmwST_local_mesh),      intent(in)    :: hecMESH   !< mesh
+  subroutine solve_LINEQ_contact_elim_init(hecMAT, is_sym)
     type(hecmwST_matrix),          intent(inout) :: hecMAT    !< matrix excl. contact
     logical,                       intent(in)    :: is_sym    !< if matrix is symmetric or not
 

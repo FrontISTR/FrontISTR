@@ -48,25 +48,23 @@ contains
   !C*** hecmw_matvec_33_setup
   !C***
   !C
-  subroutine hecmw_matvec_33_setup (hecMESH, hecMAT)
+  subroutine hecmw_matvec_33_setup (hecMAT)
     use hecmw_util
     use hecmw_jad_type
     implicit none
-    type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_matrix), intent(in), target :: hecMAT
 
     ! JAD takes over the whole matvec, so the tuned implementations must stay out of it
     if (hecmw_JAD_IS_INITIALIZED().ne.0) return
 
     matvec_impl = hecmw_mat_get_matvec_impl(hecMAT)
-    if (matvec_impl == HECMW_MATVEC_IMPL_CSR) call hecmw_matvec_setup_33(hecMESH, hecMAT)
+    if (matvec_impl == HECMW_MATVEC_IMPL_CSR) call hecmw_matvec_setup_33(hecMAT)
   end subroutine hecmw_matvec_33_setup
 
-  subroutine hecmw_matvec_setup_33 (hecMESH, hecMAT)
+  subroutine hecmw_matvec_setup_33 (hecMAT)
     use hecmw_jad_type
     use hecmw_matrix_misc
     implicit none
-    type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_matrix), intent(in), target :: hecMAT
 #ifdef HECMW_ARCH_FX64
 
