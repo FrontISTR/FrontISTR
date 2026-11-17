@@ -380,7 +380,7 @@ void CNFData::ReadStr(char *buff, char *s, int size) {
   }
 
   int n = strlen(buff);
-  assert(!(n >= size));
+  if (n >= size) n = size - 1;
 
   for (i = 0; i < n; i++) s[i] = buff[i];
 
