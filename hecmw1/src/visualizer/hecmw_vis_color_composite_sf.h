@@ -9,7 +9,7 @@
 int find_surface_point(double fp[3][3], double point_o[3],
                        double view_point_d[3], double point[3], double n_f[4],
                        double v_f[9], double c_value[3], double *value,
-                       double normal[9], int normal_flag, int smooth_shading);
+                       double normal[9], int normal_flag);
 int find_point_depth(double fp[3][3], double point_o[3], double view_point_d[3],
                      double n_f[4], double point[3], int normal_flag);
 int find2_point_depth(double fp[3][3], double point_o[3],

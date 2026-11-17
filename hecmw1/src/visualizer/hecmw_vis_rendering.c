@@ -72,9 +72,6 @@ void HECMW_vis_rendering_surface(struct surface_module *sf,
   double *iso_value = NULL, *iso_rgb = NULL;
   int pixel_i[2][2], flag, tmp_i, last_j, next_j;
   int normal_flag;
-  double *v_normal;
-  double *p_normal;
-  int *v_num;
 
   double f_f[4], norm, v_f[9];
   double f_disp[3][3];
@@ -584,54 +581,6 @@ t2=t3;
         if (sf[iii + 1].deform_display_on == 1) {
           if ((sf[iii + 1].initial_style == 2) ||
               (sf[iii + 1].initial_style == 3)) {
-            if (sr->smooth_shading == 1) {
-              v_normal = (double *)HECMW_calloc(result[iii].n_vertex * 3,
-                                                sizeof(double));
-              p_normal = (double *)HECMW_calloc(result[iii].n_patch * 4,
-                                                sizeof(double));
-              v_num = (int *)HECMW_calloc(result[iii].n_vertex, sizeof(int));
-              if ((v_normal == NULL) || (v_num == NULL) || (p_normal == NULL))
-                HECMW_vis_memory_exit("v_normal, p_normal");
-              for (k = 0; k < result[iii].n_vertex; k++) v_num[k] = 0;
-              for (k = 0; k < result[iii].n_vertex * 3; k++) v_normal[k] = 0.0;
-              for (k = 0; k < result[iii].n_patch; k++) {
-                for (i = 0; i < 3; i++) {
-                  for (j = 0; j < 3; j++)
-                    f[i][j] =
-                        result[iii]
-                            .vertex[(result[iii].patch[k * 3 + i] - 1) * 3 + j];
-                }
-                p_normal[k * 4 + 0] =
-                    (f[1][1] - f[0][1]) * (f[2][2] - f[0][2]) -
-                    (f[2][1] - f[0][1]) * (f[1][2] - f[0][2]);
-                p_normal[k * 4 + 1] =
-                    -(f[1][0] - f[0][0]) * (f[2][2] - f[0][2]) +
-                    (f[2][0] - f[0][0]) * (f[1][2] - f[0][2]);
-                p_normal[k * 4 + 2] =
-                    (f[1][0] - f[0][0]) * (f[2][1] - f[0][1]) -
-                    (f[2][0] - f[0][0]) * (f[1][1] - f[0][1]);
-                norm = sqrt(p_normal[k * 4 + 0] * p_normal[k * 4 + 0] +
-                            p_normal[k * 4 + 1] * p_normal[k * 4 + 1] +
-                            p_normal[k * 4 + 2] * p_normal[k * 4 + 2]);
-                if (fabs(norm) > EPSILON) {
-                  for (j = 0; j < 3; j++) p_normal[k * 4 + j] /= norm;
-                }
-                p_normal[k * 4 + 3] = -p_normal[k * 4 + 0] * f[0][0] -
-                                      p_normal[k * 4 + 1] * f[0][1] -
-                                      p_normal[k * 4 + 2] * f[0][2];
-                for (i = 0; i < 3; i++) {
-                  v_num[result[iii].patch[k * 3 + i] - 1]++;
-                  for (j = 0; j < 3; j++)
-                    v_normal[(result[iii].patch[k * 3 + i] - 1) * 3 + j] +=
-                        p_normal[k * 4 + j];
-                }
-              }
-              for (k = 0; k < result[iii].n_vertex; k++) {
-                if (v_num[k] != 0) {
-                  for (j = 0; j < 3; j++) v_normal[k * 3 + j] /= v_num[k];
-                }
-              }
-            }
             normal_flag = 1;
             for (k = 0; k < result[iii].n_patch; k++) {
               for (i = 0; i < 3; i++) {
@@ -641,12 +590,6 @@ t2=t3;
                           .vertex[(result[iii].patch[k * 3 + i] - 1) * 3 + j];
                 c_value[i] =
                     result[iii].color[result[iii].patch[k * 3 + i] - 1];
-              }
-              if (sr->smooth_shading == 1) {
-                for (i = 0; i < 3; i++)
-                  for (j = 0; j < 3; j++)
-                    normal[i * 3 + j] =
-                        v_normal[(result[iii].patch[k * 3 + i] - 1) * 3 + j];
               }
 
               transform_frame3(sr->screen_point, f, coff_matrix, n_f);
@@ -668,7 +611,7 @@ t2=t3;
 
                   intersection = find_surface_point(
                       f, point_o, sr->view_point_d, inter_point, f_f, v_f,
-                      c_value, &value, normal, normal_flag, sr->smooth_shading);
+                      c_value, &value, normal, normal_flag);
                   if (intersection == 1) {
                     depth = sqrt(SQR(inter_point[0] - sr->view_point_d[0]) +
                                  SQR(inter_point[1] - sr->view_point_d[1]) +
@@ -702,72 +645,6 @@ t2=t3;
           if ((sf[iii + 1].deform_style == 2) ||
               (sf[iii + 1].deform_style == 3)) {
             normal_flag = 1;
-            if (sr->smooth_shading == 1) {
-              v_normal = (double *)HECMW_calloc(result[iii].n_vertex * 3,
-                                                sizeof(double));
-              p_normal = (double *)HECMW_calloc(result[iii].n_patch * 4,
-                                                sizeof(double));
-              v_num = (int *)HECMW_calloc(result[iii].n_vertex, sizeof(int));
-              if ((v_normal == NULL) || (v_num == NULL) || (p_normal == NULL))
-                HECMW_vis_memory_exit("v_normal_d, p_normal");
-              for (k = 0; k < result[iii].n_vertex; k++) v_num[k] = 0;
-              for (k = 0; k < result[iii].n_vertex * 3; k++) v_normal[k] = 0.0;
-              for (k = 0; k < result[iii].n_patch; k++) {
-                for (i = 0; i < 3; i++) {
-                  if (stat_para[70] == 0) {
-                    for (j = 0; j < 3; j++)
-                      f[i][j] =
-                          result[iii]
-                              .vertex[(result[iii].patch[k * 3 + i] - 1) * 3 +
-                                      j] +
-                          result[iii]
-                                  .disp[(result[iii].patch[k * 3 + i] - 1) * 3 +
-                                        j] *
-                              (sf[iii + 1].disp_scale /
-                               (sr->deform_num_of_frames) * (jjj + 1));
-                  } else {
-                    for (j = 0; j < 3; j++)
-                      f[i][j] =
-                          result[iii]
-                              .vertex[(result[iii].patch[k * 3 + i] - 1) * 3 +
-                                      j] +
-                          result[iii]
-                                  .disp[(result[iii].patch[k * 3 + i] - 1) * 3 +
-                                        j] *
-                              sf[iii + 1].disp_scale;
-                  }
-                }
-                p_normal[k * 4 + 0] =
-                    (f[1][1] - f[0][1]) * (f[2][2] - f[0][2]) -
-                    (f[2][1] - f[0][1]) * (f[1][2] - f[0][2]);
-                p_normal[k * 4 + 1] =
-                    -(f[1][0] - f[0][0]) * (f[2][2] - f[0][2]) +
-                    (f[2][0] - f[0][0]) * (f[1][2] - f[0][2]);
-                p_normal[k * 4 + 2] =
-                    (f[1][0] - f[0][0]) * (f[2][1] - f[0][1]) -
-                    (f[2][0] - f[0][0]) * (f[1][1] - f[0][1]);
-                norm = sqrt(p_normal[k * 4 + 0] * p_normal[k * 4 + 0] +
-                            p_normal[k * 4 + 1] * p_normal[k * 4 + 1] +
-                            p_normal[k * 4 + 2] * p_normal[k * 4 + 2]);
-                if (fabs(norm) > EPSILON) {
-                  for (j = 0; j < 3; j++) p_normal[k * 4 + j] /= norm;
-                }
-                p_normal[k * 4 + 3] = -p_normal[k * 4 + 0] * f[0][0] -
-                                      p_normal[k * 4 + 1] * f[0][1] -
-                                      p_normal[k * 4 + 2] * f[0][2];
-                for (i = 0; i < 3; i++) {
-                  v_num[result[iii].patch[k * 3 + i] - 1]++;
-                  for (j = 0; j < 3; j++)
-                    v_normal[(result[iii].patch[k * 3 + i] - 1) * 3 + j] +=
-                        p_normal[k * 4 + j];
-                }
-              }
-              for (k = 0; k < result[iii].n_vertex; k++) {
-                if (v_num[k] != 0) {
-                  for (j = 0; j < 3; j++) v_normal[k * 3 + j] /= v_num[k];
-                }
-              }
-            }
 
             for (k = 0; k < result[iii].n_patch; k++) {
               for (i = 0; i < 3; i++) {
@@ -797,12 +674,6 @@ t2=t3;
                 c_value[i] =
                     result[iii].color[result[iii].patch[k * 3 + i] - 1];
               }
-              if (sr->smooth_shading == 1) {
-                for (i = 0; i < 3; i++)
-                  for (j = 0; j < 3; j++)
-                    normal[i * 3 + j] =
-                        v_normal[(result[iii].patch[k * 3 + i] - 1) * 3 + j];
-              }
 
               transform_frame3(sr->screen_point, f_disp, coff_matrix, n_f);
               find_projection_range2(view_point, n_f, scr_f);
@@ -823,7 +694,7 @@ t2=t3;
 
                   intersection = find_surface_point(
                       f_disp, point_o, sr->view_point_d, inter_point, f_f, v_f,
-                      c_value, &value, normal, normal_flag, sr->smooth_shading);
+                      c_value, &value, normal, normal_flag);
                   if (intersection == 1) {
                     depth = sqrt(SQR(inter_point[0] - sr->view_point_d[0]) +
                                  SQR(inter_point[1] - sr->view_point_d[1]) +
@@ -1353,54 +1224,6 @@ t2=t3;
             normal_flag = 0;
           } else {
             normal_flag = 1;
-            if (sr->smooth_shading == 1) {
-              v_normal = (double *)HECMW_calloc(result[iii].n_vertex * 3,
-                                                sizeof(double));
-              p_normal = (double *)HECMW_calloc(result[iii].n_patch * 4,
-                                                sizeof(double));
-              v_num = (int *)HECMW_calloc(result[iii].n_vertex, sizeof(int));
-              if ((v_normal == NULL) || (v_num == NULL) || (p_normal == NULL))
-                HECMW_vis_memory_exit("v_normal, p_normal");
-              for (k = 0; k < result[iii].n_vertex; k++) v_num[k] = 0;
-              for (k = 0; k < result[iii].n_vertex * 3; k++) v_normal[k] = 0.0;
-              for (k = 0; k < result[iii].n_patch; k++) {
-                for (i = 0; i < 3; i++) {
-                  for (j = 0; j < 3; j++)
-                    f[i][j] =
-                        result[iii]
-                            .vertex[(result[iii].patch[k * 3 + i] - 1) * 3 + j];
-                }
-                p_normal[k * 4 + 0] =
-                    (f[1][1] - f[0][1]) * (f[2][2] - f[0][2]) -
-                    (f[2][1] - f[0][1]) * (f[1][2] - f[0][2]);
-                p_normal[k * 4 + 1] =
-                    -(f[1][0] - f[0][0]) * (f[2][2] - f[0][2]) +
-                    (f[2][0] - f[0][0]) * (f[1][2] - f[0][2]);
-                p_normal[k * 4 + 2] =
-                    (f[1][0] - f[0][0]) * (f[2][1] - f[0][1]) -
-                    (f[2][0] - f[0][0]) * (f[1][1] - f[0][1]);
-                norm = sqrt(p_normal[k * 4 + 0] * p_normal[k * 4 + 0] +
-                            p_normal[k * 4 + 1] * p_normal[k * 4 + 1] +
-                            p_normal[k * 4 + 2] * p_normal[k * 4 + 2]);
-                if (fabs(norm) > EPSILON) {
-                  for (j = 0; j < 3; j++) p_normal[k * 4 + j] /= norm;
-                }
-                p_normal[k * 4 + 3] = -p_normal[k * 4 + 0] * f[0][0] -
-                                      p_normal[k * 4 + 1] * f[0][1] -
-                                      p_normal[k * 4 + 2] * f[0][2];
-                for (i = 0; i < 3; i++) {
-                  v_num[result[iii].patch[k * 3 + i] - 1]++;
-                  for (j = 0; j < 3; j++)
-                    v_normal[(result[iii].patch[k * 3 + i] - 1) * 3 + j] +=
-                        p_normal[k * 4 + j];
-                }
-              }
-              for (k = 0; k < result[iii].n_vertex; k++) {
-                if (v_num[k] != 0) {
-                  for (j = 0; j < 3; j++) v_normal[k * 3 + j] /= v_num[k];
-                }
-              }
-            }
           }
 
           for (k = 0; k < result[iii].n_patch; k++) {
@@ -1412,12 +1235,6 @@ t2=t3;
               c_value[i] = result[iii].color[result[iii].patch[k * 3 + i] - 1];
             }
             if (sf[iii + 1].display_method != 2) {
-              if (sr->smooth_shading == 1) {
-                for (i = 0; i < 3; i++)
-                  for (j = 0; j < 3; j++)
-                    normal[i * 3 + j] =
-                        v_normal[(result[iii].patch[k * 3 + i] - 1) * 3 + j];
-              }
 
               transform_frame3(sr->screen_point, f, coff_matrix, n_f);
               find_projection_range2(view_point, n_f, scr_f);
@@ -1438,7 +1255,7 @@ t2=t3;
 
                   intersection = find_surface_point(
                       f, point_o, sr->view_point_d, inter_point, f_f, v_f,
-                      c_value, &value, normal, normal_flag, sr->smooth_shading);
+                      c_value, &value, normal, normal_flag);
                   if (intersection == 1) {
                     depth = sqrt(SQR(inter_point[0] - sr->view_point_d[0]) +
                                  SQR(inter_point[1] - sr->view_point_d[1]) +
@@ -2243,11 +2060,6 @@ snprintf(fname + strlen(fname), sizeof(fname) - strlen(fname), ".%d.%d.bmp", v->
       }
       HECMW_free(image);
       HECMW_free(z_buffer);
-      if (sr->smooth_shading == 1) {
-        HECMW_free(v_normal);
-        HECMW_free(p_normal);
-        HECMW_free(v_num);
-      }
     }
   } /*for jjj loop */
 
