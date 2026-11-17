@@ -61,12 +61,8 @@ typedef struct _rendering_parameter_struct {
   int histogram_on;
   int boundary_line_on;
   double isoline_color[3];
-  int time_mark_on;
   int fixed_scale_mark;
-  int smooth_shading;
   double fixed_mesh_range[6];
-  double start_time;
-  double time_interval;
 } Parameter_rendering;
 /*
 Parameter_rendering *sr;
