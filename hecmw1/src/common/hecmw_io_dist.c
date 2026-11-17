@@ -13,9 +13,6 @@
 #include "hecmw_dist_alloc.h"
 #include "hecmw_io_dist.h"
 
-#define FSCANF_RTC_TOO_SHORT (-10001)
-#define FSCNAF_RTC_EOF (-10002)
-
 #define COLS_INT_DEF 10
 #define COLS_DOUBLE_DEF 5
 #define COLS_TWO 2

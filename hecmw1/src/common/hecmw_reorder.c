@@ -13,7 +13,6 @@
 
 #define MASK_BIT(map, bit) ((map) |= (bit))
 #define EVAL_BIT(map, bit) ((map) & (bit))
-#define INV_BIT(map, bit) ((map) ^= (bit))
 #define CLEAR_BIT(map, bit) \
   ((map) |= (bit));         \
   ((map) ^= (bit))
@@ -25,18 +24,6 @@
 #define BIT_DOF_ALL (BIT_DOF_TWO | BIT_DOF_THREE | BIT_DOF_SIX | BIT_DOF_FOUR)
 
 #define HECMW_COMMON_EQUATION_BLOCK_NAME "EQUATION_BLOCK"
-#define MY_RANK 1
-#define NEIGHBOR_RANK 2
-#define BOTH_RANK 3
-#define MPC_BLOCK 4
-#define CANDIDATE 8
-#define ALL_BIT 255
-
-#ifdef DEBUG
-#define dw_node_flag(ptr, nmemb) dw_node_flag_(ptr, nmemb, __FILE__, __LINE__)
-#else
-#define dw_node_flag(ptr, nmemb) ((void)0)
-#endif
 
 struct equation_block {
   int n_eqn_block;

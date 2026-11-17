@@ -28,12 +28,9 @@
 
 #ifndef TRUE
 #define TRUE 1
-#define FALSE 0
 #endif
 
 static int fg_little_endian = TRUE;
-
-#define RES_BIN_HEADER "HECMW_BINARY_RESULT"
 
 /*---------------------------------------------------------------------------*/
 
