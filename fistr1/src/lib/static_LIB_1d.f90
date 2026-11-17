@@ -258,101 +258,17 @@ contains
             n = hecMESH%elem_node_item(jS+j)
             if( hecMAT%D(9*n-8) == 0.0d0)then
               hecMAT%D(9*n-8) = 1.0d0
-              !call search_diag_modify(n,1,hecMAT,hecMESH)
             endif
             if( hecMAT%D(9*n-4) == 0.0d0)then
               hecMAT%D(9*n-4) = 1.0d0
-              !call search_diag_modify(n,2,hecMAT,hecMESH)
             endif
             if( hecMAT%D(9*n  ) == 0.0d0)then
               hecMAT%D(9*n  ) = 1.0d0
-              !call search_diag_modify(n,3,hecMAT,hecMESH)
             endif
           enddo
         enddo
       endif
     enddo
-
-  end subroutine
-
-  !----------------------------------------------------------------------*
-  subroutine search_diag_modify(n,nn,hecMAT,hecMESH)
-    !----------------------------------------------------------------------*
-    !
-    use hecmw
-    type (hecmwST_matrix)     :: hecMAT
-    type (hecmwST_local_mesh) :: hecMESH
-    integer :: n, nn, is, iE, i, a
-
-    if(nn == 1)then
-      a = 0
-      is = hecMAT%IndexL(n-1)+1
-      iE = hecMAT%IndexL(n  )
-      do i=is,iE
-        if(hecMAT%AL(9*i-8) /= 0.0d0) a = 1
-        if(hecMAT%AL(9*i-7) /= 0.0d0) a = 1
-        if(hecMAT%AL(9*i-6) /= 0.0d0) a = 1
-      enddo
-      is = hecMAT%IndexU(n-1)+1
-      iE = hecMAT%IndexU(n  )
-      do i=is,iE
-        if(hecMAT%AU(9*i-8) /= 0.0d0) a = 1
-        if(hecMAT%AU(9*i-7) /= 0.0d0) a = 1
-        if(hecMAT%AU(9*i-6) /= 0.0d0) a = 1
-      enddo
-      if(hecMAT%D(9*n-7) /= 0.0d0) a = 1
-      if(hecMAT%D(9*n-6) /= 0.0d0) a = 1
-      if(a == 0)then
-        hecMAT%D(9*n-8) = 1.0d0
-        !write(*,"(a,i,a,i,a)")"### FIX DIAGONAL n:",n,", ID:",hecMESH%global_node_ID(n),", dof:1"
-      endif
-    endif
-    if(nn == 2)then
-      a = 0
-      is = hecMAT%IndexL(n-1)+1
-      iE = hecMAT%IndexL(n  )
-      do i=is,iE
-        if(hecMAT%AL(9*i-5) /= 0.0d0) a = 1
-        if(hecMAT%AL(9*i-4) /= 0.0d0) a = 1
-        if(hecMAT%AL(9*i-3) /= 0.0d0) a = 1
-      enddo
-      is = hecMAT%IndexU(n-1)+1
-      iE = hecMAT%IndexU(n  )
-      do i=is,iE
-        if(hecMAT%AU(9*i-5) /= 0.0d0) a = 1
-        if(hecMAT%AU(9*i-4) /= 0.0d0) a = 1
-        if(hecMAT%AU(9*i-3) /= 0.0d0) a = 1
-      enddo
-      if(hecMAT%D(9*n-5) /= 0.0d0) a = 1
-      if(hecMAT%D(9*n-3) /= 0.0d0) a = 1
-      if(a == 0)then
-        hecMAT%D(9*n-4) = 1.0d0
-        !write(*,"(a,i,a,i,a)")"### FIX DIAGONAL n:",n,", ID:",hecMESH%global_node_ID(n),", dof:2"
-      endif
-    endif
-    if(nn == 3)then
-      a = 0
-      is = hecMAT%IndexL(n-1)+1
-      iE = hecMAT%IndexL(n  )
-      do i=is,iE
-        if(hecMAT%AL(9*i-2) /= 0.0d0) a = 1
-        if(hecMAT%AL(9*i-1) /= 0.0d0) a = 1
-        if(hecMAT%AL(9*i  ) /= 0.0d0) a = 1
-      enddo
-      is = hecMAT%IndexU(n-1)+1
-      iE = hecMAT%IndexU(n  )
-      do i=is,iE
-        if(hecMAT%AU(9*i-2) /= 0.0d0) a = 1
-        if(hecMAT%AU(9*i-1) /= 0.0d0) a = 1
-        if(hecMAT%AU(9*i  ) /= 0.0d0) a = 1
-      enddo
-      if(hecMAT%D(9*n-2) /= 0.0d0) a = 1
-      if(hecMAT%D(9*n-1) /= 0.0d0) a = 1
-      if(a == 0)then
-        hecMAT%D(9*n  ) = 1.0d0
-        !write(*,"(a,i,a,i,a)")"### FIX DIAGONAL n:",n,", ID:",hecMESH%global_node_ID(n),", dof:3"
-      endif
-    endif
 
   end subroutine
 
