@@ -551,10 +551,10 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     implicit none
 
-    type (child_matrix)  :: cm
+    type (child_matrix), save :: cm
 
     real(kind=kreal), allocatable :: b(:,:) ! (ndeg, neqns)
-    type (dsinfo) :: dsi
+    type (dsinfo), save :: dsi
     logical, save :: nusol_ready = .false.
 
     ! for MPI
