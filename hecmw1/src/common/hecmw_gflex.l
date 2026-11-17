@@ -14,7 +14,7 @@ static long len = 0;
 
 %}
 
-%option nounput
+%option nounput noinput
 
 comment_line	^(!|#).*\r?\n
 comment		(!|#).*

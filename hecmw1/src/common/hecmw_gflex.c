@@ -733,7 +733,8 @@ static int lineno;
 static long len = 0;
 
 #line 736 "<stdout>"
-#line 737 "<stdout>"
+#define YY_NO_INPUT 1
+#line 738 "<stdout>"
 
 #define INITIAL 0
 
@@ -954,7 +955,7 @@ YY_DECL
 #line 28 "../src/common/hecmw_gflex.l"
 
 
-#line 958 "<stdout>"
+#line 959 "<stdout>"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -1075,7 +1076,7 @@ YY_RULE_SETUP
 #line 53 "../src/common/hecmw_gflex.l"
 ECHO;
 	YY_BREAK
-#line 1079 "<stdout>"
+#line 1080 "<stdout>"
 
 	case YY_END_OF_BUFFER:
 		{
