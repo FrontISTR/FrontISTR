@@ -327,68 +327,6 @@ void font7_generate(char input, int output[7][7]) {
   return;
 }
 
-void mark_time_label(double font_size, int xr, int yr, double font_color[3],
-                     double background_color[3], double start_time,
-                     double time_interval, int timestep, int max_len_step,
-                     double *image) {
-  int i, j, m;
-  int start_ys, start_xs, scale, len_step;
-  double vv;
-  char buf[300], buf1[128], buf2[140], buf3[140];
-  int output7[7][7], tmp1, tmp2;
-
-  font_size = 2.5;
-  scale     = (int)font_size;
-  start_xs  = 30;
-  start_ys  = yr - 25;
-  vv        = start_time + (double)timestep * time_interval;
-  tmp1      = (int)vv;
-  tmp2      = (int)((vv - (double)tmp1) * 100.0);
-  snprintf(buf1, sizeof(buf1), "%d", tmp1);
-  len_step = strlen(buf1);
-
-  if (len_step < max_len_step) {
-    for (i = 0; i < max_len_step - len_step; i++) buf2[i] = ' ';
-
-    for (i    = max_len_step - len_step; i < max_len_step; i++)
-      buf2[i] = buf1[i - (max_len_step - len_step)];
-
-    buf2[max_len_step] = '\0';
-  } else {
-    snprintf(buf2, sizeof(buf2), "%s", buf1);
-  }
-
-  snprintf(buf3, sizeof(buf3), "%d", tmp2);
-
-  if (strlen(buf3) < 2) {
-    buf3[2] = '\0';
-    buf3[1] = buf3[0];
-    buf3[0] = '0';
-  }
-
-  snprintf(buf, sizeof(buf), "%s%s.%s%s", "T=", buf2, buf3, "s");
-
-  for (m = 0; m < max_len_step + 6; m++) {
-    font7_generate(buf[max_len_step + 5 - m], output7);
-    for (j = 0; j < 7 * scale; j++)
-      for (i = 0; i < 7 * scale; i++) {
-        if (output7[6 - (int)(j / scale)][(int)(i / scale)] == 1) {
-          image[((start_ys + j) * xr + start_xs - i) * 3]     = font_color[0];
-          image[((start_ys + j) * xr + start_xs - i) * 3 + 1] = font_color[1];
-          image[((start_ys + j) * xr + start_xs - i) * 3 + 2] = font_color[2];
-        } else {
-          image[((start_ys + j) * xr + start_xs - i) * 3] = background_color[0];
-          image[((start_ys + j) * xr + start_xs - i) * 3 + 1] =
-              background_color[1];
-          image[((start_ys + j) * xr + start_xs - i) * 3 + 2] =
-              background_color[2];
-        }
-      }
-    start_xs += 7 * scale;
-  }
-  return;
-}
-
 void value2_to_rgb(double value, double color[3], int color_system_type) {
   double r, g, b;
 

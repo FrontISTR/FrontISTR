@@ -31,7 +31,7 @@ void HECMW_vis_rendering_surface(struct surface_module *sf,
                                  int *color_list, double *minvalue,
                                  double *maxvalue, Result *result,
                                  char *outfile, int stat_para[NUM_CONTROL_PSF],
-                                 HECMW_Comm VIS_COMM, int timestep)
+                                 HECMW_Comm VIS_COMM)
 
 {
   char fname[HECMW_FILENAME_LEN + 1];
@@ -77,9 +77,6 @@ void HECMW_vis_rendering_surface(struct surface_module *sf,
   int *v_num;
 
   double f_f[4], norm, v_f[9];
-  int end_timestep;
-  double start_time, time_interval;
-  int len_step;
   double f_disp[3][3];
   int deform_flag, count_dash_num;
 
@@ -90,11 +87,6 @@ void HECMW_vis_rendering_surface(struct surface_module *sf,
 fprintf(stderr, "Start rendering patches\n");
      */
   }
-  /*    start_time=0.0;
-time_interval=0.01;
-start_timestep=1;
-end_timestep=1000;
-   */
   mivalue = (double *)HECMW_calloc(data->nn_component, sizeof(double));
   mavalue = (double *)HECMW_calloc(data->nn_component, sizeof(double));
   if ((mivalue == NULL) || (mavalue == NULL))
@@ -384,8 +376,7 @@ for(j=0;j<3;j++)
     /* for multi-PEs, should find minx, maxx, miny, maxy in scr_area for all PE
      */
     if (ii == 0) {
-      if ((sr->color_mapping_bar_on == 0) && (sr->scale_marking_on == 0) &&
-          (sr->time_mark_on == 0)) {
+      if ((sr->color_mapping_bar_on == 0) && (sr->scale_marking_on == 0)) {
         start_x = 10;
         start_y = 10;
 
@@ -407,54 +398,6 @@ for(j=0;j<3;j++)
           else if (num_img > 1)
             sr->yr =
                 (int)((int)(20 + (m_scr[3] - m_scr[2]) / yd) / 10) * 10 + 10;
-        }
-        if (xd < yd) {
-          xd = yd;
-
-          if (num_img == 1)
-            sr->xr =
-                (int)((int)(20 + (scr_area[1] - scr_area[0]) / xd) / 8) * 8 + 8;
-          else if (num_img > 1)
-            sr->xr = (int)((int)(20 + (m_scr[1] - m_scr[0]) / xd) / 8) * 8 + 8;
-        }
-      } else if ((sr->color_mapping_bar_on == 0) &&
-                 (sr->scale_marking_on == 0) && (sr->time_mark_on == 1)) {
-        char buf3[128];
-        snprintf(buf3, sizeof(buf3), "%d",
-                (int)(start_time + time_interval * (double)end_timestep));
-        len_step   = strlen(buf3);
-        scale_type = 2;
-        scale      = (int)sr->font_size;
-        start_x    = 10;
-        start_y    = 10 + 7 * scale + 5;
-        if (sr->yr < start_y + 10)
-          HECMW_vis_print_exit(
-              "The resolution for yr is not enough, please specify a larger "
-              "one");
-        if (sr->xr < start_x + (len_step + 3 + 3) * scale)
-          HECMW_vis_print_exit(
-              "The resolution for xr is not enough, please specify a larger "
-              "one ");
-        if (num_img == 1) {
-          xd = (scr_area[1] - scr_area[0]) / (sr->xr - (start_x + 10));
-          yd = (scr_area[3] - scr_area[2]) / (sr->yr - (start_y + 10));
-        } else if (num_img > 1) {
-          xd = (m_scr[1] - m_scr[0]) / (sr->xr - (start_x + 10));
-          yd = (m_scr[3] - m_scr[2]) / (sr->yr - (start_y + 10));
-        }
-        if (xd >= yd) {
-          yd = xd;
-          if (num_img == 1)
-            sr->yr =
-                (int)((int)(start_y + 10 + (scr_area[3] - scr_area[2]) / yd) /
-                      10) *
-                    10 +
-                10;
-          else if (num_img > 1)
-            sr->yr =
-                (int)((int)(start_y + 10 + (m_scr[3] - m_scr[2]) / yd) / 10) *
-                    10 +
-                10;
         }
         if (xd < yd) {
           xd = yd;
@@ -2143,13 +2086,6 @@ fclose(outfp);
               sr->font_color, sr->color_system_type, sr->color_mapping_style,
               sr->interval_point, sr->interval_mapping_num, sr->num_of_scale,
               tmincolor, tmaxcolor, tmincolor, tmaxcolor, image);
-        /*        fprintf(stderr, "time_mark_on is %d timestep is %d\n",
-         * sr->time_mark_on, timestep);
-         */
-        if (sr->time_mark_on == 1)
-          mark_time_label(sr->font_size, sr->xr, sr->yr, sr->font_color,
-                          sr->background_color, start_time, time_interval,
-                          timestep, len_step, image);
         /*	(void)GEOFEM_file_translate_filename(geofem_output_file,
                  fname, GEOFEM_INDEPENDENT);
 {
