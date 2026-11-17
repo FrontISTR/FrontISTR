@@ -1058,6 +1058,8 @@ contains
         if( xi==0.d0 ) stop "Math error in return mapping"
         dlambda = 0.d0
         pstrain = plstrain
+        eqvs = eqvst
+        p = pt
         istat=0; exit
       endif
       pstrain = plstrain+xi*dlambda
@@ -1079,6 +1081,7 @@ contains
       alpha = xi/etabar
       beta = xi/eta
       depv=0.d0
+      factor=0.d0
       pstrain = plstrain
       cohe = calCurrYield( matl, pstrain, temp )
       resid = beta*cohe - pt
@@ -1092,7 +1095,6 @@ contains
         resid = beta*cohe - p
         if( abs(resid/cohe)<tol ) then
           dlambda=depv/etabar
-          factor=0.d0
           exit
         endif
         ! if( i==MAXITER ) then
