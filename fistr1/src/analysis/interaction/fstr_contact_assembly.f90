@@ -179,14 +179,12 @@ contains
 
   !> This subroutine update lagrangian multiplier and the
   !> distance between contacting nodes
-  subroutine update_contact_multiplier( contact, coord, disp, ddisp, fcoeff, &
+  subroutine update_contact_multiplier( contact, disp, ddisp, &
     hecMESH, gnt, ctchanged )
     type( tContact ), intent(inout)      :: contact        !< contact info
-    real(kind=kreal), intent(in)         :: coord(:)       !< mesh coordinate
     real(kind=kreal), intent(in)         :: disp(:)        !< disp till current step
     real(kind=kreal), intent(in)         :: ddisp(:)       !< disp till current substep
-    real(kind=kreal), intent(in)         :: fcoeff         !< frictional coeff
-    type(hecmwST_local_mesh), intent(in) :: hecMESH        !< mesh for allreduce
+    type(hecmwST_local_mesh), intent(in) :: hecMESH        !< mesh coordinate and communication
     real(kind=kreal), intent(inout)      :: gnt(2)         !< convergency information
     logical, intent(inout)               :: ctchanged      !< if contact state changes
 
@@ -215,9 +213,9 @@ contains
       ndLocal(2:nn+1) = contact%master(master)%nodes(1:nn)
 
       ! Update multiplier and calculate forces
-      call updateContactMultiplier_Alag(contact%states(i), ndLocal(1:nn+1), coord, disp, ddisp, &
+      call updateContactMultiplier_Alag(contact%states(i), ndLocal(1:nn+1), hecMESH%node, disp, ddisp, &
         contact%nPenalty * contact%refStiff, contact%tPenalty * contact%refStiff, &
-        fcoeff, contact%master(master), lgnt, ctchanged, ctNForce, ctTForce, jump_ratio_local, contact%smoothing)
+        contact%fcoeff, contact%master(master), lgnt, ctchanged, ctNForce, ctTForce, jump_ratio_local, contact%smoothing)
 
       ! Track maximum jump ratio
       max_jump_ratio = max(max_jump_ratio, jump_ratio_local)
