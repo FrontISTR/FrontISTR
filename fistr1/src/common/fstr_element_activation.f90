@@ -131,10 +131,9 @@ contains
 
   end subroutine
 
-  subroutine fstr_updatedof_elemact( ndof, hecMESH, elemact, elements, vec_old, vec_new )
+  subroutine fstr_updatedof_elemact( ndof, hecMESH, elements, vec_old, vec_new )
     integer(kind=kint), intent(in)            :: ndof
     type(hecmwST_local_mesh), intent(in)      :: hecMESH      !< mesh information
-    type(tElemact), intent(in)                  :: elemact        !< elemact info
     type(tElement), pointer, intent(inout)    :: elements(:)  !< elements info(elemact flags will be updated)
     real(kind=kreal), pointer, intent(in)     :: vec_old(:)
     real(kind=kreal), pointer, intent(inout)  :: vec_new(:)

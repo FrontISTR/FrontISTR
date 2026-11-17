@@ -11,9 +11,8 @@ module mHyperElastic
 contains
 
   !> This subroutine calculates derivative of the invariant with respect to Cauchy-Green tensor
-  subroutine cderiv( matl, ctn, itn,               &
+  subroutine cderiv( ctn, itn,               &
       inv1b, inv2b, inv3b, dibdc, d2ibdc2, strain, direction, inv4b, dibdc_ani, d2ibdc2_ani )
-    type( tMaterial ), intent(in) :: matl                  !< material rpoperties
     real(kind=kreal), intent(out) :: inv1b                 !< invariants
     real(kind=kreal), intent(out) :: inv2b                 !< invariants
     real(kind=kreal), intent(out) :: inv3b                 !< invariants
@@ -205,7 +204,7 @@ contains
     real(kind=kreal) :: d2ibdc2(3,3,3,3,3)
     real(kind=kreal) :: constant(3), coef
 
-    call cderiv(  matl, ctn, itn, inv1b, inv2b, inv3b,            &
+    call cderiv( ctn, itn, inv1b, inv2b, inv3b,            &
       dibdc, d2ibdc2, strain    )
     constant(1:3)=matl%variables(M_PLCONST1:M_PLCONST3)
     coef = constant(2)
@@ -252,7 +251,7 @@ contains
 
     constant(1:3)=matl%variables(M_PLCONST1:M_PLCONST3)
     coef = constant(2)
-    call cderiv(  matl, ctn, itn,      &
+    call cderiv( ctn, itn,      &
       inv1b, inv2b, inv3b,           &
       dibdc, d2ibdc2, dstrain    )
 
@@ -304,7 +303,7 @@ contains
     end if
     if( dabs(constant(3))>1.d-12 ) constant(3) = 1.d0/constant(3)
 
-    call cderiv( matl, ctn, itn, inv1b, inv2b, inv3b,            &
+    call cderiv( ctn, itn, inv1b, inv2b, inv3b,            &
       dibdc, d2ibdc2, strain    )
 
     do n=1,3
@@ -351,7 +350,7 @@ contains
     end if
     if( dabs(constant(3))>1.d-12 ) constant(3) = 1.d0/constant(3)
 
-    call cderiv( matl, ctn, itn, inv1b, inv2b, inv3b,      &
+    call cderiv( ctn, itn, inv1b, inv2b, inv3b,      &
       dibdc, d2ibdc2, strain    )
 
 
@@ -406,7 +405,7 @@ contains
     end if
     if( dabs(constant(3))>1.d-12 ) constant(3) = 1.d0/constant(3)
 
-    call cderiv( matl, ctn, itn, inv1b, inv2b, inv3b,      &
+    call cderiv( ctn, itn, inv1b, inv2b, inv3b,      &
       dibdc, d2ibdc2, strain, cdsys(1,1:3), inv4b, dibdc_ani, d2ibdc2_ani )
 
     do n=1,3 
@@ -458,7 +457,7 @@ contains
     end if
     if( dabs(constant(3))>1.d-12 ) constant(3) = 1.d0/constant(3)
 
-    call cderiv( matl, ctn, itn, inv1b, inv2b, inv3b,      &
+    call cderiv( ctn, itn, inv1b, inv2b, inv3b,      &
       dibdc, d2ibdc2, strain, cdsys(1,1:3), inv4b, dibdc_ani, d2ibdc2_ani )
 
     ! ----- stress

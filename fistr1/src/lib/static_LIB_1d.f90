@@ -318,7 +318,7 @@ contains
 
   !> Update strain and stress inside spring element
   !---------------------------------------------------------------------*
-  subroutine UPDATE_CONNECTOR( nn, ecoord, u, du, qf ,gausses, TT )
+  subroutine UPDATE_CONNECTOR( nn, ecoord, u, du, qf ,gausses )
     !---------------------------------------------------------------------*
     use m_fstr
     ! I/F VARIABLES
@@ -328,7 +328,6 @@ contains
     real(kind=kreal),   intent(in)     :: du(3,nn)        !< \param [in] nodal displacement ( solutions of solver )
     real(kind=kreal),   intent(out)    :: qf(nn*3)        !< \param [out] Internal Force
     type(tGaussStatus), intent(inout)  :: gausses(:)      !< \param [out] status of qudrature points
-    real(kind=kreal),   intent(in), optional :: TT(nn)    !< current temperature
 
     qf = 0.d0
     !clear stress and strain

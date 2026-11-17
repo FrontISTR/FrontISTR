@@ -44,7 +44,6 @@ contains
     !C-- global variable
     type(hecmwST_local_mesh)             :: hecMESH
     type(hecmwST_matrix)                 :: hecMAT
-    type(hecmwST_matrix), pointer        :: hecMAT0
     type(fstr_eigen)                     :: fstrEIG
     type(fstr_solid)                     :: fstrSOLID
     type(fstr_param)                     :: fstrPARAM
@@ -69,8 +68,6 @@ contains
     if(hecMESH%my_rank==0) call fstr_TimeInc_PrintSTATUS_init
 
     is_interaction_active = ( associated( fstrSOLID%contacts ) .or. associated( fstrSOLID%embeds ) )
-
-    nullify(hecMAT0)
 
     ! sum of n_node among all subdomains (to be used to calc res)
     n_node_global = hecMESH%nn_internal
@@ -163,7 +160,7 @@ contains
     call solve_LINEQ_contact_init(hecMESH,hecMAT,is_mat_symmetric)
 
     fstrSOLID%FACTOR = 0.0d0
-    call fstr_cutback_init( hecMESH, fstrSOLID )
+    call fstr_cutback_init( fstrSOLID )
     call fstr_cutback_save( fstrSOLID, infoCTChange, infoCTChange_bak )
     
     step_count = restart_step_count
@@ -183,7 +180,7 @@ contains
 
         call fstr_Newton_dynamic_contactSLag(tot_step, hecMESH, hecMAT, fstrSOLID, &
             fstrDYNAMIC, fstrPARAM, fstrCPL, infoCTChange, &
-            restart_step_num, hecMAT0, sub_step, fstrDYNAMIC%t_curr, fstrDYNAMIC%t_delta)
+            restart_step_num, sub_step, fstrDYNAMIC%t_curr, fstrDYNAMIC%t_delta)
 
         ! Time Increment
         if( hecMESH%my_rank == 0 ) call fstr_TimeInc_PrintSTATUS( fstrSOLID%step_ctrl(tot_step), fstrPARAM, &
@@ -284,11 +281,6 @@ contains
       !C-- end of time step loop
     enddo
 
-    if (associated(hecMAT0)) then
-      call hecmw_mat_finalize(hecMAT0)
-      deallocate(hecMAT0)
-    endif
-
     !  message
     if( hecMESH%my_rank == 0 ) then
       call fstr_TimeInc_PrintSTATUS_final(.true.)
@@ -300,14 +292,13 @@ contains
 
   subroutine fstr_Newton_dynamic_contactSLag(cstep, hecMESH, hecMAT, fstrSOLID, &
       fstrDYNAMIC, fstrPARAM, fstrCPL, infoCTChange, &
-      restart_step_num, hecMAT0, istep, t_curr, t_delta)
+      restart_step_num, istep, t_curr, t_delta)
     implicit none
     !C-- arguments
     integer(kind=kint), intent(in)       :: cstep, restart_step_num, istep
     real(kind=kreal), intent(in)         :: t_curr, t_delta
     type(hecmwST_local_mesh)             :: hecMESH
     type(hecmwST_matrix)                 :: hecMAT
-    type(hecmwST_matrix), pointer        :: hecMAT0
     type(fstr_solid)                     :: fstrSOLID
     type(fstr_dynamic)                   :: fstrDYNAMIC
     type(fstr_param)                     :: fstrPARAM
@@ -450,7 +441,7 @@ contains
         hecMAT%X = 0.0d0
         call fstr_set_current_config_to_mesh(hecMESH,fstrSOLID,coord)
         call solve_LINEQ_contact(hecMESH,hecMAT,hecEBC,istat,1.0D0,fstr_is_contact_active())
-        call fstr_recover_initial_config_to_mesh(hecMESH,fstrSOLID,coord)
+        call fstr_recover_initial_config_to_mesh(hecMESH,coord)
         call hecmw_ebc_finalize(hecEBC)
         ! ----- check matrix solver error
         call fstr_check_linear_solver(hecMESH, hecMAT, fstrSOLID, cstep, istep, iterStatus, istat)
@@ -537,7 +528,7 @@ contains
     fstrSOLID%NRstat_i(knstCITER) = count_step ! logging contact iteration
 
     !C for couple analysis
-      call fstr_solve_dynamic_nlimplicit_couple_post(hecMESH, hecMAT, fstrSOLID, &
+      call fstr_solve_dynamic_nlimplicit_couple_post(fstrSOLID, &
         & fstrPARAM, fstrDYNAMIC, fstrCPL, a1, a2, a3, b1, b2, b3, istep, is_cycle)
       if(is_cycle) cycle
       exit
@@ -625,11 +616,9 @@ contains
     endif
   end subroutine fstr_solve_dynamic_nlimplicit_couple_pre
 
-  subroutine fstr_solve_dynamic_nlimplicit_couple_post(hecMESH, hecMAT, fstrSOLID, &
+  subroutine fstr_solve_dynamic_nlimplicit_couple_post(fstrSOLID, &
     & fstrPARAM, fstrDYNAMIC, fstrCPL, a1, a2, a3, b1, b2, b3, i, is_cycle)
     implicit none
-    type(hecmwST_local_mesh) :: hecMESH ! unused - kept for interface compatibility
-    type(hecmwST_matrix)     :: hecMAT ! unused - kept for interface compatibility
     type(fstr_solid)         :: fstrSOLID
     type(fstr_param)         :: fstrPARAM
     type(fstr_dynamic)       :: fstrDYNAMIC

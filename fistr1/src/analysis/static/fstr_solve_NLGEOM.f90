@@ -104,7 +104,7 @@ contains
 
     fstrSOLID%FACTOR = 0.0d0
     call fstr_begin_nodal_kinematics_step( hecMESH, fstrSOLID, hecMAT%NDOF )
-    call fstr_cutback_init( hecMESH, fstrSOLID )
+    call fstr_cutback_init( fstrSOLID )
     infoCTChange%active = .true.
     call fstr_cutback_save( fstrSOLID, infoCTChange, infoCTChange_bak )
 

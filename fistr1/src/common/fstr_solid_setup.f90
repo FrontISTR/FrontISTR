@@ -34,9 +34,8 @@ module m_fstr_solid_setup
 contains
 
   !> Initializer of structure fstr_solid
-  subroutine fstr_solid_init( hecMESH, fstrSOLID )
+  subroutine fstr_solid_init( fstrSOLID )
     use m_fstr
-    type(hecmwST_local_mesh),target :: hecMESH
     type(fstr_solid)                :: fstrSOLID
 
     fstrSOLID%file_type  = kbcfFSTR
@@ -2143,7 +2142,7 @@ contains
     fstrSOLID => P%SOLID
 
     c_output=3
-    if( .not. fstr_ctrl_get_outitem( ctrl, hecMESH, fstrSOLID%output_ctrl(c_output)%outinfo ) ) then
+    if( .not. fstr_ctrl_get_outitem( ctrl, fstrSOLID%output_ctrl(c_output)%outinfo ) ) then
       write(*,*) '### Error: Fail in read in node output definition : ' , c_output
       write(ILOG,*) '### Error: Fail in read in node output definition : ', c_output
       stop HECMW_EXIT_INPUT
@@ -2174,7 +2173,7 @@ contains
     fstrSOLID => P%SOLID
 
     c_output=4
-    if( .not. fstr_ctrl_get_outitem( ctrl, hecMESH, fstrSOLID%output_ctrl(c_output)%outinfo ) ) then
+    if( .not. fstr_ctrl_get_outitem( ctrl, fstrSOLID%output_ctrl(c_output)%outinfo ) ) then
       write(*,*) '### Error: Fail in read in element output definition : ' , c_output
       write(ILOG,*) '### Error: Fail in read in element output definition : ', c_output
       stop HECMW_EXIT_INPUT

@@ -128,7 +128,7 @@ contains
     call fstr_mat_init  ( hecMAT   )
     call fstr_param_init( fstrPARAM, hecMESH )
 
-    call fstr_solid_init( hecMESH, fstrSOLID )
+    call fstr_solid_init( fstrSOLID )
     call fstr_eigen_init( fstrEIG )
     call fstr_heat_init ( fstrHEAT  )
     call fstr_dynamic_init( fstrDYNAMIC  )

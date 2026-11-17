@@ -179,10 +179,10 @@ contains
         endif
         label = 'DISPLACEMENT'
         if(is_33beam == 1)then
-          call fstr_reorder_node_beam(fstrSOLID, hecMESH, unode)
+          call fstr_reorder_node_beam(hecMESH, unode)
         endif
         if(is_33shell == 1)then
-          call fstr_reorder_node_shell(fstrSOLID, hecMESH, unode)
+          call fstr_reorder_node_shell(hecMESH, unode)
         endif
         call result_add( id, nitem, label, label_suffix, unode )
         deallocate( unode )
@@ -1059,10 +1059,10 @@ contains
           unode(:) = fstrSOLID%unode(:)
         endif
         if(is_33beam == 1)then
-          call fstr_reorder_node_beam(fstrSOLID, hecMESH, unode)
+          call fstr_reorder_node_beam(hecMESH, unode)
         endif
         if(is_33shell == 1)then
-          call fstr_reorder_node_shell(fstrSOLID, hecMESH, unode)
+          call fstr_reorder_node_shell(hecMESH, unode)
         endif
         do i = 1, hecMESH%n_node
           do j = 1, nn
@@ -1743,13 +1743,12 @@ contains
 
   end subroutine fstr_make_result_main
 
-  subroutine fstr_reorder_node_shell(fstrSOLID, hecMESH, unode)
+  subroutine fstr_reorder_node_shell(hecMESH, unode)
     use m_fstr
     use m_out
     use m_static_lib
 
     implicit none
-    type (fstr_solid)         :: fstrSOLID
     type (hecmwST_local_mesh) :: hecMESH
     integer(kind=kint) :: j, itype, is, iE, ic_type, jS, icel
     integer(kind=kint) :: n1, n2
@@ -1866,13 +1865,12 @@ contains
 
   end subroutine fstr_reorder_rot_beam
 
-  subroutine fstr_reorder_node_beam(fstrSOLID, hecMESH, unode)
+  subroutine fstr_reorder_node_beam(hecMESH, unode)
     use m_fstr
     use m_out
     use m_static_lib
 
     implicit none
-    type (fstr_solid)         :: fstrSOLID
     type (hecmwST_local_mesh) :: hecMESH
     integer(kind=kint) :: j, itype, is, iE, ic_type, jS, icel
     integer(kind=kint) :: a, b

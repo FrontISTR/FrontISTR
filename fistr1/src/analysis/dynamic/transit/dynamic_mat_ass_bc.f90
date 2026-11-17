@@ -247,7 +247,7 @@ contains
   end subroutine DYNAMIC_BC_INIT
 
   !>  This subroutine setup disp boundary condition
-  subroutine DYNAMIC_EXPLICIT_ASS_BC(hecMESH, hecMAT, fstrSOLID ,fstrDYNAMIC, t_curr, iter)
+  subroutine DYNAMIC_EXPLICIT_ASS_BC(hecMESH, hecMAT, fstrSOLID ,fstrDYNAMIC, t_curr)
     use m_fstr
     use m_table_dyn
     use mContact
@@ -259,7 +259,6 @@ contains
     type(fstr_solid)                     :: fstrSOLID
     type(fstr_dynamic)                   :: fstrDYNAMIC
     real(kind=kreal)                     :: t_curr
-    integer, optional                    :: iter
 
     integer(kind=kint) :: ig0, ig, ityp, NDOF, iS0, iE0, ik, in, idofS, idofE, idof
 

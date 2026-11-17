@@ -472,8 +472,7 @@ contains
   end function fstr_ctrl_get_SECTION
 
   !> Read in !ECHO
-  function fstr_ctrl_get_ECHO( ctrl, echo )
-    integer(kind=kint) :: ctrl
+  function fstr_ctrl_get_ECHO( echo )
     integer(kind=kint) :: echo
     integer(kind=kint) :: fstr_ctrl_get_ECHO
 
@@ -524,12 +523,11 @@ contains
   end function fstr_ctrl_get_MPC
 
   !> Read in !OUTPUT_RES & !OUTPUT_VIS
-  logical function fstr_ctrl_get_outitem( ctrl, hecMESH, outinfo )
+  logical function fstr_ctrl_get_outitem( ctrl, outinfo )
     use hecmw_setup_util, only: hecmw_str2index
     use fstr_setup_util
     use m_out
     integer(kind=kint), intent(in)        :: ctrl      !< readed data
-    type (hecmwST_local_mesh), intent(in) :: hecMESH   !< mesh information
     type( output_info ), intent(inout)    :: outinfo   !< output information; num_items and keyWord are supplied by the caller
 
     integer(kind=kint) :: rcode, ipos

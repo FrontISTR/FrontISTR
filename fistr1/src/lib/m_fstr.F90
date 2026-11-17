@@ -1356,10 +1356,9 @@ contains
     enddo
   end subroutine fstr_set_current_config_to_mesh
 
-  subroutine fstr_recover_initial_config_to_mesh(hecMESH,fstrSOLID,coord)
+  subroutine fstr_recover_initial_config_to_mesh(hecMESH,coord)
     implicit none
     type(hecmwST_local_mesh), intent(inout) :: hecMESH
-    type (fstr_solid), intent(in) :: fstrSOLID
     real(kind=kreal), intent(in) :: coord(:)
     integer(kind=kint) :: i
     if(hecMESH%n_dof == 4) return

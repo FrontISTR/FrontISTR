@@ -14,7 +14,7 @@ contains
   !--------------------------------------------------------------------
   subroutine STF_C3_vp                                  &
       (etype, nn, ecoord, gausses, stiff, tincr, &
-      v, temperature)
+      v)
     !--------------------------------------------------------------------
 
     use mMechGauss
@@ -28,7 +28,6 @@ contains
     real(kind=kreal),   intent(out) :: stiff(:,:)               !< stiff matrix
     real(kind=kreal),   intent(in) :: tincr                     !< time increment
     real(kind=kreal),   intent(in), optional :: v(:, :)         !< nodal velocity
-    real(kind=kreal),   intent(in), optional :: temperature(nn) !< temperature
 
     !--------------------------------------------------------------------
 
