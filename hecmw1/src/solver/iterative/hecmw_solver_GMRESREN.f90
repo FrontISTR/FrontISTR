@@ -47,9 +47,6 @@ contains
 
     real   (kind=kreal) :: TOL
 
-    real   (kind=kreal)   ZERO, ONE
-    parameter ( ZERO = 0.0D+0, ONE = 1.0D+0 )
-
     integer(kind=kint ) :: i,iOrth
     real   (kind=kreal) :: S_TIME,E_TIME,S1_TIME,E1_TIME
     real   (kind=kreal) :: BNRM2,DNRM2

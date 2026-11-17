@@ -4361,7 +4361,6 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     integer(kind=kint), intent(out)  :: ir
 
     integer(kind=kint), parameter :: ndeg2=9
-    integer(kind=kint), parameter :: ndeg2l=6
     integer(kind=kint) :: k,l,ii,jj,itrans,i0,j0,ks,ke
 
     ir=0

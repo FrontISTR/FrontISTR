@@ -39,7 +39,6 @@ contains
     integer(kind=kint), intent(in) :: nn !< number of elemental nodes
     real(kind=kreal), intent(in) :: temperature(nn) !< temperature
     real(kind=kreal), intent(out) :: stiff(:,:) !< stiff matrix
-    integer(kind=kint), parameter :: ndof = 1
     integer(kind=kint) :: ntab
     real(kind=kreal) :: ecoord(3, nn)
     real(kind=kreal) :: dx, dy, dz, surf, val, temp_i, length
