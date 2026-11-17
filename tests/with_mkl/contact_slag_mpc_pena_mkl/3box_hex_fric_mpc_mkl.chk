@@ -1,0 +1,4 @@
+# ITERLOG prints the post-solve residual of the system with the Lagrange multiplier rows
+# also when contact is solved without elimination (issue #958), with PARDISO (single
+# process) and Cluster PARDISO (MPI)
+Relative residual =
