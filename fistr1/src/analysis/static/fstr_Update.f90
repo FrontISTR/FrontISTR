@@ -220,13 +220,13 @@ contains
             qf(1:nn*ndof),fstrSOLID%elements(icel)%gausses(:) )
   
         else if( ic_type == 611) then
-          if( fstrPARAM%nlgeom ) call Update_abort( ic_type, 2 )
+          if( fstrSOLID%elements(icel)%gausses(1)%pMaterial%nlgeom_flag /= INFINITESIMAL ) call Update_abort( ic_type, 2 )
           CALL UpdateST_Beam(nn, ecoord, total_disp(1:6,1:nn), du(1:6,1:nn), &
             hecMESH%section%sect_R_item(ihead+1:), fstrSOLID%elements(icel)%gausses(:), qf(1:nn*ndof), &
             fstrSOLID%sections(isect)%elemopt611)
 
         else if( ic_type == 641 ) then
-          if( fstrPARAM%nlgeom ) call Update_abort( ic_type, 2 )
+          if( fstrSOLID%elements(icel)%gausses(1)%pMaterial%nlgeom_flag /= INFINITESIMAL ) call Update_abort( ic_type, 2 )
           call UpdateST_Beam_641_from_611(ecoord(1:3,1:4), total_disp(1:ndof,1:4), du(1:ndof,1:4), &
             fstrSOLID%elements(icel)%gausses(:), hecMESH%section%sect_R_item(ihead+1:), &
             qf(1:nn*ndof), fstrSOLID%sections(isect)%elemopt611)
