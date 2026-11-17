@@ -120,10 +120,6 @@ contains
     use m_fstr
     implicit none
     type(fstr_heat) :: fstrHEAT
-!    deallocate(fstrHEAT%TEMP0)
-!    deallocate(fstrHEAT%TEMPC)
-!    deallocate(fstrHEAT%TEMP )
-!    deallocate(fstrHEAT%is_dummy_node)
     if(associated(fstrHEAT%STEP_DLTIME)) deallocate(fstrHEAT%STEP_DLTIME)
     if(associated(fstrHEAT%STEP_EETIME)) deallocate(fstrHEAT%STEP_EETIME)
     if(associated(fstrHEAT%STEP_DELMIN)) deallocate(fstrHEAT%STEP_DELMIN)
