@@ -128,6 +128,7 @@ contains
     if(associated(fstrHEAT%STEP_EETIME)) deallocate(fstrHEAT%STEP_EETIME)
     if(associated(fstrHEAT%STEP_DELMIN)) deallocate(fstrHEAT%STEP_DELMIN)
     if(associated(fstrHEAT%STEP_DELMAX)) deallocate(fstrHEAT%STEP_DELMAX)
+    if(associated(fstrHEAT%mat_name)) deallocate(fstrHEAT%mat_name)
     if(associated(fstrHEAT%RHOtab)) deallocate(fstrHEAT%RHOtab)
     if(associated(fstrHEAT%CPtab)) deallocate(fstrHEAT%CPtab)
     if(associated(fstrHEAT%CONDtab)) deallocate(fstrHEAT%CONDtab)
@@ -279,6 +280,12 @@ contains
     !C +----------+
     !C===
     fstrHEAT%MATERIALtot= hecMESH%material%n_mat
+
+    if(associated(fstrHEAT%mat_name)) deallocate(fstrHEAT%mat_name)
+    allocate(fstrHEAT%mat_name(fstrHEAT%MATERIALtot))
+    do im = 1, fstrHEAT%MATERIALtot
+      fstrHEAT%mat_name(im) = hecMESH%material%mat_name(im)
+    enddo
 
     m1max = 0
     m2max = 0
