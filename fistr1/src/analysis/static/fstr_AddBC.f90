@@ -10,7 +10,7 @@ contains
 
   !>  Add Essential Boundary Conditions
   !------------------------------------------------------------------------------------------*
-  subroutine fstr_AddBC(cstep,hecMESH,hecMAT,fstrSOLID,fstrPARAM,hecLagMAT,iter,hecEBC,conMAT,RHSvector)
+  subroutine fstr_AddBC(cstep,hecMESH,hecMAT,fstrSOLID,fstrPARAM,iter,hecEBC,RHSvector)
     !------------------------------------------------------------------------------------------*
     use m_fstr
     use mContact
@@ -23,10 +23,8 @@ contains
     type(hecmwST_matrix)                 :: hecMAT !< hecmw matrix
     type(fstr_solid)                     :: fstrSOLID !< fstr_solid
     type(fstr_param)                     :: fstrPARAM !< analysis control parameters
-    type(hecmwST_matrix_lagrange)        :: hecLagMAT !< type hecmwST_matrix_lagrange
     integer(kind=kint)                   :: iter !< NR iterations
     type(hecmwST_ebc)                    :: hecEBC !< prescribed displacements to be imposed after the MPC processing
-    type(hecmwST_matrix), optional       :: conMAT !< hecmw matrix for contact only
     real(kind=kreal), optional           :: RHSvector(:) !< only Right Hand Side vector
 
     integer(kind=kint) :: ig0, ig, ityp, idofS, idofE, idof, iS0, iE0, ik, in
@@ -123,11 +121,7 @@ contains
           endif
           if( fstr_is_contact_active() .and. fstrPARAM%solution_type == kstSTATIC   &
               .and. fstrPARAM%contact_algo == kcaSLagrange ) then
-            if(present(conMAT)) then
-              call hecmw_mat_ass_bc_contactlag(conMAT,hecLagMAT,in,idof,RHS)
-            else
-              call hecmw_mat_ass_bc_contactlag(hecMAT,hecLagMAT,in,idof,RHS)
-            endif
+            call hecmw_mat_ass_bc_contactlag(hecMAT,in,idof,RHS)
           endif
 
         enddo
@@ -172,11 +166,7 @@ contains
           endif
           if( fstr_is_contact_active() .and. fstrPARAM%solution_type == kstSTATIC   &
               .and. fstrPARAM%contact_algo == kcaSLagrange ) then
-            if(present(conMAT)) then
-              call hecmw_mat_ass_bc_contactlag(conMAT,hecLagMAT,in,idof,RHS)
-            else
-              call hecmw_mat_ass_bc_contactlag(hecMAT,hecLagMAT,in,idof,RHS)
-            endif
+            call hecmw_mat_ass_bc_contactlag(hecMAT,in,idof,RHS)
           endif
         enddo
       enddo

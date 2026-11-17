@@ -85,8 +85,8 @@ contains
   !> This subrouitne set velocity boundary condition in dynamic analysis
   !C***
 
-  subroutine DYNAMIC_MAT_ASS_BC_VL(cstep, hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, hecLagMAT, hecEBC, &
-      t_curr, iter, conMAT)
+  subroutine DYNAMIC_MAT_ASS_BC_VL(cstep, hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, hecEBC, &
+      t_curr, iter)
     use m_fstr
     use m_table_dyn
     use mContact
@@ -100,10 +100,8 @@ contains
     type(fstr_solid)                     :: fstrSOLID
     type(fstr_dynamic)                   :: fstrDYNAMIC
     type(fstr_param)                     :: fstrPARAM !< analysis control parameters
-    type(hecmwST_matrix_lagrange)        :: hecLagMAT !< type hecmwST_matrix_lagrange
     type(hecmwST_ebc)                    :: hecEBC !< prescribed displacements to be imposed after the MPC processing
     real(kind=kreal)                     :: t_curr
-    type(hecmwST_matrix), optional       :: conMAT
 
     integer, optional :: iter
 
@@ -189,11 +187,7 @@ contains
             call hecmw_ebc_set(hecEBC, in, idof, RHS)
             if( fstr_is_contact_active() .and. fstrPARAM%contact_algo == kcaSLagrange  &
                 .and. fstrPARAM%nlgeom .and. fstrDYNAMIC%idx_resp == 1 ) then
-              if(present(conMAT)) then
-                call hecmw_mat_ass_bc_contactlag(conMAT,hecLagMAT,in,idof,RHS)
-              else
-                call hecmw_mat_ass_bc_contactlag(hecMAT,hecLagMAT,in,idof,RHS)
-              endif
+              call hecmw_mat_ass_bc_contactlag(hecMAT,in,idof,RHS)
             endif
           enddo
         enddo
@@ -231,11 +225,7 @@ contains
             call hecmw_ebc_set(hecEBC, in, idof, RHS)
             if( fstr_is_contact_active() .and. fstrPARAM%contact_algo == kcaSLagrange  &
                 .and. fstrPARAM%nlgeom .and. fstrDYNAMIC%idx_resp == 1 ) then
-              if(present(conMAT)) then
-                call hecmw_mat_ass_bc_contactlag(conMAT,hecLagMAT,in,idof,RHS)
-              else
-                call hecmw_mat_ass_bc_contactlag(hecMAT,hecLagMAT,in,idof,RHS)
-              endif
+              call hecmw_mat_ass_bc_contactlag(hecMAT,in,idof,RHS)
             endif
           enddo
         enddo

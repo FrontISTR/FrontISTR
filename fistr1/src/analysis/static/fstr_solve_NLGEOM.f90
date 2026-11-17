@@ -28,14 +28,12 @@ contains
   !>              Z. Sun(ASTOM)/2010/11
   !>  \date       2009/08/31
   !>  \version    0.00
-  subroutine FSTR_SOLVE_NLGEOM(hecMESH,hecMAT,fstrSOLID,hecLagMAT,fstrPARAM,conMAT)
+  subroutine FSTR_SOLVE_NLGEOM(hecMESH,hecMAT,fstrSOLID,fstrPARAM)
     type (hecmwST_local_mesh)              :: hecMESH      !< mesh information
     type (hecmwST_matrix    )              :: hecMAT       !< linear equation, its right side modified here
     type (fstr_param       )               :: fstrPARAM    !< analysis control parameters
     type (fstr_solid       )               :: fstrSOLID    !< we need boundary conditions of curr step
-    type (hecmwST_matrix_lagrange)         :: hecLagMAT    !< type hecmwST_matrix_lagrange
     type (fstr_info_contactChange)         :: infoCTChange, infoCTChange_bak !< type fstr_info_contactChange
-    type (hecmwST_matrix    )              :: conMAT
 
     integer(kind=kint) :: ndof, nn
     integer(kind=kint) :: j, i, tot_step, step_count, tot_step_print, CBbound
@@ -165,11 +163,11 @@ contains
           endif
         else
           if( fstrPARAM%contact_algo == kcaSLagrange ) then
-            call fstr_Newton_contactSLag( tot_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM, hecLagMAT,  &
-              restart_step_num, restart_substep_num, sub_step, fstr_get_time(), fstr_get_timeinc(), infoCTChange, conMAT )
+            call fstr_Newton_contactSLag( tot_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM,            &
+              restart_step_num, restart_substep_num, sub_step, fstr_get_time(), fstr_get_timeinc(), infoCTChange )
           else if( fstrPARAM%contact_algo == kcaALagrange ) then
             call fstr_Newton_contactALag( tot_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM,            &
-              restart_step_num, restart_substep_num, sub_step, fstr_get_time(), fstr_get_timeinc(), infoCTChange, conMAT )
+              restart_step_num, restart_substep_num, sub_step, fstr_get_time(), fstr_get_timeinc(), infoCTChange )
           endif
         endif
 
@@ -196,10 +194,10 @@ contains
             ! restore matrix structure for slagrange contact analysis
             if( is_interaction_active ) then
               call fstr_set_contact_active( infoCTChange%active )   ! restore last scan-set active
-              call fstr_mat_con_contact( tot_step, fstrPARAM%contact_algo, hecMAT, fstrSOLID, hecLagMAT, &
-                &  conMAT, fstr_is_contact_active())
-              conMAT%B(:) = 0.0d0
-              call solve_LINEQ_contact_init(hecMESH, hecMAT, hecLagMAT, fstr_is_matrixStruct_symmetric(fstrSOLID, hecMESH))
+              call fstr_mat_con_contact( tot_step, fstrPARAM%contact_algo, hecMAT, fstrSOLID, &
+                &  fstr_is_contact_active())
+              hecMAT%conmat%B(:) = 0.0d0
+              call solve_LINEQ_contact_init(hecMESH, hecMAT, fstr_is_matrixStruct_symmetric(fstrSOLID, hecMESH))
             endif
             if( hecMESH%my_rank == 0 ) write(*,*) '### State has been restored at time =',fstr_get_time()
 

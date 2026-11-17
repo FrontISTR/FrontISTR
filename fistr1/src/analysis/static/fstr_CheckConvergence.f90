@@ -57,7 +57,7 @@ contains
   !> The body is kept separate so that customized convergence criteria can be implemented by swapping or extending
   !> fstr_check_convergence_main without touching the failure-handling boilerplate here.
   subroutine fstr_check_convergence( hecMESH, hecMAT, fstrSOLID, fstrPARAM, ndof, iter, sub_step, cstep, &
-      residual_vec, cnvstat, iterStatus, hecLagMAT )
+      residual_vec, cnvstat, iterStatus )
     implicit none
 
     type(hecmwST_local_mesh), intent(in)      :: hecMESH
@@ -71,14 +71,13 @@ contains
     real(kind=kreal), intent(in)              :: residual_vec(:)
     type(fstr_convergence_state), intent(out) :: cnvstat
     integer(kind=kint), intent(out)           :: iterStatus
-    type(hecmwST_matrix_lagrange), intent(in), optional :: hecLagMAT
 
     real(kind=kreal)    :: res_for_check
     logical             :: do_failure_check
 
     ! --- core convergence check (customizable) ---
     call fstr_check_convergence_main( hecMESH, hecMAT, fstrSOLID, fstrPARAM, ndof, iter, cstep, &
-        residual_vec, cnvstat, iterStatus, do_failure_check, res_for_check, hecLagMAT )
+        residual_vec, cnvstat, iterStatus, do_failure_check, res_for_check )
 
     if( iterStatus == kitrConverged ) return
     if( .not. do_failure_check ) return
@@ -147,9 +146,8 @@ contains
   !> \param[out]   iterStatus    kitrConverged or kitrContinue (failure paths handled by caller)
   !> \param[out]   do_failure_check  true if caller should run divergence/NaN check
   !> \param[out]   res_for_check     residual value the caller should use for divergence check
-  !> \param[in]    hecLagMAT     (optional) Lagrange multipliers of contact analysis
   subroutine fstr_check_convergence_main( hecMESH, hecMAT, fstrSOLID, fstrPARAM, ndof, iter, cstep, &
-      residual_vec, cnvstat, iterStatus, do_failure_check, res_for_check, hecLagMAT )
+      residual_vec, cnvstat, iterStatus, do_failure_check, res_for_check )
     implicit none
 
     type(hecmwST_local_mesh), intent(in)      :: hecMESH
@@ -164,7 +162,6 @@ contains
     integer(kind=kint), intent(out)           :: iterStatus
     logical, intent(out)                      :: do_failure_check
     real(kind=kreal), intent(out)             :: res_for_check
-    type(hecmwST_matrix_lagrange), intent(in), optional :: hecLagMAT
 
     logical :: has_dx
 
@@ -174,7 +171,7 @@ contains
 
     has_dx = .not. ( fstrPARAM%solution_type == kstDYNAMIC .and. iter == 1 )
 
-    call fstr_evaluate_convergence( hecMESH, hecMAT, fstrSOLID, ndof, cstep, has_dx, residual_vec, cnvstat, hecLagMAT )
+    call fstr_evaluate_convergence( hecMESH, hecMAT, fstrSOLID, ndof, cstep, has_dx, residual_vec, cnvstat )
 
     if( hecMESH%my_rank == 0 ) call fstr_print_convergence_state( iter, cnvstat )
 
@@ -236,8 +233,7 @@ contains
   !>
   !> A criterion is checked when the step asks for it and it applies to the analysis and to the iteration: rotation
   !> for ndof=6, Lagrange for a model with Lagrange rows, correction when has_dx.
-  subroutine fstr_evaluate_convergence( hecMESH, hecMAT, fstrSOLID, ndof, cstep, has_dx, residual_vec, cnvstat, &
-      hecLagMAT )
+  subroutine fstr_evaluate_convergence( hecMESH, hecMAT, fstrSOLID, ndof, cstep, has_dx, residual_vec, cnvstat )
     implicit none
 
     type(hecmwST_local_mesh), intent(in)      :: hecMESH
@@ -248,7 +244,6 @@ contains
     logical, intent(in)                       :: has_dx           !< the correction belongs to this iteration
     real(kind=kreal), intent(in)              :: residual_vec(:)
     type(fstr_convergence_state), intent(out) :: cnvstat
-    type(hecmwST_matrix_lagrange), intent(in), optional :: hecLagMAT
 
     integer(kind=kint), parameter :: NSUM = 13
     real(kind=kreal)   :: sq(NSUM)
@@ -256,8 +251,7 @@ contains
     real(kind=kreal)   :: dx_t, dx_r, fref_t
     logical            :: has_rot, has_lag
 
-    num_lagrange = 0
-    if( present(hecLagMAT) ) num_lagrange = hecLagMAT%num_lagrange
+    num_lagrange = hecMAT%lagmat%num_lagrange
     npndof = hecMAT%NP*ndof
 
     has_rot = ( ndof == 6 )
@@ -272,7 +266,7 @@ contains
       call fstr_get_sqnorm_dofgroup( hecMESH, ndof, fstrSOLID%dunode, sq(9), sq(10) )
       do i = 1, num_lagrange
         sq(11) = sq(11) + hecMAT%X(npndof+i)*hecMAT%X(npndof+i)
-        sq(12) = sq(12) + hecLagMAT%Lagrange(i)*hecLagMAT%Lagrange(i)
+        sq(12) = sq(12) + hecMAT%lagmat%Lagrange(i)*hecMAT%lagmat%Lagrange(i)
       enddo
     endif
     sq(13) = dble(num_lagrange)
@@ -315,8 +309,7 @@ contains
 
     ! The flags are the same on every subdomain, so the collectives of the max norms are skipped consistently.
     if( any( cnvstat%m(:,:,kcnvMax)%check ) ) then
-      call fstr_evaluate_convergence_max( hecMESH, hecMAT, fstrSOLID, ndof, has_dx, residual_vec, cnvstat, &
-          hecLagMAT )
+      call fstr_evaluate_convergence_max( hecMESH, hecMAT, fstrSOLID, ndof, has_dx, residual_vec, cnvstat )
     endif
 
     ! A NaN component fails every comparison above: it never wins a maximum and never passes the test on a denominator,
@@ -334,8 +327,7 @@ contains
   !> The max norm of a DOF group is the largest absolute DOF component over the internal nodes, and each criterion is
   !> the same ratio as its L2 counterpart with the norms replaced. Where several nodes hold the same maximum, the
   !> largest node ID is reported, with the DOF taken from the subdomain owning that node.
-  subroutine fstr_evaluate_convergence_max( hecMESH, hecMAT, fstrSOLID, ndof, has_dx, residual_vec, cnvstat, &
-      hecLagMAT )
+  subroutine fstr_evaluate_convergence_max( hecMESH, hecMAT, fstrSOLID, ndof, has_dx, residual_vec, cnvstat )
     implicit none
 
     type(hecmwST_local_mesh), intent(in)        :: hecMESH
@@ -345,7 +337,6 @@ contains
     logical, intent(in)                         :: has_dx           !< the correction belongs to this iteration
     real(kind=kreal), intent(in)                :: residual_vec(:)
     type(fstr_convergence_state), intent(inout) :: cnvstat
-    type(hecmwST_matrix_lagrange), intent(in), optional :: hecLagMAT
 
     integer(kind=kint), parameter :: NMAX = 12
     ! entries of vmax located, and the criteria they belong to
@@ -358,8 +349,7 @@ contains
     integer(kind=kint) :: i, k, npndof, num_lagrange
     real(kind=kreal)   :: dx_t, dx_r, fref_t
 
-    num_lagrange = 0
-    if( present(hecLagMAT) ) num_lagrange = hecLagMAT%num_lagrange
+    num_lagrange = hecMAT%lagmat%num_lagrange
     npndof = hecMAT%NP*ndof
 
     vmax(:) = 0.0d0
@@ -372,7 +362,7 @@ contains
       call fstr_get_maxabs_dofgroup( hecMESH, ndof, fstrSOLID%dunode, vmax(9), vmax(10) )
       do i = 1, num_lagrange
         vmax(11) = max( vmax(11), abs(hecMAT%X(npndof+i)) )
-        vmax(12) = max( vmax(12), abs(hecLagMAT%Lagrange(i)) )
+        vmax(12) = max( vmax(12), abs(hecMAT%lagmat%Lagrange(i)) )
       enddo
     endif
     gmax(:) = vmax(:)

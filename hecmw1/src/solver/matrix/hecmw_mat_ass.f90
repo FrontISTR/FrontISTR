@@ -18,7 +18,6 @@ module hecmw_matrix_ass
   public :: hecmw_mat_ass_equation
   public :: hecmw_mat_ass_equation_rhs
   public :: hecmw_mat_add_dof
-  public :: hecmw_mat_ass_bc
   public :: hecmw_mat_ass_bc_contactlag
   public :: hecmw_mat_ass_contactlag
   public :: stf_get_block
@@ -353,179 +352,41 @@ contains
 
   end subroutine hecmw_mat_add_dof
 
-  !C
-  !C***
-  !C*** MAT_ASS_BC
-  !C***
-  !C
-  subroutine hecmw_mat_ass_bc(hecMAT, inode, idof, RHS, conMAT)
-    type (hecmwST_matrix)     :: hecMAT
-    integer(kind=kint) :: inode, idof
-    real(kind=kreal) :: RHS, val
-    type (hecmwST_matrix),optional     :: conMAT
-    integer(kind=kint) :: NDOF, in, i, ii, iii, ndof2, k, is, iE, iiS, iiE, ik, idx
-
-    NDOF = hecMAT%NDOF
-    if( NDOF < idof ) return
-
-    !C-- DIAGONAL block
-
-    hecMAT%B(NDOF*inode-(NDOF-idof)) = RHS
-    if(present(conMAT)) conMAT%B(NDOF*inode-(NDOF-idof)) = 0.0D0
-    ndof2 = NDOF*NDOF
-    ii  = ndof2 - idof
-
-    do i = NDOF-1,0,-1
-      if( i .NE. NDOF-idof ) then
-        idx = NDOF*inode-i
-        val = hecMAT%D(ndof2*inode-ii)*RHS
-        !$omp atomic
-        hecMAT%B(idx) = hecMAT%B(idx) - val
-        if(present(conMAT)) then
-          val = conMAT%D(ndof2*inode-ii)*RHS
-          !$omp atomic
-          conMAT%B(idx) = conMAT%B(idx) - val
-        endif
-      endif
-      ii = ii - NDOF
-    end do
-
-    !*Set diagonal row to zero
-    ii  = ndof2-1 - (idof-1)*NDOF
-
-    do i = 0, NDOF - 1
-      hecMAT%D(ndof2*inode-ii+i)=0.d0
-      if(present(conMAT)) conMAT%D(ndof2*inode-ii+i)=0.d0
-    end do
-
-    !*Set diagonal column to zero
-    ii = ndof2 - idof
-    do i = 1, NDOF
-      if( i.NE.idof ) then
-        hecMAT%D(ndof2*inode-ii) = 0.d0
-        if(present(conMAT)) conMAT%D(ndof2*inode-ii) = 0.d0
-      else
-        hecMAT%D(ndof2*inode-ii) = 1.d0
-        if(present(conMAT)) conMAT%D(ndof2*inode-ii) = 0.d0
-      endif
-      ii = ii - NDOF
-    end do
-
-    !C-- OFF-DIAGONAL blocks
-
-    ii  = ndof2-1 - (idof-1)*NDOF
-    is = hecMAT%indexL(inode-1) + 1
-    iE = hecMAT%indexL(inode  )
-
-    do k= is, iE
-
-      !*row (left)
-      do i = 0, NDOF - 1
-        hecMAT%AL(ndof2*k-ii+i) = 0.d0
-        if(present(conMAT)) conMAT%AL(ndof2*k-ii+i) = 0.d0
-      end do
-
-      !*column (upper)
-      in = hecMAT%itemL(k)
-      iiS = hecMAT%indexU(in-1) + 1
-      iiE = hecMAT%indexU(in  )
-      do ik = iiS, iiE
-        if (hecMAT%itemU(ik) .eq. inode) then
-          iii = ndof2 - idof
-          do i = NDOF-1,0,-1
-            idx = NDOF*in-i
-            val = hecMAT%AU(ndof2*ik-iii)*RHS
-            !$omp atomic
-            hecMAT%B(idx) = hecMAT%B(idx) - val
-            hecMAT%AU(ndof2*ik-iii)= 0.d0
-            if(present(conMAT)) then
-              val = conMAT%AU(ndof2*ik-iii)*RHS
-              !$omp atomic
-              conMAT%B(idx) = conMAT%B(idx) - val
-              conMAT%AU(ndof2*ik-iii)= 0.d0
-            endif
-            iii = iii - NDOF
-          end do
-          exit
-        endif
-      enddo
-
-    enddo
-
-    ii = ndof2-1 - (idof-1)*NDOF
-    is = hecMAT%indexU(inode-1) + 1
-    iE = hecMAT%indexU(inode  )
-
-    do k= is, iE
-
-      !*row (right)
-      do i = 0,NDOF-1
-        hecMAT%AU(ndof2*k-ii+i) = 0.d0
-        if(present(conMAT)) conMAT%AU(ndof2*k-ii+i) = 0.d0
-      end do
-
-      !*column (lower)
-      in = hecMAT%itemU(k)
-      iiS = hecMAT%indexL(in-1) + 1
-      iiE = hecMAT%indexL(in  )
-      do ik= iiS, iiE
-        if (hecMAT%itemL(ik) .eq. inode) then
-          iii  = ndof2 - idof
-
-          do i = NDOF-1, 0, -1
-            idx = NDOF*in-i
-            val = hecMAT%AL(ndof2*ik-iii)*RHS
-            !$omp atomic
-            hecMAT%B(idx) = hecMAT%B(idx) - val
-            hecMAT%AL(ndof2*ik-iii) = 0.d0
-            if(present(conMAT)) then
-              val = conMAT%AL(ndof2*ik-iii)*RHS
-              !$omp atomic
-              conMAT%B(idx) = conMAT%B(idx) - val
-              conMAT%AL(ndof2*ik-iii) = 0.d0
-            endif
-            iii = iii - NDOF
-          end do
-          exit
-        endif
-      enddo
-
-    enddo
-    !*End off - diagonal blocks
-
-  end subroutine hecmw_mat_ass_bc
-
-
   !> Modify Lagrange multiplier-related part of stiffness matrix and right-hand side vector
   !> for dealing with prescribed displacement boundary condition
-  subroutine hecmw_mat_ass_bc_contactlag(hecMAT,hecLagMAT,inode,idof,RHS)
+  subroutine hecmw_mat_ass_bc_contactlag(hecMAT,inode,idof,RHS)
 
     type(hecmwST_matrix)                 :: hecMAT !< hecmwST_matrix
-    type(hecmwST_matrix_lagrange)        :: hecLagMAT !< hecmwST_matrix_lagrange
     integer(kind=kint) :: inode, idof !< number of node; degree of freedom
     integer(kind=kint) :: isU, ieU, isL, ieL, i, l, k
     real(kind=kreal)   :: RHS !< value of prescribed displacement
+    real(kind=kreal), pointer :: B(:) !< right-hand side holding the rows of Lagrange multipliers
 
-    isU = hecLagMAT%indexU_lagrange(inode-1)+1
-    ieU = hecLagMAT%indexU_lagrange(inode)
+    if( associated(hecMAT%conmat) ) then
+      B => hecMAT%conmat%B
+    else
+      B => hecMAT%B
+    endif
+
+    isU = hecMAT%lagmat%indexU_lagrange(inode-1)+1
+    ieU = hecMAT%lagmat%indexU_lagrange(inode)
     do i = isU, ieU
-      hecLagMAT%AU_lagrange((i-1)*3+idof) = 0.0d0
-      l = hecLagMAT%itemU_lagrange(i)
-      isL = hecLagMAT%indexL_lagrange(l-1)+1
-      ieL = hecLagMAT%indexL_lagrange(l)
-      k = hecmw_array_search_i(hecLagMAT%itemL_lagrange,isL,ieL,inode)
+      hecMAT%lagmat%AU_lagrange((i-1)*3+idof) = 0.0d0
+      l = hecMAT%lagmat%itemU_lagrange(i)
+      isL = hecMAT%lagmat%indexL_lagrange(l-1)+1
+      ieL = hecMAT%lagmat%indexL_lagrange(l)
+      k = hecmw_array_search_i(hecMAT%lagmat%itemL_lagrange,isL,ieL,inode)
       if(k < isL .or. k > ieL) cycle
-      hecMAT%B(hecMAT%NP*hecMAT%NDOF+l) = hecMAT%B(hecMAT%NP*hecMAT%NDOF+l) - hecLagMAT%AL_lagrange((k-1)*3+idof)*RHS
-      hecLagMAT%AL_lagrange((k-1)*3+idof) = 0.0d0
+      B(hecMAT%NP*hecMAT%NDOF+l) = B(hecMAT%NP*hecMAT%NDOF+l) - hecMAT%lagmat%AL_lagrange((k-1)*3+idof)*RHS
+      hecMAT%lagmat%AL_lagrange((k-1)*3+idof) = 0.0d0
     enddo
 
   end subroutine hecmw_mat_ass_bc_contactlag
 
   !> \brief This subroutine assembles contact stiffness matrix of a contact pair into global stiffness matrix
-  subroutine hecmw_mat_ass_contactlag(nnode,ndLocal,id_lagrange,fcoeff,stiffness,hecMAT,hecLagMAT)
+  subroutine hecmw_mat_ass_contactlag(nnode,ndLocal,id_lagrange,fcoeff,stiffness,hecMAT)
 
     type(hecmwST_matrix)                 :: hecMAT !< type hecmwST_matrix
-    type(hecmwST_matrix_lagrange)        :: hecLagMAT !< type hecmwST_matrix_lagrange
     integer(kind=kint) :: nnode, ndLocal(nnode + 1), id_lagrange !< total number of nodes of master segment
 !< global number of nodes of contact pair
 !< number of Lagrange multiplier
@@ -537,20 +398,20 @@ contains
 
     i = nnode + 1 + 1
     inod = id_lagrange
-    isL = hecLagMAT%indexL_lagrange(inod-1)+1
-    ieL = hecLagMAT%indexL_lagrange(inod)
+    isL = hecMAT%lagmat%indexL_lagrange(inod-1)+1
+    ieL = hecMAT%lagmat%indexL_lagrange(inod)
 
     do j = 1, nnode + 1
       jnod = ndLocal(j)
-      isU = hecLagMAT%indexU_lagrange(jnod-1)+1
-      ieU = hecLagMAT%indexU_lagrange(jnod)
+      isU = hecMAT%lagmat%indexU_lagrange(jnod-1)+1
+      ieU = hecMAT%lagmat%indexU_lagrange(jnod)
 
-      kL = hecmw_array_search_i(hecLagMAT%itemL_lagrange,isL,ieL,jnod)
+      kL = hecmw_array_search_i(hecMAT%lagmat%itemL_lagrange,isL,ieL,jnod)
       if( kL<isL .or. kL>ieL ) then
         write(*,*) '###ERROR### : cannot find connectivity (Lagrange1)'
         stop
       endif
-      kU = hecmw_array_search_i(hecLagMAT%itemU_lagrange,isU,ieU,inod)
+      kU = hecmw_array_search_i(hecMAT%lagmat%itemU_lagrange,isU,ieU,inod)
       if( kU<isU .or. kU>ieU ) then
         write(*,*) '###ERROR### : cannot find connectivity (Lagrange2)'
         stop
@@ -561,9 +422,9 @@ contains
 
       do l = 1, 3
         idxL = idxL_base + l
-        hecLagMAT%AL_lagrange(idxL) = hecLagMAT%AL_lagrange(idxL) + stiffness((i-1)*3+1,(j-1)*3+l)
+        hecMAT%lagmat%AL_lagrange(idxL) = hecMAT%lagmat%AL_lagrange(idxL) + stiffness((i-1)*3+1,(j-1)*3+l)
         idxU = idxU_base + l
-        hecLagMAT%AU_lagrange(idxU) = hecLagMAT%AU_lagrange(idxU) + stiffness((j-1)*3+l,(i-1)*3+1)
+        hecMAT%lagmat%AU_lagrange(idxU) = hecMAT%lagmat%AU_lagrange(idxU) + stiffness((j-1)*3+l,(i-1)*3+1)
       enddo
     enddo
 
@@ -575,7 +436,7 @@ contains
         do j = 1, nnode + 1
           jnod = ndLocal(j)
           call stf_get_block(stiffness(1:(nnode+1)*3,1:(nnode+1)*3), 3, i, j, a)
-          call hecmw_mat_add_node(hecMAT, inod, jnod, a)
+          call hecmw_mat_add_node(hecMAT%conmat, inod, jnod, a)
         enddo
       enddo
 

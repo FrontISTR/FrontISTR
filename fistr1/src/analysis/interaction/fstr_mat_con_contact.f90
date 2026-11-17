@@ -18,7 +18,6 @@ module fstr_matrix_con_contact
   implicit none
   private
   public :: fstr_get_num_lagrange_pernode
-  public :: hecmwST_matrix_lagrange
   public :: fstr_save_originalMatrixStructure
   public :: fstr_mat_con_contact
   public :: fstr_s2s_profile_needs_refresh
@@ -58,19 +57,17 @@ contains
 
   !> \brief this subroutine reconstructs node-based (stiffness) matrix structure
   !> \corresponding to contact state
-  subroutine fstr_mat_con_contact(cstep,contact_algo,hecMAT,fstrSOLID,hecLagMAT,conMAT,is_contact_active_flag)
+  subroutine fstr_mat_con_contact(cstep,contact_algo,hecMAT,fstrSOLID,is_contact_active_flag)
 
     integer(kind=kint)                   :: cstep !< current loading step
     integer(kind=kint)                   :: contact_algo !< current loading step
     type(hecmwST_matrix)                 :: hecMAT !< type hecmwST_matrix
     type(fstr_solid)                     :: fstrSOLID !< type fstr_solid
-    type(hecmwST_matrix_lagrange) :: hecLagMAT !< type hecmwST_matrix_lagrange
 
     integer(kind=kint)                   :: num_lagrange !< number of Lagrange multipliers
     integer(kind=kint)                   :: countNon0LU_node, countNon0LU_lagrange !< counter of node-based number of non-zero items
     integer(kind=kint)                   :: numNon0_node, numNon0_lagrange !< node-based number of displacement-related non-zero items in half of the matrix
     !< node-based number of Lagrange multiplier-related non-zero items in half of the matrix
-    type (hecmwST_matrix)                :: conMAT
     logical, intent(in)                  :: is_contact_active_flag
 
     integer(kind=kint)                   :: i, j, grpid
@@ -136,20 +133,21 @@ contains
         &  hecMAT%NP,fstrSOLID,countNon0LU_node,countNon0LU_lagrange,list_nodeRelated)
     endif
 
-    ! Construct new matrix structure(hecMAT&hecLagMAT)
+    ! Construct new matrix structure(hecMAT&hecMAT%lagmat)
     numNon0_node = countNon0LU_node/2
     numNon0_lagrange = countNon0LU_lagrange/2
     call hecmw_construct_hecMAT_from_nodeRelated(hecMAT%N, hecMAT%NP, hecMAT%NDOF, &
     & numNon0_node, num_lagrange, list_nodeRelated, hecMAT)
+    if( .not. associated(hecMAT%conmat) ) allocate(hecMAT%conmat)
     call hecmw_construct_hecMAT_from_nodeRelated(hecMAT%N, hecMAT%NP, hecMAT%NDOF, &
-    & numNon0_node, num_lagrange, list_nodeRelated, conMAT)
+    & numNon0_node, num_lagrange, list_nodeRelated, hecMAT%conmat)
     if( contact_algo == kcaSLagrange ) call hecmw_construct_hecLagMAT_from_nodeRelated(hecMAT%NP, &
-    & hecMAT%NDOF, num_lagrange, numNon0_lagrange, is_contact_active_flag, list_nodeRelated, hecLagMAT)
+    & hecMAT%NDOF, num_lagrange, numNon0_lagrange, is_contact_active_flag, list_nodeRelated, hecMAT)
     call hecmw_finalize_nodeRelated(list_nodeRelated)
 
     ! Copy Lagrange multipliers
     if( is_contact_active_flag .and. contact_algo == kcaSLagrange ) &
-      call fstr_copy_lagrange_contact(fstrSOLID,hecLagMAT)
+      call fstr_copy_lagrange_contact(fstrSOLID,hecMAT)
 
   end subroutine fstr_mat_con_contact
 
@@ -262,10 +260,10 @@ contains
   end subroutine getNewListOFrelatednodesANDLagrangeMultipliers
 
   !> Copy Lagrange multipliers
-  subroutine fstr_copy_lagrange_contact(fstrSOLID,hecLagMAT)
+  subroutine fstr_copy_lagrange_contact(fstrSOLID,hecMAT)
 
     type(fstr_solid)                        :: fstrSOLID                !< type fstr_solid
-    type(hecmwST_matrix_lagrange)          :: hecLagMAT            !< hecmwST_matrix_lagrange
+    type(hecmwST_matrix)                   :: hecMAT               !< type hecmwST_matrix
     integer (kind=kint)                    :: id_lagrange, algtype, i, j, k, nlag
 
     do i = 1, fstrSOLID%n_contacts
@@ -277,7 +275,7 @@ contains
         id_lagrange = fstrSOLID%contacts(i)%states(j)%id_lagrange
         if( id_lagrange == 0 ) cycle
         do k=1,nlag
-          hecLagMAT%Lagrange(id_lagrange+k-1)=fstrSOLID%contacts(i)%states(j)%multiplier(k)
+          hecMAT%lagmat%Lagrange(id_lagrange+k-1)=fstrSOLID%contacts(i)%states(j)%multiplier(k)
         enddo
       enddo
     enddo
@@ -288,7 +286,7 @@ contains
         id_lagrange = fstrSOLID%embeds(i)%states(j)%id_lagrange
         if( id_lagrange == 0 ) cycle
         do k=1,nlag
-          hecLagMAT%Lagrange(id_lagrange+k-1)=fstrSOLID%embeds(i)%states(j)%multiplier(k)
+          hecMAT%lagmat%Lagrange(id_lagrange+k-1)=fstrSOLID%embeds(i)%states(j)%multiplier(k)
         enddo
       enddo
     enddo
@@ -376,43 +374,43 @@ contains
   end function fstr_is_tangent_symmetric
 
   !> \brief Set diagonal component value for specified Lagrange multiplier
-  subroutine fstr_set_lagrange_diagonal(hecLagMAT, ilag, value)
-    type(hecmwST_matrix_lagrange), intent(inout) :: hecLagMAT !< hecmwST_matrix_lagrange
+  subroutine fstr_set_lagrange_diagonal(hecMAT, ilag, value)
+    type(hecmwST_matrix), intent(inout) :: hecMAT !< type hecmwST_matrix
     integer(kind=kint), intent(in) :: ilag !< Lagrange multiplier index (1-based)
     real(kind=kreal), intent(in) :: value !< diagonal component value to set
 
-    if (ilag < 1 .or. ilag > hecLagMAT%num_lagrange) then
+    if (ilag < 1 .or. ilag > hecMAT%lagmat%num_lagrange) then
       write(*,*) 'Error in fstr_set_lagrange_diagonal: invalid Lagrange multiplier index', ilag
       stop
     endif
 
-    if (.not. associated(hecLagMAT%D_lagrange)) then
+    if (.not. associated(hecMAT%lagmat%D_lagrange)) then
       write(*,*) 'Error in fstr_set_lagrange_diagonal: D_lagrange not allocated'
       stop
     endif
 
-    hecLagMAT%D_lagrange(ilag) = value
+    hecMAT%lagmat%D_lagrange(ilag) = value
 
   end subroutine fstr_set_lagrange_diagonal
 
   !> \brief Get diagonal component value for specified Lagrange multiplier
-  real(kind=kreal) function fstr_get_lagrange_diagonal(hecLagMAT, ilag)
-    type(hecmwST_matrix_lagrange), intent(in) :: hecLagMAT !< hecmwST_matrix_lagrange
+  real(kind=kreal) function fstr_get_lagrange_diagonal(hecMAT, ilag)
+    type(hecmwST_matrix), intent(in) :: hecMAT !< type hecmwST_matrix
     integer(kind=kint), intent(in) :: ilag !< Lagrange multiplier index (1-based)
 
-    if (ilag < 1 .or. ilag > hecLagMAT%num_lagrange) then
+    if (ilag < 1 .or. ilag > hecMAT%lagmat%num_lagrange) then
       write(*,*) 'Error in fstr_get_lagrange_diagonal: invalid Lagrange multiplier index', ilag
       fstr_get_lagrange_diagonal = 0.0d0
       return
     endif
 
-    if (.not. associated(hecLagMAT%D_lagrange)) then
+    if (.not. associated(hecMAT%lagmat%D_lagrange)) then
       write(*,*) 'Error in fstr_get_lagrange_diagonal: D_lagrange not allocated'
       fstr_get_lagrange_diagonal = 0.0d0
       return
     endif
 
-    fstr_get_lagrange_diagonal = hecLagMAT%D_lagrange(ilag)
+    fstr_get_lagrange_diagonal = hecMAT%lagmat%D_lagrange(ilag)
 
   end function fstr_get_lagrange_diagonal
 
@@ -512,7 +510,7 @@ contains
   !> getNewListOFrelatednodesANDLagrangeMultipliers_ss / register_pair_to_sparsity).
   !>
   !> Returns .true. if any currently-active (slave_surf, master) mortar pair has a
-  !> slave-node x master-node coupling that is NOT present in the matrix profile of conMAT.
+  !> slave-node x master-node coupling that is NOT present in the matrix profile of hecMAT%conmat.
   !> Such a missing coupling means the active master has drifted beyond the reserved 1-ring
   !> via a silent facet-hop / re-association (one that does not increment the structural
   !> change counters, so fstr_is_matrixStructure_changed stays false), and the next contact
@@ -531,11 +529,11 @@ contains
   !> method-gated to CONTACTS2S + ALag (N2S and SLagrange paths untouched). Per-rank (local)
   !> decision, mirroring the existing per-rank fstr_is_matrixStructure_changed gate; the
   !> collective solver re-init rides the existing contact_changed_global allreduce.
-  logical function fstr_s2s_profile_needs_refresh( cstep, contact_algo, fstrSOLID, conMAT )
+  logical function fstr_s2s_profile_needs_refresh( cstep, contact_algo, fstrSOLID, hecMAT )
     integer(kind=kint), intent(in)   :: cstep         !< current loading step
     integer(kind=kint), intent(in)   :: contact_algo  !< contact algorithm (kcaALagrange/kcaSLagrange)
     type(fstr_solid), intent(in)     :: fstrSOLID     !< type fstr_solid
-    type(hecmwST_matrix), intent(in) :: conMAT        !< contact matrix (S2S stiffness assembly target)
+    type(hecmwST_matrix), intent(in) :: hecMAT        !< matrix holding the contact part (S2S stiffness assembly target)
 
     integer(kind=kint) :: i, j, g, ctsurf, grpid, unique_count
     integer(kind=kint) :: maplist(MAX_N_INTP), master_idxs(MAX_N_INTP)
@@ -555,7 +553,7 @@ contains
         do g = 1, unique_count
           ctsurf = master_idxs(g)
           if( .not. pair_cross_profile_complete( fstrSOLID%contacts(i)%slave_surf(j)%nodes, &
-              &  fstrSOLID%contacts(i)%master(ctsurf), conMAT ) ) then
+              &  fstrSOLID%contacts(i)%master(ctsurf), hecMAT ) ) then
             fstr_s2s_profile_needs_refresh = .true.
             return
           endif
@@ -565,19 +563,19 @@ contains
   end function fstr_s2s_profile_needs_refresh
 
   !> \brief True if every slave-node x master-node coupling of one (slave_surf, master)
-  !> mortar pair is present in the conMAT profile. See fstr_s2s_profile_needs_refresh for
+  !> mortar pair is present in the hecMAT%conmat profile. See fstr_s2s_profile_needs_refresh for
   !> why only cross couplings are checked (slave-slave / master-master are base FE terms).
-  logical function pair_cross_profile_complete( slave_nodes, master_surf, conMAT )
+  logical function pair_cross_profile_complete( slave_nodes, master_surf, hecMAT )
     integer(kind=kint), intent(in)   :: slave_nodes(:)  !< slave surface node ids
     type(tSurfElement), intent(in)   :: master_surf     !< master surface element
-    type(hecmwST_matrix), intent(in) :: conMAT          !< contact matrix
+    type(hecmwST_matrix), intent(in) :: hecMAT          !< matrix holding the contact part
 
     integer(kind=kint) :: s, m
 
     pair_cross_profile_complete = .true.
     do s = 1, size(slave_nodes)
       do m = 1, size(master_surf%nodes)
-        if( .not. hecmw_mat_profile_has_node( conMAT, slave_nodes(s), master_surf%nodes(m) ) ) then
+        if( .not. hecmw_mat_profile_has_node( hecMAT%conmat, slave_nodes(s), master_surf%nodes(m) ) ) then
           pair_cross_profile_complete = .false.
           return
         endif

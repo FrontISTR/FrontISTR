@@ -58,19 +58,18 @@ module mContact
 
 contains
 
-  subroutine fstr_AddContactStiffness(cstep,ctAlgo, iter,hecMESH,conMAT,hecLagMAT,fstrSOLID)
+  subroutine fstr_AddContactStiffness(cstep,ctAlgo, iter,hecMESH,hecMAT,fstrSOLID)
 
     integer(kind=kint)                   :: cstep !< current loading step
     integer(kind=kint)                   :: ctAlgo !< contact algorithm type
     integer(kind=kint)                   :: iter
     type(hecmwST_local_mesh)             :: hecMESH !< type hecmwST_local_mesh
-    type(hecmwST_matrix)                 :: conMAT !< type hecmwST_matrix
+    type(hecmwST_matrix)                 :: hecMAT !< type hecmwST_matrix
     type(fstr_solid)                     :: fstrSOLID !< type fstr_solid
-    type(hecmwST_matrix_lagrange)        :: hecLagMAT !< type hecmwST_matrix_lagrange
     integer(kind=kint)                   :: i, grpid
 
-    if( associated(hecLagMAT%AL_lagrange) ) hecLagMAT%AL_lagrange = 0.0d0
-    if( associated(hecLagMAT%AU_lagrange) ) hecLagMAT%AU_lagrange = 0.0d0
+    if( associated(hecMAT%lagmat%AL_lagrange) ) hecMAT%lagmat%AL_lagrange = 0.0d0
+    if( associated(hecMAT%lagmat%AU_lagrange) ) hecMAT%lagmat%AU_lagrange = 0.0d0
 
     do i = 1, fstrSOLID%n_contacts
 
@@ -79,10 +78,10 @@ contains
 
       if( fstrSOLID%contacts(i)%method == CONTACTS2S ) then
         call calcu_contact_stiffness_SurfSurf( ctAlgo, fstrSOLID%contacts(i), hecMESH%node(:), fstrSOLID%unode(:), &
-          fstrSOLID%dunode(:), conMAT )
+          fstrSOLID%dunode(:), hecMAT )
       else
         call calcu_contact_stiffness_NodeSurf( ctAlgo, fstrSOLID%contacts(i), hecMESH%node(:), fstrSOLID%unode(:), &
-          fstrSOLID%dunode(:), iter, hecLagMAT%Lagrange(:), conMAT, hecLagMAT)
+          fstrSOLID%dunode(:), iter, hecMAT)
       endif
     enddo
 
@@ -92,35 +91,33 @@ contains
       if( .not. fstr_isEmbedActive( fstrSOLID, grpid, cstep ) ) cycle
 
       call calcu_contact_stiffness_NodeSurf( ctAlgo, fstrSOLID%embeds(i), hecMESH%node(:), fstrSOLID%unode(:), &
-        fstrSOLID%dunode(:), iter, hecLagMAT%Lagrange(:), conMAT, hecLagMAT)
+        fstrSOLID%dunode(:), iter, hecMAT)
 
     enddo
 
   end subroutine fstr_AddContactStiffness
 
-  !> \brief Compute contact forces for residual vector (conMAT%B).
-  subroutine fstr_Update_NDForce_contact(cstep,ctAlgo,hecMESH,hecLagMAT,fstrSOLID,conMAT)
+  !> \brief Compute contact forces for residual vector (hecMAT%conmat%B).
+  subroutine fstr_Update_NDForce_contact(cstep,ctAlgo,hecMESH,hecMAT,fstrSOLID)
     integer(kind=kint), intent(in)       :: cstep
     integer(kind=kint), intent(in)       :: ctAlgo
     type(hecmwST_local_mesh)             :: hecMESH
     type(fstr_solid)                     :: fstrSOLID
-    type(hecmwST_matrix_lagrange)        :: hecLagMAT
-    type(hecmwST_matrix)                 :: conMAT
+    type(hecmwST_matrix)                 :: hecMAT
 
-    call fstr_contact_ndforce_core(kctForResidual,cstep,ctAlgo,hecMESH,hecLagMAT,fstrSOLID,conMAT)
+    call fstr_contact_ndforce_core(kctForResidual,cstep,ctAlgo,hecMESH,hecMAT,fstrSOLID)
 
   end subroutine fstr_Update_NDForce_contact
 
   !> \brief Compute contact forces for output (CONT_NFORCE/CONT_FRIC).
-  subroutine fstr_calc_contact_output_force(cstep,ctAlgo,hecMESH,hecLagMAT,fstrSOLID,conMAT)
+  subroutine fstr_calc_contact_output_force(cstep,ctAlgo,hecMESH,hecMAT,fstrSOLID)
     integer(kind=kint), intent(in)       :: cstep
     integer(kind=kint), intent(in)       :: ctAlgo
     type(hecmwST_local_mesh)             :: hecMESH
     type(fstr_solid)                     :: fstrSOLID
-    type(hecmwST_matrix_lagrange)        :: hecLagMAT
-    type(hecmwST_matrix)                 :: conMAT
+    type(hecmwST_matrix)                 :: hecMAT
 
-    call fstr_contact_ndforce_core(kctForOutput,cstep,ctAlgo,hecMESH,hecLagMAT,fstrSOLID,conMAT)
+    call fstr_contact_ndforce_core(kctForOutput,cstep,ctAlgo,hecMESH,hecMAT,fstrSOLID)
 
   end subroutine fstr_calc_contact_output_force
 
@@ -129,10 +126,10 @@ contains
   !! The explicit (central-difference) solver enforces contact through the
   !! forward-increment Lagrange corrector, which stores the contact normal force
   !! in states(:)%multiplier(1) but builds no Lagrange matrix. Hence
-  !! fstr_calc_contact_output_force (which reads hecLagMAT%Lagrange) cannot be used,
+  !! fstr_calc_contact_output_force (which reads hecMAT%lagmat%Lagrange) cannot be used,
   !! and CONT_NFORCE was left at zero for result/visualization output. This routine
   !! fills CONT_NFORCE from the stored multipliers, reusing the same element force
-  !! routine as the implicit path. It needs neither hecLagMAT nor conMAT.
+  !! routine as the implicit path. It needs neither hecMAT%lagmat nor hecMAT%conmat.
   subroutine fstr_calc_contact_output_force_exp( hecMESH, fstrSOLID )
     type(hecmwST_local_mesh), intent(in) :: hecMESH
     type(fstr_solid), intent(inout)      :: fstrSOLID
@@ -151,16 +148,15 @@ contains
   end subroutine fstr_calc_contact_output_force_exp
 
   !> \brief Core routine: compute contact nodal forces for all contact/embed pairs.
-  !! purpose == kctForResidual: assemble into conMAT%B
+  !! purpose == kctForResidual: assemble into hecMAT%conmat%B
   !! purpose == kctForOutput:   store into CONT_NFORCE/CONT_FRIC (zero-cleared first)
-  subroutine fstr_contact_ndforce_core(purpose,cstep,ctAlgo,hecMESH,hecLagMAT,fstrSOLID,conMAT)
+  subroutine fstr_contact_ndforce_core(purpose,cstep,ctAlgo,hecMESH,hecMAT,fstrSOLID)
     integer(kind=kint), intent(in)       :: purpose
     integer(kind=kint), intent(in)       :: cstep
     integer(kind=kint), intent(in)       :: ctAlgo
     type(hecmwST_local_mesh)             :: hecMESH
     type(fstr_solid)                     :: fstrSOLID
-    type(hecmwST_matrix_lagrange)        :: hecLagMAT
-    type(hecmwST_matrix)                 :: conMAT
+    type(hecmwST_matrix)                 :: hecMAT
     integer(kind=kint) :: i, grpid
 
     ! Zero-clear output arrays only when computing for output
@@ -175,10 +171,10 @@ contains
       if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) cycle
       if( fstrSOLID%contacts(i)%method == CONTACTS2S ) then
         call calcu_contact_ndforce_SurfSurf( purpose, ctAlgo, fstrSOLID%contacts(i), hecMESH%node(:), fstrSOLID%unode(:), &
-          fstrSOLID%dunode(:), conMAT, fstrSOLID%CONT_NFORCE, fstrSOLID%CONT_FRIC )
+          fstrSOLID%dunode(:), hecMAT, fstrSOLID%CONT_NFORCE, fstrSOLID%CONT_FRIC )
       else
         call calcu_contact_ndforce_NodeSurf( purpose, ctAlgo, fstrSOLID%contacts(i), hecMESH%node(:), fstrSOLID%unode(:), &
-          fstrSOLID%dunode(:), hecLagMAT%Lagrange(:), conMAT, &
+          fstrSOLID%dunode(:), hecMAT, &
           fstrSOLID%CONT_NFORCE, fstrSOLID%CONT_FRIC )
       endif
     enddo
@@ -187,7 +183,7 @@ contains
       grpid = fstrSOLID%embeds(i)%group
       if( .not. fstr_isEmbedActive( fstrSOLID, grpid, cstep ) ) cycle
       call calcu_contact_ndforce_NodeSurf( purpose, ctAlgo, fstrSOLID%embeds(i), hecMESH%node(:), fstrSOLID%unode(:), &
-        fstrSOLID%dunode(:), hecLagMAT%Lagrange(:), conMAT, &
+        fstrSOLID%dunode(:), hecMAT, &
         fstrSOLID%EMBED_NFORCE, fstrSOLID%EMBED_NFORCE )
     enddo
 
@@ -479,10 +475,9 @@ contains
       fstr_is_matrixStructure_changed = .true.
   end function
 
-  subroutine fstr_update_contact_multiplier( cstep, hecMESH, hecLagMAT, fstrSOLID, ctchanged )
+  subroutine fstr_update_contact_multiplier( cstep, hecMESH, fstrSOLID, ctchanged )
     integer(kind=kint), intent(in)        :: cstep
     type( hecmwST_local_mesh ), intent(in) :: hecMESH
-    type(hecmwST_matrix_lagrange), intent(in) :: hecLagMAT
     type(fstr_solid), intent(inout)        :: fstrSOLID
     logical, intent(out)                   :: ctchanged
 
@@ -502,7 +497,7 @@ contains
         if( algtype == CONTACTSSLID .or. algtype == CONTACTFSLID ) then
           call update_contact_multiplier( fstrSOLID%contacts(i), hecMESH%node(:), fstrSOLID%unode(:), &
             fstrSOLID%dunode(:), fstrSOLID%contacts(i)%fcoeff, &
-            hecMESH, hecLagMAT, gnt, ctchanged )
+            hecMESH, gnt, ctchanged )
         else if( algtype == CONTACTTIED ) then
           call update_tied_multiplier( fstrSOLID%contacts(i), fstrSOLID%unode(:), fstrSOLID%dunode(:), &
           &  ctchanged )

@@ -72,17 +72,16 @@ contains
   !C*** hecmw_ebc_apply
   !C***
   !C
-  subroutine hecmw_ebc_apply(hecMESH, hecMAT, hecEBC, conMAT)
+  subroutine hecmw_ebc_apply(hecMESH, hecMAT, hecEBC)
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_matrix), intent(inout) :: hecMAT
     type (hecmwST_ebc), intent(inout) :: hecEBC
-    type (hecmwST_matrix), intent(inout), optional :: conMAT
 
     call hecmw_ebc_extend(hecMESH, hecMAT, hecEBC)
     call hecmw_ebc_convert_slave(hecMESH, hecMAT, hecEBC)
     call hecmw_ebc_impose(hecMAT, hecEBC, 1.d0)
-    if (present(conMAT)) call hecmw_ebc_impose(conMAT, hecEBC, 0.d0)
+    if (associated(hecMAT%conmat)) call hecmw_ebc_impose(hecMAT%conmat, hecEBC, 0.d0)
   end subroutine hecmw_ebc_apply
 
   !C
@@ -221,10 +220,11 @@ contains
   !C*** hecmw_ebc_impose
   !C***
   !C
-  !> Same operations as hecmw_mat_ass_bc for every marked DOF, but the columns are
-  !> found by sweeping the rows instead of through the row of the constrained node,
-  !> whose entries have been moved to the owner rank when the node is external to
-  !> the reduced matrix.
+  !> For every marked DOF, the column is moved to the right-hand side, the row and the
+  !> column are cleared, and diag and diag times the prescribed value are put on the
+  !> diagonal and the right-hand side. The columns are found by sweeping the rows
+  !> instead of through the row of the constrained node, whose entries have been moved
+  !> to the owner rank when the node is external to the reduced matrix.
   subroutine hecmw_ebc_impose(hecMAT, hecEBC, diag)
     implicit none
     type (hecmwST_matrix), intent(inout) :: hecMAT

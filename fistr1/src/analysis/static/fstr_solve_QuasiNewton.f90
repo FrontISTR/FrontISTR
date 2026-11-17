@@ -37,7 +37,6 @@ contains
     real(kind=kreal), intent(in)          :: ctime     !< current time
     real(kind=kreal), intent(in)          :: dtime     !< time increment
     type (fstr_param)                     :: fstrPARAM !< type fstr_param
-    type (hecmwST_matrix_lagrange)        :: hecLagMAT !< type hecmwST_matrix_lagrange
 
     type (hecmwST_local_mesh), pointer :: hecMESHmpc
     type (hecmwST_matrix), pointer :: hecMATmpc
@@ -75,12 +74,12 @@ contains
 
     tincr = dtime
     if( fstrSOLID%step_ctrl(cstep)%solution == stepStatic ) tincr = 0.d0
-    call fstr_init_Newton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, cstep, dtime, fstrPARAM, hecLagMAT, ndof, 0, hecMAT)
+    call fstr_init_Newton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, cstep, dtime, fstrPARAM, ndof, 0)
     fstrSOLID%GL0(:) = fstrSOLID%GL(:) !store external load at du=0
 
     !! initialize du for non-zero Dirichlet condition
     call hecmw_ebc_init(hecMAT, hecEBC)
-    call fstr_AddBC(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, hecLagMAT, 1, hecEBC, RHSvector=fstrSOLID%dunode)
+    call fstr_AddBC(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, 1, hecEBC, RHSvector=fstrSOLID%dunode)
     !! update residual vector
     call fstr_calc_residual_vector(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
 
@@ -128,7 +127,7 @@ contains
       call fstr_apply_solution_increment( hecMESH, fstrSOLID, ndof, hecMAT%X )
 
       !! set du for non-zero Dirichlet condition
-      ! call fstr_AddBC(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, hecLagMAT, 1, RHSvector=fstrSOLID%dunode)
+      ! call fstr_AddBC(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, 1, RHSvector=fstrSOLID%dunode)
       call fstr_calc_residual_vector(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
  
       ! ----- check convergence

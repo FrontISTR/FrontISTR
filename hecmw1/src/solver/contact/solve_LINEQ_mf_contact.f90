@@ -32,11 +32,10 @@ module m_solve_LINEQ_mf_contact
 
 contains
 
-  subroutine solve_LINEQ_mf_contact_init(hecMESH,hecMAT,hecLagMAT,is_sym)
+  subroutine solve_LINEQ_mf_contact_init(hecMESH,hecMAT,is_sym)
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_matrix), intent(inout) :: hecMAT
-    type (hecmwST_matrix_lagrange), intent(in) :: hecLagMAT
     logical, intent(in) :: is_sym
 
     if (INITIALIZED) then
@@ -49,11 +48,10 @@ contains
     INITIALIZED = .true.
   end subroutine solve_LINEQ_mf_contact_init
 
-  subroutine solve_LINEQ_mf_contact(hecMESH,hecMAT,hecLagMAT,hecEBC,istat)
+  subroutine solve_LINEQ_mf_contact(hecMESH,hecMAT,hecEBC,istat)
     implicit none
     type (hecmwST_local_mesh), intent(inout) :: hecMESH
     type (hecmwST_matrix), intent(inout) :: hecMAT
-    type (hecmwST_matrix_lagrange), intent(inout) :: hecLagMAT
     type (hecmwST_ebc), intent(inout) :: hecEBC
     integer(kind=kint), intent(out) :: istat
     integer(kind=kint) :: ntdf, mpc_method, iterlog, timelog, irmax, it
@@ -79,12 +77,12 @@ contains
     call hecmw_mat_dump(hecMAT, hecMESH)
 
     if (NEED_ANALYSIS) then
-      call mf_contact_set_profile(hecMAT, hecLagMAT)
+      call mf_contact_set_profile(hecMAT)
       NEED_ANALYSIS = .false.
     endif
 
-    call mf_contact_set_values(hecMAT, hecLagMAT)
-    ntdf = hecMAT%NP*hecMAT%NDOF + hecLagMAT%num_lagrange
+    call mf_contact_set_values(hecMAT)
+    ntdf = hecMAT%NP*hecMAT%NDOF + hecMAT%lagmat%num_lagrange
     mfMAT%B(1:ntdf) = hecMAT%B(1:ntdf)
     mfMAT%X(1:ntdf) = 0.0d0
     mfMAT%Iarray(97) = 1
@@ -140,23 +138,22 @@ contains
   !> Build the DOF-granularity profile of the saddle-point system: the scalar expansion of
   !> hecMAT followed by the Lagrange rows. Both halves are always built (the factorization
   !> reads whichever half an entry lands in after permutation, and the structure must stay
-  !> mirrored); the Lagrange couplings of hecLagMAT are mirrored by construction.
-  subroutine mf_contact_set_profile(hecMAT, hecLagMAT)
+  !> mirrored); the Lagrange couplings of hecMAT%lagmat are mirrored by construction.
+  subroutine mf_contact_set_profile(hecMAT)
     implicit none
     type (hecmwST_matrix), intent(in) :: hecMAT
-    type (hecmwST_matrix_lagrange), intent(in) :: hecLagMAT
     integer(kind=kint) :: np, ndof, nlag, ntdf, npl, npu
     integer(kind=kint) :: i, j, k, l, cl, cu
 
     np = hecMAT%NP
     ndof = hecMAT%NDOF
-    nlag = hecLagMAT%num_lagrange
+    nlag = hecMAT%lagmat%num_lagrange
     ntdf = np*ndof + nlag
     npl = hecMAT%NPL*ndof*ndof + np*ndof*(ndof-1)/2
     npu = hecMAT%NPU*ndof*ndof + np*ndof*(ndof-1)/2
     if (nlag > 0) then
-      npl = npl + hecLagMAT%numL_lagrange*ndof
-      npu = npu + hecLagMAT%numU_lagrange*ndof
+      npl = npl + hecMAT%lagmat%numL_lagrange*ndof
+      npu = npu + hecMAT%lagmat%numU_lagrange*ndof
     endif
 
     call hecmw_mat_finalize(mfMAT)
@@ -197,9 +194,9 @@ contains
           enddo
         enddo
         if (nlag > 0) then
-          do l = hecLagMAT%indexU_lagrange(i-1)+1, hecLagMAT%indexU_lagrange(i)
+          do l = hecMAT%lagmat%indexU_lagrange(i-1)+1, hecMAT%lagmat%indexU_lagrange(i)
             cu = cu + 1
-            mfMAT%itemU(cu) = np*ndof + hecLagMAT%itemU_lagrange(l)
+            mfMAT%itemU(cu) = np*ndof + hecMAT%lagmat%itemU_lagrange(l)
           enddo
         endif
         mfMAT%indexL((i-1)*ndof+j) = cl
@@ -207,10 +204,10 @@ contains
       enddo
     enddo
     do i = 1, nlag
-      do l = hecLagMAT%indexL_lagrange(i-1)+1, hecLagMAT%indexL_lagrange(i)
+      do l = hecMAT%lagmat%indexL_lagrange(i-1)+1, hecMAT%lagmat%indexL_lagrange(i)
         do k = 1, ndof
           cl = cl + 1
-          mfMAT%itemL(cl) = (hecLagMAT%itemL_lagrange(l)-1)*ndof + k
+          mfMAT%itemL(cl) = (hecMAT%lagmat%itemL_lagrange(l)-1)*ndof + k
         enddo
       enddo
       mfMAT%indexL(np*ndof+i) = cl
@@ -234,16 +231,15 @@ contains
 
   !> Load the values in the order the profile was built. The Lagrange diagonal stays zero;
   !> the delayed pivoting of the factorization handles it.
-  subroutine mf_contact_set_values(hecMAT, hecLagMAT)
+  subroutine mf_contact_set_values(hecMAT)
     implicit none
     type (hecmwST_matrix), intent(in) :: hecMAT
-    type (hecmwST_matrix_lagrange), intent(in) :: hecLagMAT
     integer(kind=kint) :: np, ndof, nlag
     integer(kind=kint) :: i, j, k, l, cl, cu
 
     np = hecMAT%NP
     ndof = hecMAT%NDOF
-    nlag = hecLagMAT%num_lagrange
+    nlag = hecMAT%lagmat%num_lagrange
 
     cl = 0
     cu = 0
@@ -271,19 +267,19 @@ contains
           enddo
         enddo
         if (nlag > 0) then
-          do l = hecLagMAT%indexU_lagrange(i-1)+1, hecLagMAT%indexU_lagrange(i)
+          do l = hecMAT%lagmat%indexU_lagrange(i-1)+1, hecMAT%lagmat%indexU_lagrange(i)
             cu = cu + 1
-            mfMAT%AU(cu) = hecLagMAT%AU_lagrange((l-1)*ndof+j)
+            mfMAT%AU(cu) = hecMAT%lagmat%AU_lagrange((l-1)*ndof+j)
           enddo
         endif
       enddo
     enddo
     do i = 1, nlag
       mfMAT%D(np*ndof+i) = 0.0d0
-      do l = hecLagMAT%indexL_lagrange(i-1)+1, hecLagMAT%indexL_lagrange(i)
+      do l = hecMAT%lagmat%indexL_lagrange(i-1)+1, hecMAT%lagmat%indexL_lagrange(i)
         do k = 1, ndof
           cl = cl + 1
-          mfMAT%AL(cl) = hecLagMAT%AL_lagrange((l-1)*ndof+k)
+          mfMAT%AL(cl) = hecMAT%lagmat%AL_lagrange((l-1)*ndof+k)
         enddo
       enddo
     enddo
