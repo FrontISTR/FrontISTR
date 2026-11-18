@@ -109,6 +109,12 @@ typedef struct { int i; } Integer;
 
 static struct hecmw_map_int *elem_secopt;
 
+/* *SOLID SECTION whose secopt is set after reading all the elements */
+static struct solid_sect_data {
+  struct hecmw_io_section *sect;
+  struct solid_sect_data *next;
+} * solidsect;
+
 static void free_Integer(void *v) {
   Integer *i;
   i = (Integer *)v;
@@ -557,10 +563,11 @@ static int get_secopt(char *elset) {
   int i, secopt_prev;
   struct hecmw_io_id_array *elem = NULL;
 
+  /* no element in this file */
+  if (elem_secopt == NULL) return 0;
+
   elem = HECMW_io_get_elem_in_egrp(elset);
   if (elem == NULL) return -1;
-
-  HECMW_map_int_check_dup(elem_secopt);
 
   secopt_prev = -1;
   for (i = 0; i < elem->n; i++) {
@@ -583,6 +590,68 @@ error:
     HECMW_free(elem);
   }
   return -1;
+}
+
+static int add_solid_sect_data(struct hecmw_io_section *sect) {
+  struct solid_sect_data *p, *q, *sdata;
+
+  sdata = HECMW_malloc(sizeof(*sdata));
+  if (sdata == NULL) {
+    set_err(errno, "");
+    return -1;
+  }
+
+  sdata->sect = sect;
+  sdata->next = NULL;
+
+  q = NULL;
+  for (p = solidsect; p; p = (q = p)->next)
+    ;
+  if (q == NULL) {
+    solidsect = sdata;
+  } else {
+    q->next = sdata;
+  }
+
+  return 0;
+}
+
+/* The elements and the element set of a *SOLID SECTION may be defined after
+ * it, so its secopt is set after reading all the elements */
+static int set_solid_sect_secopt(void) {
+  struct solid_sect_data *p;
+
+  if (elem_secopt) HECMW_map_int_check_dup(elem_secopt);
+
+  for (p = solidsect; p; p = p->next) {
+    int secopt;
+    char *elset = p->sect->egrp;
+
+    if (HECMW_io_get_egrp(elset) == NULL) {
+      set_err_noloc(HECMW_IO_E1024, "Element group %s not found", elset);
+      return -1;
+    }
+
+    secopt = get_secopt(elset);
+    if (secopt < 0) {
+      set_err_noloc(HECMW_IO_E1026, "Two or more secopt found in %s", elset);
+      return -1;
+    }
+
+    p->sect->secopt = secopt;
+  }
+
+  return 0;
+}
+
+static void free_solid_sect_data(void) {
+  struct solid_sect_data *p, *q;
+
+  for (p = solidsect; p; p = q) {
+    q = p->next;
+    HECMW_free(p);
+  }
+  solidsect = NULL;
 }
 
 /*------------------------------------------------------------------------------
@@ -3508,38 +3577,28 @@ static int read_solid_section(void) {
         return -1;
       }
     } else if (state == ST_DATA_LINE) {
-      int secopt;
       double thickness;
-      struct hecmw_io_section sect;
+      struct hecmw_io_section sect, *added;
       union hecmw_io_section_item sect_item;
 
       HECMW_assert(flag_elset);
 
       if (read_solidsect_data(&thickness)) return -1;
 
-      if (HECMW_io_get_egrp(elset) == NULL) {
-        set_err_noloc(HECMW_IO_E1024, "Element group %s not found", elset);
-        return -1;
-      }
-
-      secopt = get_secopt(elset);
-      if (secopt < 0) {
-        set_err_noloc(HECMW_IO_E1026, "Two or more secopt found in %s", elset);
-        return -1;
-      }
-
       /* set */
       sect_item.solid.thickness = thickness;
       snprintf(sect.egrp, sizeof(sect.egrp), "%s", elset);
       snprintf(sect.material, sizeof(sect.material), "%s", material);
       sect.composite = composite;
-      sect.secopt    = secopt;
+      sect.secopt    = 0; /* set in post_inp */
       sect.type      = HECMW_SECT_TYPE_SOLID;
       sect.sect      = sect_item;
       sect.next      = NULL;
 
       /* add */
-      if (HECMW_io_add_sect(&sect) == NULL) return -1;
+      added = HECMW_io_add_sect(&sect);
+      if (added == NULL) return -1;
+      if (add_solid_sect_data(added)) return -1;
 
       /* set next state */
       state = ST_FINISHED;
@@ -3985,12 +4044,17 @@ static int parse(void) {
 /*----------------------------------------------------------------------------*/
 
 static int post_inp(void) {
-  if (elem_secopt == NULL) return 0;
+  int rtc;
 
-  HECMW_map_int_finalize(elem_secopt);
-  HECMW_free(elem_secopt);
-  elem_secopt = NULL;
-  return 0;
+  rtc = set_solid_sect_secopt();
+  free_solid_sect_data();
+
+  if (elem_secopt) {
+    HECMW_map_int_finalize(elem_secopt);
+    HECMW_free(elem_secopt);
+    elem_secopt = NULL;
+  }
+  return rtc;
 }
 
 /* read only. Not make hecmwST_local_mesh */
