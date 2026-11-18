@@ -241,13 +241,7 @@ contains
 
     ! loading boundary conditions etc. from fstr control file or nastran mesh file
     ! and setup parameters ...
-!    svRarray(:) = hecMAT%Rarray(:)
-!    svIarray(:) = hecMAT%Iarray(:)
-
     call fstr_setup( cntfileNAME, hecMESH, hecMAT, fstrPARAM, fstrSOLID, fstrEIG, fstrHEAT, fstrDYNAMIC, fstrCPL, fstrFREQ )
-
-!    hecMAT%Rarray(:) = svRarray(:)
-!    hecMAT%Iarray(:) = svIarray(:)
 
     call fstr_input_precheck( hecMESH, hecMAT, fstrSOLID, fstrPARAM )
 
