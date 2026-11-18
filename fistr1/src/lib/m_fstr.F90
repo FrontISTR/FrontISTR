@@ -450,6 +450,7 @@ module m_fstr
 
     !> MATERIAL
     integer(kind=kint) :: MATERIALtot=0
+    character(len=HECMW_NAME_LEN), pointer :: mat_name(:)=>null() !< material names (same order as hecMESH%material)
     integer(kind=kint), pointer :: RHOtab(:)=>null(), CPtab(:)=>null(), CONDtab(:)=>null()
     real(kind=kreal), pointer :: RHO(:,:)=>null(), RHOtemp(:,:)=>null()
     real(kind=kreal), pointer :: CP(:,:)=>null(),  CPtemp(:,:)=>null()
@@ -897,6 +898,7 @@ contains
     nullify( H%STEP_EETIME )
     nullify( H%STEP_DELMIN )
     nullify( H%STEP_DELMAX )
+    nullify( H%mat_name )
     nullify( H%RHOtab )
     nullify( H%CPtab )
     nullify( H%CONDtab )
