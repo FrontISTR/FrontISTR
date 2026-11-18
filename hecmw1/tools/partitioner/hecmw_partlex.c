@@ -866,7 +866,8 @@ static int lineno;
 static long len = 0;
 
 #line 869 "<stdout>"
-#line 870 "<stdout>"
+#define YY_NO_INPUT 1
+#line 871 "<stdout>"
 
 #define INITIAL 0
 
@@ -1087,7 +1088,7 @@ YY_DECL
 #line 28 "../tools/partitioner/hecmw_partlex.l"
 
 
-#line 1091 "<stdout>"
+#line 1092 "<stdout>"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -1327,7 +1328,7 @@ YY_RULE_SETUP
 #line 84 "../tools/partitioner/hecmw_partlex.l"
 ECHO;
 	YY_BREAK
-#line 1331 "<stdout>"
+#line 1332 "<stdout>"
 
 	case YY_END_OF_BUFFER:
 		{

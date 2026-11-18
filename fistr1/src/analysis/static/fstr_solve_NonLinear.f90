@@ -140,7 +140,7 @@ contains
       hecMATmpc%X = 0.0d0
       call fstr_set_current_config_to_mesh(hecMESHmpc,fstrSOLID,coord)
       call solve_LINEQ(hecMESHmpc,hecMATmpc)
-      call fstr_recover_initial_config_to_mesh(hecMESHmpc,fstrSOLID,coord)
+      call fstr_recover_initial_config_to_mesh(hecMESHmpc,coord)
       ! ----- check matrix solver error
       call fstr_check_linear_solver(hecMESH, hecMATmpc, fstrSOLID, cstep, sub_step, iterStatus)
       if( iterStatus /= kitrContinue ) then
@@ -303,7 +303,7 @@ contains
           hecMAT%X = 0.0d0
           call fstr_set_current_config_to_mesh(hecMESH,fstrSOLID,coord)
           call solve_LINEQ_contact(hecMESH, hecMAT, hecEBC, istat, 1.0D0, fstr_is_contact_active())
-          call fstr_recover_initial_config_to_mesh(hecMESH,fstrSOLID,coord)
+          call fstr_recover_initial_config_to_mesh(hecMESH,coord)
           call hecmw_ebc_finalize(hecEBC)
           ! ----- check matrix solver error
           call fstr_check_linear_solver(hecMESH, hecMAT, fstrSOLID, cstep, sub_step, iterStatus, istat)
@@ -536,7 +536,7 @@ contains
         hecMAT%X = 0.0d0
         call fstr_set_current_config_to_mesh(hecMESH,fstrSOLID,coord)
         call solve_LINEQ_contact(hecMESH, hecMAT, hecEBC, istat, 1.0D0, fstr_is_contact_active())
-        call fstr_recover_initial_config_to_mesh(hecMESH,fstrSOLID,coord)
+        call fstr_recover_initial_config_to_mesh(hecMESH,coord)
         call hecmw_ebc_finalize(hecEBC)
         ! ----- check matrix solver error
         call fstr_check_linear_solver(hecMESH, hecMAT, fstrSOLID, cstep, sub_step, iterStatus, istat)

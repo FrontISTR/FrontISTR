@@ -350,8 +350,7 @@ contains
 
     integer(kind=kint) :: rcode
 
-    rcode = fstr_ctrl_get_ECHO( ctrl,        &
-      P%PARAM%fg_echo )
+    rcode = fstr_ctrl_get_ECHO( P%PARAM%fg_echo )
     if( rcode /= 0 ) call fstr_ctrl_err_stop
 
   end subroutine fstr_setup_ECHO

@@ -21,8 +21,7 @@ contains
   end function
 
   !> Initializer of cutback variables
-  subroutine fstr_cutback_init( hecMESH, fstrSOLID )
-    type(hecmwST_local_mesh) :: hecMESH
+  subroutine fstr_cutback_init( fstrSOLID )
     type(fstr_solid)         :: fstrSOLID
 
     integer(kind=kint) :: istep, i, j

@@ -99,7 +99,7 @@ contains
       enddo
     enddo
 
-    call EGLIST(hecMESH, hecMAT, fstrEIG)
+    call EGLIST(hecMAT, fstrEIG)
 
     if(myrank == 0)then
       write(IMSG,*) ''
@@ -277,12 +277,11 @@ contains
   end subroutine
 
   !> Output eigenvalues and vectors
-  subroutine EGLIST(hecMESH, hecMAT, fstrEIG)
+  subroutine EGLIST(hecMAT, fstrEIG)
     use m_fstr
     use hecmw_util
     use m_fstr_EIG_lanczos_util
     implicit none
-    type(hecmwST_local_mesh) :: hecMESH
     type(hecmwST_matrix)     :: hecMAT
     type(fstr_eigen)         :: fstrEIG
 

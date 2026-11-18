@@ -52,7 +52,7 @@ contains
       enddo
 
       if( fstrHEAT%elemact%ELEMACT_egrp_tot>0 ) &
-        &  call fstr_updatedof_elemact( 1, hecMESH, fstrHEAT%elemact, fstrSOLID%elements, fstrHEAT%TEMP0, fstrHEAT%TEMP )
+        &  call fstr_updatedof_elemact( 1, hecMESH, fstrSOLID%elements, fstrHEAT%TEMP0, fstrHEAT%TEMP )
 
       call heat_check_convergence(hecMESH, fstrHEAT, fstrPARAM, ISTEP, iterALL, is_congerged)
 

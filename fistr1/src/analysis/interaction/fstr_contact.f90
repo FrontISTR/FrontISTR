@@ -495,8 +495,8 @@ contains
       else
         algtype = fstrSOLID%contacts(i)%algtype
         if( algtype == CONTACTSSLID .or. algtype == CONTACTFSLID ) then
-          call update_contact_multiplier( fstrSOLID%contacts(i), hecMESH%node(:), fstrSOLID%unode(:), &
-            fstrSOLID%dunode(:), fstrSOLID%contacts(i)%fcoeff, &
+          call update_contact_multiplier( fstrSOLID%contacts(i), fstrSOLID%unode(:), &
+            fstrSOLID%dunode(:), &
             hecMESH, gnt, ctchanged )
         else if( algtype == CONTACTTIED ) then
           call update_tied_multiplier( fstrSOLID%contacts(i), fstrSOLID%unode(:), fstrSOLID%dunode(:), &

@@ -8,7 +8,6 @@
 #include "hecmw.h"
 
 #define DEF_MESH_ID  "fstrMSH"
-#define DEF_RCAP_ID  "revocap"
 
 static
 char* rcap_fname_header = NULL;

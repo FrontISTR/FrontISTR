@@ -421,7 +421,6 @@ contains
     integer(kind=kint), intent(in)       :: numnode
     real(kind=kreal), intent(inout)      :: eigenvector(:, :) !intend (numdof*NN,nmode)
     !---- vals
-    integer(kind=kint), parameter :: compidx = 1 !Component index of displacement
     integer(kind=kint)            :: imode, idx, ind, a, b, nallcomp, j
     type(hecmwST_result_data)     :: eigenres
     character(len=HECMW_NAME_LEN) :: name
@@ -617,7 +616,6 @@ contains
     real(kind=kreal), intent(inout)      :: loadvecRe(:) !intend(numnode*ndof)
     real(kind=kreal), intent(inout)      :: loadvecIm(:) !intend(numnode*ndof)
     !---- vals
-    integer(kind=kint), parameter   :: MAXNODE = 100
     integer(kind=kint)              :: sgrpID, is, ie, ic, nsurf, ic_type
     integer(kind=kint)              :: nn, dof_index, ndof
     integer(kind=kint)              :: i, j, k, l, isn, nsize

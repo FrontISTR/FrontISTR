@@ -7,13 +7,12 @@
 module m_heat_mat_ass_bc_FIXT
 contains
 
-  subroutine heat_mat_ass_bc_FIXT(hecMAT, hecEBC, fstrHEAT, CTIME)
+  subroutine heat_mat_ass_bc_FIXT(hecEBC, fstrHEAT, CTIME)
     use m_fstr
     use m_heat_get_amplitude
     use hecmw_ebc_defer
     implicit none
     type(fstr_heat)      :: fstrHEAT
-    type(hecmwST_matrix) :: hecMAT
     type(hecmwST_ebc)    :: hecEBC
     integer(kind=kint) :: ib, ii, id
     real(kind=kreal)   :: CTIME, QQ

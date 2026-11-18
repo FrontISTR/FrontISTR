@@ -3,8 +3,6 @@
  * This software is released under the MIT License, see LICENSE.txt
  *****************************************************************************/
 
-#define INAGAKI_PARTITIONER
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -44,27 +42,13 @@
 
 #define MARK 32
 
-#define MY_DOMAIN 1
-
-#define NEIGHBOR_DOMAIN 2
-
-#define MPC_BLOCK 4
-
-#define CANDIDATE 8
-
-#define EPS (1.0E-12)
-
 #define F_1_2 (0.5)
-
-#define F_6_10 (0.6)
 
 #define QSORT_LOWER 50
 
 #define MASK_BIT(map, bit) ((map) |= (bit))
 
 #define EVAL_BIT(map, bit) ((map) & (bit))
-
-#define INV_BIT(map, bit) ((map) ^= (bit))
 
 #define CLEAR_BIT(map, bit) \
   ((map) |= (bit));         \
@@ -91,10 +75,6 @@
 #define RTC_NORMAL 0
 
 #define RTC_ERROR (-1)
-
-#define RTC_WARN 1
-
-#define MAX_NODE_SIZE 20
 
 struct link_unit {
   int id;

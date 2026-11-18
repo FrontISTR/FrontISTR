@@ -45,7 +45,6 @@ contains
     real(kind=kreal), allocatable :: prevB(:)
     integer(kind=kint) :: restrt_step_num
     integer(kind=kint) :: restrt_step_count
-    real(kind=kreal), parameter :: PI = 3.14159265358979323846D0
     integer(kind=kint) :: tot_step, sub_step, step_count
     logical :: is_OutPoint
 

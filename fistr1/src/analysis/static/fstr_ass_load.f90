@@ -492,7 +492,7 @@ contains
           
           ! Calculate thermal load based on element type
           call calculate_thermal_load(ic_type, nn, xx, yy, zz, tt, tt0, isect, ndof, &
-                                     hecMESH, fstrSOLID, fstrPARAM, icel, vect, cdsys_ID, local_coords, &
+                                     fstrSOLID, fstrPARAM, icel, vect, cdsys_ID, local_coords, &
                                      iset, pa1, iwk, hecMAT%B)
         enddo
       enddo
@@ -504,12 +504,11 @@ contains
   !> Calculate thermal load based on element type
   !======================================================================!
   subroutine calculate_thermal_load(ic_type, nn, xx, yy, zz, tt, tt0, isect, ndof, &
-                                   hecMESH, fstrSOLID, fstrPARAM, icel, vect, cdsys_ID, coords, &
+                                   fstrSOLID, fstrPARAM, icel, vect, cdsys_ID, coords, &
                                    iset, pa1, iwk, B)
     integer(kind=kint), intent(in)       :: ic_type, nn, isect, ndof, cdsys_ID, iset
     real(kind=kreal), intent(in)         :: xx(*), yy(*), zz(*), tt(*), tt0(*), pa1
     real(kind=kreal), intent(inout)      :: coords(3,3)  ! Changed INTENT from IN to INOUT
-    type(hecmwST_local_mesh), intent(in) :: hecMESH
     type(fstr_solid), intent(in)         :: fstrSOLID
     type(fstr_param), intent(in)         :: fstrPARAM
     integer(kind=kint), intent(in)       :: icel

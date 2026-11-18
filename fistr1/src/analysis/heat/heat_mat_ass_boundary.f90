@@ -40,7 +40,7 @@ contains
 
     !> !BOUNDARY
     call hecmw_ebc_init(hecMAT, hecEBC)
-    call heat_mat_ass_bc_FIXT(hecMAT, hecEBC, fstrHEAT, next_time)
+    call heat_mat_ass_bc_FIXT(hecEBC, fstrHEAT, next_time)
 
     !> MPC
     call hecmw_mpc_mat_ass(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)

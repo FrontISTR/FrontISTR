@@ -49,7 +49,6 @@ module hecmw_solver_direct_serial_lag
   logical, parameter :: ldbg  = .false.
   !integer, parameter :: idbg  = 52 ! according to FSTR
   integer :: idbg  = 10 ! debug output fort.*
-  logical :: lelap = .false. ! debug out
 
 contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -1360,7 +1359,6 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 6000 format(i6,'(',2i6,')')
 6010 format(' binary tree')
 6020 format(' the first zero pivot is ',i4)
-6100 format(2i8)
     return
   end subroutine genbtq
 
@@ -1455,7 +1453,6 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       endif
     enddo
     ! (2) followed by nodes in Ancestor(iy)-Adj(T(iy))
-330 continue
     do i=1,neqns
       adjt(i)=0
     enddo
@@ -1677,7 +1674,6 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
           leaf(l)=lc
           l=l+1
         endif
-125     continue
         lc1=lc
       enddo
       ik=1
@@ -1850,7 +1846,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         elseif(node==0) then
           goto 600
         endif
-400     if(marker(node).ne.0) goto 500
+        if(marker(node).ne.0) goto 500
         rchsze=rchsze+1
         rchset(rchsze)=node
         marker(node)=1
@@ -1995,14 +1991,14 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         elseif(nabor==0) then
           goto 700
         endif
-300     mark=marker(nabor)
+        mark=marker(nabor)
         !if(mark)600,400,500
         if(mark<0) then
           goto 600
         elseif(mark>0) then
           goto 500
         endif
-400     rchsze=rchsze+1
+        rchsze=rchsze+1
         rchset(rchsze)=nabor
         deg1=deg1+qsize(nabor)
         marker(nabor)=1
@@ -2185,7 +2181,6 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         iw(m)=itemp
 110   continue
     enddo
-200 continue
     return
   end subroutine qqsort
 
@@ -2269,7 +2264,6 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       write(idbg,*) 'ndeg=1 only'
       stop
     endif
-1000 continue
     return
   end subroutine staij1
 
@@ -2299,7 +2293,6 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       call errtrp('stop due to allocation error.')
     end if
 
-2   continue
     ks=xlnzr(ic)
     ke=xlnzr(ic+1)
     t=0.0d0
@@ -2329,7 +2322,6 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     if(dabs(piv).gt.rmin) then
       diag(ic)=1.0d0/piv
     endif
-1   continue
     !         if(isem.eq.1) then !DBG
     isem=0
     nch(ic)=-1
@@ -2775,7 +2767,6 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         &       'norm(Ax-b)            =  ',1pd20.10/&
         &       'norm(b)               =  ',1pd20.10/&
         &       'norm(Ax-b)/norm(b)    =  ',1pd20.10)
-6010 format(1p4d15.7)
     return
   end subroutine verif0
 

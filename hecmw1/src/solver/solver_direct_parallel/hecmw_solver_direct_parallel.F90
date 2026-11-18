@@ -2596,7 +2596,6 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 6000 format(i6,'(',2i6,')')
 6010 format(' binary tree')
 6020 format(' the first zero pivot is ',i4)
-6100 format(2i8)
     return
   end subroutine genbtq
 
@@ -2691,7 +2690,6 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       endif
 320 continue
     ! (2) followed by nodes in Ancestor(iy)-Adj(T(iy))
-330   continue
     do 340 i=1,neqns
       adjt(i)=0
 340 continue
@@ -2913,7 +2911,6 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
           leaf(l)=lc
           l=l+1
         endif
-125     continue
         lc1=lc
 130   continue
       ik=1
@@ -3086,7 +3083,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         elseif(node==0) then
           goto 600
         endif
-400     if(marker(node).ne.0) goto 500
+        if(marker(node).ne.0) goto 500
         rchsze=rchsze+1
         rchset(rchsze)=node
         marker(node)=1
@@ -3231,14 +3228,14 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         elseif(nabor==0) then
           goto 700
         endif
-300     mark=marker(nabor)
+        mark=marker(nabor)
         !if(mark)600,400,500
         if(mark<0) then
           goto 600
         elseif(mark>0) then
           goto 500
         endif
-400     rchsze=rchsze+1
+        rchsze=rchsze+1
         rchset(rchsze)=nabor
         deg1=deg1+qsize(nabor)
         marker(nabor)=1
@@ -3421,7 +3418,6 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         iw(m)=itemp
 110   continue
 100 continue
-200 continue
     return
   end subroutine qqsort
 
@@ -3503,7 +3499,6 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     else
       call addrx(i,j,aij,dsi%invp,dsi%xlnzr,dsi%colno,dsi%diag,dsi%zln,dsi%dsln,nstop,ndeg,ndeg2l,ir)
     endif
-1000 continue
     return
   end subroutine staij1
 
@@ -3535,7 +3530,6 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     isem = 0
 
-2   continue
     ks=xlnzr(ic)
     ke=xlnzr(ic+1)
     t=0.0d0
@@ -4367,7 +4361,6 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     integer(kind=kint), intent(out)  :: ir
 
     integer(kind=kint), parameter :: ndeg2=9
-    integer(kind=kint), parameter :: ndeg2l=6
     integer(kind=kint) :: k,l,ii,jj,itrans,i0,j0,ks,ke
 
     ir=0
@@ -5365,7 +5358,6 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       &       'norm(Ax-b)            =  ',1pd20.10/&
       &       'norm(b)               =  ',1pd20.10/&
       &       'norm(Ax-b)/norm(b)    =  ',1pd20.10)
-6010 format(1p4d15.7)
     return
   end subroutine verif0
 

@@ -1980,8 +1980,9 @@ static int flag_header;
 
 static void set_flag_header(int flag);
 #line 1982 "<stdout>"
+#define YY_NO_INPUT 1
 
-#line 1984 "<stdout>"
+#line 1985 "<stdout>"
 
 #define INITIAL 0
 #define HEADER 1
@@ -2204,7 +2205,7 @@ YY_DECL
 #line 38 "src/common/hecmw_inplex.l"
 
 
-#line 2207 "<stdout>"
+#line 2208 "<stdout>"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -3124,7 +3125,7 @@ YY_RULE_SETUP
 #line 245 "src/common/hecmw_inplex.l"
 ECHO;
 	YY_BREAK
-#line 3127 "<stdout>"
+#line 3128 "<stdout>"
 
 	case YY_END_OF_BUFFER:
 		{

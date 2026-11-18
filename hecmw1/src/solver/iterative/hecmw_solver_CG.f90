@@ -117,7 +117,7 @@ contains
     if (hecmw_mat_get_usejad(hecMAT).ne.0) then
       call hecmw_JAD_INIT(hecMAT)
     endif
-    call hecmw_matvec_setup(hecMESH, hecMAT)
+    call hecmw_matvec_setup(hecMAT)
 
     if (ESTCOND /= 0 .and. hecMESH%my_rank == 0) then
       allocate(D(MAXIT),E(MAXIT-1))

@@ -24,10 +24,8 @@ module m_solve_LINEQ_MUMPS_contact
 
 contains
 
-  subroutine solve_LINEQ_MUMPS_contact_init(hecMESH,hecMAT,is_sym)
+  subroutine solve_LINEQ_MUMPS_contact_init(is_sym)
     implicit none
-    type (hecmwST_local_mesh), intent(in) :: hecMESH
-    type (hecmwST_matrix    ), intent(inout) :: hecMAT
     logical, intent(in) :: is_sym
     integer(kind=kint) :: spmat_type
     integer(kind=kint) :: spmat_symtype

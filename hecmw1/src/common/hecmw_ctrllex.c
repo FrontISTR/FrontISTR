@@ -885,7 +885,8 @@ static int flag_header;
 
 static void set_flag_header(int flag);
 #line 888 "<stdout>"
-#line 889 "<stdout>"
+#define YY_NO_INPUT 1
+#line 890 "<stdout>"
 
 #define INITIAL 0
 
@@ -1106,7 +1107,7 @@ YY_DECL
 #line 30 "hecmw_ctrllex.l"
 
 
-#line 1110 "<stdout>"
+#line 1111 "<stdout>"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -1386,7 +1387,7 @@ YY_RULE_SETUP
 #line 94 "hecmw_ctrllex.l"
 ECHO;
 	YY_BREAK
-#line 1390 "<stdout>"
+#line 1391 "<stdout>"
 
 	case YY_END_OF_BUFFER:
 		{

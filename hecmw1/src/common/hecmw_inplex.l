@@ -21,7 +21,7 @@ static int flag_header;
 static void set_flag_header(int flag);
 %}
 
-%option nounput
+%option nounput noinput
 
 comment		^(\*\*).*\r?\n
 ws			[ \t]+

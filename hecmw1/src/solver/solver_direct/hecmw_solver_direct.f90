@@ -1571,7 +1571,6 @@ contains
     integer(kind=kint):: l
     integer(kind=kint), parameter:: idbg = 0
     integer(kind=kint), parameter:: ndeg2 = 9
-    integer(kind=kint), parameter:: ndeg2l = 6
 
     Ir = 0
     ii = Invp(I)
