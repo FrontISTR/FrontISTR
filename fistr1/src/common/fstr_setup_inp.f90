@@ -141,7 +141,8 @@ contains
 
   !> Reads the cards of the inp file in order, and calls the reader of each card in the table T for the reading ipass
   !> (1 or 2), as fstr_setup_read_cards does for a cnt file. The first reading stops at a card not in T, since the cards
-  !> of the inp format that are not read yet would change the analysis.
+  !> of the inp format that are not read yet would change the analysis. A parameter of an analysis card that its reader
+  !> does not read is skipped with a warning.
   subroutine fstr_setup_inp_read_cards( ctrl, T, ipass, total, P )
     implicit none
     integer(kind=kint) :: ctrl
@@ -150,13 +151,48 @@ contains
     integer(kind=kint), intent(inout) :: total(:)
     type(fstr_param_pack) :: P
 
-    integer(kind=kint) :: rcode, k
+    integer(kind=kint) :: rcode, k, comma, next_comma, i, c
     integer(kind=kint) :: pos(size(total))
     character(len=HECMW_NAME_LEN) :: header_name
+    character(len=256) :: header, param
+    logical :: supported
 
     pos(:) = 0
     do
       rcode = fstr_ctrl_get_c_h_name_inp( ctrl, header_name, HECMW_NAME_LEN )
+      if( ipass == 1 ) then
+        select case( trim(header_name) )
+        case( '*STEP', '*END STEP', '*STATIC', '*BOUNDARY', '*CLOAD' )
+          rcode = fstr_ctrl_get_line( ctrl, fstr_ctrl_get_c_h_pos(ctrl), header, len(header) )
+          if( rcode /= 0 ) call fstr_ctrl_err_stop
+          comma = index( header, ',' )
+          do while( comma > 0 )
+            header = adjustl( header(comma+1:) )
+            next_comma = index( header, ',' )
+            param = header
+            if( next_comma > 0 ) param = header(:next_comma-1)
+            if( len_trim(param) > 0 ) then
+              i = scan( param, '= ' )
+              if( i > 0 ) param = param(:i-1)
+              do i = 1, len_trim(param)
+                c = iachar( param(i:i) )
+                if( c >= iachar('a') .and. c <= iachar('z') ) param(i:i) = achar( c - iachar('a') + iachar('A') )
+              enddo
+              supported = .false.
+              select case( trim(header_name) )
+              case( '*STEP' )
+                supported = param == 'NLGEOM'
+              case( '*BOUNDARY', '*CLOAD' )
+                supported = param == 'AMPLITUDE'
+              end select
+              if( .not. supported .and. P%MESH%my_rank == 0 ) write(*,'(a,a,a,i0,a,a,a)') ' Warning: ', &
+                trim(header_name), ' (line:', fstr_ctrl_get_c_h_line_no( ctrl ), ') : unsupported parameter ', &
+                trim(param), ' is skipped'
+            endif
+            comma = next_comma
+          enddo
+        end select
+      endif
       k = fstr_card_find( T, header_name(2:), P%STATE%version )
       if( k > 0 ) then
         call fstr_card_read( ctrl, T, k, ipass, header_name, pos, total, P )
