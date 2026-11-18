@@ -183,7 +183,14 @@ contains
     case default ; if (myrank == 0) write(*,'(a,i0,a)') &
         '#### SA-AMG: invalid cycle ', iopt(3), ' (ignored) -- using default (W)'
     end select
-    if (iopt(4) > 0) prm%max_level = iopt(4)   ! ML MaxLevels
+    ! slot 4: max levels (ML MaxLevels).  A direct coarsest solve needs an aggregated level
+    ! (contiguous coarse offsets), so 1 is raised to 2.
+    if (iopt(4) == 1) then
+      prm%max_level = 2
+      if (myrank == 0) write(*,'(a)') '#### SA-AMG: max levels 1 not supported -- using 2'
+    else if (iopt(4) > 0) then
+      prm%max_level = iopt(4)
+    end if
     ! slot 5: reserved.  ML puts CoarsenScheme here (1..5 = UncoupledMIS/METIS/
     ! ParMETIS/Zoltan/DD); SA-AMG always uses uncoupled aggregation, so the value is
     ! ignored -- but say so, otherwise a reused ML option line looks like it selects
@@ -259,7 +266,7 @@ contains
     call hecmw_saamg_setup(A, g_cmt, B, m, prm, g_dh, saamg_fine_matvec, &
          move_in=(.not. prm%verify))
     ! verify: a numeric refresh reproduces (a) the full build for the SAME A and
-    ! (b) a fresh full build for a value-perturbed A' (same pattern) -- S4 routing
+    ! (b) a fresh full build for a value-perturbed A' (same pattern)
     if (prm%verify) call hecmw_saamg_verify_refresh(g_dh, A, g_cmt, B, m, prm, nint*ndof)
     if (prm%dump_vtk) call dump_agg_vtk(g_dh, hecMESH, ndof, nint)
     call hecmw_saamg_bcsr_free(A)

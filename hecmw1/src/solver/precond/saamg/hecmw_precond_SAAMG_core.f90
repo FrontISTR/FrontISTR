@@ -2,18 +2,18 @@
 ! Copyright (c) 2026 FrontISTR Commons
 ! This software is released under the MIT License, see License.txt
 !-------------------------------------------------------------------------------
-!> \brief  Smoothed Aggregation AMG preconditioner : distributed coarsening
+!> \brief  Smoothed Aggregation AMG preconditioner : distributed hierarchy
 !!
-!! MPI-distributed construction of one coarse level.  Aggregation is "uncoupled":
+!! MPI-distributed construction of each coarse level.  Aggregation is "uncoupled":
 !! each rank aggregates only its internal nodes (halo neighbors are dropped by the
 !! node-graph builder), so an aggregate never crosses a rank boundary and is owned
 !! entirely by one rank.  Coarse nodes are globally numbered via allgather offsets;
 !! the coarse communication table is derived directly from the fine import/export
 !! lists plus the exchanged global aggregate ids -- no extra communication.
 !!
-!! F4b-1 scope: aggregation + coarse global numbering + coarse comm table.  The
-!! distributed prolongator (F4b-2) and Galerkin operator (F4c) build on the maps
-!! produced here (aggr, agg_loc, the coarse comm table).
+!! The distributed prolongators and Galerkin operators build on the maps produced
+!! by the aggregation (aggr, agg_loc, the coarse comm table); the module also holds
+!! the multilevel setup, the numeric refresh, the cycle and the coarsest solve.
 module hecmw_precond_SAAMG_core
   use hecmw_precond_SAAMG_util
   use hecmw_precond_SAAMG_comm
@@ -69,13 +69,7 @@ module hecmw_precond_SAAMG_core
     end subroutine hecmw_saamg_matvec_if
   end interface
 
-  !> A fully-distributed multilevel SA-AMG hierarchy (S2/S3): every level keeps a
-  !! distributed rectangular operator + comm table + Chebyshev smoother, and each
-  !! coarse operator is assembled distributed via row-owner routing (hecmw_saamg_galerkin).
-  !! Only the tiny COARSEST level is solved globally -- by distributed MUMPS (no
-  !! gather) or gathered redundantly and factored on every rank (dense LDL^T, or
-  !! sparse by DIRECTmf).
-  !> Cached routing for numeric-only Galerkin refresh (S4).  The coarse operator's
+  !> Cached routing for numeric-only Galerkin refresh.  The coarse operator's
   !! SPARSITY is fixed across a Newton refresh (aggregation / P-hat / A pattern all
   !! reused), so only the values move.  This records the structural maps so a refresh
   !! skips the operator-comm-table handshake, column localization and triplet sort:
@@ -99,8 +93,7 @@ module hecmw_precond_SAAMG_core
     type(hecmwST_saamg_bcsr)      :: P       !< prolongator to the next level
     type(hecmwST_saamg_bcsr)      :: Pt      !< P^T
     type(hecmwST_saamg_bcsr)      :: phat_ext!< tentative prolongator (kept for refresh)
-    type(hecmwST_saamg_comm)      :: cmt_c   !< 1-ring coarse table from coarsen_struct (refresh)
-    type(hecmwST_saamg_gplan)     :: gplan   !< cached Galerkin routing for numeric refresh (S4)
+    type(hecmwST_saamg_gplan)     :: gplan   !< cached Galerkin routing for numeric refresh
     integer(kind=kint) :: nb_l = 0, naggr_local = 0, ncnode = 0, my_off = 0
     integer(kind=kint), allocatable :: chalo_gid(:)  !< global id per P halo coarse node
     real(kind=kreal),   allocatable :: x(:), rhs(:), res(:), tmp(:), rc(:)  !< V-cycle work
@@ -108,19 +101,23 @@ module hecmw_precond_SAAMG_core
     logical :: is_coarsest = .false.
   end type hecmwST_saamg_dlevel
 
-  !> The fully-distributed multilevel hierarchy: lev(1)=finest .. lev(nlevel).  The
-  !! coarsest operator is gathered redundantly (small) and factored by dense LDL^T.
+  !> The fully-distributed multilevel hierarchy: lev(1)=finest .. lev(nlevel).  Every
+  !! level keeps a distributed rectangular operator + comm table + Chebyshev smoother,
+  !! and each coarse operator is assembled distributed via row-owner routing
+  !! (hecmw_saamg_galerkin).  Only the COARSEST level is solved globally -- by
+  !! distributed MUMPS (no gather), gathered redundantly and factored on every rank
+  !! (dense LDL^T / LU, or sparse by DIRECTmf), or by its smoother (make_coarsest).
   type hecmwST_saamg_hier
     integer(kind=kint) :: nlevel = 0, m = 0, nc_coarsest = 0
     type(hecmwST_saamg_params) :: prm
     type(hecmwST_saamg_dlevel), allocatable :: lev(:)
     type(hecmwST_saamg_coarse) :: coarse                !< coarsest dense LDL^T (fallback)
-    type(hecmwST_saamg_cmumps) :: cmumps                !< coarsest distributed MUMPS (F7)
+    type(hecmwST_saamg_cmumps) :: cmumps                !< coarsest distributed MUMPS
     type(hecmwST_saamg_cmf)    :: cmf                   !< coarsest redundant sparse DIRECTmf
     logical :: coarse_is_mumps = .false.              !< which coarsest backend is in use
     logical :: coarse_is_mf = .false.                 !< coarsest = redundant sparse DIRECTmf
     logical :: coarse_is_smoother = .false.           !< coarsest = Chebyshev smoother sweeps (no direct solve)
-    logical :: symmetric = .true.                     !< F8: non-sym => SYM=0/LU coarsest
+    logical :: symmetric = .true.                     !< non-sym => SYM=0/LU coarsest
     real(kind=kreal), allocatable :: rcg(:), zcg(:)   !< coarsest gather work (dense path)
     integer(kind=kint), allocatable :: aggr_fine(:)   !< finest aggregation, global id per internal node (dump_vtk)
     procedure(hecmw_saamg_matvec_if), pointer, nopass :: fine_matvec => null()  !< fast finest matvec (HEC-MW), else scalar
@@ -154,7 +151,7 @@ contains
     type(hecmwST_saamg_comm),          intent(out) :: cmt_c
     !> global coarse-node offset of this rank, and the global coarse id of each
     !! halo coarse node (local id naggr_local+t -> chalo_gid(t)).  Optional: the
-    !! F4b checks do not need them; the F4c Galerkin does (local<->global cols).
+    !! coarsening self-check (F4b) does not need them; the Galerkin does (local<->global cols).
     integer(kind=kint), optional,              intent(out) :: my_coarse_off
     integer(kind=kint), optional, allocatable, intent(out) :: chalo_gid(:)
     !> seed-scan ordering (prm%agg_order; absent = 1 = BFS default)
@@ -461,18 +458,11 @@ contains
     deallocate(counts)
   end function hecmw_saamg_nc_global
 
-  !> Distributed Galerkin via redundant assembly: each rank forms its partial
-  !! contribution Ac_loc = (Pext_internal)^T (A Pext) in GLOBAL coarse-dof ids,
-  !! then all partials are Allgatherv'd and summed (duplicates added) into the
-  !! full global coarse operator Ac_global, identical on every rank.  This avoids
-  !! distributed coarse comm tables and non-neighbor routing: the 2-ring coarse
-  !! couplings enter through Pext's halo rows (columns of A*Pext) and the sum over
-  !! every rank's partial reconstructs each global entry exactly once.
   !> This rank's partial coarse-operator contributions Ac_loc=(Pext_internal)^T(A Pext)
   !! as GLOBAL coarse-dof triplets (gti,gtj,gtv)[1:nt].  Shared by the redundant gather
-  !! (galerkin_global, coarsest) and the distributed assembly (galerkin).  Rows are
-  !! EXTENDED coarse nodes (some owned by other ranks) -> caller gathers or routes by
-  !! row owner.  (Pext/C/Ac_loc construction unchanged from the original routine.)
+  !! (galerkin_global, self-checks), the distributed assembly (galerkin) and its numeric
+  !! refresh (galerkin_refresh).  Rows are EXTENDED coarse nodes (some owned by other
+  !! ranks) -> caller gathers or routes by row owner.
   subroutine ac_global_triplets(A, cmt, P, naggr_local, my_off, chalo_gid, m, gti, gtj, gtv, nt, mem_level, fuse_this_level)
     type(hecmwST_saamg_bcsr), intent(in)  :: A, P
     type(hecmwST_saamg_comm), intent(in)  :: cmt
@@ -581,8 +571,8 @@ contains
     ! formed without an explicit Pint copy.  Two implementations (identical result
     ! up to rounding; see prm%galerkin_lowmem):
     !   2-stage (default): materialize C = A*Pext, then Pt*C.  Clean SpGEMM kernels
-    !     + reuse of A*Pext -> ~2x faster setup (Mold 3M np=8: 10.4 -> 5.0 s), at a
-    !     larger peak (C is the level-1 memory high-water mark).
+    !     + reuse of A*Pext -> ~3x faster Galerkin (Mold 3M np=8: 7.35 -> 2.45 s,
+    !     setup 9.9 -> 5.9 s), at a larger peak (C is the level-1 memory high-water mark).
     !   fused: triple product with no A*Pext intermediate -> lower peak memory; for
     !     memory-bound runs at scale.
     use_fused = .false.; if (present(fuse_this_level)) use_fused = fuse_this_level
@@ -599,7 +589,7 @@ contains
     if (mem_level >= 2) call report_mem(cmt, '  galerkin: after Ac_loc')
     call hecmw_saamg_bcsr_free(Pt); call hecmw_saamg_bcsr_free(Pext)
 
-    ! --- emit Ac_loc as GLOBAL scalar triplets (block read; skip exact zeros) ---
+    ! --- emit Ac_loc as GLOBAL scalar triplets (block read) ---
     allocate(gti(Ac_loc%nnzb*m*m), gtj(Ac_loc%nnzb*m*m), gtv(Ac_loc%nnzb*m*m), stat=astat); nt = 0
     call hecmw_saamg_check_alloc(astat, 'galerkin coarse triplets (gti/gtj/gtv)')
     do ib = 1, Ac_loc%nbrow
@@ -627,8 +617,8 @@ contains
   end subroutine ac_global_triplets
 
   !> Redundant Galerkin: gather every rank's partial triplets and sum -> the full
-  !! global coarse operator (identical on every rank).  Used ONLY at the coarsest
-  !! level now (the distributed levels use hecmw_saamg_galerkin).
+  !! global coarse operator (identical on every rank).  Used only by the self-checks
+  !! (F4c-2b, S1); the hierarchy uses hecmw_saamg_galerkin.
   subroutine hecmw_saamg_galerkin_global(A, cmt, P, naggr_local, ncnode, &
        my_off, chalo_gid, m, Ac_global, fuse_this_level)
     type(hecmwST_saamg_bcsr), intent(in)  :: A, P
@@ -652,7 +642,7 @@ contains
 
   !> Distributed Galerkin: assemble THIS rank's owned rows of the coarse operator
   !! A_next (rectangular naggr_local*m x ncnode_op*m) by routing each rank's partial
-  !! triplets to the OWNING rank (MPI_Alltoallv; owners may be non-neighbors), summing
+  !! triplets to the OWNING rank (MPI_Alltoallv; this rank or a neighbor), summing
   !! duplicates; and build the coarse OPERATOR comm table cmt_op from A_next's column
   !! sparsity.  Each global Ac(I,J) is summed exactly once on its owner.
   subroutine hecmw_saamg_galerkin(A, cmt, P, naggr_local, ncnode, my_off, chalo_gid, m, &
@@ -663,7 +653,7 @@ contains
     integer(kind=kint),     intent(in)  :: chalo_gid(:)
     type(hecmwST_saamg_bcsr), intent(out) :: A_next
     type(hecmwST_saamg_comm), intent(out) :: cmt_op
-    type(hecmwST_saamg_gplan), optional, intent(out) :: gplan  !< S4: record refresh routing
+    type(hecmwST_saamg_gplan), optional, intent(out) :: gplan  !< record the refresh routing
     integer(kind=kint), optional, intent(in) :: mem_level    !< >=2 prints [mem] peak probes (default off)
     logical, optional,      intent(in) :: fuse_this_level              !< Galerkin product form (see prm%galerkin_lowmem)
     integer(kind=kint), allocatable :: gti(:), gtj(:), si(:), sj(:), ri(:), rj(:)
@@ -737,7 +727,7 @@ contains
     ncnode_op = naggr_local + nhc
     call hecmw_saamg_bcsr_from_triplets(naggr_local*m, ncnode_op*m, m, lti, ltj, ltv, nrecv, A_next)
 
-    ! S4: record the refresh routing (scnt + send permutation + value-slot map).
+    ! record the refresh routing (scnt + send permutation + value-slot map).
     ! acc_map(k) = the value slot in A_next for received triplet k (lti,ltj).
     if (present(gplan)) then
       gplan%nt = nt; gplan%nrecv = nrecv
@@ -755,7 +745,7 @@ contains
     deallocate(chalo_op, coff)
   end subroutine hecmw_saamg_galerkin
 
-  !> Numeric-only Galerkin refresh (S4): recompute the coarse operator VALUES into
+  !> Numeric-only Galerkin refresh: recompute the coarse operator VALUES into
   !! the existing A_next pattern using the cached routing plan.  Skips the operator
   !! comm-table handshake, column localization and triplet sort -- only the values
   !! are recomputed (SpGEMM) and re-routed (values-only Alltoallv).  A_next must be
@@ -944,7 +934,13 @@ contains
       if (want(r+1) > 0 .or. recvwant(r+1) > 0) nnb = nnb + 1
     end do
     cmt_op%n_neighbor = nnb
-    if (nnb == 0) then; deallocate(want, recvwant); return; end if
+    if (nnb == 0) then
+      ! alltoallv_int is collective: join it with nothing to send (and nothing to receive)
+      allocate(scnt(nprocs), sbuf(1)); scnt = 0
+      call hecmw_saamg_comm_alltoallv_int(cmt, scnt, sbuf, ntot, rbuf)
+      deallocate(want, recvwant, scnt, sbuf, rbuf)
+      return
+    end if
 
     allocate(neigh(nnb), rank2nb(0:nprocs-1)); rank2nb = 0
     nb2 = 0
@@ -1110,7 +1106,7 @@ contains
   end function saamg_wtime
 
   !> Timing diagnostic: report the wall time of a labelled setup section at level
-  !! lev.  Enabled by !SOLVER LOGLEVEL>=2 (same gate as the [mem] probes); the
+  !! lev.  Enabled by !SOLVER TIMELOG=VERBOSE (prm%timelog >= 2); the
   !! reported value is the max over ranks (the slowest rank gates a collective).
   subroutine report_time(cmt, lev, label, dt)
     type(hecmwST_saamg_comm), intent(in) :: cmt
@@ -1175,8 +1171,8 @@ contains
       if (prm%timelog >= 2) call report_time(dh%lev(l)%cmt, l, 'smoother      ', saamg_wtime()-ts)
       nglob = dh%lev(l)%A%n
       call hecmw_saamg_comm_allreduce_sum_int(dh%lev(l)%cmt, nglob)
-      ! coarsest when the global size is small (but always coarsen >=1 so the
-      ! coarsest is a coarse level with contiguous coarse offsets), or max depth.
+      ! coarsest when the global size is small (but always try to coarsen level 1: only
+      ! an aggregated level has the contiguous coarse offsets of a direct coarsest solve), or max depth.
       if ((nglob <= prm%coarse_size .and. l > 1) .or. l == prm%max_level) then
         ts = saamg_wtime()
         call make_coarsest(dh, l)
@@ -1255,6 +1251,10 @@ contains
     call hecmw_saamg_blockdiag_free(lev%D)
     call hecmw_saamg_blockdiag_setup(lev%A, lev%D)
     lambda = hecmw_saamg_lambda_max(lev%A, lev%cmt, lev%D, prm%lanczos_iter)
+    if (.not. (lambda > 0.0d0)) then
+      write(*,'(a,es12.4)') 'hecmw_saamg level_smoother: lambda_max(D^{-1}A) estimate=', lambda
+      call hecmw_saamg_abort('level_smoother: operator or its block diagonal is not positive definite')
+    end if
     lambda_hat = prm%safety * lambda
     call hecmw_saamg_cheb_setup(lambda_hat, prm%cheb_deg, prm%cheb_alpha, lev%cheb)
     omega = (4.0d0/3.0d0) / lambda_hat
@@ -1262,7 +1262,8 @@ contains
 
   !> Coarsen level l -> level l+1 (distributed): uncoupled aggregation + tentative
   !! P-hat + smoothed P + distributed Galerkin.  Bnext = owned coarse near-kernel.
-  !! stalled = the coarsening barely reduced the size (treat l as the coarsest).
+  !! stalled = the coarsening barely reduced the size or formed no aggregate (treat l
+  !! as the coarsest; level 1 is then solved by the smoother, see make_coarsest).
   !! nglob = global dof of level l (already allreduced by the setup loop).
   subroutine build_coarse_level(dh, l, B, m, omega, nglob, Bnext, stalled)
     type(hecmwST_saamg_hier), intent(inout) :: dh
@@ -1272,9 +1273,11 @@ contains
     logical,                     intent(out)   :: stalled
     integer(kind=kint), allocatable :: aggr(:), agg_loc(:)
     real(kind=kreal),   allocatable :: bcoarse(:,:)
-    integer(kind=kint) :: na_glob, nf_glob, i, nint, lmax_size
+    integer(kind=kint) :: na_glob, nf_glob, i, nint, lmax_size, my_off
     real(kind=kreal) :: ts
+    type(hecmwST_saamg_comm) :: cmt_c
     ts = saamg_wtime()
+    my_off = dh%lev(l)%my_off
     ! Coarsening taper (levels >= 2): cap the effective max_size so each level
     ! keeps at least ~taper_k aggregates GLOBALLY.  Without it, phase-1 cores on
     ! the (Galerkin-densified) deep-level graphs swallow whole components and the
@@ -1290,8 +1293,10 @@ contains
     end if
     call hecmw_saamg_coarsen_struct(dh%lev(l)%A, dh%lev(l)%cmt, dh%prm%min_size, &
          lmax_size, dh%prm%theta, m, aggr, dh%lev(l)%naggr_local, agg_loc, &
-         dh%lev(l)%ncnode, dh%lev(l)%cmt_c, dh%lev(l)%my_off, dh%lev(l)%chalo_gid, &
+         dh%lev(l)%ncnode, cmt_c, dh%lev(l)%my_off, dh%lev(l)%chalo_gid, &
          agg_order=dh%prm%agg_order)
+    ! the next level communicates through the operator table built by the Galerkin
+    call hecmw_saamg_comm_free(cmt_c)
     ! capture the finest aggregation (global coarse-node id per internal node) for VTK
     if (l == 1 .and. dh%prm%dump_vtk) then
       nint = dh%lev(1)%A%n / dh%lev(1)%A%nb
@@ -1309,7 +1314,9 @@ contains
     call hecmw_saamg_comm_allreduce_sum_int(dh%lev(l)%cmt, na_glob)
     nf_glob = dh%lev(l)%A%n / dh%lev(l)%A%nb
     call hecmw_saamg_comm_allreduce_sum_int(dh%lev(l)%cmt, nf_glob)
-    if (real(na_glob,kreal) > dh%prm%stagn * real(nf_glob,kreal)) then
+    if (na_glob == 0 .or. real(na_glob,kreal) > dh%prm%stagn * real(nf_glob,kreal)) then
+      ! coarsen_struct set my_off to the next level's offset; the coarsest needs its own
+      dh%lev(l)%my_off = my_off
       stalled = .true.; deallocate(aggr, agg_loc); return
     end if
     stalled = .false.
@@ -1342,9 +1349,10 @@ contains
     deallocate(aggr, agg_loc)
   end subroutine build_coarse_level
 
-  !> Mark level l the coarsest and factor its operator.  With MUMPS (F7) the
-  !! distributed coarse operator is factored in parallel WITHOUT a gather; otherwise
-  !! it is gathered redundantly (tiny) and factored by dense LDL^T.
+  !> Mark level l the coarsest and factor its operator.  With MUMPS the distributed
+  !! coarse operator is factored in parallel WITHOUT a gather; with the dense or the
+  !! DIRECTmf backend it is gathered redundantly (tiny) and factored on every rank;
+  !! the smoother backend factors nothing.
   subroutine make_coarsest(dh, l)
     type(hecmwST_saamg_hier), intent(inout) :: dh
     integer(kind=kint),          intent(in)    :: l
@@ -1356,11 +1364,13 @@ contains
     ! reuse the level's Chebyshev smoother (D/cheb already built by level_smoother).
     ! Fully local+halo, so it scales like the smoother (no gather / host solve / factor).
     ! Accurate only when the coarsest is small; coarse_size default (100) keeps it so.
-    if (dh%prm%coarsest_solver == 1) then
+    ! Level 1 (coarsening stalled on it) has no coarse offsets, so it is always left to the smoother.
+    if (dh%prm%coarsest_solver == 1 .or. l == 1) then
+      if (l == 1 .and. dh%lev(l)%cmt%my_rank == 0) write(*,'(a)') &
+           '#### SA-AMG: level 1 does not coarsen (theta too large?) -- only the smoother is used'
       dh%coarse_is_smoother = .true.
       dh%coarse_is_mumps    = .false.
-      nown = dh%lev(l)%A%n / dh%m
-      dh%nc_coarsest = hecmw_saamg_nc_global(dh%lev(l)%cmt, nown) * dh%m
+      dh%nc_coarsest = hecmw_saamg_nc_global(dh%lev(l)%cmt, dh%lev(l)%A%n)
       return
     end if
     select case (dh%prm%coarsest_solver)
@@ -1371,8 +1381,8 @@ contains
     end select
     if (use_mumps) then
       dh%coarse_is_mumps = .true.
-      ! the coarsest level is never coarsened, so its naggr_local is unset; the
-      ! owned coarse-node count is A%n/m and its global offset is my_off (inherited).
+      ! naggr_local of the coarsest level is unset (or left from a stalled coarsening);
+      ! the owned coarse-node count is A%n/m and its global offset is my_off (inherited).
       nown = dh%lev(l)%A%n / dh%m
       dh%nc_coarsest = hecmw_saamg_nc_global(dh%lev(l)%cmt, nown) * dh%m
       call hecmw_saamg_cmumps_setup(dh%lev(l)%cmt, dh%lev(l)%A, dh%lev(l)%my_off, dh%m, &
@@ -1435,7 +1445,7 @@ contains
   end subroutine gather_level_operator
 
   !> Numeric-only refresh (Newton): reuse each level's aggregation / comm table /
-  !! tentative P-hat AND the cached Galerkin routing plan (S4), recompute only
+  !! tentative P-hat AND the cached Galerkin routing plan, recompute only
   !! D / lambda / smoothed P / coarse operator VALUES.  No comm-table rebuild:
   !! the coarse operator pattern and every level's cmt are untouched, so only the
   !! values move (SpGEMM + values-only Alltoallv).
@@ -1624,7 +1634,6 @@ contains
         call hecmw_saamg_bcsr_free(dh%lev(l)%P)
         call hecmw_saamg_bcsr_free(dh%lev(l)%Pt)
         call hecmw_saamg_bcsr_free(dh%lev(l)%phat_ext)
-        call hecmw_saamg_comm_free(dh%lev(l)%cmt_c)
         call hecmw_saamg_gplan_free(dh%lev(l)%gplan)
         if (allocated(dh%lev(l)%chalo_gid)) deallocate(dh%lev(l)%chalo_gid)
         if (allocated(dh%lev(l)%x))   deallocate(dh%lev(l)%x)
@@ -1651,14 +1660,14 @@ contains
   end subroutine hecmw_saamg_free
 
 
-  !> Halo-exchange the smoothed prolongator's rows (F4c Galerkin needs P rows for
+  !> Halo-exchange the smoothed prolongator's rows (the Galerkin needs P rows for
   !! halo fine nodes, since A has halo columns).  P columns are converted to GLOBAL
   !! coarse-dof ids before sending (each rank localizes differently); the owner's
   !! row arrives padded to maxe entries per fine row.  This routine VERIFIES the
   !! row exchange by a round-trip checksum: the owner also sends, as a per-node
   !! scalar, sum(P_row^2); the importer compares it to the checksum of the row it
-  !! received.  mism (global max) must be ~0.  The packed buffers are the basis of
-  !! the F4c distributed Galerkin (built next).
+  !! received.  mism (global max) must be ~0.  The Galerkin (ac_global_triplets)
+  !! exchanges the same rows with per-node counts instead of the padding.
   subroutine hecmw_saamg_verify_prows(cmt, m, P, naggr_local, my_off, chalo_gid, mism)
     type(hecmwST_saamg_comm), intent(in)  :: cmt
     integer(kind=kint),     intent(in)  :: m, naggr_local, my_off

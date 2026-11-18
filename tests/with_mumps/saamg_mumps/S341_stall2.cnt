@@ -1,0 +1,21 @@
+!!
+!! SA-AMG (PRECOND=22) test : coarsening that stalls at level 2, on the NDOF=1 heat model of S341
+!! SA_CoarseSize=1 (int slot7) keeps coarsening, and SA_TaperK=1000000 (real slot4) with SA_MinAggSize=1
+!! (real slot6) caps the aggregates of level 2 at one node, so level 2 stalls and is the coarsest;
+!! the MUMPS rows must then use the global offsets of level 2 (wrong offsets show with 2 or more processes)
+!! coarsest solver forced to distributed sparse MUMPS (coarse_solver=3 (slot1))
+!!
+!SOLUTION,TYPE=HEAT
+!HEAT
+,,,,100
+!FIXTEMP
+ XMIN, 0.0
+!DFLUX
+ HGEN, BF, 2500.0
+!SOLVER,METHOD=1,PRECOND=22,ITERLOG=NO,TIMELOG=NO,LOGLEVEL=1
+ 20000, 1, 10, 10
+ 1.0e-8, 1.0, 0.0
+ 3, 0, 0, 0, 0, 0, 1, 4
+ 0.2, 0, 0, 1000000, 0, 1
+!WRITE,RESULT
+!END

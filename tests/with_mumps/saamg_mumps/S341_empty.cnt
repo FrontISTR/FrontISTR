@@ -1,0 +1,20 @@
+!!
+!! SA-AMG (PRECOND=22) test : a level that forms no aggregate, on the NDOF=1 heat model of S341
+!! SA_CoarseSize=1 (int slot7) keeps coarsening down to a few nodes, where SA_Theta=0.3 (real slot1) leaves
+!! no strong coupling and no aggregate; that level must be the coarsest instead of making an empty next level
+!! coarsest solver forced to distributed sparse MUMPS (coarse_solver=3 (slot1))
+!!
+!SOLUTION,TYPE=HEAT
+!HEAT
+,,,,100
+!FIXTEMP
+ XMIN, 0.0
+!DFLUX
+ HGEN, BF, 2500.0
+!SOLVER,METHOD=1,PRECOND=22,ITERLOG=NO,TIMELOG=NO,LOGLEVEL=1
+ 20000, 1, 10, 10
+ 1.0e-8, 1.0, 0.0
+ 3, 0, 0, 0, 0, 0, 1, 4
+ 0.3, 0, 0, 1000000, 0, 1
+!WRITE,RESULT
+!END

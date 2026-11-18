@@ -1,0 +1,20 @@
+!!
+!! SA-AMG (PRECOND=22) test : coarsening that stalls at level 1, on the NDOF=1 heat model of S341
+!! SA_MaxAggSize=1 (int slot8) and SA_MinAggSize=1 (real slot6) make every node its own aggregate;
+!! level 1 stalls and is the coarsest; it has no coarse offsets for the dense LDL^T, so the smoother is used
+!! coarsest solver set to dense LDL^T (coarse_solver=2 (int slot1)) -> no external library dependency
+!!
+!SOLUTION,TYPE=HEAT
+!HEAT
+,,,,100
+!FIXTEMP
+ XMIN, 0.0
+!DFLUX
+ HGEN, BF, 2500.0
+!SOLVER,METHOD=1,PRECOND=22,ITERLOG=NO,TIMELOG=NO,LOGLEVEL=1
+ 20000, 1, 10, 10
+ 1.0e-8, 1.0, 0.0
+ 2, 0, 0, 0, 0, 0, 0, 1
+ 0, 0, 0, 0, 0, 1
+!WRITE,RESULT
+!END

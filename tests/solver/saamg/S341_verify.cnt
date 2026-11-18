@@ -1,0 +1,19 @@
+!!
+!! SA-AMG (PRECOND=22) test : the setup self-checks SA_Verify=1 (real slot7) on the NDOF=1 heat model of S341
+!! the near-kernel of the checks must follow NDOF (constant mode); all check lines must be printed
+!! coarsest solver forced to dense LDL^T (coarse_solver=2 (int slot1)) -> no external library dependency
+!!
+!SOLUTION,TYPE=HEAT
+!HEAT
+,,,,100
+!FIXTEMP
+ XMIN, 0.0
+!DFLUX
+ HGEN, BF, 2500.0
+!SOLVER,METHOD=1,PRECOND=22,ITERLOG=NO,TIMELOG=NO
+ 20000, 1, 10, 10
+ 1.0e-8, 1.0, 0.0
+ 2
+ 0, 0, 0, 0, 0, 0, 1
+!WRITE,RESULT
+!END

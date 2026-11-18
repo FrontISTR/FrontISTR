@@ -4,7 +4,7 @@
 !-------------------------------------------------------------------------------
 !> \brief  Smoothed Aggregation AMG preconditioner : distributed MUMPS coarsest solver
 !!
-!! Alternative coarsest-level backend (F7): a parallel sparse direct factorization
+!! Alternative coarsest-level backend: a parallel sparse direct factorization
 !! of the DISTRIBUTED coarse operator, with NO redundant gather.  Each rank feeds
 !! its owned coarse rows to MUMPS as distributed assembled input (ICNTL(18)=3, lower
 !! triangle, SYM=2) over the level communicator; MUMPS factors in parallel.  Per
@@ -262,7 +262,7 @@ contains
       else
         if (myrank == 0) write(*,'(a,i0,a,i0)') &
              ' #### SA-AMG MUMPS error: INFOG(1)=', istat, ' INFOG(2)=', id%INFOG(2)
-        exit
+        call hecmw_saamg_abort('MUMPS coarsest: analysis, factorization or solve failed')
       end if
     end do
   end subroutine mumps_run

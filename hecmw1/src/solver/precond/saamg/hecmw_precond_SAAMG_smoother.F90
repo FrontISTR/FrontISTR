@@ -227,11 +227,9 @@ contains
 #endif
   end subroutine hecmw_saamg_blockdiag_apply
 
-  !> Apply DC = D^{-1} C block-row-wise to a block-CSR matrix C (reusing the stored
-  !! block LU).  Each node block's nb rows are solved together by one multi-RHS
-  !! triangular solve over the union of their columns, so a column present in any
-  !! row of the block receives all nb output entries.  Used for the SpGEMM-based
-  !! prolongator smoothing P = P-hat - omega D^{-1}(A P-hat).
+  !> Apply DC = D^{-1} C block-row-wise to a block-CSR matrix C: each nb x mb block
+  !! C_IK is multiplied by the stored inverse D_I^{-1} (D%inv), so DC keeps the
+  !! block structure of C.  The prolongator smoothing uses the in-place variant below.
   subroutine hecmw_saamg_blockdiag_apply_bcsr(D, C, DC)
     implicit none
     type(hecmwST_saamg_blockdiag), intent(in)  :: D
@@ -273,10 +271,10 @@ contains
       end do
     end do
     !$omp end parallel do
-    ! block-only result: the sole consumer (smoothed prolongator) reads bval
+    ! block-only result (DC%nnz stays 0): read it through browptr/bcol/bval
   end subroutine hecmw_saamg_blockdiag_apply_bcsr
 
-  !> Apply C <- D^{-1} C in place (each nb x mb block solved against the node's LU).
+  !> Apply C <- D^{-1} C in place (each nb x mb block multiplied by the node's D%inv).
   !! Same as blockdiag_apply_bcsr but overwrites C, avoiding a full second operator
   !! (important for the large level-1 A P-hat product).
   subroutine hecmw_saamg_blockdiag_apply_bcsr_inplace(D, C)

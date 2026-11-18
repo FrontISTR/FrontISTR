@@ -9,9 +9,9 @@
 !!     thin Householder QR (LAPACK dgeqrf/dorgqr): B_k = Q_k R_k, Q_k -> P-hat
 !!     block column k, R_k -> B_coarse block row k.  By construction
 !!     P-hat * B_coarse = B_fine and P-hat^T P-hat = I.
-!!   * prolongator smoothing  P = (I - omega D^{-1} A) P-hat, computed column by
-!!     column reusing the tested matvec and block-diagonal solve (a SpGEMM-based
-!!     path is a later optimization).
+!!   * prolongator smoothing  P = (I - omega D^{-1} A) P-hat, computed with block
+!!     sparse products: A P-hat by SpGEMM, D^{-1} applied to its block rows, and
+!!     P-hat - omega D^{-1} A P-hat summed block by block.
 !!
 !! Coarse layout: aggregate k becomes coarse node k with m dofs; coarse dof
 !! (k-1)*m + c.  Excluded nodes (aggr=0) get an all-zero P-hat row.

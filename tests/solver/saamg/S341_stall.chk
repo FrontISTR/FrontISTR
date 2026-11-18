@@ -1,0 +1,3 @@
+# level 1 stalls (every node is its own aggregate) and is solved by the smoother, with a warning
+level 1 does not coarsen .* only the smoother is used
+SA-AMG setup: nlevel=1 +cycle

@@ -1,0 +1,3 @@
+# no level may be empty, and the coarsest must be factored by MUMPS without an error
+no:global dof=0 +global
+no:MUMPS error
