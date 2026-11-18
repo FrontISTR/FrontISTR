@@ -1,0 +1,5 @@
+# ITERLOG: DIRECTmf prints the history of its own refinement, and the contact wrapper prints
+# the final residual of the system with the Lagrange multiplier rows, as for the other
+# direct solvers (issue #958)
+\[DIRECTmf\]: refinement 0: residual =
+Relative residual =

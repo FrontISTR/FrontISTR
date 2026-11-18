@@ -57,7 +57,8 @@ contains
 
     ! TIMELOG holds the stage times, ITERLOG the refinement residuals, LOGLEVEL the
     ! diagnostics; an unset LOGLEVEL (-1) means no diagnostics here, with no fallback
-    ! to the other two flags
+    ! to the other two flags. The final residual of the solve is printed by the caller
+    ! (hecmw_solve, or solve_LINEQ_contact on the contact path without elimination)
     loglevel = hecmw_mat_get_loglevel(hecMAT)
     if (loglevel < 0) loglevel = 0
     iterlog = hecmw_mat_get_iterlog(hecMAT)
@@ -258,18 +259,6 @@ contains
       t2 = hecmw_wtime()
       if (timelog > 0) write(*,'(a,f10.3,a)') '[DIRECTmf]: refinement done (', t2 - t1, ' sec)'
       deallocate(rr, dd, xp)
-    else if (irmax == 0 .and. iterlog > 0) then
-      ! a negative irmax asks for no residual work at all (the contact wrapper measures
-      ! its saddle-point system itself and disables this path with -1)
-      n = hecMAT%NP * hecMAT%NDOF
-      allocate(rr(n))
-      tcomm = 0.0d0
-      call hecmw_InnerProduct_R(hecMESH, hecMAT%NDOF, hecMAT%B, hecMAT%B, bnrm, tcomm)
-      call hecmw_matresid(hecMESH, hecMAT, hecMAT%X, hecMAT%B, rr, tcomm)
-      call hecmw_InnerProduct_R(hecMESH, hecMAT%NDOF, rr, rr, rnrm, tcomm)
-      rnrm = sqrt(rnrm / max(bnrm, tiny(bnrm)))
-      write(*,'(a,1pe11.4)') '[DIRECTmf]: residual = ', rnrm
-      deallocate(rr)
     endif
   end subroutine hecmw_solve_direct_mf
 
@@ -513,18 +502,6 @@ contains
       t2 = hecmw_wtime()
       if (timelog > 0) write(*,'(a,f10.3,a)') '[DIRECTmf]: refinement done (', t2 - t1, ' sec)'
       deallocate(rr, xp)
-    else if (irmax == 0 .and. hecmw_mat_get_iterlog(hecMAT) > 0) then
-      ! every rank enters the residual evaluation (it is collective); the passed iterlog
-      ! is zeroed off rank 0 and only gates the print
-      n = hecMAT%NP * hecMAT%NDOF
-      allocate(rr(n))
-      tcomm = 0.0d0
-      call hecmw_InnerProduct_R(hecMESH, hecMAT%NDOF, hecMAT%B, hecMAT%B, bnrm, tcomm)
-      call hecmw_matresid(hecMESH, hecMAT, hecMAT%X, hecMAT%B, rr, tcomm)
-      call hecmw_InnerProduct_R(hecMESH, hecMAT%NDOF, rr, rr, rnrm, tcomm)
-      rnrm = sqrt(rnrm / max(bnrm, tiny(bnrm)))
-      if (iterlog > 0) write(*,'(a,1pe11.4)') '[DIRECTmf]: residual = ', rnrm
-      deallocate(rr)
     endif
     call hecmw_update_R(hecMESH, hecMAT%X, hecMAT%NP, hecMAT%NDOF)
     deallocate(gb, gx)
