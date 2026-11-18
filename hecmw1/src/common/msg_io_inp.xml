@@ -270,10 +270,6 @@
 			<message>*SOLID SECTION: INTEGPOINTS must be positive integer</message>
 			<description>不正なINTEGPOINTSの値を検出した</description>
 		</define>
-		<define type="error" name="E2107">
-			<message>*SOLID SECTION: Only one secopt can be allowed in element group</message>
-			<description>要素グループの要素は全て同じsecoptでなければならない</description>
-		</define>
 		<define type="error" name="E2108">
 			<message>*SOLID SECTION: Missing MATERIAL or COMPOSITE</message>
 			<description>*SOLID SECIOTNの必須パラメータMATERIALまたはCOMPOSITEが見つからない</description>
