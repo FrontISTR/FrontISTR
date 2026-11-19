@@ -234,7 +234,7 @@ contains
     type(fstr_solid), intent(inout)        :: fstrSOLID   !< type fstr_solid
     type(fstr_info_contactChange), intent(inout):: infoCTChange   !<
     character(len=9)                       :: flag_ctAlgo !< contact analysis algorithm flag
-    integer(kind=kint) :: i, j, k, grpid
+    integer(kind=kint) :: i, j, k, grpid, ndof
     integer(kind=kint) :: s_chg(3,3), s_emov, s_ebey, s_islid, s_act
     integer(kind=kint), allocatable :: in_contact(:)
     logical :: iactive, is_init
@@ -250,8 +250,12 @@ contains
 
     ! P.A. We redefine fstrSOLID%ddunode as current coordinate of every nodes
     !  fstrSOLID%ddunode(:) = fstrSOLID%unode(:) + fstrSOLID%dunode(:)
-    do i = 1, size(fstrSOLID%unode)
-      fstrSOLID%ddunode(i) = hecMESH%node(i) + fstrSOLID%unode(i) + fstrSOLID%dunode(i)
+    ndof = hecMESH%n_dof
+    do i = 1, hecMESH%n_node
+      do j = 1, min(ndof,3)
+        k = ndof*(i-1)+j
+        fstrSOLID%ddunode(k) = hecMESH%node(3*(i-1)+j) + fstrSOLID%unode(k) + fstrSOLID%dunode(k)
+      enddo
     enddo
     active = .false.
 
@@ -356,15 +360,19 @@ contains
     type(fstr_solid), intent(inout)              :: fstrSOLID     !< type fstr_solid
     type(fstr_info_contactChange), intent(inout) :: infoCTChange  !<
 
-    integer(kind=kint) :: i, grpid
+    integer(kind=kint) :: i, j, k, grpid, ndof
     integer(kind=kint) :: s_chg(3,3), s_emov, s_ebey, s_islid, s_act
     logical :: iactive
 
 
     ! P.A. We redefine fstrSOLID%ddunode as current coordinate of every nodes
     !  fstrSOLID%ddunode(:) = fstrSOLID%unode(:) + fstrSOLID%dunode(:)
-    do i = 1, size(fstrSOLID%unode)
-      fstrSOLID%ddunode(i) = hecMESH%node(i) + fstrSOLID%unode(i) + fstrSOLID%dunode(i)
+    ndof = hecMESH%n_dof
+    do i = 1, hecMESH%n_node
+      do j = 1, min(ndof,3)
+        k = ndof*(i-1)+j
+        fstrSOLID%ddunode(k) = hecMESH%node(3*(i-1)+j) + fstrSOLID%unode(k) + fstrSOLID%dunode(k)
+      enddo
     enddo
     infoCTChange%active = .false.
 
