@@ -672,7 +672,7 @@ contains
       idofE = ityp-idofS*10
       if( fstrSOLID%BOUNDARY_ngrp_rotID(ig0) > 0 ) then
         idofS = 1
-        idofE = ndof
+        idofE = min(ndof,3)
       endif
       iS0 = hecMESH%node_group%grp_index(ig-1)+1
       iE0 = hecMESH%node_group%grp_index(ig)
@@ -692,7 +692,7 @@ contains
         idofE = ityp-idofS*10
         if( fstrSOLID%VELOCITY_ngrp_rotID(ig0) > 0 ) then
           idofS = 1
-          idofE = ndof
+          idofE = min(ndof,3)
         endif
         iS0 = hecMESH%node_group%grp_index(ig-1)+1
         iE0 = hecMESH%node_group%grp_index(ig)

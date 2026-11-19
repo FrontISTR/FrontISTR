@@ -117,7 +117,7 @@ contains
         idof2 = ityp - idof1*10
         if( fstrSOLID%BOUNDARY_ngrp_rotID(ig0) > 0 ) then
           idof1 = 1
-          idof2 = ndof
+          idof2 = min(ndof,3)
         end if
         do idof=idof1,idof2
           B( ndof*(in-1) + idof ) = 0.d0
@@ -157,7 +157,7 @@ contains
         idof2 = ityp - idof1*10
         if( fstrSOLID%BOUNDARY_ngrp_rotID(ig0) > 0 ) then
           idof1 = 1
-          idof2 = ndof
+          idof2 = min(ndof,3)
         end if
         do idof=idof1,idof2
           fstrSOLID%REACTION(ndof*(in-1)+idof) = fstrSOLID%QFORCE(ndof*(in-1)+idof)
@@ -179,6 +179,10 @@ contains
         iE0= hecMESH%node_group%grp_index(ig  )
         idof1 = ityp/10
         idof2 = ityp - idof1*10
+        if( fstrSOLID%VELOCITY_ngrp_rotID(ig0) > 0 ) then
+          idof1 = 1
+          idof2 = min(ndof,3)
+        end if
         do ik= iS0, iE0
           in   = hecMESH%node_group%grp_item(ik)
           do idof=idof1,idof2

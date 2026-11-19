@@ -40,8 +40,10 @@ contains
     real(kind=kreal)   :: ccoord(3), cdiff(3), cdiff0(3)
     real(kind=kreal)   :: cdisp(3), cddisp(3)
     real(kind=kreal)   :: rotation_factor
+    integer(kind=kint) :: ntdof
     !
     ndof = hecMAT%NDOF
+    ntdof = min(ndof,3)
     n_rot = fstrSOLID%BOUNDARY_ngrp_rot
     if( n_rot > 0 ) call fstr_RotInfo_init(n_rot, rinfo)
 
@@ -86,11 +88,7 @@ contains
             rinfo%conds(rid)%torque_ngrp_id = ig
           endif
           do idof=idofS,idofE
-            if( idof>ndof ) then
-              rinfo%conds(rid)%vec(idof-ndof) = RHS
-            else
-              rinfo%conds(rid)%vec(idof) = RHS
-            endif
+            rinfo%conds(rid)%vec(mod(idof-1,3)+1) = RHS
           enddo
           cycle
         endif
@@ -128,12 +126,12 @@ contains
 
         if( rotation_factor > 0.d0 ) then
           ig = rinfo%conds(rid)%center_ngrp_id
-          do idof = 1, ndof
-            ccoord(idof) = hecmw_ngrp_get_totalvalue(hecMESH, ig, ndof, idof, hecMESH%node)
+          do idof = 1, ntdof
+            ccoord(idof) = hecmw_ngrp_get_totalvalue(hecMESH, ig, 3, idof, hecMESH%node)
             cdisp(idof) = hecmw_ngrp_get_totalvalue(hecMESH, ig, ndof, idof, fstrSOLID%unode)
             cddisp(idof) = hecmw_ngrp_get_totalvalue(hecMESH, ig, ndof, idof, hecEBC%val)
           enddo
-          ccoord(1:ndof) = ccoord(1:ndof) + cdisp(1:ndof)
+          ccoord(1:ntdof) = ccoord(1:ntdof) + cdisp(1:ntdof)
         endif
 
         ig = rinfo%conds(rid)%torque_ngrp_id
@@ -142,11 +140,12 @@ contains
         do ik = iS0, iE0
           in = hecMESH%node_group%grp_item(ik)
           if( rotation_factor > 0.d0 ) then
-            cdiff0(1:ndof) = hecMESH%node(ndof*(in-1)+1:ndof*in)+fstrSOLID%unode(ndof*(in-1)+1:ndof*in)-ccoord(1:ndof)
-            cdiff(1:ndof) = cdiff0(1:ndof)
-            call rotate_3dvector_by_Rodrigues_formula(rinfo%conds(rid)%vec(1:ndof),cdiff(1:ndof))
+            cdiff0(1:ntdof) = hecMESH%node(3*(in-1)+1:3*(in-1)+ntdof) &
+              + fstrSOLID%unode(ndof*(in-1)+1:ndof*(in-1)+ntdof) - ccoord(1:ntdof)
+            cdiff(1:3) = cdiff0(1:3)
+            call rotate_3dvector_by_Rodrigues_formula(rinfo%conds(rid)%vec(1:3),cdiff(1:3))
           endif
-          do idof = 1, ndof
+          do idof = 1, ntdof
             RHS = cdiff(idof)-cdiff0(idof)+cddisp(idof)
             call hecmw_ebc_set(hecEBC, in, idof, RHS)
             if( fstr_is_contact_active() .and. fstrPARAM%solution_type == kstSTATIC   &
@@ -220,6 +219,7 @@ contains
     NDOF = hecMAT%NDOF
 
     do ig0 = 1, fstrSOLID%BOUNDARY_ngrp_tot
+      if( fstrSOLID%BOUNDARY_ngrp_rotID(ig0) > 0 ) cycle
       ig   = fstrSOLID%BOUNDARY_ngrp_ID(ig0)
       RHS  = fstrSOLID%BOUNDARY_ngrp_val(ig0)
       grpid = fstrSOLID%BOUNDARY_ngrp_GRPID(ig0)
@@ -270,8 +270,10 @@ contains
     type(tRotInfo)     :: rinfo
     real(kind=kreal)   :: ccoord(3), cdiff(3), cdiff0(3)
     real(kind=kreal)   :: cdisp(3)
+    integer(kind=kint) :: ntdof
     !
     ndof = hecMAT%NDOF
+    ntdof = min(ndof,3)
     n_rot = fstrSOLID%BOUNDARY_ngrp_rot
     if( n_rot > 0 ) call fstr_RotInfo_init(n_rot, rinfo)
 
@@ -300,11 +302,7 @@ contains
             rinfo%conds(rid)%torque_ngrp_id = ig
           endif
           do idof=idofS,idofE
-            if( idof>ndof ) then
-              rinfo%conds(rid)%vec(idof-ndof) = RHS
-            else
-              rinfo%conds(rid)%vec(idof) = RHS
-            endif
+            rinfo%conds(rid)%vec(mod(idof-1,3)+1) = RHS
           enddo
           cycle
         endif
@@ -331,8 +329,8 @@ contains
         cdisp = 0.d0
 
         ig = rinfo%conds(rid)%center_ngrp_id
-        do idof = 1, ndof
-          ccoord(idof) = hecmw_ngrp_get_totalvalue(hecMESH, ig, ndof, idof, hecMESH%node)
+        do idof = 1, ntdof
+          ccoord(idof) = hecmw_ngrp_get_totalvalue(hecMESH, ig, 3, idof, hecMESH%node)
           cdisp(idof)  = hecmw_ngrp_get_totalvalue(hecMESH, ig, ndof, idof, fstrSOLID%unode)
         enddo
 
@@ -341,10 +339,10 @@ contains
         iE0 = hecMESH%node_group%grp_index(ig  )
         do ik = iS0, iE0
           in = hecMESH%node_group%grp_item(ik)
-          cdiff0(1:ndof) = hecMESH%node(ndof*(in-1)+1:ndof*in) - ccoord(1:ndof)
-          cdiff(1:ndof) = cdiff0(1:ndof)
-          call rotate_3dvector_by_Rodrigues_formula(rinfo%conds(rid)%vec(1:ndof),cdiff(1:ndof))
-          do idof = 1, ndof
+          cdiff0(1:ntdof) = hecMESH%node(3*(in-1)+1:3*(in-1)+ntdof) - ccoord(1:ntdof)
+          cdiff(1:3) = cdiff0(1:3)
+          call rotate_3dvector_by_Rodrigues_formula(rinfo%conds(rid)%vec(1:3),cdiff(1:3))
+          do idof = 1, ntdof
             RHS = cdiff(idof) - cdiff0(idof) + cdisp(idof)
             hecMAT%B(NDOF*in-(NDOF-idof)) = RHS*fstrDYNAMIC%VEC1(NDOF*in-(NDOF-idof))
           enddo
