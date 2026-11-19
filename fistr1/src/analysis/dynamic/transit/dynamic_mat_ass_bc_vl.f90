@@ -113,7 +113,7 @@ contains
     !for rotation
     integer(kind=kint) :: n_rot, rid
     type(tRotInfo)     :: rinfo
-    real(kind=kreal)   :: ccoord(3), cdiff(3), vnode(3), omega(3)
+    real(kind=kreal)   :: ccoord(3), cdiff(3), vnode(3), omega(3), wvec(3)
 
     if( fstrSOLID%VELOCITY_type == kbcInitial )return
 
@@ -203,10 +203,16 @@ contains
         iE0 = hecMESH%node_group%grp_index(ig  )
         do ik = iS0, iE0
           in = hecMESH%node_group%grp_item(ik)
+          ! Solve v = omega x (x_end - x_center) with x_end = x + b2*VEL + b3*ACC + b4*v in closed form.
+          ! For constant omega about a fixed axis, the radius has no secular drift at gamma = 1/2, beta = 1/4;
+          ! HHT (alpha < 0) introduces a small numerical shrinkage.
           cdiff = 0.d0
           cdiff(1:NDOF) = hecMESH%node(NDOF*(in-1)+1:NDOF*in) &
-            + fstrSOLID%unode(NDOF*(in-1)+1:NDOF*in) - ccoord(1:NDOF)
-          call cross_product(omega, cdiff, vnode)   ! v = omega x (x - x_center)
+            + fstrSOLID%unode(NDOF*(in-1)+1:NDOF*in) - ccoord(1:NDOF) &
+            + b2*fstrDYNAMIC%VEL(NDOF*(in-1)+1:NDOF*in,1) + b3*fstrDYNAMIC%ACC(NDOF*(in-1)+1:NDOF*in,1)
+          call cross_product(omega, cdiff, wvec)
+          call cross_product(omega, wvec, vnode)
+          vnode(1:3) = (wvec(1:3) + b4*vnode(1:3))/(1.d0 + b4*b4*dot_product(omega, omega))
           do idof = 1, NDOF
             if( present(iter) ) then
               if( iter>1 ) then
