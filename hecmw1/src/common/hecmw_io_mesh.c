@@ -3225,7 +3225,7 @@ static int post_remove_unused_node(void) {
 
   HECMW_assert(_node);
 
-  /* used nodes have been marked in post_elem_check_node_existence() */
+  /* used nodes have been marked in post_elem() and post_equation() */
 
   HECMW_map_int_iter_init(_node);
   while (HECMW_map_int_iter_next_unmarked(_node, &id, NULL)) {
@@ -3758,7 +3758,7 @@ static int post_equation_ngrp_to_node(void) {
 }
 
 static int post_equation_add_elem(void) {
-  int i, j, mpc_id, elem_id, dof1, dof2, type;
+  int i, j, k, mpc_id, elem_id, dof1, dof2, type;
   int node[2];
   struct hecmw_io_mpc *p;
   struct hecmw_io_element *elem;
@@ -3788,6 +3788,13 @@ static int post_equation_add_elem(void) {
         elem = HECMW_io_add_elem(elem_id, type, node, 0, NULL);
         if (elem == NULL) {
           return -1;
+        }
+
+        for (k = 0; k < 2; k++) {
+          if (HECMW_map_int_mark(_node, node[k])) {
+            set_err(HECMW_IO_E1027, "Node %d does not exist", node[k]);
+            return -1;
+          }
         }
 
         elem->mpc_matid  = (j + 1) * 10 + (i + 1);
@@ -4150,12 +4157,12 @@ int HECMW_io_post_process(void) {
   HECMW_log(HECMW_LOG_DEBUG, "post_egrp done");
   if (post_sgrp()) goto error;
   HECMW_log(HECMW_LOG_DEBUG, "post_sgrp done");
+  if (post_equation()) goto error;
+  HECMW_log(HECMW_LOG_DEBUG, "post_equation done");
   if (post_remove_unused_node()) goto error;
   HECMW_log(HECMW_LOG_DEBUG, "post_remove_unused_node done");
   if (post_initial()) goto error;
   HECMW_log(HECMW_LOG_DEBUG, "post_initial done");
-  if (post_equation()) goto error;
-  HECMW_log(HECMW_LOG_DEBUG, "post_equation done");
   if (post_section()) goto error;
   HECMW_log(HECMW_LOG_DEBUG, "post_section done");
   if (post_contact()) goto error;

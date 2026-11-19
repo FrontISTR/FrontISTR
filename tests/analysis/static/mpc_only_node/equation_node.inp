@@ -1,0 +1,28 @@
+*HEADING
+ Cantilever and a node 13 of no element, tied to the node 11 by an equation of node IDs
+*NODE, NSET=NALL
+1, 0.0, 0.0, 0.0
+2, 1.0, 0.0, 0.0
+3, 1.0, 1.0, 0.0
+4, 0.0, 1.0, 0.0
+5, 0.0, 0.0, 1.0
+6, 1.0, 0.0, 1.0
+7, 1.0, 1.0, 1.0
+8, 0.0, 1.0, 1.0
+9, 2.0, 0.0, 0.0
+10, 2.0, 1.0, 0.0
+11, 2.0, 0.0, 1.0
+12, 2.0, 1.0, 1.0
+13, 3.0, 0.5, 0.5
+*NSET, NSET=FIX
+1, 4, 5, 8
+*ELEMENT, TYPE=C3D8, ELSET=EALL
+1, 1, 2, 3, 4, 5, 6, 7, 8
+2, 2, 9, 10, 3, 6, 11, 12, 7
+*MATERIAL, NAME=STEEL
+*ELASTIC
+210000.0, 0.3
+*SOLID SECTION, ELSET=EALL, MATERIAL=STEEL
+*EQUATION
+2
+13, 3, 1.0, 11, 3, -1.0
