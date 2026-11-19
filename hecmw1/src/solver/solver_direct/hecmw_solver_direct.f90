@@ -60,7 +60,6 @@ contains
   !----------------------------------------------------------------------
   subroutine HECMW_SOLVE_DIRECT(hecMESH,hecMAT,Ifmsg)
     use HECMW_MATRIX_ASS
-    use HECMW_MATRIX_DUMP
     implicit none
     !------
     type (HECMWST_LOCAL_MESH), intent(in)::hecMESH
@@ -87,8 +86,6 @@ contains
     timelog = hecMAT%IARRAY(22)
     ordering = hecMAT%IARRAY(41)
     loglevel = max(0, hecMAT%IARRAY(24)) ! LOGLEVEL is -1 when not given
-
-    call HECMW_MAT_DUMP(hecMAT,hecMESH)
 
     call PTIME(t1)
     t2 = t1
@@ -174,8 +171,6 @@ contains
       write(*,*) 'setup time : ',t4-t1
       write(*,*) 'solve time : ',t5-t4
     endif
-
-    call HECMW_MAT_DUMP_SOLUTION(hecMAT)
   end subroutine HECMW_SOLVE_DIRECT
 
   !======================================================================!

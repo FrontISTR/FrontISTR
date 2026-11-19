@@ -26,7 +26,6 @@ contains
     use hecmw_solver_las
     use hecmw_precond
     use hecmw_matrix_misc
-    use hecmw_matrix_dump
     use hecmw_solver_misc
 
     implicit none
@@ -81,9 +80,6 @@ contains
 
     !C-- RECYCLE SETTING OF PRECONDITIONER
     call hecmw_mat_recycle_precond_setting(hecMAT)
-
-    ! exchange diagonal elements of overlap region
-    call hecmw_mat_dump(hecMAT, hecMESH)
 
     !C ITERATIVE solver
     error=0
@@ -157,8 +153,6 @@ contains
       write(*,"(a,1pe12.5)")'### Relative residual =', resid2
     endif
     if (resid2 < hecmw_mat_get_resid(hecMAT)) call hecmw_mat_set_flag_converged(hecMAT, 1)
-
-    call hecmw_mat_dump_solution(hecMAT)
 
     time_Ax = hecmw_matvec_get_timer()
     time_precond = hecmw_precond_get_timer()

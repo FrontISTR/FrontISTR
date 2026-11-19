@@ -16,7 +16,6 @@ module hecmw_solver_direct_parallel
 
 #ifndef HECMW_SERIAL
   use hecmw_matrix_ass
-  use hecmw_matrix_dump
 #endif
 
   ! access control !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -94,8 +93,6 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     ! start !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    call hecmw_mat_dump(hecMAT, hecMESH)
-
     imsg=ii ! set message file
 
     ! enable the timestamped progress trace
@@ -131,8 +128,6 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     end if
 
     call MPI_BCAST(hecMAT%x, hecMESH%n_dof*hecMAT%NP, MPI_REAL8, m_pds_procinfo%imp, MPI_COMM_WORLD, ierr)
-
-    call hecmw_mat_dump_solution(hecMAT)
 
 #endif
 
