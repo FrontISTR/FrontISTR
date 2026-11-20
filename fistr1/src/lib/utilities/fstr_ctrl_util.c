@@ -1301,6 +1301,11 @@ int c_fstr_ctrl_get_data_array_v(fstr_ctrl_data *ctrl, const char *format,
       if (fg_fortran_get_data_array_v &&
           (toupper(fmt[j]) == 'S' || toupper(fmt[j]) == 'F')) {
         snprintf(buff, sizeof(buff), "%s", (char *)param[j]);
+
+        if (toupper(fmt[j]) == 'S') {
+          Strupr(buff);
+        }
+
         strcpy_c2f((char *)param[j], array_size[j], buff);
       }
 

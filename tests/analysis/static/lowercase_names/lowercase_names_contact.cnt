@@ -1,0 +1,85 @@
+# Every name and output item in this control file is written in lower case,
+# while the mesh defines the names in upper case. The result must be the same
+# as that of analysis/interaction/contact_slag_iter/2box_hex_nofric_iter.
+###################################
+#####   SOLVER INFORMATION    #####
+###################################
+!VERSION
+ 3
+!SOLUTION, TYPE=NLSTATIC
+!CONTACT_ALGO,TYPE=SLAGRANGE
+!WRITE,RESULT,FREQUENCY=10
+!OUTPUT_RES
+disp,on
+reaction,on
+nstrain,off
+nstress,on
+nmises,on
+estrain,off
+estress,on
+emises,on
+istrain,on
+istress,on
+contact_nforce,on
+contact_friction,on
+contact_relvel,on
+contact_state,on
+contact_ftraction,on
+contact_ntraction,on
+!OUTPUT_VIS
+disp,on
+reaction,on
+nstrain,off
+nstress,on
+nmises,on
+contact_nforce,on
+contact_friction,on
+contact_relvel,on
+contact_state,on
+contact_ftraction,on
+contact_ntraction,on
+!WRITE,LOG
+!SOLVER,METHOD=CG,PRECOND=1,NSET=0,ITERLOG=NO,TIMELOG=NO
+ 5000, 1
+ 1.0e-06, 1.00, 0.0
+ 0.100, 0.100
+###################################
+#####   BOUNDARY CONDITIONS   #####
+###################################
+!BOUNDARY, GRPID=1
+ set_1,1,1
+!BOUNDARY, GRPID=2
+ set_2,2,2
+!BOUNDARY, GRPID=3
+ set_3,3,3
+!BOUNDARY, GRPID=4
+ set_4,3,3,-0.1
+###################################
+#####   CONTACT DEFINITIONS   #####
+###################################
+!CONTACT, INTERACTION=FSLID, GRPID=1
+cp1,0.0,5.0E+2
+###################################
+#####         MATERIAL        #####
+###################################
+!MATERIAL, NAME=material_1
+!ELASTIC
+ 1.00000000E+03, 3.00000000E-01
+###################################
+#####       STEP CONTROL      #####
+###################################
+!STEP, SUBSTEPS=1, CONVERG=1.0e-6
+boundary,1
+boundary,2
+boundary,3
+boundary,4
+contact,1
+###################################
+#####      FOR VISUALIZER     #####
+###################################
+!WRITE,VISUAL,FREQUENCY=10
+!VISUAL, method=PSR
+!surface_num=1
+!surface 1
+!output_type = BIN_VTK
+!END
