@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include "hecmw_util.h"
+#include "hecmw_control.h"
 #include "hecmw_inplex.h"
 #include "hecmw_io_inp.h"
 #include "hecmw_io_mesh.h"
@@ -25,6 +26,7 @@
 
 static char grid_filename[HECMW_FILENAME_LEN + 1]    = "Unknown";
 static char include_filename[HECMW_FILENAME_LEN + 1] = "Unknown";
+static int is_control_input;
 
 /*----------------------------------------------------------------------------*/
 
@@ -3561,7 +3563,7 @@ static int read_boundary_keyword(void) {
     return -1;
   }
   /* if(isFirst == 0) { */
-  fprintf(stderr,
+  if (!is_control_input) fprintf(stderr,
           "Auto-generated cards should be added in !BOUNDARY section of *.cnt "
           "file \n");
   /*	isFirst =1; */
@@ -3597,7 +3599,7 @@ static int read_boundary_data(int *nnode, int **node_array, int msgno) {
       isNode = 1;
     }
 
-    if (token == HECMW_INPLEX_NAME) {
+    if (token == HECMW_INPLEX_NAME && !is_control_input) {
       isSuggest = 1;
       char *c   = HECMW_inplex_get_text();
       fprintf(stderr, "%s", c);
@@ -3695,6 +3697,15 @@ static int read_boundary(void) {
       int *node;
 
       HECMW_assert(flag_boundary);
+      do {
+        token = HECMW_inplex_next_token();
+      } while (token == HECMW_INPLEX_NL);
+      if (token == 0) break;
+      if (HECMW_inplex_get_text()[0] == '*') {
+        HECMW_inplex_unput_token();
+        break;
+      }
+      HECMW_inplex_unput_token();
       if (read_boundary_data(&n, &node, HECMW_IO_INP_E2600)) return -1;
 
       if (n > 0) {
@@ -3706,21 +3717,13 @@ static int read_boundary(void) {
         HECMW_free(node);
       }
 
-      /* check next state */
-      token = HECMW_inplex_next_token();
-      if (token != HECMW_INPLEX_INT && token != HECMW_INPLEX_NAME) {
-        state = ST_FINISHED;
-      } else {
-        state = ST_DATA_LINE;
-      }
-      HECMW_inplex_unput_token();
     } else {
       HECMW_assert(0);
     }
   }
 
   if (isNodeInput == 1) {
-    fprintf(stderr, "NGRP=BND%d\n", nbound);
+    if (!is_control_input) fprintf(stderr, "NGRP=BND%d\n", nbound);
     nbound++;
   }
 
@@ -3744,7 +3747,7 @@ static int read_cload_keyword(void) {
                   "',' or NL required after *CLOAD");
     return -1;
   }
-  fprintf(stderr,
+  if (!is_control_input) fprintf(stderr,
           "Auto-generated cards should be added in !CLOAD section of *.cnt "
           "file \n");
   return 0;
@@ -3770,6 +3773,15 @@ static int read_cload(void) {
       int n, *node;
 
       HECMW_assert(flag_cload);
+      do {
+        token = HECMW_inplex_next_token();
+      } while (token == HECMW_INPLEX_NL);
+      if (token == 0) break;
+      if (HECMW_inplex_get_text()[0] == '*') {
+        HECMW_inplex_unput_token();
+        break;
+      }
+      HECMW_inplex_unput_token();
       if (read_boundary_data(&n, &node, HECMW_IO_INP_E2700)) return -1;
 
       /* add node to group */
@@ -3781,21 +3793,13 @@ static int read_cload(void) {
         HECMW_free(node);
       }
 
-      /* check next state */
-      token = HECMW_inplex_next_token();
-      if (token != HECMW_INPLEX_INT && token != HECMW_INPLEX_NAME) {
-        state = ST_FINISHED;
-      } else {
-        state = ST_DATA_LINE;
-      }
-      HECMW_inplex_unput_token();
     } else {
       HECMW_assert(0);
     }
   }
 
   if (isCload != 0) {
-    fprintf(stderr, "NGRP=CLOAD%d\n", ncload);
+    if (!is_control_input) fprintf(stderr, "NGRP=CLOAD%d\n", ncload);
     ncload++;
   }
 
@@ -3819,7 +3823,7 @@ static int read_dload_keyword(void) {
                   "',' or NL required after *DLOAD");
     return -1;
   }
-  fprintf(stderr,
+  if (!is_control_input) fprintf(stderr,
           "Auto-generated cards should be added in !DLOAD section of *.cnt "
           "file \n");
   return 0;
@@ -3845,6 +3849,15 @@ static int read_dload(void) {
       int n, *elem;
 
       HECMW_assert(flag_dload);
+      do {
+        token = HECMW_inplex_next_token();
+      } while (token == HECMW_INPLEX_NL);
+      if (token == 0) break;
+      if (HECMW_inplex_get_text()[0] == '*') {
+        HECMW_inplex_unput_token();
+        break;
+      }
+      HECMW_inplex_unput_token();
       if (read_boundary_data(&n, &elem, HECMW_IO_INP_E2800)) return -1;
 
       if (n != 0) {
@@ -3855,21 +3868,14 @@ static int read_dload(void) {
         HECMW_free(elem);
       }
 
-      /* check next state */
-      token = HECMW_inplex_next_token();
-      if (token != HECMW_INPLEX_INT && token != HECMW_INPLEX_NAME) {
-        state = ST_FINISHED;
-      } else {
-        state = ST_DATA_LINE;
-      }
-      HECMW_inplex_unput_token();
     } else {
       HECMW_assert(0);
     }
   }
 
   if (isDload != 0) {
-    fprintf(stderr, "NGRP=DLOAD%d is automatically generated\n", ndload);
+    if (!is_control_input)
+      fprintf(stderr, "NGRP=DLOAD%d is automatically generated\n", ndload);
     ndload++;
   }
 
@@ -3939,10 +3945,12 @@ static int parse(void) {
       if (p[1] == '\0') {
         token = HECMW_inplex_next_token();
         p     = token ? HECMW_inplex_get_text() : "";
-        HECMW_print_msg(HECMW_LOG_WARN, HECMW_IO_INP_W0099, "*%s", p);
+        if (!is_control_input)
+          HECMW_print_msg(HECMW_LOG_WARN, HECMW_IO_INP_W0099, "*%s", p);
         if (!token) break;
       } else {
-        HECMW_print_msg(HECMW_LOG_WARN, HECMW_IO_INP_W0099, "%s", p);
+        if (!is_control_input)
+          HECMW_print_msg(HECMW_LOG_WARN, HECMW_IO_INP_W0099, "%s", p);
       }
       if (!skip_to_next_keyword()) break;
       continue;
@@ -3980,6 +3988,7 @@ static int post_inp(void) {
 int HECMW_read_inp_mesh(const char *filename) {
   FILE *fp;
 
+  is_control_input = 0;
   HECMW_log(HECMW_LOG_DEBUG, "Start to read INP mesh");
 
   if (filename == NULL) {
@@ -3995,6 +4004,7 @@ int HECMW_read_inp_mesh(const char *filename) {
   }
 
   snprintf(grid_filename, sizeof(grid_filename), "%s", filename);
+  is_control_input = HECMW_ctrl_is_control_file(filename);
   HECMW_io_set_gridfile(grid_filename);
 
   if ((fp = fopen(filename, "r")) == NULL) {

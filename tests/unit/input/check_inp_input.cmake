@@ -1,0 +1,77 @@
+###############################################################################
+# Copyright (c) 2026 FrontISTR Commons
+# This software is released under the MIT License, see License.txt
+###############################################################################
+
+# Runs PROGRAM on the mesh of INPUT followed by the analysis data of CASE, and checks
+# the exit status and the messages, which give the lines of the inp file.
+cmake_policy(SET CMP0054 NEW)
+
+file(READ "${INPUT}" mesh)
+string(FIND "${mesh}" "*boundary" mesh_end)
+string(SUBSTRING "${mesh}" 0 ${mesh_end} mesh)
+string(REGEX MATCHALL "\n" lines "${mesh}")
+list(LENGTH lines n)
+
+# The k-th line of the analysis data is the line n+k of the inp file.
+set(analysis "*BOUNDARY\nFIX, 1, 3\n*STEP\n*STATIC\n*CLOAD\nTIP, 3, -1\n*END STEP\n")
+set(status 0)
+set(found "FrontISTR Completed !!")
+set(absent "")
+if(CASE STREQUAL "data_line")
+  set(analysis "*BOUNDARY\nFIX, 1, 3\n*STEP\n*STATIC\n*CLOAD\nTIP, 3, -1\n** a comment\nTIP, 3, bad\n*END STEP\n")
+  math(EXPR line "${n} + 8")
+  set(status 2)
+  set(found "line:${line}, column:3")
+elseif(CASE STREQUAL "solver_twice")
+  string(APPEND analysis "*SOLVER, METHOD=DIRECTmf\n*SOLVER, METHOD=CG\n")
+  set(status 2)
+  set(found "*SOLVER exists twice")
+elseif(CASE STREQUAL "parameters")
+  set(analysis "*AMPLITUDE, NAME=RAMP\n0, 1, 1, 1\n*bOuNdArY, aMpLiTuDe = RAMP, OP=NEW\nFIX, 1, 3\n")
+  string(APPEND analysis "*sTeP, name=Step-1, nLgEoM = no, INC=100\n*Static,\n** a parameter on a continuation line\n\n")
+  string(APPEND analysis "\tSTABILIZE\n*CLOAD, AMPLITUDE=RAMP, FOLLOWER\nTIP, 3, -1\n*END STEP, UNUSED\n")
+  foreach(warning "*BOUNDARY 3 OP" "*STEP 5 NAME" "*STEP 5 INC" "*STATIC 6 STABILIZE" "*CLOAD 10 FOLLOWER"
+      "*END STEP 12 UNUSED")
+    string(REGEX MATCH "^(.*) ([0-9]+) (.*)$" warning "${warning}")
+    math(EXPR line "${n} + ${CMAKE_MATCH_2}")
+    list(APPEND found "${CMAKE_MATCH_1} (line:${line}) : unsupported parameter ${CMAKE_MATCH_3} is skipped")
+  endforeach()
+  set(absent "parameter NLGEOM" "parameter AMPLITUDE")
+elseif(CASE STREQUAL "unknown_card")
+  string(APPEND analysis "*DLOAD\n1, P1, 1\n")
+  math(EXPR line "${n} + 8")
+  set(status 2)
+  set(found "*DLOAD (line:${line}) : not supported in an inp file yet")
+else()
+  message(FATAL_ERROR "Unknown case: ${CASE}")
+endif()
+
+file(REMOVE_RECURSE "${WORK_DIR}")
+file(MAKE_DIRECTORY "${WORK_DIR}")
+file(WRITE "${WORK_DIR}/model.inp" "${mesh}${analysis}")
+file(WRITE "${WORK_DIR}/hecmw_ctrl.dat"
+  "!MESH, NAME=fstrMSH, TYPE=INP\nmodel.inp\n!CONTROL, NAME=fstrCNT\nmodel.inp\n!RESULT, NAME=fstrRES, IO=OUT\nmodel.res\n")
+execute_process(COMMAND "${PROGRAM}" -t 1 WORKING_DIRECTORY "${WORK_DIR}"
+  RESULT_VARIABLE result OUTPUT_VARIABLE output ERROR_VARIABLE errors)
+set(log "${output}${errors}")
+if(EXISTS "${WORK_DIR}/0.log")
+  file(READ "${WORK_DIR}/0.log" rank0)
+  string(APPEND log "${rank0}")
+endif()
+file(WRITE "${WORK_DIR}/solver.log" "${log}")
+if(NOT "${result}" STREQUAL "${status}")
+  message(FATAL_ERROR "${CASE}: exit status ${result}, expected ${status}; see ${WORK_DIR}/solver.log")
+endif()
+foreach(text IN LISTS found)
+  string(FIND "${log}" "${text}" position)
+  if(position EQUAL -1)
+    message(FATAL_ERROR "${CASE}: '${text}' not found; see ${WORK_DIR}/solver.log")
+  endif()
+endforeach()
+foreach(text IN LISTS absent)
+  string(FIND "${log}" "${text}" position)
+  if(NOT position EQUAL -1)
+    message(FATAL_ERROR "${CASE}: unexpected '${text}'; see ${WORK_DIR}/solver.log")
+  endif()
+endforeach()

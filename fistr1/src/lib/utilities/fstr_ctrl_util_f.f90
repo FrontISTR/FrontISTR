@@ -27,6 +27,29 @@ module fstr_ctrl_util_f
       type(c_ptr),value :: filename
     end function fstr_ctrl_open_c
 
+    function fstr_ctrl_open_inp_c( filename ) &
+        bind(c,name='fstr_ctrl_open_inp')
+      use iso_c_binding
+      integer(c_int) :: fstr_ctrl_open_inp_c
+      type(c_ptr),value :: filename
+    end function fstr_ctrl_open_inp_c
+
+    function fstr_ctrl_is_inp_file_c( filename ) &
+        bind(c,name='fstr_ctrl_is_inp_file')
+      use iso_c_binding
+      integer(c_int) :: fstr_ctrl_is_inp_file_c
+      type(c_ptr),value :: filename
+    end function fstr_ctrl_is_inp_file_c
+
+    function fstr_ctrl_get_c_h_name_inp_c( ctrl, header_name, buf_size ) &
+        bind(c,name='fstr_ctrl_get_c_h_name_inp')
+      use iso_c_binding
+      integer(c_int) :: fstr_ctrl_get_c_h_name_inp_c
+      integer(c_int) :: ctrl
+      type(c_ptr),value :: header_name
+      integer(c_int) :: buf_size
+    end function fstr_ctrl_get_c_h_name_inp_c
+
     function fstr_ctrl_get_rec_number( ctrl ) &
         bind(c,name='fstr_ctrl_get_rec_number')
       use iso_c_binding
@@ -194,6 +217,32 @@ contains
     character(len=*),target :: filename
     fstr_ctrl_open = fstr_ctrl_open_c( c_loc(filename) )
   end function fstr_ctrl_open
+
+  !> Open the analysis data of an inp file. Get the keyword of a header with fstr_ctrl_get_c_h_name_inp.
+  function fstr_ctrl_open_inp( filename )
+    use iso_c_binding
+    integer(c_int) :: fstr_ctrl_open_inp
+    character(len=*),target :: filename
+    fstr_ctrl_open_inp = fstr_ctrl_open_inp_c( c_loc(filename) )
+  end function fstr_ctrl_open_inp
+
+  !> .true. if the first line other than blank and comment lines starts with '*'
+  function fstr_ctrl_is_inp_file( filename )
+    use iso_c_binding
+    logical :: fstr_ctrl_is_inp_file
+    character(len=*),target :: filename
+    fstr_ctrl_is_inp_file = ( fstr_ctrl_is_inp_file_c( c_loc(filename) ) /= 0 )
+  end function fstr_ctrl_is_inp_file
+
+  !> Keyword of the current header of an inp file, in upper case. The blanks between the words become one space.
+  function fstr_ctrl_get_c_h_name_inp( ctrl, header_name, buf_size )
+    use iso_c_binding
+    integer(c_int) :: fstr_ctrl_get_c_h_name_inp
+    integer(c_int) :: ctrl
+    character(len=*),target :: header_name
+    integer(c_int) :: buf_size
+    fstr_ctrl_get_c_h_name_inp = fstr_ctrl_get_c_h_name_inp_c( ctrl, c_loc(header_name), buf_size )
+  end function fstr_ctrl_get_c_h_name_inp
 
   function fstr_ctrl_get_line( ctrl, rec_no, buff, buff_size )
     use iso_c_binding

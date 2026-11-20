@@ -69,6 +69,7 @@ extern char *HECMW_ctrl_get_restart_file(char *name_ID);
 extern char *HECMW_ctrl_get_restart_file_by_io(int io);
 extern char *HECMW_ctrl_get_control_file(char *name_ID);
 extern int HECMW_ctrl_is_exists_control(char *name_ID);
+extern int HECMW_ctrl_is_control_file(const char *filename);
 extern int HECMW_ctrl_make_subdir(char *filename);
 extern int HECMW_ctrl_is_subdir(void);
 
