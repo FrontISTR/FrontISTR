@@ -15,7 +15,9 @@ module m_fstr_setup_finish
     , reallocate_real
   use m_fstr_solid_setup, only &
     : fstr_solid_alloc &
-    , fstr_element_init
+    , fstr_element_init &
+    , fstr_solid_init_section &
+    , fstr_solid_init_output
   use mContactParam
   use m_static_get_prop
   implicit none
@@ -60,14 +62,12 @@ contains
       beam_angle1, beam_angle2, beam_angle3,&
       beam_angle4, beam_angle5, beam_angle6
     type(tshellmat),pointer :: shmat(:)
-    character(len=HECMW_FILENAME_LEN) :: logfileNAME
 
     hecMESH => P%MESH
     fstrPARAM => P%PARAM
     fstrSOLID => P%SOLID
     fstrHEAT => P%HEAT
     fstrDYNAMIC => P%DYN
-    write( logfileNAME, '(i5,''.log'')' ) myrank
 
     fstrSOLID%n_contacts = counts%contact_pairs
     if( counts%contact_pairs>0 ) then
@@ -134,28 +134,7 @@ contains
       call initMaterial(fstrSOLID%materials(i))
     enddo
 
-    ! for section control
-    allocate( fstrSOLID%sections(hecMESH%section%n_sect) )
-    do i=1,hecMESH%section%n_sect
-      ! set default 361 element formulation
-      if( p%PARAM%solution_type==kstSTATIC .or. p%PARAM%solution_type==kstDYNAMIC ) then
-        if( p%PARAM%nlgeom ) then
-          fstrSOLID%sections(i)%elemopt361 = kel361FBAR
-        else
-          fstrSOLID%sections(i)%elemopt361 = kel361IC
-        end if
-      else if( p%PARAM%solution_type==kstEIGEN ) then
-        fstrSOLID%sections(i)%elemopt361 = kel361IC
-      else if( p%PARAM%solution_type==kstSTATICEIGEN ) then
-        fstrSOLID%sections(i)%elemopt361 = kel361FBAR
-      else
-        fstrSOLID%sections(i)%elemopt361 = kel361FI
-      end if
-      fstrSOLID%sections(i)%elemopt341 = kel341FI
-      fstrSOLID%sections(i)%elemopt611 = kel611EULER
-      ! INTERFACE sections are skipped in the loop below and keep this thickness
-      fstrSOLID%sections(i)%thickness = 1.0d0
-    enddo
+    call fstr_solid_init_section( hecMESH, fstrSOLID, fstrPARAM )
 
     if( hecMESH%section%n_sect >0 ) then
       do i=1,hecMESH%section%n_sect
@@ -191,13 +170,7 @@ contains
       enddo
     endif
 
-    allocate( fstrSOLID%output_ctrl( 4 ) )
-    call fstr_init_outctrl(fstrSOLID%output_ctrl(1))
-    fstrSOLID%output_ctrl( 1 )%filename = trim(logfileNAME)
-    fstrSOLID%output_ctrl( 1 )%filenum = ILOG
-    call fstr_init_outctrl(fstrSOLID%output_ctrl(2))
-    call fstr_init_outctrl(fstrSOLID%output_ctrl(3))
-    call fstr_init_outctrl(fstrSOLID%output_ctrl(4))
+    call fstr_solid_init_output( fstrSOLID )
   end subroutine fstr_setup_prepare
 
   !> Processing after all the cards are read: the temperature arrays, the default step,
