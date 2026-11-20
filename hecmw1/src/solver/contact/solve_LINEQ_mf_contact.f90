@@ -52,7 +52,7 @@ contains
     type (hecmwST_matrix), intent(inout) :: hecMAT
     type (hecmwST_ebc), intent(inout) :: hecEBC
     integer(kind=kint), intent(out) :: istat
-    integer(kind=kint) :: ntdf, mpc_method, iterlog, timelog, irmax, it
+    integer(kind=kint) :: ntdf, npndof, mpc_method, iterlog, timelog, irmax, it, i
     real(kind=kreal) :: bnrm, rnrm, rprev, irtol, t1, t2
     real(kind=kreal), allocatable :: bb(:), xx(:), rr(:), xp(:)
     ! the unit hecmw_solve passes to the direct solvers for error messages
@@ -80,8 +80,12 @@ contains
     endif
 
     call mf_contact_set_values(hecMAT)
-    ntdf = hecMAT%NP*hecMAT%NDOF + hecMAT%lagmat%num_lagrange
-    mfMAT%B(1:ntdf) = hecMAT%B(1:ntdf)
+    npndof = hecMAT%NP*hecMAT%NDOF
+    ntdf = npndof + hecMAT%lagmat%num_lagrange
+    mfMAT%B(1:npndof) = hecMAT%B(1:npndof)
+    do i = 1, hecMAT%lagmat%num_lagrange
+      mfMAT%B(npndof+i) = hecMAT%lagmat%B_lagrange(i)
+    enddo
     mfMAT%X(1:ntdf) = 0.0d0
     mfMAT%Iarray(97) = 1
     mfMAT%symmetric = IS_SYMMETRIC
@@ -128,7 +132,10 @@ contains
       deallocate(bb, xx, rr, xp)
     endif
 
-    hecMAT%X(1:ntdf) = mfMAT%X(1:ntdf)
+    hecMAT%X(1:npndof) = mfMAT%X(1:npndof)
+    do i = 1, hecMAT%lagmat%num_lagrange
+      hecMAT%lagmat%X_lagrange(i) = mfMAT%X(npndof+i)
+    enddo
 
     call hecmw_mat_dump_solution(hecMAT)
   end subroutine solve_LINEQ_mf_contact

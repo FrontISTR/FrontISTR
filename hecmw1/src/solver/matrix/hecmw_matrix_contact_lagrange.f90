@@ -305,12 +305,11 @@ contains
   end subroutine reallocate_memory
 
   !> \brief This subroutine constructs hecMAT structure from list_nodeRelated
-  subroutine hecmw_construct_hecMAT_from_nodeRelated(n, np, ndof, nnz, num_lagrange, list_nodeRelated, hecMAT)
+  subroutine hecmw_construct_hecMAT_from_nodeRelated(n, np, ndof, nnz, list_nodeRelated, hecMAT)
     integer(kind=kint), intent(in)                      :: n
     integer(kind=kint), intent(in)                      :: np
     integer(kind=kint), intent(in)                      :: ndof
     integer(kind=kint), intent(in)                      :: nnz
-    integer(kind=kint), intent(in)                      :: num_lagrange
     type(nodeRelated), pointer, intent(in)              :: list_nodeRelated(:) !< nodeRelated structure of matrix
     type(hecmwST_matrix), intent(inout)                 :: hecMAT !< type hecmwST_matrix
 
@@ -379,15 +378,15 @@ contains
     if ( ierr /= 0 ) stop " Allocation error, hecMAT%AU "
     hecMAT%AU = 0.0D0
 
-    allocate(hecMAT%D(np*ndof2+num_lagrange), stat=ierr)
+    allocate(hecMAT%D(np*ndof2), stat=ierr)
     if ( ierr /= 0 ) stop " Allocation error, hecMAT%D "
     hecMAT%D = 0.0D0
 
-    allocate(hecMAT%B(np*ndof+num_lagrange), stat=ierr)
+    allocate(hecMAT%B(np*ndof), stat=ierr)
     if ( ierr /= 0 ) stop " Allocation error, hecMAT%B "
     hecMAT%B = 0.0D0
 
-    allocate(hecMAT%X(np*ndof+num_lagrange), stat=ierr)
+    allocate(hecMAT%X(np*ndof), stat=ierr)
     if ( ierr /= 0 ) stop " Allocation error, hecMAT%X "
     hecMAT%X = 0.0D0
 
@@ -419,6 +418,8 @@ contains
     if(associated(hecMAT%lagmat%AL_lagrange)) deallocate(hecMAT%lagmat%AL_lagrange)
     if(associated(hecMAT%lagmat%AU_lagrange)) deallocate(hecMAT%lagmat%AU_lagrange)
     if(associated(hecMAT%lagmat%D_lagrange)) deallocate(hecMAT%lagmat%D_lagrange)
+    if(associated(hecMAT%lagmat%B_lagrange)) deallocate(hecMAT%lagmat%B_lagrange)
+    if(associated(hecMAT%lagmat%X_lagrange)) deallocate(hecMAT%lagmat%X_lagrange)
     if(associated(hecMAT%lagmat%Lagrange)) deallocate(hecMAT%lagmat%Lagrange)
 
     if( is_contact_active ) then
@@ -478,6 +479,16 @@ contains
       allocate(hecMAT%lagmat%D_lagrange(num_lagrange), stat=ierr)
       if ( ierr /= 0 ) stop " Allocation error, hecMAT%lagmat%D_lagrange "
       hecMAT%lagmat%D_lagrange = 0.0D0
+
+      ! init B_lagrange (right-hand side of the rows of Lagrange multipliers)
+      allocate(hecMAT%lagmat%B_lagrange(num_lagrange), stat=ierr)
+      if ( ierr /= 0 ) stop " Allocation error, hecMAT%lagmat%B_lagrange "
+      hecMAT%lagmat%B_lagrange = 0.0D0
+
+      ! init X_lagrange (solution for Lagrange multipliers)
+      allocate(hecMAT%lagmat%X_lagrange(num_lagrange), stat=ierr)
+      if ( ierr /= 0 ) stop " Allocation error, hecMAT%lagmat%X_lagrange "
+      hecMAT%lagmat%X_lagrange = 0.0D0
 
       ! init Lagrange
       allocate(hecMAT%lagmat%Lagrange(num_lagrange))

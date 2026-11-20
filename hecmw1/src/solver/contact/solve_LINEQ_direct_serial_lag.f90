@@ -32,7 +32,7 @@ contains
     integer (kind=4)                         :: ntdf, ilag_sta
 
     real(kind=8), allocatable               :: b(:)           !< right-hand side vector
-    integer(kind=kint) :: mpc_method
+    integer(kind=kint) :: mpc_method, npndof, i
 
     mpc_method = hecmw_mat_get_mpc_method(hecMAT)
     if (mpc_method /= 1 .and. mpc_method /= 3) then
@@ -52,15 +52,22 @@ contains
 
     call set_values_directsolver(hecMAT)
 
-    ntdf = hecMAT%NP*hecMAT%NDOF + hecMAT%lagmat%num_lagrange
-    ilag_sta = hecMAT%NP*hecMAT%NDOF + 1
+    npndof = hecMAT%NP*hecMAT%NDOF
+    ntdf = npndof + hecMAT%lagmat%num_lagrange
+    ilag_sta = npndof + 1
 
-    allocate(b(size(hecMAT%B)))
-    b = hecMAT%B
+    allocate(b(ntdf))
+    b(1:npndof) = hecMAT%B(1:npndof)
+    do i = 1, hecMAT%lagmat%num_lagrange
+      b(npndof+i) = hecMAT%lagmat%B_lagrange(i)
+    enddo
 
     call hecmw_solve_direct_serial_lag(ntdf, ilag_sta, pointers, indices, values, b)
 
-    hecMAT%X = b
+    hecMAT%X(1:npndof) = b(1:npndof)
+    do i = 1, hecMAT%lagmat%num_lagrange
+      hecMAT%lagmat%X_lagrange(i) = b(npndof+i)
+    enddo
 
     deallocate(b)
 

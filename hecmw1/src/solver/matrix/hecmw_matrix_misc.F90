@@ -279,6 +279,8 @@ contains
     if (associated(hecMAT%lagmat%AL_lagrange)) deallocate(hecMAT%lagmat%AL_lagrange)
     if (associated(hecMAT%lagmat%AU_lagrange)) deallocate(hecMAT%lagmat%AU_lagrange)
     if (associated(hecMAT%lagmat%D_lagrange)) deallocate(hecMAT%lagmat%D_lagrange)
+    if (associated(hecMAT%lagmat%B_lagrange)) deallocate(hecMAT%lagmat%B_lagrange)
+    if (associated(hecMAT%lagmat%X_lagrange)) deallocate(hecMAT%lagmat%X_lagrange)
     if (associated(hecMAT%lagmat%Lagrange)) deallocate(hecMAT%lagmat%Lagrange)
     if (associated(hecMAT%conmat)) then
       call hecmw_mat_finalize(hecMAT%conmat)

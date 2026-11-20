@@ -183,6 +183,7 @@ contains
     endif
 
     hecMAT%X=factor*hecMAT%X
+    if( associated(hecMAT%lagmat%X_lagrange) ) hecMAT%lagmat%X_lagrange=factor*hecMAT%lagmat%X_lagrange
 
   end subroutine solve_LINEQ_contact
 
@@ -208,7 +209,7 @@ contains
     ndof = hecMAT%NDOF
     ndof2 = ndof*ndof
 
-    do i=1,hecMAT%NP*ndof + hecMAT%lagmat%num_lagrange
+    do i=1,hecMAT%NP*ndof
       hecMAT%B(i) = hecMAT%B(i) + hecMAT%conmat%B(i)
     enddo
 
@@ -236,7 +237,6 @@ contains
 
     integer(kind=kint) :: ndof, ndof2, nndof, npndof, i, idof, jdof, j, k, l, irow
     real(kind=kreal), allocatable :: y(:), yc(:), bc(:)
-    real(kind=kreal), pointer :: blag(:)
     real(kind=kreal) :: bi, rl, sums(2)
 
     ndof = hecMAT%NDOF
@@ -281,7 +281,7 @@ contains
           j = hecMAT%lagmat%itemU_lagrange(l)
           do idof = 1, ndof
             irow = ndof*(i-1)+idof
-            yc(irow) = yc(irow) + hecMAT%lagmat%AU_lagrange(ndof*(l-1)+idof)*hecMAT%X(npndof+j)
+            yc(irow) = yc(irow) + hecMAT%lagmat%AU_lagrange(ndof*(l-1)+idof)*hecMAT%lagmat%X_lagrange(j)
           enddo
         enddo
       enddo
@@ -297,14 +297,8 @@ contains
       sums(2) = sums(2) + bi**2
     enddo
 
-    ! the solvers take the right-hand side of the multiplier rows from conmat when it is separate
-    if( with_conmat )then
-      blag => hecMAT%conmat%B
-    else
-      blag => hecMAT%B
-    endif
     do i = 1, hecMAT%lagmat%num_lagrange
-      rl = blag(npndof+i)
+      rl = hecMAT%lagmat%B_lagrange(i)
       do l = hecMAT%lagmat%indexL_lagrange(i-1)+1, hecMAT%lagmat%indexL_lagrange(i)
         j = hecMAT%lagmat%itemL_lagrange(l)
         do jdof = 1, ndof
@@ -312,7 +306,7 @@ contains
         enddo
       enddo
       sums(1) = sums(1) + rl**2
-      sums(2) = sums(2) + blag(npndof+i)**2
+      sums(2) = sums(2) + hecMAT%lagmat%B_lagrange(i)**2
     enddo
 
     call hecmw_allreduce_R(hecMESH, sums, 2, hecmw_sum)
