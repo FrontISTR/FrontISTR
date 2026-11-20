@@ -69,6 +69,11 @@ contains
     fstrSOLID%NRstat_i(:) = 0
     fstrSOLID%NRstat_r(:) = 0.d0
 
+    fstrSOLID%elemact%ELEMACT_egrp_tot = 0
+!    fstrSOLID%StaticType = 1 ! Total
+    fstrSOLID%step_ctrl_restart%solution = stepStatic
+    fstrSOLID%step_ctrl_restart%inc_type = stepFixedInc
+
   end subroutine fstr_solid_init
 
   !> Initializer of structure fstr_solid
@@ -2710,6 +2715,52 @@ contains
     call elem_grp_name_to_id_ex( hecMESH, header_name, n, grp_names, fstrSOLID%elemact%ELEMACT_egrp_ID(old_size+1:))
 
   end subroutine fstr_solid_append_element_activation
+
+  subroutine fstr_solid_init_section( hecMESH, fstrSOLID, fstrPARAM )
+    implicit none
+    type(hecmwST_local_mesh) :: hecMESH
+    type(fstr_solid) :: fstrSOLID
+    type(fstr_param) :: fstrPARAM
+    integer :: i
+    ! for section control
+    allocate( fstrSOLID%sections(hecMESH%section%n_sect) )
+    do i=1,hecMESH%section%n_sect
+      ! set default 361 element formulation
+      if( fstrPARAM%solution_type==kstSTATIC .or. fstrPARAM%solution_type==kstDYNAMIC ) then
+        if( fstrPARAM%nlgeom ) then
+          fstrSOLID%sections(i)%elemopt361 = kel361FBAR
+        else
+          fstrSOLID%sections(i)%elemopt361 = kel361IC
+        end if
+      else if( fstrPARAM%solution_type==kstEIGEN ) then
+        fstrSOLID%sections(i)%elemopt361 = kel361IC
+      else if( fstrPARAM%solution_type==kstSTATICEIGEN ) then
+        fstrSOLID%sections(i)%elemopt361 = kel361FBAR
+      else
+        fstrSOLID%sections(i)%elemopt361 = kel361FI
+      end if
+      fstrSOLID%sections(i)%elemopt341 = kel341FI
+      fstrSOLID%sections(i)%elemopt611 = kel611EULER
+      ! INTERFACE sections are skipped in the loop below and keep this thickness
+      fstrSOLID%sections(i)%thickness = 1.0d0
+    enddo
+  end subroutine
+
+  subroutine fstr_solid_init_output( fstrSOLID )
+    use m_fstr
+    implicit none
+    type(fstr_solid) :: fstrSOLID
+    character(len=HECMW_FILENAME_LEN) :: logfileNAME
+
+    write( logfileNAME, '(i5,''.log'')' ) myrank
+    allocate( fstrSOLID%output_ctrl( 4 ) )
+    call fstr_init_outctrl(fstrSOLID%output_ctrl(1))
+    fstrSOLID%output_ctrl( 1 )%filename = trim(logfileNAME)
+    fstrSOLID%output_ctrl( 1 )%filenum = ILOG
+    call fstr_init_outctrl(fstrSOLID%output_ctrl(2))
+    call fstr_init_outctrl(fstrSOLID%output_ctrl(3))
+    call fstr_init_outctrl(fstrSOLID%output_ctrl(4))
+  end subroutine
 
   !-----------------------------------------------------------------------------!
   !> Initialize !CONTACT                                                        !
