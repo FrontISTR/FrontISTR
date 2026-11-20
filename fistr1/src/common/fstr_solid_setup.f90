@@ -70,7 +70,6 @@ contains
     fstrSOLID%NRstat_r(:) = 0.d0
 
     fstrSOLID%elemact%ELEMACT_egrp_tot = 0
-!    fstrSOLID%StaticType = 1 ! Total
     fstrSOLID%step_ctrl_restart%solution = stepStatic
     fstrSOLID%step_ctrl_restart%inc_type = stepFixedInc
 
