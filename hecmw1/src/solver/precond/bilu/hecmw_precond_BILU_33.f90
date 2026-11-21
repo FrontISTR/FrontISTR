@@ -872,6 +872,7 @@ contains
             exit
           endif
         enddo
+        if (kk1 > inumFI1L(i)) stop 'ERROR: Missing entry in ILU setup'
 
         do jj= INU(k-1)+1, INU(k)
           j_old= IAU(jj)
@@ -890,6 +891,7 @@ contains
               exit
             endif
           enddo
+          if (jj1 > inumFI1U(k)) stop 'ERROR: Missing entry in ILU setup'
 
           call ILU1b33 (RHS_Aij, DkINV, Aik, Akj)
 

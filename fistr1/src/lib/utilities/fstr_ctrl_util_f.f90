@@ -307,7 +307,7 @@ contains
     integer(c_int) :: ctrl
     integer(c_int) :: line_no
     character(len=*),target :: format
-    type(*),target,optional :: v1,v2,v3,v4,v5,v6,v7,v8,v9,v10
+    type(*),dimension(..),target,optional :: v1,v2,v3,v4,v5,v6,v7,v8,v9,v10
     type(c_ptr) :: pv(10)
     pv(:) = C_NULL_PTR
     if( present(v1) ) pv(1) = c_loc(v1)
@@ -330,7 +330,7 @@ contains
     integer(c_int) :: ctrl
     integer(c_int) :: line_no
     character(len=*),target :: format
-    type(*),target,optional :: v1,v2,v3,v4,v5,v6,v7,v8,v9,v10
+    type(*),dimension(..),target,optional :: v1,v2,v3,v4,v5,v6,v7,v8,v9,v10
     type(c_ptr) :: pv(10)
     pv(:) = C_NULL_PTR
     if( present(v1) ) pv(1) = c_loc(v1)

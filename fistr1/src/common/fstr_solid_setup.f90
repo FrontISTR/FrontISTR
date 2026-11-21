@@ -1529,7 +1529,7 @@ contains
     type(fstr_solid), pointer :: fstrSOLID
     integer(kind=kint) :: c_contact, n, k
     real(kind=kreal) :: ee, pp, rho, alpha
-    character(len=HECMW_FILENAME_LEN) :: mName
+    character(len=HECMW_NAME_LEN) :: mName
     type(fstr_card_slot) :: slot
 
     slot = P%STATE%slot
@@ -1561,7 +1561,7 @@ contains
     type(fstr_param), pointer :: fstrPARAM
     type(fstr_solid), pointer :: fstrSOLID
     integer(kind=kint) :: c_embed, n, k
-    character(len=HECMW_FILENAME_LEN) :: mName
+    character(len=HECMW_NAME_LEN) :: mName
     type(fstr_card_slot) :: slot
 
     slot = P%STATE%slot

@@ -228,6 +228,7 @@ contains
 
     character(len=HECMW_NAME_LEN) :: data_fmt,ss
 
+    fstr_ctrl_get_TEMPERATURE = -1
     irres = 0
     if( fstr_ctrl_get_param_ex( ctrl, 'READRESULT ', '# ', 0, 'I', irres )/= 0) return
     if( fstr_ctrl_get_param_ex( ctrl, 'SSTEP ',      '# ', 0, 'I', tstep )/= 0) return

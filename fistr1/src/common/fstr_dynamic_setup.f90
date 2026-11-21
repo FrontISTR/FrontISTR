@@ -143,6 +143,7 @@ contains
     type(fstr_dynamic) :: fstrDYNAMIC
 
     integer :: ierror
+    ierror = 0
     if( associated(fstrDYNAMIC%DISP) )        &
       deallocate( fstrDYNAMIC%DISP    ,stat=ierror )
     if( ierror /= 0 ) then

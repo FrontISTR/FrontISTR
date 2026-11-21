@@ -519,8 +519,8 @@ contains
           &  alpha_S, alpha_E, h_prime_S, h_prime_E, pot_S, pot_E
     endif    
 
-		Q_Wolfe = 1 + Delta_approx_wolfe * Q_Wolfe
-		C_Wolfe = C_Wolfe + (abs(pot_0)-C_Wolfe) / Q_Wolfe
+    Q_Wolfe = 1 + Delta_approx_wolfe * Q_Wolfe
+    C_Wolfe = C_Wolfe + (abs(pot_0)-C_Wolfe) / Q_Wolfe
 
     flag_converged = .false.
     iter_ls=0

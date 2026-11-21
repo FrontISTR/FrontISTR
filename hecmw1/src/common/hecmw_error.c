@@ -22,8 +22,10 @@ int HECMW_set_verror(int errorno, const char *fmt, va_list ap) {
   size_t len = snprintf(hecmw_errmsg, sizeof(hecmw_errmsg), "%s", HECMW_strmsg(errorno));
   HECMW_vsnprintf(errmsg, sizeof(errmsg), fmt, ap);
 
+  /* the detail is cut so that " (", ")" and the NUL fit in hecmw_errmsg */
   if (strlen(errmsg) > 0)
-    snprintf(hecmw_errmsg + len, sizeof(hecmw_errmsg) - len, " (%s)", errmsg);
+    snprintf(hecmw_errmsg + len, sizeof(hecmw_errmsg) - len, " (%.*s)",
+             (int)(sizeof(hecmw_errmsg) - len - 4), errmsg);
 
   HECMW_print_error();
 

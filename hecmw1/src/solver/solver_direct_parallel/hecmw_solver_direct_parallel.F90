@@ -551,10 +551,10 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     implicit none
 
-    type (child_matrix)  :: cm
+    type (child_matrix), save :: cm
 
     real(kind=kreal), allocatable :: b(:,:) ! (ndeg, neqns)
-    type (dsinfo) :: dsi
+    type (dsinfo), save :: dsi
     logical, save :: nusol_ready = .false.
 
     ! for MPI
@@ -4010,6 +4010,9 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     ierr=0
     allocate(temp(9,neqns),indx(neqns), stat=ierr)
+    if(ierr .ne. 0) then
+      call errtrp('stop due to allocation error.')
+    end if
     temp = 0.0d0
     indx = 0
 
@@ -4671,7 +4674,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     implicit none
 
-    real(kind=kreal),   intent(inout) :: dsln(3)
+    real(kind=kreal),   intent(inout) :: dsln(:)
     integer(kind=kint), intent(out) :: ir
 
     real(kind=kreal) :: t

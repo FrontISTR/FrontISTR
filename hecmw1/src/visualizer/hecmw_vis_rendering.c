@@ -31,7 +31,7 @@ void HECMW_vis_rendering_surface(struct surface_module *sf,
                                  int *color_list, double *minvalue,
                                  double *maxvalue, Result *result,
                                  char *outfile, int stat_para[NUM_CONTROL_PSF],
-                                 HECMW_Comm VIS_COMM, int timestep)
+                                 HECMW_Comm VIS_COMM)
 
 {
   char fname[HECMW_FILENAME_LEN + 1];
@@ -40,7 +40,7 @@ void HECMW_vis_rendering_surface(struct surface_module *sf,
   FILE *outfp;
   double view_n[3], nview_n, vertex[3 * 8];
   double point_s[3], point_o[3];
-  double range[6], xd, yd;
+  double range[6], xd = 0.0, yd = 0.0;
   double coff_matrix[3][3], n_vertex[3 * 8], inv_matrix[3][3];
   double view_point[3], scr_area[4], x, y;
   double tmincolor, tmaxcolor, trange[6], svertex[3 * 8], sn_vertex[3 * 8],
@@ -52,13 +52,14 @@ void HECMW_vis_rendering_surface(struct surface_module *sf,
   double *n_subimage, *n_subopa, *subimage, *subopa;
   double *subimage1, *subopa1;
   HECMW_Status stat;
-  int starti, startj, endi, endj, start_x, start_y;
+  int starti, startj, endi, endj, start_x = 0, start_y = 0;
   double minx, miny, minz, maxx, maxy, maxz, tminx, tminy, tminz, tmaxx, tmaxy,
       tmaxz;
   int num_img, base_x, base_y;
   double o_v_point[3], m_scr[4];
-  double mincolor, maxcolor, *mivalue, *mavalue, color_iso[3], org_mincolor,
-      org_maxcolor;
+  double mincolor = 0.0, maxcolor = 0.0, *mivalue, *mavalue, color_iso[3],
+      org_mincolor, org_maxcolor;
+  int color_on;
 
   BITMAPFILEHEADER header; /* File header */
   unsigned char r, g, b;
@@ -68,17 +69,11 @@ void HECMW_vis_rendering_surface(struct surface_module *sf,
   double *z_buffer, scr_f[4], f[3][3], n_f[3][3], inter_point[3], normal[9];
   double value, c_value[3], depth;
   double deltac, iso_p[6], isocolor, n_iso[6], pixel_d[2][2], slip_y;
-  double *iso_value, *iso_rgb;
+  double *iso_value = NULL, *iso_rgb = NULL;
   int pixel_i[2][2], flag, tmp_i, last_j, next_j;
   int normal_flag;
-  double *v_normal;
-  double *p_normal;
-  int *v_num;
 
   double f_f[4], norm, v_f[9];
-  int end_timestep;
-  double start_time, time_interval;
-  int len_step;
   double f_disp[3][3];
   int deform_flag, count_dash_num;
 
@@ -89,11 +84,6 @@ void HECMW_vis_rendering_surface(struct surface_module *sf,
 fprintf(stderr, "Start rendering patches\n");
      */
   }
-  /*    start_time=0.0;
-time_interval=0.01;
-start_timestep=1;
-end_timestep=1000;
-   */
   mivalue = (double *)HECMW_calloc(data->nn_component, sizeof(double));
   mavalue = (double *)HECMW_calloc(data->nn_component, sizeof(double));
   if ((mivalue == NULL) || (mavalue == NULL))
@@ -110,8 +100,13 @@ end_timestep=1000;
     }
   }
 
+  /* Surfaces with display_method = 4 are drawn in a single color and do not
+   * enter color_list. If all surfaces are so, there is no range of values for
+   * the color bar and the histogram, and they are not drawn. */
+  color_on = 0;
   for (i = 0; i < data->nn_component; i++) {
     if (color_list[i] == 1) {
+      color_on     = 1;
       org_mincolor = tmincolor = mivalue[i];
       org_maxcolor = tmaxcolor = mavalue[i];
       if (mynode == 0)
@@ -128,14 +123,14 @@ end_timestep=1000;
     }
   }
 
-  if (sr->histogram_on == 1)
+  if (color_on && sr->histogram_on == 1)
     output_histogram_sf(sf, color_list, data, mivalue, mavalue, result, mynode,
                         pesize, VIS_COMM);
-  if (sr->histogram_on == 2)
+  if (color_on && sr->histogram_on == 2)
     generate_histogram_graph_sf(sf, color_list, data, mivalue, mavalue, result,
                                 mynode, pesize, VIS_COMM,
                                 sr->color_system_type);
-  if (sr->color_mapping_style == 4) {
+  if (color_on && sr->color_mapping_style == 4) {
     sr->interval_mapping_num = 10;
     sr->interval_point       = (double *)HECMW_calloc(22, sizeof(double));
     generate_interval_point_sf(sf, color_list, data, mivalue, mavalue, result,
@@ -287,16 +282,16 @@ sr->rotate_num_of_frames);
     fprintf(stderr, "rotate_style=%d num_of_frames=%d\n", sr->rotate_style,
             sr->rotate_num_of_frames);
   }
+  m_scr[0] = m_scr[2] = 1.0E+17;
+  m_scr[1] = m_scr[3] = -1.0E+17;
   if (sr->rotate_style == 0)
     num_img = 1;
-  else if ((sr->rotate_style >= 1) && (sr->rotate_style <= 4)) {
+  else { /* rotate_style is 1 to 4, checked in hecmw_vis_read_control.c */
     num_img = sr->rotate_num_of_frames;
     for (i                = 0; i < 3; i++)
       sr->screen_point[i] = (trange[i * 2] + trange[i * 2 + 1]) / 2.0;
     /*find the range of projection */
     for (i = 0; i < 3; i++) o_v_point[i] = sr->view_point_d[i];
-    m_scr[0] = m_scr[2] = 1.0E+17;
-    m_scr[1] = m_scr[3] = -1.0E+17;
 
     for (ii = 0; ii < num_img; ii++) {
       /*	   if(ii!=0)
@@ -378,8 +373,7 @@ for(j=0;j<3;j++)
     /* for multi-PEs, should find minx, maxx, miny, maxy in scr_area for all PE
      */
     if (ii == 0) {
-      if ((sr->color_mapping_bar_on == 0) && (sr->scale_marking_on == 0) &&
-          (sr->time_mark_on == 0)) {
+      if ((sr->color_mapping_bar_on == 0) && (sr->scale_marking_on == 0)) {
         start_x = 10;
         start_y = 10;
 
@@ -401,54 +395,6 @@ for(j=0;j<3;j++)
           else if (num_img > 1)
             sr->yr =
                 (int)((int)(20 + (m_scr[3] - m_scr[2]) / yd) / 10) * 10 + 10;
-        }
-        if (xd < yd) {
-          xd = yd;
-
-          if (num_img == 1)
-            sr->xr =
-                (int)((int)(20 + (scr_area[1] - scr_area[0]) / xd) / 8) * 8 + 8;
-          else if (num_img > 1)
-            sr->xr = (int)((int)(20 + (m_scr[1] - m_scr[0]) / xd) / 8) * 8 + 8;
-        }
-      } else if ((sr->color_mapping_bar_on == 0) &&
-                 (sr->scale_marking_on == 0) && (sr->time_mark_on == 1)) {
-        char buf3[128];
-        snprintf(buf3, sizeof(buf3), "%d",
-                (int)(start_time + time_interval * (double)end_timestep));
-        len_step   = strlen(buf3);
-        scale_type = 2;
-        scale      = (int)sr->font_size;
-        start_x    = 10;
-        start_y    = 10 + 7 * scale + 5;
-        if (sr->yr < start_y + 10)
-          HECMW_vis_print_exit(
-              "The resolution for yr is not enough, please specify a larger "
-              "one");
-        if (sr->xr < start_x + (len_step + 3 + 3) * scale)
-          HECMW_vis_print_exit(
-              "The resolution for xr is not enough, please specify a larger "
-              "one ");
-        if (num_img == 1) {
-          xd = (scr_area[1] - scr_area[0]) / (sr->xr - (start_x + 10));
-          yd = (scr_area[3] - scr_area[2]) / (sr->yr - (start_y + 10));
-        } else if (num_img > 1) {
-          xd = (m_scr[1] - m_scr[0]) / (sr->xr - (start_x + 10));
-          yd = (m_scr[3] - m_scr[2]) / (sr->yr - (start_y + 10));
-        }
-        if (xd >= yd) {
-          yd = xd;
-          if (num_img == 1)
-            sr->yr =
-                (int)((int)(start_y + 10 + (scr_area[3] - scr_area[2]) / yd) /
-                      10) *
-                    10 +
-                10;
-          else if (num_img > 1)
-            sr->yr =
-                (int)((int)(start_y + 10 + (m_scr[3] - m_scr[2]) / yd) / 10) *
-                    10 +
-                10;
         }
         if (xd < yd) {
           xd = yd;
@@ -635,54 +581,6 @@ t2=t3;
         if (sf[iii + 1].deform_display_on == 1) {
           if ((sf[iii + 1].initial_style == 2) ||
               (sf[iii + 1].initial_style == 3)) {
-            if (sr->smooth_shading == 1) {
-              v_normal = (double *)HECMW_calloc(result[iii].n_vertex * 3,
-                                                sizeof(double));
-              p_normal = (double *)HECMW_calloc(result[iii].n_patch * 4,
-                                                sizeof(double));
-              v_num = (int *)HECMW_calloc(result[iii].n_vertex, sizeof(int));
-              if ((v_normal == NULL) || (v_num == NULL) || (p_normal == NULL))
-                HECMW_vis_memory_exit("v_normal, p_normal");
-              for (k = 0; k < result[iii].n_vertex; k++) v_num[k] = 0;
-              for (k = 0; k < result[iii].n_vertex * 3; k++) v_normal[k] = 0.0;
-              for (k = 0; k < result[iii].n_patch; k++) {
-                for (i = 0; i < 3; i++) {
-                  for (j = 0; j < 3; j++)
-                    f[i][j] =
-                        result[iii]
-                            .vertex[(result[iii].patch[k * 3 + i] - 1) * 3 + j];
-                }
-                p_normal[k * 4 + 0] =
-                    (f[1][1] - f[0][1]) * (f[2][2] - f[0][2]) -
-                    (f[2][1] - f[0][1]) * (f[1][2] - f[0][2]);
-                p_normal[k * 4 + 1] =
-                    -(f[1][0] - f[0][0]) * (f[2][2] - f[0][2]) +
-                    (f[2][0] - f[0][0]) * (f[1][2] - f[0][2]);
-                p_normal[k * 4 + 2] =
-                    (f[1][0] - f[0][0]) * (f[2][1] - f[0][1]) -
-                    (f[2][0] - f[0][0]) * (f[1][1] - f[0][1]);
-                norm = sqrt(p_normal[k * 4 + 0] * p_normal[k * 4 + 0] +
-                            p_normal[k * 4 + 1] * p_normal[k * 4 + 1] +
-                            p_normal[k * 4 + 2] * p_normal[k * 4 + 2]);
-                if (fabs(norm) > EPSILON) {
-                  for (j = 0; j < 3; j++) p_normal[k * 4 + j] /= norm;
-                }
-                p_normal[k * 4 + 3] = -p_normal[k * 4 + 0] * f[0][0] -
-                                      p_normal[k * 4 + 1] * f[0][1] -
-                                      p_normal[k * 4 + 2] * f[0][2];
-                for (i = 0; i < 3; i++) {
-                  v_num[result[iii].patch[k * 3 + i] - 1]++;
-                  for (j = 0; j < 3; j++)
-                    v_normal[(result[iii].patch[k * 3 + i] - 1) * 3 + j] +=
-                        p_normal[k * 4 + j];
-                }
-              }
-              for (k = 0; k < result[iii].n_vertex; k++) {
-                if (v_num[k] != 0) {
-                  for (j = 0; j < 3; j++) v_normal[k * 3 + j] /= v_num[k];
-                }
-              }
-            }
             normal_flag = 1;
             for (k = 0; k < result[iii].n_patch; k++) {
               for (i = 0; i < 3; i++) {
@@ -692,12 +590,6 @@ t2=t3;
                           .vertex[(result[iii].patch[k * 3 + i] - 1) * 3 + j];
                 c_value[i] =
                     result[iii].color[result[iii].patch[k * 3 + i] - 1];
-              }
-              if (sr->smooth_shading == 1) {
-                for (i = 0; i < 3; i++)
-                  for (j = 0; j < 3; j++)
-                    normal[i * 3 + j] =
-                        v_normal[(result[iii].patch[k * 3 + i] - 1) * 3 + j];
               }
 
               transform_frame3(sr->screen_point, f, coff_matrix, n_f);
@@ -719,7 +611,7 @@ t2=t3;
 
                   intersection = find_surface_point(
                       f, point_o, sr->view_point_d, inter_point, f_f, v_f,
-                      c_value, &value, normal, normal_flag, sr->smooth_shading);
+                      c_value, &value, normal, normal_flag);
                   if (intersection == 1) {
                     depth = sqrt(SQR(inter_point[0] - sr->view_point_d[0]) +
                                  SQR(inter_point[1] - sr->view_point_d[1]) +
@@ -753,72 +645,6 @@ t2=t3;
           if ((sf[iii + 1].deform_style == 2) ||
               (sf[iii + 1].deform_style == 3)) {
             normal_flag = 1;
-            if (sr->smooth_shading == 1) {
-              v_normal = (double *)HECMW_calloc(result[iii].n_vertex * 3,
-                                                sizeof(double));
-              p_normal = (double *)HECMW_calloc(result[iii].n_patch * 4,
-                                                sizeof(double));
-              v_num = (int *)HECMW_calloc(result[iii].n_vertex, sizeof(int));
-              if ((v_normal == NULL) || (v_num == NULL) || (p_normal == NULL))
-                HECMW_vis_memory_exit("v_normal_d, p_normal");
-              for (k = 0; k < result[iii].n_vertex; k++) v_num[k] = 0;
-              for (k = 0; k < result[iii].n_vertex * 3; k++) v_normal[k] = 0.0;
-              for (k = 0; k < result[iii].n_patch; k++) {
-                for (i = 0; i < 3; i++) {
-                  if (stat_para[70] == 0) {
-                    for (j = 0; j < 3; j++)
-                      f[i][j] =
-                          result[iii]
-                              .vertex[(result[iii].patch[k * 3 + i] - 1) * 3 +
-                                      j] +
-                          result[iii]
-                                  .disp[(result[iii].patch[k * 3 + i] - 1) * 3 +
-                                        j] *
-                              (sf[iii + 1].disp_scale /
-                               (sr->deform_num_of_frames) * (jjj + 1));
-                  } else {
-                    for (j = 0; j < 3; j++)
-                      f[i][j] =
-                          result[iii]
-                              .vertex[(result[iii].patch[k * 3 + i] - 1) * 3 +
-                                      j] +
-                          result[iii]
-                                  .disp[(result[iii].patch[k * 3 + i] - 1) * 3 +
-                                        j] *
-                              sf[iii + 1].disp_scale;
-                  }
-                }
-                p_normal[k * 4 + 0] =
-                    (f[1][1] - f[0][1]) * (f[2][2] - f[0][2]) -
-                    (f[2][1] - f[0][1]) * (f[1][2] - f[0][2]);
-                p_normal[k * 4 + 1] =
-                    -(f[1][0] - f[0][0]) * (f[2][2] - f[0][2]) +
-                    (f[2][0] - f[0][0]) * (f[1][2] - f[0][2]);
-                p_normal[k * 4 + 2] =
-                    (f[1][0] - f[0][0]) * (f[2][1] - f[0][1]) -
-                    (f[2][0] - f[0][0]) * (f[1][1] - f[0][1]);
-                norm = sqrt(p_normal[k * 4 + 0] * p_normal[k * 4 + 0] +
-                            p_normal[k * 4 + 1] * p_normal[k * 4 + 1] +
-                            p_normal[k * 4 + 2] * p_normal[k * 4 + 2]);
-                if (fabs(norm) > EPSILON) {
-                  for (j = 0; j < 3; j++) p_normal[k * 4 + j] /= norm;
-                }
-                p_normal[k * 4 + 3] = -p_normal[k * 4 + 0] * f[0][0] -
-                                      p_normal[k * 4 + 1] * f[0][1] -
-                                      p_normal[k * 4 + 2] * f[0][2];
-                for (i = 0; i < 3; i++) {
-                  v_num[result[iii].patch[k * 3 + i] - 1]++;
-                  for (j = 0; j < 3; j++)
-                    v_normal[(result[iii].patch[k * 3 + i] - 1) * 3 + j] +=
-                        p_normal[k * 4 + j];
-                }
-              }
-              for (k = 0; k < result[iii].n_vertex; k++) {
-                if (v_num[k] != 0) {
-                  for (j = 0; j < 3; j++) v_normal[k * 3 + j] /= v_num[k];
-                }
-              }
-            }
 
             for (k = 0; k < result[iii].n_patch; k++) {
               for (i = 0; i < 3; i++) {
@@ -848,12 +674,6 @@ t2=t3;
                 c_value[i] =
                     result[iii].color[result[iii].patch[k * 3 + i] - 1];
               }
-              if (sr->smooth_shading == 1) {
-                for (i = 0; i < 3; i++)
-                  for (j = 0; j < 3; j++)
-                    normal[i * 3 + j] =
-                        v_normal[(result[iii].patch[k * 3 + i] - 1) * 3 + j];
-              }
 
               transform_frame3(sr->screen_point, f_disp, coff_matrix, n_f);
               find_projection_range2(view_point, n_f, scr_f);
@@ -874,7 +694,7 @@ t2=t3;
 
                   intersection = find_surface_point(
                       f_disp, point_o, sr->view_point_d, inter_point, f_f, v_f,
-                      c_value, &value, normal, normal_flag, sr->smooth_shading);
+                      c_value, &value, normal, normal_flag);
                   if (intersection == 1) {
                     depth = sqrt(SQR(inter_point[0] - sr->view_point_d[0]) +
                                  SQR(inter_point[1] - sr->view_point_d[1]) +
@@ -1166,6 +986,7 @@ t2=t3;
                   iso_p[j + 3] = f_disp[mmm1][j];
                 }
 
+                count_dash_num = -1;
                 transform_frame4(sr->screen_point, iso_p, coff_matrix, n_iso);
                 find_projection_range3(view_point, n_iso, pixel_d, iso_p);
                 for (j = 0; j < 2; j++) {
@@ -1403,54 +1224,6 @@ t2=t3;
             normal_flag = 0;
           } else {
             normal_flag = 1;
-            if (sr->smooth_shading == 1) {
-              v_normal = (double *)HECMW_calloc(result[iii].n_vertex * 3,
-                                                sizeof(double));
-              p_normal = (double *)HECMW_calloc(result[iii].n_patch * 4,
-                                                sizeof(double));
-              v_num = (int *)HECMW_calloc(result[iii].n_vertex, sizeof(int));
-              if ((v_normal == NULL) || (v_num == NULL) || (p_normal == NULL))
-                HECMW_vis_memory_exit("v_normal, p_normal");
-              for (k = 0; k < result[iii].n_vertex; k++) v_num[k] = 0;
-              for (k = 0; k < result[iii].n_vertex * 3; k++) v_normal[k] = 0.0;
-              for (k = 0; k < result[iii].n_patch; k++) {
-                for (i = 0; i < 3; i++) {
-                  for (j = 0; j < 3; j++)
-                    f[i][j] =
-                        result[iii]
-                            .vertex[(result[iii].patch[k * 3 + i] - 1) * 3 + j];
-                }
-                p_normal[k * 4 + 0] =
-                    (f[1][1] - f[0][1]) * (f[2][2] - f[0][2]) -
-                    (f[2][1] - f[0][1]) * (f[1][2] - f[0][2]);
-                p_normal[k * 4 + 1] =
-                    -(f[1][0] - f[0][0]) * (f[2][2] - f[0][2]) +
-                    (f[2][0] - f[0][0]) * (f[1][2] - f[0][2]);
-                p_normal[k * 4 + 2] =
-                    (f[1][0] - f[0][0]) * (f[2][1] - f[0][1]) -
-                    (f[2][0] - f[0][0]) * (f[1][1] - f[0][1]);
-                norm = sqrt(p_normal[k * 4 + 0] * p_normal[k * 4 + 0] +
-                            p_normal[k * 4 + 1] * p_normal[k * 4 + 1] +
-                            p_normal[k * 4 + 2] * p_normal[k * 4 + 2]);
-                if (fabs(norm) > EPSILON) {
-                  for (j = 0; j < 3; j++) p_normal[k * 4 + j] /= norm;
-                }
-                p_normal[k * 4 + 3] = -p_normal[k * 4 + 0] * f[0][0] -
-                                      p_normal[k * 4 + 1] * f[0][1] -
-                                      p_normal[k * 4 + 2] * f[0][2];
-                for (i = 0; i < 3; i++) {
-                  v_num[result[iii].patch[k * 3 + i] - 1]++;
-                  for (j = 0; j < 3; j++)
-                    v_normal[(result[iii].patch[k * 3 + i] - 1) * 3 + j] +=
-                        p_normal[k * 4 + j];
-                }
-              }
-              for (k = 0; k < result[iii].n_vertex; k++) {
-                if (v_num[k] != 0) {
-                  for (j = 0; j < 3; j++) v_normal[k * 3 + j] /= v_num[k];
-                }
-              }
-            }
           }
 
           for (k = 0; k < result[iii].n_patch; k++) {
@@ -1462,12 +1235,6 @@ t2=t3;
               c_value[i] = result[iii].color[result[iii].patch[k * 3 + i] - 1];
             }
             if (sf[iii + 1].display_method != 2) {
-              if (sr->smooth_shading == 1) {
-                for (i = 0; i < 3; i++)
-                  for (j = 0; j < 3; j++)
-                    normal[i * 3 + j] =
-                        v_normal[(result[iii].patch[k * 3 + i] - 1) * 3 + j];
-              }
 
               transform_frame3(sr->screen_point, f, coff_matrix, n_f);
               find_projection_range2(view_point, n_f, scr_f);
@@ -1488,7 +1255,7 @@ t2=t3;
 
                   intersection = find_surface_point(
                       f, point_o, sr->view_point_d, inter_point, f_f, v_f,
-                      c_value, &value, normal, normal_flag, sr->smooth_shading);
+                      c_value, &value, normal, normal_flag);
                   if (intersection == 1) {
                     depth = sqrt(SQR(inter_point[0] - sr->view_point_d[0]) +
                                  SQR(inter_point[1] - sr->view_point_d[1]) +
@@ -2122,27 +1889,20 @@ for(i=xr-1;i>=0;i--)
   image[(j*xr+i)*3+2]);
 fclose(outfp);
          */
-        if (sr->fixed_scale_mark == 0)
+        if (color_on && sr->fixed_scale_mark == 0)
           generate_color_bar(
               sr->scale_marking_on, sr->font_size, sr->color_bar_style,
               sr->mark_0_on, sr->color_mapping_bar_on, sr->xr, sr->yr,
               sr->font_color, sr->color_system_type, sr->color_mapping_style,
               sr->interval_point, sr->interval_mapping_num, sr->num_of_scale,
               tmincolor, tmaxcolor, org_mincolor, org_maxcolor, image);
-        if (sr->fixed_scale_mark == 1)
+        if (color_on && sr->fixed_scale_mark == 1)
           generate_color_bar(
               sr->scale_marking_on, sr->font_size, sr->color_bar_style,
               sr->mark_0_on, sr->color_mapping_bar_on, sr->xr, sr->yr,
               sr->font_color, sr->color_system_type, sr->color_mapping_style,
               sr->interval_point, sr->interval_mapping_num, sr->num_of_scale,
               tmincolor, tmaxcolor, tmincolor, tmaxcolor, image);
-        /*        fprintf(stderr, "time_mark_on is %d timestep is %d\n",
-         * sr->time_mark_on, timestep);
-         */
-        if (sr->time_mark_on == 1)
-          mark_time_label(sr->font_size, sr->xr, sr->yr, sr->font_color,
-                          sr->background_color, start_time, time_interval,
-                          timestep, len_step, image);
         /*	(void)GEOFEM_file_translate_filename(geofem_output_file,
                  fname, GEOFEM_INDEPENDENT);
 {
@@ -2300,11 +2060,6 @@ snprintf(fname + strlen(fname), sizeof(fname) - strlen(fname), ".%d.%d.bmp", v->
       }
       HECMW_free(image);
       HECMW_free(z_buffer);
-      if (sr->smooth_shading == 1) {
-        HECMW_free(v_normal);
-        HECMW_free(p_normal);
-        HECMW_free(v_num);
-      }
     }
   } /*for jjj loop */
 

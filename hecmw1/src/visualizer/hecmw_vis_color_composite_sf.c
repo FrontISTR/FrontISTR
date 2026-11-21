@@ -11,10 +11,9 @@
 int find_surface_point(double fp[3][3], double point_o[3],
                        double view_point_d[3], double point[3], double n_f[4],
                        double v_f[9], double c_value[3], double *value,
-                       double normal[9], int normal_flag, int smooth_shading) {
+                       double normal[9], int normal_flag) {
   int i, j, n1, n2, flag_inside;
   double s[3], sina, cosa, ss, t, dis[3], dist, n_norm, v_norm, nv_sign;
-  double tmp_p[7];
 
   /*find the equation of the patch first */
   flag_inside = 0;
@@ -41,8 +40,7 @@ int find_surface_point(double fp[3][3], double point_o[3],
   }
   if (normal_flag == 1)
     n_f[3] = -n_f[0] * fp[0][0] - n_f[1] * fp[0][1] - n_f[2] * fp[0][2];
-  if (smooth_shading == 0)
-    for (i = 0; i < 3; i++) normal[i] = n_f[i];
+  for (i = 0; i < 3; i++) normal[i] = n_f[i];
   /*find intersection point*/
   if (fabs(n_f[0] * (point_o[0] - view_point_d[0]) +
            n_f[1] * (point_o[1] - view_point_d[1]) +
@@ -65,14 +63,6 @@ int find_surface_point(double fp[3][3], double point_o[3],
             (fabs(point[2] - fp[n1][2]) < EPSILON)) {
           flag_inside = 1;
           *value      = c_value[n1];
-          if (smooth_shading == 1) {
-            tmp_p[0]  = normal[n1 * 3 + 0];
-            tmp_p[1]  = normal[n1 * 3 + 1];
-            tmp_p[2]  = normal[n1 * 3 + 2];
-            normal[0] = tmp_p[0];
-            normal[1] = tmp_p[1];
-            normal[2] = tmp_p[2];
-          }
           break;
         }
         cosa = ((point[0] - fp[n1][0]) * (fp[n2][0] - fp[n1][0]) +
@@ -113,14 +103,6 @@ int find_surface_point(double fp[3][3], double point_o[3],
           dist   = 1.0 / dis[0] + 1.0 / dis[1] + 1.0 / dis[2];
           *value = c_value[0] / (dis[0] * dist) + c_value[1] / (dis[1] * dist) +
                    c_value[2] / (dis[2] * dist);
-          if (smooth_shading == 1) {
-            for (j = 0; j < 3; j++) {
-              tmp_p[j] = normal[0 * 3 + j] / (dis[0] * dist) +
-                         normal[1 * 3 + j] / (dis[1] * dist) +
-                         normal[2 * 3 + j] / (dis[2] * dist);
-            }
-            for (j = 0; j < 3; j++) normal[j] = tmp_p[j];
-          }
         }
       }
     }
@@ -290,7 +272,7 @@ void compute_color_sf(double p[3], double value, double n[3],
       r = (value - 0.5) * 4.0;
       g = 1.0;
       b = 0.0;
-    } else if (value > 0.75) {
+    } else {
       r = 1.0;
       g = (1.0 - value) * 4.0;
       b = 0.0;
@@ -317,12 +299,12 @@ void compute_color_sf(double p[3], double value, double n[3],
       r = (value - 0.6) * 5.0;
       g = 1.0;
       b = 0.0;
-    } else if (value > 0.0) {
+    } else {
       r = 1.0;
       g = 1.0 - (value - 0.8) * 5.0;
       b = 0.0;
     }
-  } else if (color_system_type == 3) {
+  } else { /* color_system_type is 3 */
     r = g = b = value;
   }
 

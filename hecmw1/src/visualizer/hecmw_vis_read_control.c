@@ -600,6 +600,7 @@ void HECMW_vis_read_control(FILE *fp, int pesize, int mynode, PSF_link *psf,
       len_para[55] = 11;
       snprintf(parameters[56], para_size, "isoline_color");
       len_para[56] = 12;
+      /* not used, kept for the indices */
       snprintf(parameters[57], para_size, "time_mark_on");
       len_para[57] = 10;
       snprintf(parameters[58], para_size, "fixed_scale_mark");
@@ -622,16 +623,13 @@ void HECMW_vis_read_control(FILE *fp, int pesize, int mynode, PSF_link *psf,
       len_para[66] = 15;
       snprintf(parameters[67], para_size, "deform_num_of_frames");
       len_para[67] = 15;
+      /* not used, kept for the indices */
       snprintf(parameters[68], para_size, "smooth_shading_on");
       len_para[68] = 15;
       snprintf(parameters[69], para_size, "real_deform_scale");
       len_para[69] = 16;
       snprintf(parameters[70], para_size, "fixed_mesh_range");
       len_para[70] = 14;
-      snprintf(parameters[71], para_size, "start_time");
-      len_para[71] = 9;
-      snprintf(parameters[72], para_size, "time_interval");
-      len_para[72] = 9;
 
       for (i = 0; i < NUM_CONTROL_PSF; i++) {
         stat_para[i] = 0;
@@ -1035,9 +1033,6 @@ void HECMW_vis_read_control(FILE *fp, int pesize, int mynode, PSF_link *psf,
                             get_double_item(para, buf, &location);
                       }
                       break;
-                    case 57:
-                      sr->time_mark_on = get_int_item(para, buf, &location);
-                      break;
                     case 58:
                       sr->fixed_scale_mark = get_int_item(para, buf, &location);
                       break;
@@ -1077,9 +1072,6 @@ void HECMW_vis_read_control(FILE *fp, int pesize, int mynode, PSF_link *psf,
                       sr->deform_num_of_frames =
                           get_int_item(para, buf, &location);
                       break;
-                    case 68:
-                      sr->smooth_shading = get_int_item(para, buf, &location);
-                      break;
                     case 69:
                       sf[k].real_disp_scale =
                           get_double_item(para, buf, &location);
@@ -1089,12 +1081,6 @@ void HECMW_vis_read_control(FILE *fp, int pesize, int mynode, PSF_link *psf,
                         sr->fixed_mesh_range[i] =
                             get_double_item(para, buf, &location);
                       }
-                      break;
-                    case 71:
-                      sr->start_time = get_double_item(para, buf, &location);
-                      break;
-                    case 72:
-                      sr->time_interval = get_double_item(para, buf, &location);
                       break;
                   }
                 }
@@ -1419,6 +1405,12 @@ HECMW_vis_print_exit("Please re-input again");
           sr->rotate_style         = 0;
           sr->rotate_num_of_frames = 1;
         }
+        if ((sr->rotate_style < 0) || (sr->rotate_style > 4)) {
+          fprintf(stderr,
+                  "ERROR: HEC-MW-VIS-E1039: The rotate_style parameter is "
+                  "wrong. Please input one within (0, 4)\n");
+          HECMW_vis_print_exit("Please re-input and run again");
+        }
         if ((sr->rotate_style >= 1) && (sr->rotate_style <= 4)) {
           if (stat_para[37] == 0) sr->rotate_num_of_frames = 8;
           if (sr->rotate_num_of_frames <= 0) {
@@ -1444,6 +1436,8 @@ HECMW_vis_print_exit("Please re-input again");
                   "can be defined as 0 or 1\n");
           HECMW_vis_print_exit("Please re-input it and run again");
         }
+        /* the scale marks belong to the color mapping bar */
+        if (sr->color_mapping_bar_on == 0) sr->scale_marking_on = 0;
 
         if ((sr->color_mapping_bar_on == 1) && (sr->xr < 40)) {
           fprintf(stderr,
@@ -1595,13 +1589,6 @@ HECMW_vis_print_exit("Please re-input again");
           sr->isoline_color[1] = 0.0;
           sr->isoline_color[2] = 0.0;
         }
-        if (stat_para[57] == 0) sr->time_mark_on = 0;
-        if ((sr->time_mark_on < 0) || (sr->time_mark_on > 1)) {
-          fprintf(
-              stderr,
-              "ERROR: HEC-MW-VIS-E1036: time_mark_on value should be 0 or 1");
-          HECMW_vis_print_exit("Please re-input again");
-        }
         if (stat_para[58] == 0) sr->fixed_scale_mark = 0;
         if ((sr->fixed_scale_mark < 0) || (sr->fixed_scale_mark > 1)) {
           fprintf(stderr,
@@ -1609,7 +1596,6 @@ HECMW_vis_print_exit("Please re-input again");
                   "or 1");
           HECMW_vis_print_exit("Please re-input again");
         }
-        if (stat_para[68] == 0) sr->smooth_shading = 0;
 
         /*		  fprintf(stderr, "resolution is %d  %d\n", sr->xr,
 sr->yr);
@@ -1746,6 +1732,7 @@ fprintf(stderr, "*********current PSF number= %d\n", psf->num_of_psf);
       len_para[45] = 10;
       snprintf(parameters[46], para_size, "display_range");
       len_para[46] = 13;
+      /* not used, kept for the indices */
       snprintf(parameters[47], para_size, "time_mark_on");
       len_para[47] = 10;
       snprintf(parameters[48], para_size, "fixed_scale_mark");
@@ -2007,9 +1994,6 @@ fprintf(stderr, "*********current PSF number= %d\n", psf->num_of_psf);
                   vr->display_range[i] = get_double_item(para, buf, &location);
                 }
                 break;
-              case 47:
-                vr->time_mark_on = get_int_item(para, buf, &location);
-                break;
               case 48:
                 vr->fixed_scale_mark = get_int_item(para, buf, &location);
                 break;
@@ -2230,6 +2214,8 @@ if((stat_para[12]==1) && (vr->surface_opacity<0.0)) {
                 "be defined as 0 or 1\n");
         HECMW_vis_print_exit("Please re-input it and run again");
       }
+      /* the scale marks belong to the color mapping bar */
+      if (vr->color_mapping_bar_on == 0) vr->scale_marking_on = 0;
 
       if ((vr->color_mapping_bar_on == 1) && (vr->xr < 40)) {
         fprintf(stderr,
@@ -2398,12 +2384,6 @@ on case\n");
         HECMW_vis_print_exit("Please input and run again");
       }
       if (stat_para[45] == 0) vr->histogram_on = 0;
-      if (stat_para[47] == 0) vr->time_mark_on = 0;
-      if ((vr->time_mark_on < 0) || (vr->time_mark_on > 1)) {
-        fprintf(stderr,
-                "ERROR: HEC-MW-VIS-E1050: time_mark_on value should be 0 or 1");
-        HECMW_vis_print_exit("Please re-input again");
-      }
       if (stat_para[48] == 0) vr->fixed_scale_mark = 0;
       if ((vr->fixed_scale_mark < 0) || (vr->fixed_scale_mark > 1)) {
         fprintf(

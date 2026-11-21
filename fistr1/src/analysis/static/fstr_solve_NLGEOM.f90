@@ -64,7 +64,7 @@ contains
     if( fstrSOLID%TEMP_ngrp_tot>0 .and. associated(g_InitialCnd) ) then
       fstrSOLID%last_temp = 0.0d0
       fstrSOLID%temperature = 0.0d0
-	  do j=1,size(g_InitialCnd)
+      do j=1,size(g_InitialCnd)
           if( g_InitialCnd(j)%cond_name=="temperature" ) then
             if( .not. associated(fstrSOLID%temperature) ) then
                 allocate( fstrSOLID%temperature( hecMESH%n_node ) )

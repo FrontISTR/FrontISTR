@@ -87,12 +87,13 @@ contains
 
     if(NBFGS>0)then
        allocate (tmpVecBFGS(NDOF*NP))
-       allocate (sBFGS(NDOF*NP,NBFGS))
-       allocate (yBFGS(NDOF*NP,NBFGS))
-       allocate (idxBFGS(NBFGS))
-       allocate (rho(NBFGS))
-       allocate (alpha(NBFGS))
     endif
+    ! the arrays of the BFGS history have size 0 when NBFGS is 0
+    allocate (sBFGS(NDOF*NP,NBFGS))
+    allocate (yBFGS(NDOF*NP,NBFGS))
+    allocate (idxBFGS(NBFGS))
+    allocate (rho(NBFGS))
+    allocate (alpha(NBFGS))
 
     do idx = 1, NBFGS
        idxBFGS(idx) = idx

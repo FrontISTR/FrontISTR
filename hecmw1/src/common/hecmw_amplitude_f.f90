@@ -31,13 +31,14 @@ contains
     else if(time <= amp%amp_table(jj1)) then
       f_t = amp%amp_val(jj1)
     else
+      s2 = jj2
       do i = jj1+1, jj2
         if(time <= amp%amp_table(i)) then
           s2 = i
-          s1 = s2 - 1
           exit
         endif
       end do
+      s1 = s2 - 1
 
       t_2 = amp%amp_table(s2)
       t_1 = amp%amp_table(s1)

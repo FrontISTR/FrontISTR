@@ -102,6 +102,8 @@ contains
       n_subelem = (nn-1)/3
     else if( etype == 891 ) then !edge-smoothed element
       n_subelem = (nn-2)/2
+    else
+      stop "element type not defined"
     end if
     call create_compressed_vector_by_node_id(nn,nodlocal,nn_comp,local_nid)
 

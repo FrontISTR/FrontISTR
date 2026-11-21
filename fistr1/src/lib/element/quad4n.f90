@@ -19,7 +19,7 @@ contains
 
   subroutine ShapeDeriv_quad4n(lcoord,func)
     real(kind=kreal), intent(in) :: lcoord(2)
-    real(kind=kreal) :: func(4,2)
+    real(kind=kreal), intent(out) :: func(4,2)
     func(1,1) = -0.25d0*(1.d0-lcoord(2))
     func(2,1) =  0.25d0*(1.d0-lcoord(2))
     func(3,1) =  0.25d0*(1.d0+lcoord(2))
@@ -32,7 +32,7 @@ contains
   end subroutine
 
   subroutine Shape2ndDeriv_quad4n(func)
-    real(kind=kreal) :: func(4,2,2)
+    real(kind=kreal), intent(out) :: func(4,2,2)
     func(:,1,1) = 0.d0
     func(1,1,2) = 0.25d0
     func(2,1,2) = -0.25d0

@@ -136,7 +136,7 @@ void CNFData::Load(const char *fname) {
       } while (fg_block_continue);
     }
 
-  } catch (CNFError e) {
+  } catch (CNFError &e) {
     fclose(fp);
     throw e;
   }
@@ -328,14 +328,15 @@ void CNFData::ReadRecord(char *buff, const char *fmt, ...) {
       }
     }
 
-  } catch (CNFError err) {
+  } catch (CNFError &err) {
     throw err;
   }
 }
 
 int CNFData::ReadLine(char *buff, int size) {
   if (!fg_line_buff_empty) {
-    snprintf(buff, size, "%s", line_buff);
+    /* line_buff holds a line read by ReadLine with the same size */
+    snprintf(buff, size, "%.*s", size - 1, line_buff);
     fg_line_buff_empty = TRUE;
     return READLINE_SUCESS;
   }
@@ -379,7 +380,7 @@ void CNFData::ReadStr(char *buff, char *s, int size) {
   }
 
   int n = strlen(buff);
-  assert(!(n >= size));
+  if (n >= size) n = size - 1;
 
   for (i = 0; i < n; i++) s[i] = buff[i];
 
@@ -411,7 +412,7 @@ void CNFData::ReadMultRec(char type, int n_in_rec, int val_n, void *val) {
       break;
 
     default:
-      assert(0);
+      throw CNFError(NFE_UNKNOWN_ERROR, line);
   }
 
   n  = val_n / n_in_rec;
@@ -522,7 +523,7 @@ void CNFData::WriteData(FILE *fp, const char *fmt, ...) {
       }
     }
 
-  } catch (CNFError err) {
+  } catch (CNFError &err) {
     va_end(va);
     throw err;
   }

@@ -34,12 +34,12 @@ void generate_histogram_graph_sf(struct surface_module *sf, int *color_list,
   int output7[7][7];
   int color_id;
 
+  color_id = -1;
   for (i = 0; i < data->nn_component; i++) {
-    if (color_list[i] == 1) {
-      color_id = i;
-      delta    = (mavalue[i] - mivalue[i]) / 500.0;
-    }
+    if (color_list[i] == 1) color_id = i;
   }
+  if (color_id < 0) return;
+  delta = (mavalue[color_id] - mivalue[color_id]) / 500.0;
 
   for (i = 0; i < 500; i++) {
     count[i]   = 0;
@@ -240,12 +240,12 @@ void generate_interval_point_sf(struct surface_module *sf, int *color_list,
       current_j;
   int color_id;
 
+  color_id = -1;
   for (i = 0; i < data->nn_component; i++) {
-    if (color_list[i] == 1) {
-      color_id = i;
-      delta    = (mavalue[i] - mivalue[i]) / 500.0;
-    }
+    if (color_list[i] == 1) color_id = i;
   }
+  if (color_id < 0) return;
+  delta = (mavalue[color_id] - mivalue[color_id]) / 500.0;
 
   for (i = 0; i < 500; i++) {
     count[i]   = 0;
@@ -312,12 +312,12 @@ void output_histogram_sf(struct surface_module *sf, int *color_list,
   int count[100], t_count[100];
   FILE *fp;
   int color_id;
+  color_id = -1;
   for (i = 0; i < data->nn_component; i++) {
-    if (color_list[i] == 1) {
-      color_id = i;
-      delta    = (mavalue[i] - mivalue[i]) / 100.0;
-    }
+    if (color_list[i] == 1) color_id = i;
   }
+  if (color_id < 0) return;
+  delta = (mavalue[color_id] - mivalue[color_id]) / 100.0;
 
   for (i = 0; i < 100; i++) {
     count[i]   = 0;

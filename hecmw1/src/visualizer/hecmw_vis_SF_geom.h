@@ -62,7 +62,7 @@
 
 #define HASH_TABLE_SIZE 10000
 
-#define NUM_CONTROL_PSF 73
+#define NUM_CONTROL_PSF 71
 /*
 #define MAX_LINE_LEN   256
 #define buffer_size  300

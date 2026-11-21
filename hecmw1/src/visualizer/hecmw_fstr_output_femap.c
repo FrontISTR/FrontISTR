@@ -183,6 +183,9 @@ static void femap_write_elem(FILE *outfp, int mynode, int n_elem,
       nnb[7]                          = nn[13];
       nnb[8]                          = nn[14];
       nnb[9]                          = nn[15];
+    } else {
+      fprintf(stderr, "WARNING: Unknown element type %d, skipping\n", ietyp);
+      continue;
     }
 
     fprintf(outfp, "%8d,%8d,%8d,%8d,%8d,1,0,0,0,0,0,0,0,\n", ielm, icol, isid,
@@ -213,7 +216,7 @@ void HECMW_fstr_output_femap(struct hecmwST_local_mesh *mesh,
   long long *tmp_elem_node_index;
   int disp_comp, stress_comp, disp_base, stress_base, name_len;
   int temp_comp, temp_base;
-  FILE *outfp;
+  FILE *outfp = NULL;
 
   HECMW_Comm_rank(VIS_COMM, &mynode);
   HECMW_Comm_size(VIS_COMM, &pesize);
@@ -994,8 +997,8 @@ static void avs_output(struct hecmwST_local_mesh *mesh,
   int mynode, pesize;
   int total_n_node, total_n_elem;
   int tn_component, te_component;
-  int *nid_offsets, *eid_offsets;
-  FILE *outfp;
+  int *nid_offsets = NULL, *eid_offsets = NULL;
+  FILE *outfp = NULL;
   HECMW_Status stat;
 
   int flag_skip_ext = 1;
@@ -1397,7 +1400,7 @@ void HECMW_bin_avs_output(struct hecmwST_local_mesh *mesh,
       *tmp_elem_node_item, *tmp_section_ID,
       *tmp_node_global_ID;
   long long *tmp_elem_node_index;
-  FILE *fp, *fp2;
+  FILE *fp = NULL, *fp2;
   int total_n_node, total_n_elem;
 
   int icell_type[1];
@@ -1414,7 +1417,7 @@ void HECMW_bin_avs_output(struct hecmwST_local_mesh *mesh,
   char nodedata_label[16];
   char nodedata_unit[16];
   int ztype;
-  int tmp_int_conv, *tmp_global_id, count, elem_type_bin;
+  int tmp_int_conv, *tmp_global_id = NULL, count, elem_type_bin;
   float tmp_d_conv;
   int node_num;
 
@@ -1439,6 +1442,9 @@ void HECMW_bin_avs_output(struct hecmwST_local_mesh *mesh,
   } else if ((mesh->elem_type[0] == 361) || (mesh->elem_type[0] == 362)) {
     elem_type_bin = 7;
     node_num      = 8;
+  } else {
+    HECMW_vis_print_exit(
+        "ERROR: Element type not supported in binary AVS output");
   }
   if (pesize > 1) {
     HECMW_Allreduce(&mesh->nn_internal, &total_n_node, 1, HECMW_INT, HECMW_SUM,

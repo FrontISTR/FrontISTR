@@ -58,7 +58,7 @@ display_range[6];
   double vertex[3 * 8];
   double point_s[3], point_o[3], ray_direction[3];
   int i, j, k, m;
-  double range[6], xd, yd;
+  double range[6], xd = 0.0, yd = 0.0;
   double coff_matrix[3][3], n_vertex[3 * 8], inv_matrix[3][3];
   double mincolor, maxcolor, view_point[3], scr_area[4], x, y, nn;
   double tmincolor, tmaxcolor, trange[6], svertex[3 * 8], sn_vertex[3 * 8],
@@ -67,8 +67,8 @@ display_range[6];
   double accum_rgba[4];
   extern void HECMW_vis_memory_exit(char *var);
   extern void HECMW_vis_print_exit(char *var);
-  double *accum_opa;
-  double *image;
+  double *accum_opa = NULL;
+  double *image = NULL;
   double center[3], dis_c_v, *ndis_c_v, tmpd;
   int *pe_id, tmpi, pix_num, pix0_num, pixn;
   double *n_subimage, *n_subopa, *subimage, *subopa;
@@ -76,7 +76,7 @@ display_range[6];
   double first_p[3];
   HECMW_Status stat;
   int starti, startj, endi, endj;
-  int start_x, start_y;
+  int start_x = 0, start_y = 0;
   double minx, miny, minz, maxx, maxy, maxz, tminx, tminy, tminz, tmaxx, tmaxy,
       tmaxz;
   double av_length, tav_length;
@@ -341,16 +341,16 @@ fprintf(stderr, "the time for reading file is %lf the total time up to now is
 Define the sampling and projection parameters
    */
   /* First, define the equation of screen */
+  m_scr[0] = m_scr[2] = 1.0E+17;
+  m_scr[1] = m_scr[3] = -1.0E+17;
   if (vr->rotate_style == 0)
     num_img = 1;
-  else if ((vr->rotate_style >= 1) && (vr->rotate_style <= 4)) {
+  else { /* rotate_style is 1 to 4, checked in hecmw_vis_read_control.c */
     num_img = vr->num_of_frames;
     for (i                = 0; i < 3; i++)
       vr->screen_point[i] = (trange[i * 2] + trange[i * 2 + 1]) / 2.0;
     /*find the range of projection */
     for (i = 0; i < 3; i++) o_v_point[i] = vr->view_point_d[i];
-    m_scr[0] = m_scr[2] = 1.0E+17;
-    m_scr[1] = m_scr[3] = -1.0E+17;
 
     for (ii = 0; ii < num_img; ii++) {
       if (ii != 0)

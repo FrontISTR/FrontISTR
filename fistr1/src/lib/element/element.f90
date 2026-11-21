@@ -661,6 +661,8 @@ contains
         select case(n_intp)
         case(27)
           getWeight_ss = weight2d27(np)
+        case default
+          stop "number of quadrature points not defined-qp"
         end select
       case ( fe_quad4n, fe_mitc4_shell )
         select case(n_intp)
@@ -670,6 +672,8 @@ contains
           getWeight_ss = weight2d3(np)
         case(16)
           getWeight_ss = weight2d16(np)
+        case default
+          stop "number of quadrature points not defined-qp"
         end select
       case default
         ! error message

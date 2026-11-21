@@ -64,22 +64,23 @@ void HECMW_vis_combine(struct surface_module *sf,
   double color, *mivalue, *mavalue;
   int mynode, pesize;
   HECMW_Status stat;
-  double *vcoord, *coord, *vcolor, *ccolor;
+  double *vcoord = NULL, *coord, *vcolor = NULL, *ccolor;
   int s_vertex, s_patch;
-  int *c_colorid, *v_colorid;
+  int *c_colorid = NULL, *v_colorid;
 
-  int *c_style, *vc_style;
-  int *n_vertex, *n_patch;
-  int *plist, *pplist;
+  int *c_style = NULL, *vc_style;
+  int *n_vertex = NULL, *n_patch = NULL;
+  int *plist = NULL, *pplist;
   int nbase, pbase;
-  int n_node, n_element;
+  int n_node = 0, n_element = 0;
   double r, g, b;
-  FILE *outfp;
+  FILE *outfp = NULL;
   double rgbrange[3], value;
   double range[6], minx, miny, minz, maxx, maxy, maxz, tminx, tminy, tminz,
       tmaxx, tmaxy, tmaxz;
-  double *cdisp, *vdisp, *tdisp, *tcolor, disp_min[5], disp_max[5], tmp;
-  int icol, isid, isop, istyp, itopo;
+  double *cdisp = NULL, *vdisp = NULL, *tdisp = NULL, *tcolor = NULL;
+  double disp_min[5], disp_max[5], tmp;
+  int icol = 0, isid = 0, isop, istyp = 0, itopo = 0;
 
   HECMW_Comm_size(VIS_COMM, &pesize);
   HECMW_Comm_rank(VIS_COMM, &mynode);
@@ -478,7 +479,7 @@ plist[i*3+2]=v3;
         fprintf(outfp, "   -1\n");
         fprintf(outfp, "   451\n");
         fprintf(outfp, "1,1,1,\n");
-        fprintf(outfp, "%s\n", sf[ii].color_comp_name);
+        fprintf(outfp, "%s\n", sf[1].color_comp_name);
         tmp = fabs(mavalue[sf[1].color_comp]);
         if (fabs(mivalue[sf[1].color_comp]) > tmp)
           tmp = fabs(mivalue[sf[1].color_comp]);
@@ -570,8 +571,7 @@ fscanf(cfile, "%d %lf %d %d ", &id,&value, &cstyle, &colorid);
                      color) /
                     ((1 - rgbrange[0] * 0.5) / 2) * 0.5;
                 b = 0.0;
-              } else if (color >=
-                         ((1 - rgbrange[0] * 0.5) / 2 + 0.5 * rgbrange[0])) {
+              } else {
                 r = (color - 0.5 * rgbrange[0]) /
                     ((1 - rgbrange[0] * 0.5) / 2) * 0.5;
                 g = b = 0.0;
@@ -646,8 +646,7 @@ if(color<0.0) color=0.0;
               g = (((1 - rgbrange[0] * 0.5) / 2 + 0.5 * rgbrange[0]) - color) /
                   ((1 - rgbrange[0] * 0.5) / 2) * 0.5;
               b = 0.0;
-            } else if (color >=
-                       ((1 - rgbrange[0] * 0.5) / 2 + 0.5 * rgbrange[0])) {
+            } else {
               r = (color - 0.5 * rgbrange[0]) / ((1 - rgbrange[0] * 0.5) / 2) *
                   0.5;
               g = b = 0.0;

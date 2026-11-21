@@ -213,13 +213,13 @@ contains
       do j=1,n_totlyr
         !search material
         if(flag==0)then
-          shell_var(count)%ortho = dble(flag)
+          shell_var(count)%ortho = flag
           shell_var(count)%ee    = hecMESH%material%mat_val(mpos+i  )
           shell_var(count)%pp    = hecMESH%material%mat_val(mpos+i+1)
           shell_var(count)%weight= hecMESH%material%mat_val(mpos+i+2)
           i=i+3
         elseif(flag==1)then
-          shell_var(count)%ortho = dble(flag)
+          shell_var(count)%ortho = flag
           shell_var(count)%ee    = hecMESH%material%mat_val(mpos+i  )
           shell_var(count)%pp    = hecMESH%material%mat_val(mpos+i+1)
           shell_var(count)%ee2   = hecMESH%material%mat_val(mpos+i+2)

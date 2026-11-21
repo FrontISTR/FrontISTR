@@ -507,6 +507,8 @@ void refinement(struct hecmwST_local_mesh *mesh, double *node1, int n_voxel,
                     else if ((mesh->elem_type[i] == 351) ||
                              (mesh->elem_type[i] == 352))
                       inside = judge_inner_voxel_351(vv, in_point);
+                    else
+                      inside = 0;
 
                     /*------------need add judge inner for tetrahedras later
 !!!!!!!!!!!!!!!!!!!!

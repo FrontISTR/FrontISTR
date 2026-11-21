@@ -43,7 +43,7 @@ int conv_elem( struct hecmwST_local_mesh* mesh, FILE* fp )
 	int is,ie, icel;
 	int etype;
 	char* rcap_etype;
-	int nn, elem_n;
+	int nn = 0, elem_n;
 	int etype_count;
 
 	int tbl341[] = { 0,1,2,3 };
@@ -52,7 +52,7 @@ int conv_elem( struct hecmwST_local_mesh* mesh, FILE* fp )
 	int tbl362[] = { 0,1,2,3,4,5,6,7,8,9,10,11,16,17,18,19,12,13,14,15 };
 	int tbl351[] = { 0,1,2,3,4,5 };
 	int tbl371[] = { 4,0,3,2,1 };
-	int* tbl;
+	int* tbl = NULL;
 
 	for( i= 0, etype_count= 0, elem_n= 0; i<mesh->n_elem_type; i++ ) {
 		is = mesh->elem_type_index[i];

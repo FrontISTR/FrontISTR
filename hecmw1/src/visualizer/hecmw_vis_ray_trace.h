@@ -115,7 +115,6 @@ typedef struct _vr_parameter_struct {
   int color_subcomp;
   int nv_xyz[3];
   double display_range[6];
-  int time_mark_on;
   int fixed_scale_mark;
 } Parameter_vr;
 

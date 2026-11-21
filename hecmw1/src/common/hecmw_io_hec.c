@@ -30,7 +30,7 @@ static int connectivity_type = HECMW_CONNTYPE_HECMW;
 
 static void do_logging(int loglv, int msgno, int add_location, const char *fmt,
                        va_list ap) {
-  char line[100] = "";
+  char line[HECMW_FILENAME_LEN + 16] = "";
   char msg[HECMW_MSG_LEN + 1];
   char *p;
 
@@ -103,11 +103,11 @@ static int read_input(int msgno_invalid_token) {
     char separator[10];
     char *dname = HECMW_dirname(grid_filename);
     snprintf(separator, sizeof(separator), "%c", HECMW_get_path_separator());
-    if (strlen(dname) + strlen(separator) + strlen(p) > HECMW_FILENAME_LEN) {
+    if (snprintf(include_filename, sizeof(include_filename), "%s%s%s", dname,
+                 separator, p) > HECMW_FILENAME_LEN) {
       set_err(HECMW_IO_E0002, "");
       return -1;
     }
-    snprintf(include_filename, sizeof(include_filename), "%s%s%s", dname, separator, p);
   }
   return 0;
 }

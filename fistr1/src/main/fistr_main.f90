@@ -29,7 +29,7 @@ module m_fstr_main
   type(hecmwST_result_data), save            :: fstrRESULT
   type(fstr_couple), save                    :: fstrCPL
   type(fstr_freqanalysis), save              :: fstrFREQ
-  character(len=HECMW_FILENAME_LEN)          :: name_ID
+  character(len=HECMW_NAME_LEN)              :: name_ID
 
 contains
 

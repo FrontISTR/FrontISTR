@@ -333,7 +333,10 @@ contains
       rcnt(i+1) = rcnt(i+1) + rcnt(i)
     end do
     allocate(btmp(nt), vtmp(bs, nt), rpos(nbrow), stat=astat)
-    call hecmw_saamg_check_alloc(astat, 'bcsr_from_block_triplets (btmp/vtmp)')
+    if (astat /= 0) then
+      call hecmw_saamg_check_alloc(astat, 'bcsr_from_block_triplets (btmp/vtmp)')
+      stop ! not reached: hecmw_saamg_check_alloc stops the program
+    end if
     do i = 1, nbrow
       rpos(i) = rcnt(i)
     end do

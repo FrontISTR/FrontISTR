@@ -1551,8 +1551,8 @@ static int quick_sort(int no, int n, double *arr, int *brr, int *istack) {
 
 static int rcb_partition(int n, const double *coord, int *wnum,
                          const struct hecmw_part_cont_data *cont_data) {
-  double *value;
-  int *id, *stack;
+  double *value = NULL;
+  int *id = NULL, *stack = NULL;
   int rtc;
   int counter;
   int i, j, k;
@@ -2415,12 +2415,12 @@ static int metis_partition_nb_contact_agg(
   int rtc;
   int i;
   struct hecmwST_contact_pair *cp;
-  int *mark;
+  int *mark = NULL;
   int agg_id, agg_dup, gid;
   int n_node2;
   const idx_t *node_graph_index2;
   const idx_t *node_graph_item2;
-  idx_t *node_weight2;
+  idx_t *node_weight2 = NULL;
   struct hecmw_graph graph1, graph2;
   const int ncon = 1;
 
@@ -9326,6 +9326,14 @@ extern struct hecmwST_local_mesh *HECMW_partition_inner(
            num_ielem, num_inode, num_nbpe, error_in_ompsection)
   {
 #endif /* _OPENMP */
+
+    local_mesh         = NULL;
+    node_flag          = NULL;
+    elem_flag          = NULL;
+    node_global2local  = NULL;
+    elem_global2local  = NULL;
+    node_flag_neighbor = NULL;
+    elem_flag_neighbor = NULL;
 
     node_flag = (char *)HECMW_calloc(global_mesh->n_node, sizeof(char));
     if (node_flag == NULL) {

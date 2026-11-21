@@ -113,6 +113,7 @@ contains
     ndof = hecMAT%NDOF
     ! near-kernel size m by problem type: 1=heat(const), 2=plane(2D RBM, 3 modes),
     ! 3=solid / 6=shell (3D RBM, 6 modes).
+    m = 0
     select case (ndof)
     case (1);    m = 1
     case (2);    m = 3

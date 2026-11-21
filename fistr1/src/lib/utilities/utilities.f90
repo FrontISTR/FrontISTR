@@ -50,13 +50,18 @@ contains
     real(kind=kreal), intent(in)  :: tensor(6)          !< tensor
     real(kind=kreal), intent(out) :: eigval(3)     !< eigenvalues
 
-    real(kind=kreal) :: I1,I2,I3,R,theta,Q, X(3,3), XX(3,3)
+    real(kind=kreal) :: I1,I2,I3,R,theta,Q, X(3,3), XX(3,3), m
     real(kind=kreal), parameter :: SMALL = 1.0d-10
 
     X(1,1)=tensor(1); X(2,2)=tensor(2); X(3,3)=tensor(3)
     X(1,2)=tensor(4); X(2,1)=X(1,2)
     X(2,3)=tensor(5); X(3,2)=X(2,3)
     X(3,1)=tensor(6); X(1,3)=X(3,1)
+
+    ! Shift X by the mean of its diagonal so that Q and R do not lose digits
+    ! when X is close to a multiple of the identity. The eigenvalues are shifted back by m.
+    m= ( X(1,1)+X(2,2)+X(3,3) )/3.d0
+    X(1,1)=X(1,1)-m; X(2,2)=X(2,2)-m; X(3,3)=X(3,3)-m
 
     XX= matmul( X,X )
     I1= X(1,1)+X(2,2)+X(3,3)
@@ -69,7 +74,7 @@ contains
 
     ! Check discriminant to ensure all eigenvalues are real
     ! For a 3x3 symmetric matrix, Delta = R^2 - Q^3 must be negative or zero
-    if(R*R - Q*Q*Q > SMALL) then
+    if(R*R - Q*Q*Q > SMALL*(XX(1,1)+XX(2,2)+XX(3,3))**3) then
       write(*,*) 'ERROR in tensor_eigen3: Discriminant R^2 - Q^3 > 0'
       write(*,*) 'This indicates the algorithm has numerical issues.'
       write(*,*) 'Discriminant =', R*R - Q*Q*Q
@@ -77,37 +82,18 @@ contains
     endif
 
     ! Add handling for special cases (when Q is close to 0)
-    if(abs(Q) < SMALL) then
+    if(abs(Q) <= SMALL*(XX(1,1)+XX(2,2)+XX(3,3))) then
       ! Matrix has nearly equal diagonal elements (e.g. close to identity matrix)
-      eigval(1) = I1/3.d0
-      eigval(2) = I1/3.d0
-      eigval(3) = I1/3.d0
+      eigval(1) = I1/3.d0+m
+      eigval(2) = I1/3.d0+m
+      eigval(3) = I1/3.d0+m
     else
-      ! For Q^3 sufficiently small, address numerical stability
-      if(abs(Q*Q*Q) < SMALL) then
-        ! Q^3 is very small, but not zero - special handling
-        if(abs(R) < SMALL) then
-          ! Both R and Q^3 small means nearly triple root
-          eigval(1) = I1/3.d0
-          eigval(2) = I1/3.d0
-          eigval(3) = I1/3.d0
-        else
-          ! When Q^3 is very small, determine theta based on sign of R only
-          ! This avoids division by a very small number which could cause instability
-          if(R >= 0.0d0) then
-            theta = 0.0d0      ! R > 0 case
-          else
-            theta = PI         ! R < 0 case
-          endif
-        endif
-      else
-        ! Ensure R/sqrt(Q^3) is within [-1,1] for numerical stability
-        theta = acos(max(-1.0d0, min(1.0d0, R/dsqrt(Q*Q*Q))))
-      endif
+      ! Ensure R/sqrt(Q^3) is within [-1,1] for numerical stability
+      theta = acos(max(-1.0d0, min(1.0d0, R/dsqrt(Q*Q*Q))))
 
-      eigval(1) = -2.d0*dsqrt(Q)*cos(theta/3.d0)+I1/3.d0
-      eigval(2) = -2.d0*dsqrt(Q)*cos((theta+2.d0*PI)/3.d0)+I1/3.d0
-      eigval(3) = -2.d0*dsqrt(Q)*cos((theta-2.d0*PI)/3.d0)+I1/3.d0
+      eigval(1) = -2.d0*dsqrt(Q)*cos(theta/3.d0)+I1/3.d0+m
+      eigval(2) = -2.d0*dsqrt(Q)*cos((theta+2.d0*PI)/3.d0)+I1/3.d0+m
+      eigval(3) = -2.d0*dsqrt(Q)*cos((theta-2.d0*PI)/3.d0)+I1/3.d0+m
     endif
 
   end subroutine

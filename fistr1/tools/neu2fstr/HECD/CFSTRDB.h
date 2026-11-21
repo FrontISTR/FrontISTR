@@ -169,7 +169,7 @@ class CFSTRDB_Boundary : public CFSTRDataBlock {
     CItem() : dof_ids(0), dof_ide(0), value(0) { ngrp[0] = 0; }
     CItem(const char* name, int s, int e, double v = 0)
         : dof_ids(s), dof_ide(e), value(v) {
-      snprintf(ngrp, sizeof(ngrp), "%s", name);
+      snprintf(ngrp, sizeof(ngrp), "%.*s", (int)sizeof(ngrp) - 1, name);
     }
     CItem(const CItem& item)
         : dof_ids(item.dof_ids), dof_ide(item.dof_ide), value(item.value) {
@@ -197,7 +197,7 @@ class CFSTRDB_CLoad : public CFSTRDataBlock {
     double value;
     CItem() : dof_id(-1), value(0) { ngrp[0] = 0; }
     CItem(const char* name, int id, double v = 0) : dof_id(id), value(v) {
-      snprintf(ngrp, sizeof(ngrp), "%s", name);
+      snprintf(ngrp, sizeof(ngrp), "%.*s", (int)sizeof(ngrp) - 1, name);
     }
     CItem(const CItem& item) : dof_id(item.dof_id), value(item.value) {
       snprintf(ngrp, sizeof(ngrp), "%s", item.ngrp);
@@ -246,7 +246,7 @@ class CFSTRDB_DLoad : public CFSTRDataBlock {
       init_param();
     }
     CItem(const char* name, int t) : type(t) {
-      snprintf(egrp, sizeof(egrp), "%s", name);
+      snprintf(egrp, sizeof(egrp), "%.*s", (int)sizeof(egrp) - 1, name);
       init_param();
     }
     CItem(const CItem& item) : type(item.type) {
@@ -284,7 +284,7 @@ class CFSTRDB_Temperature : public CFSTRDataBlock {
     int value;
     CItem() : value(0) { ngrp[0] = 0; }
     CItem(const CItem& item) : value(item.value) { snprintf(ngrp, sizeof(ngrp), "%s", item.ngrp); }
-    CItem(const char* name, int v = 0) : value(v) { snprintf(ngrp, sizeof(ngrp), "%s", name); }
+    CItem(const char* name, int v = 0) : value(v) { snprintf(ngrp, sizeof(ngrp), "%.*s", (int)sizeof(ngrp) - 1, name); }
   };
 
   // data line -----------------
@@ -361,7 +361,7 @@ class CFSTRDB_Fixtemp : public CFSTRDataBlock {
     double value;
     CItem() : value(0) { ngrp[0] = 0; }
     CItem(const CItem& item) : value(item.value) { snprintf(ngrp, sizeof(ngrp), "%s", item.ngrp); }
-    CItem(const char* name, double v) : value(v) { snprintf(ngrp, sizeof(ngrp), "%s", name); }
+    CItem(const char* name, double v) : value(v) { snprintf(ngrp, sizeof(ngrp), "%.*s", (int)sizeof(ngrp) - 1, name); }
   };
 
   // header line --------------------
@@ -387,7 +387,7 @@ class CFSTRDB_CFlux : public CFSTRDataBlock {
     double value;
     CItem() : value(0) { ngrp[0] = 0; }
     CItem(const CItem& item) : value(item.value) { snprintf(ngrp, sizeof(ngrp), "%s", item.ngrp); }
-    CItem(const char* name, double v) : value(v) { snprintf(ngrp, sizeof(ngrp), "%s", name); }
+    CItem(const char* name, double v) : value(v) { snprintf(ngrp, sizeof(ngrp), "%.*s", (int)sizeof(ngrp) - 1, name); }
   };
 
   // header line --------------------
@@ -432,7 +432,7 @@ class CFSTRDB_DFlux : public CFSTRDataBlock {
       snprintf(egrp, sizeof(egrp), "%s", item.egrp);
     }
     CItem(const char* name, int t, double v) : type(t), value(v) {
-      snprintf(egrp, sizeof(egrp), "%s", name);
+      snprintf(egrp, sizeof(egrp), "%.*s", (int)sizeof(egrp) - 1, name);
     }
   };
 
@@ -459,7 +459,7 @@ class CFSTRDB_SFlux : public CFSTRDataBlock {
     double value;
     CItem() : value(0) { sgrp[0] = 0; }
     CItem(const CItem& item) : value(item.value) { snprintf(sgrp, sizeof(sgrp), "%s", item.sgrp); }
-    CItem(const char* name, double v) : value(v) { snprintf(sgrp, sizeof(sgrp), "%s", name); }
+    CItem(const char* name, double v) : value(v) { snprintf(sgrp, sizeof(sgrp), "%.*s", (int)sizeof(sgrp) - 1, name); }
   };
 
   // header line --------------------
@@ -506,7 +506,7 @@ class CFSTRDB_Film : public CFSTRDataBlock {
     }
     CItem(const char* name, int t, double v, double s)
         : type(t), value(v), sink(s) {
-      snprintf(egrp, sizeof(egrp), "%s", name);
+      snprintf(egrp, sizeof(egrp), "%.*s", (int)sizeof(egrp) - 1, name);
     }
   };
 
@@ -538,7 +538,7 @@ class CFSTRDB_SFilm : public CFSTRDataBlock {
       snprintf(sgrp, sizeof(sgrp), "%s", item.sgrp);
     }
     CItem(const char* name, double v, double s) : value(v), sink(s) {
-      snprintf(sgrp, sizeof(sgrp), "%s", name);
+      snprintf(sgrp, sizeof(sgrp), "%.*s", (int)sizeof(sgrp) - 1, name);
     }
   };
 
@@ -587,7 +587,7 @@ class CFSTRDB_Radiate : public CFSTRDataBlock {
     }
     CItem(const char* name, int t, double v, double s)
         : type(t), value(v), sink(s) {
-      snprintf(egrp, sizeof(egrp), "%s", name);
+      snprintf(egrp, sizeof(egrp), "%.*s", (int)sizeof(egrp) - 1, name);
     }
   };
 
@@ -619,7 +619,7 @@ class CFSTRDB_SRadiate : public CFSTRDataBlock {
       snprintf(sgrp, sizeof(sgrp), "%s", item.sgrp);
     }
     CItem(const char* name, double v, double s) : value(v), sink(s) {
-      snprintf(sgrp, sizeof(sgrp), "%s", name);
+      snprintf(sgrp, sizeof(sgrp), "%.*s", (int)sizeof(sgrp) - 1, name);
     }
   };
 

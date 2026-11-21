@@ -470,6 +470,7 @@ contains
     integer :: ipt
     character(len=256) :: s
 
+    fstr_ctrl_get_TRS = -1
     ipt=1
     s = 'WLF,ARRHENIUS '
     if( fstr_ctrl_get_param_ex( ctrl, 'DEFINITION ',  s, 0, 'P',   ipt    ) /= 0 ) return
@@ -637,6 +638,8 @@ contains
             stop
         end select
       case (2, 3)  ! Mohr-Coulomb, Drucker-Prager
+        phi = 0.d0
+        psi = 0.d0
         select case (hipt)
         case (1)  ! linear hardening
           allocate( fval(4,n) )
@@ -701,6 +704,9 @@ contains
             call init_table( mttable,1, 2, n-1, fval(1:2,2:n) )
             call dict_add_key( dict, MC_YIELD, mttable )
           endif
+        case default
+          print *, "Error in hardening definition!"
+          stop
         end select
         if( ipt==3 ) then     ! Drucker-Prager
           matval(M_PLCONST3) = 2.d0*sin(phi)/ ( sqrt(3.d0)*(3.d0+sin(phi)) ) ! eta
@@ -808,7 +814,7 @@ contains
     integer(kind=kint), intent(in) :: ctrl
     real(kind=kreal),intent(inout) :: matval(:)
 
-    integer(kind=kint) :: i, rcode, depends
+    integer(kind=kint) :: rcode, depends
     real(kind=kreal), allocatable :: fval(:,:)
     character(len=HECMW_NAME_LEN) :: data_fmt
 
@@ -822,9 +828,6 @@ contains
 
     allocate( fval(1,depends+1) )
     fval =0.0d0
-    do i=2,1+depends
-      data_fmt = data_fmt //"R "
-    enddo
     block
       real(kind=kreal) :: fval1(depends+1)
       fval1 = fval(1,:)
@@ -868,9 +871,6 @@ contains
     if( ipt==1 ) then
       allocate( fval(depends+1, n) )
       fval =0.0d0
-      do i=2,1+depends
-        data_fmt = data_fmt //"R "
-      enddo
       if( depends==0 ) then
         block
           real(kind=kreal) :: fval1(n)

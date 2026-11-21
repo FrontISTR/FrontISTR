@@ -29,7 +29,11 @@ static int output_result_header(FILE *fp) {
   if( HECMW_RESULT_FILEVER_MAJOR > 1 ){
     char temp_head[HECMW_HEADER_LEN + 16];
     snprintf(temp_head, sizeof(temp_head), "%s %d.%d", ResIO.head, HECMW_RESULT_FILEVER_MAJOR, HECMW_RESULT_FILEVER_MINOR);
-    snprintf(ResIO.head, sizeof(ResIO.head), "%s", temp_head);
+    /* the version must not be cut */
+    if (snprintf(ResIO.head, sizeof(ResIO.head), "%s", temp_head) >= (int)sizeof(ResIO.head)) {
+      HECMW_set_error(HECMW_UTIL_E0205, "head");
+      return -1;
+    }
   }
   rc = fprintf(fp, "%s\n", ResIO.head);
   if(rc < 0) {

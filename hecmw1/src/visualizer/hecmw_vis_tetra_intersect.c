@@ -15,7 +15,7 @@ int get_tetra_data(Surface *sff, struct hecmwST_local_mesh *mesh,
                    int tn_component) {
   int i, j;
   int nodeID;
-  int c_base, s_base;
+  int c_base, s_base = 0;
   double tmp;
   c_base = 0;
 

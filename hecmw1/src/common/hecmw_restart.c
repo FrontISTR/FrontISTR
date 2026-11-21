@@ -73,7 +73,7 @@ static int restart_read(void *ptr, size_t size, size_t nmemb, FILE *stream) {
   if (rc != nmemb) {
     if (feof(stream)) {
       msgno = HECMW_UTIL_E0104;
-    } else if (ferror(stream)) {
+    } else { /* ferror(stream) */
       msgno = HECMW_UTIL_E0105;
     }
     return msgno;
@@ -153,7 +153,7 @@ static int restart_write(const void *ptr, size_t size, size_t nmemb,
   if (rc != nmemb) {
     if (feof(stream)) {
       msgno = HECMW_UTIL_E0104;
-    } else if (ferror(stream)) {
+    } else { /* ferror(stream) */
       msgno = HECMW_UTIL_E0105;
     }
     return msgno;

@@ -19,6 +19,6 @@ void HECMW_vis_rendering_surface(struct surface_module *sf,
                                  int *color_list, double *minvalue,
                                  double *maxvalue, Result *result,
                                  char *outfile, int stat_para[NUM_CONTROL_PSF],
-                                 HECMW_Comm VIS_COMM, int timestep);
+                                 HECMW_Comm VIS_COMM);
 
 #endif /* HECMW_VIS_RENDERING_H_INCLUDED */

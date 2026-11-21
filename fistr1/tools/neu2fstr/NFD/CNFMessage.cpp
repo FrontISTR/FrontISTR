@@ -16,7 +16,7 @@ static char ERROR_MSG[][80] = {
 
 static char WARNING_MSG[][80] = {"Non supported data block"};
 
-char CNFMessage::msg[256] = "";
+char CNFMessage::msg[512] = "";
 
 const char *CNFError::Msg() {
   size_t len = snprintf(msg, sizeof(msg), "##Error");

@@ -60,7 +60,7 @@ void value_to_rgb(double value, double color[3], double mincolor,
       r = (value - 0.5) * 4.0;
       g = 1.0;
       b = 0.0;
-    } else if (value > 0.75) {
+    } else {
       r = 1.0;
       g = (1.0 - value) * 4.0;
       b = 0.0;
@@ -85,12 +85,12 @@ void value_to_rgb(double value, double color[3], double mincolor,
       r = (value - 0.6) * 5.0;
       g = 1.0;
       b = 0.0;
-    } else if (value > 0.0) {
+    } else {
       r = 1.0;
       g = 1.0 - (value - 0.8) * 5.0;
       b = 0.0;
     }
-  } else if (color_system_type == 3) {
+  } else { /* color_system_type is 3 */
     r = g = b = value;
   }
 

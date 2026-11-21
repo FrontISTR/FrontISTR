@@ -308,6 +308,7 @@ contains
     call fstr_element_init( hecMESH, fstrSOLID, p%PARAM%solution_type )
     call fstr_check_shell_j2_inputs(hecMESH, fstrSOLID, fstrPARAM)
     call fstr_check_up_inputs(hecMESH, fstrSOLID)
+    call fstr_check_ndof4_inputs(hecMESH, p%PARAM%solution_type)
     call fstr_check_shell_gauss_output(hecMESH, fstrSOLID)
     if( p%PARAM%solution_type==kstSTATIC .or. p%PARAM%solution_type==kstDYNAMIC .or.   &
       p%PARAM%solution_type==kstEIGEN  .or. p%PARAM%solution_type==kstSTATICEIGEN )  &
@@ -349,6 +350,17 @@ contains
       call hecmw_abort(hecmw_comm_get_comm())
     enddo
   end subroutine fstr_check_up_inputs
+
+  subroutine fstr_check_ndof4_inputs(hecMESH, solution_type)
+    type(hecmwST_local_mesh), intent(in) :: hecMESH
+    integer(kind=kint), intent(in) :: solution_type
+
+    if( hecMESH%n_dof /= 4 ) return
+    if( solution_type /= kstSTATIC .and. solution_type /= kstSTATICEIGEN ) return
+    write(*,*) '###ERROR### : Elements with 4 DOF per node (3414, 3614) are not supported by static analysis'
+    write(ILOG,*) '###ERROR### : Elements with 4 DOF per node (3414, 3614) are not supported by static analysis'
+    call hecmw_abort(hecmw_comm_get_comm())
+  end subroutine fstr_check_ndof4_inputs
 
   subroutine fstr_check_shell_gauss_output(hecMESH, fstrSOLID)
     use mMechGauss, only: fstr_shell_output_point_count

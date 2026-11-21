@@ -32,7 +32,7 @@ static void shell2hexa(struct hecmwST_local_mesh *mesh,
 Connect_inf *global_connect;
 
 void HECMW_vis_psf_rendering(struct hecmwST_local_mesh *mesh,
-                             struct hecmwST_result_data *data, int *timestep,
+                             struct hecmwST_result_data *data,
                              struct surface_module *sf, Parameter_rendering *sr,
                              int stat_para[NUM_CONTROL_PSF], char *outfile1,
                              size_t outfile1size, char *body,
@@ -45,7 +45,7 @@ void HECMW_vis_psf_rendering(struct hecmwST_local_mesh *mesh,
   int sum_v, sum_t, tvertex, tpatch;
   int ii, j, find;
   int *color_list;
-  double t1, t2, t3;
+  double t1, t2 = 0.0, t3;
   Result *result;
   int name_len;
   static int first_boundary = 1;
@@ -288,8 +288,8 @@ loopnum++;*/
                       maxvalue, result, outfile1, outfile1size, VIS_COMM);
   else if (sf[1].output_type == 3)
     HECMW_vis_rendering_surface(sf, sr, mesh, data, color_list, minvalue,
-                                maxvalue, result, outfile1, stat_para, VIS_COMM,
-                                *timestep);
+                                maxvalue, result, outfile1, stat_para,
+                                VIS_COMM);
 
   if (mynode == 0) {
     fprintf(stderr, "surface module finish\n");
