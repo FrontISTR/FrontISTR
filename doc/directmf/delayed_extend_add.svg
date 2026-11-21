@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="860" height="448" viewBox="0 0 860 448" font-family="'Noto Sans CJK JP', 'Hiragino Sans', 'Yu Gothic', sans-serif" font-size="12">
+  <defs>
+    <marker id="de-b" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 z" fill="#1f5f99"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="860" height="448" fill="white"/>
+  <text x="40" y="34" fill="#333">遅延 DOF を含む子の cb を、DOF 単位の対応表 1 つで親へ写す例（対称モード、下三角を格納）</text>
+
+  <!-- ===== child cb: rows d, a2, r2 ; cell 36, origin (100,110) ===== -->
+  <text x="60" y="74" fill="#333">子の cb（行の並び: 遅延 DOF → 通常行）</text>
+  <g stroke="#666">
+    <rect x="100" y="110" width="36" height="36" fill="#f4cccc"/>
+    <rect x="100" y="146" width="36" height="36" fill="#f4cccc"/>
+    <rect x="136" y="146" width="36" height="36" fill="#fdd0a2"/>
+    <rect x="100" y="182" width="36" height="36" fill="#f4cccc"/>
+    <rect x="136" y="182" width="36" height="36" fill="#fdd0a2"/>
+    <rect x="172" y="182" width="36" height="36" fill="#fdd0a2"/>
+  </g>
+  <rect x="100" y="146" width="36" height="36" fill="none" stroke="#1f5f99" stroke-width="2.5"/>
+  <g fill="#555" font-size="11" text-anchor="end">
+    <text x="92" y="132">d</text><text x="92" y="168">a2</text><text x="92" y="204">r2</text>
+  </g>
+  <g fill="#555" font-size="11" text-anchor="middle">
+    <text x="118" y="102">d</text><text x="154" y="102">a2</text><text x="190" y="102">r2</text>
+  </g>
+  <text x="60" y="246" fill="#555" font-size="11">d: 子で受理できず遅延した DOF</text>
+  <text x="60" y="262" fill="#555" font-size="11">a2・r2: 子の通常の contribution 行</text>
+  <text x="60" y="278" fill="#555" font-size="11">（親ではそれぞれ自 DOF・contribution 行）</text>
+
+  <!-- ===== mapping table ===== -->
+  <text x="270" y="120" fill="#333">対応表（子の行 → 親の位置）</text>
+  <g font-size="12" fill="#333">
+    <text x="280" y="146">d  → 3（親の自 DOF の直後に新設）</text>
+    <text x="280" y="166">a2 → 2（cmap を DOF に展開）</text>
+    <text x="280" y="186">r2 → 5（cmap を DOF に展開）</text>
+  </g>
+
+  <!-- ===== parent front: positions 1..5 ; cell 36, origin (600,80) ===== -->
+  <text x="560" y="62" fill="#333">親のフロンタル行列（位置 1〜5）</text>
+  <g stroke="#666" fill="white">
+    <rect x="600" y="80" width="36" height="36"/>
+    <rect x="600" y="116" width="36" height="36"/><rect x="636" y="116" width="36" height="36" fill="#fdd0a2"/>
+    <rect x="600" y="152" width="36" height="36"/><rect x="636" y="152" width="36" height="36" fill="#f4cccc"/><rect x="672" y="152" width="36" height="36" fill="#f4cccc"/>
+    <rect x="600" y="188" width="36" height="36"/><rect x="636" y="188" width="36" height="36"/><rect x="672" y="188" width="36" height="36"/><rect x="708" y="188" width="36" height="36"/>
+    <rect x="600" y="224" width="36" height="36"/><rect x="636" y="224" width="36" height="36" fill="#fdd0a2"/><rect x="672" y="224" width="36" height="36" fill="#f4cccc"/><rect x="708" y="224" width="36" height="36"/><rect x="744" y="224" width="36" height="36" fill="#fdd0a2"/>
+  </g>
+  <rect x="636" y="152" width="36" height="36" fill="none" stroke="#1f5f99" stroke-width="2.5"/>
+  <g fill="#555" font-size="11" text-anchor="end">
+    <text x="592" y="102">1 a1</text><text x="592" y="138">2 a2</text><text x="592" y="174">3 d</text>
+    <text x="592" y="210">4 r1</text><text x="592" y="246">5 r2</text>
+  </g>
+  <text x="560" y="282" fill="#555" font-size="11">位置 1・2: 親の自 DOF</text>
+  <text x="560" y="298" fill="#555" font-size="11">位置 3: 子からの遅延 DOF</text>
+  <text x="560" y="314" fill="#555" font-size="11">位置 4・5: contribution 行（1〜3 が fully summed）</text>
+
+  <!-- ===== arrow: child (a2,d) -> parent (3,2) ===== -->
+  <path d="M138,164 C300,230 500,200 634,172" fill="none" stroke="#1f5f99" stroke-width="2" marker-end="url(#de-b)"/>
+  <text x="300" y="228" fill="#1f5f99" font-size="11">子の (a2, d) は親の (2, 3) に写る。対角より上なので</text>
+  <text x="300" y="244" fill="#1f5f99" font-size="11">対称性により転置位置 (3, 2) に足し込む</text>
+
+  <!-- ===== notes ===== -->
+  <text x="40" y="352" fill="#555">・子の cb の成分 (i, j) は、親の (対応表(i), 対応表(j)) へ足し込む。遅延 DOF どうし（赤）、遅延 DOF と通常行の交差（赤）、</text>
+  <text x="40" y="370" fill="#555">　通常行どうし（橙）の区別なく、この 1 つの表で全成分が写る。LU モードでは上側に写る成分を上三角の格子へ足す</text>
+  <text x="40" y="388" fill="#555">・子が複数あれば、遅延 DOF の位置は子の番号の降順（extend-add と同じ順）に続けて割り当てる。</text>
+  <text x="40" y="406" fill="#555">　親の contribution 行の位置は遅延 DOF の総数だけ後ろへずれる</text>
+  <text x="40" y="430" fill="#777" font-size="11">（模式図。実際には自 DOF も子の行も節点単位でまとまって並ぶ）</text>
+</svg>

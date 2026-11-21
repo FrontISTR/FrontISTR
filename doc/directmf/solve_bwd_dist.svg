@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="840" height="450" viewBox="0 0 840 450" font-family="'Noto Sans CJK JP', 'Hiragino Sans', 'Yu Gothic', sans-serif" font-size="12">
+  <defs>
+    <marker id="barr-r" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 z" fill="#c0392b"/>
+    </marker>
+    <marker id="barr-g" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 z" fill="#2e7d32"/>
+    </marker>
+    <marker id="barr-b" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 z" fill="#1f5f99"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="840" height="450" fill="white"/>
+  <text x="40" y="34" fill="#333">分散後退代入（模式図。4×4 タイル、ランク配置は前図と同じ。列 4 を終えて列 3 を処理する場面）</text>
+
+  <!-- ===== segments (column vector) ===== -->
+  <text x="40" y="70" fill="#555">セグメント</text>
+  <text x="40" y="86" fill="#555">（前進後、master が保持）</text>
+  <g stroke="#666">
+    <rect x="100" y="90" width="24" height="44" fill="#eeeeee"/>
+    <rect x="100" y="134" width="24" height="44" fill="#eeeeee"/>
+    <rect x="100" y="178" width="24" height="44" fill="#fde9e7"/>
+    <rect x="100" y="222" width="24" height="44" fill="#dddddd"/>
+  </g>
+  <g fill="#555" font-size="11" text-anchor="middle">
+    <text x="112" y="117">b1</text><text x="112" y="161">b2</text>
+    <text x="112" y="205">b3</text><text x="112" y="249">x4</text>
+  </g>
+
+  <!-- ===== fs tiles: lower triangle 4x4, tile 44, origin (170,90), block cyclic on 2x2 grid ===== -->
+  <g stroke="#666">
+    <rect x="170" y="90" width="44" height="44" fill="#c6dbef"/>
+    <rect x="170" y="134" width="44" height="44" fill="#fdd0a2"/>
+    <rect x="214" y="134" width="44" height="44" fill="#e1cfe8"/>
+    <rect x="170" y="178" width="44" height="44" fill="#c6dbef"/>
+    <rect x="214" y="178" width="44" height="44" fill="#c8e6c9"/>
+    <rect x="258" y="178" width="44" height="44" fill="#c6dbef"/>
+    <rect x="170" y="222" width="44" height="44" fill="#fdd0a2"/>
+    <rect x="214" y="222" width="44" height="44" fill="#e1cfe8"/>
+    <rect x="258" y="222" width="44" height="44" fill="#fdd0a2"/>
+    <rect x="302" y="222" width="44" height="44" fill="#e1cfe8"/>
+  </g>
+  <g fill="#333" text-anchor="middle" font-size="11">
+    <text x="192" y="116">0</text>
+    <text x="192" y="160">2</text><text x="236" y="160">3</text>
+    <text x="192" y="204">0</text><text x="236" y="204">1</text><text x="280" y="204">0</text>
+    <text x="192" y="248">2</text><text x="236" y="248">3</text><text x="280" y="248">2</text><text x="324" y="248">3</text>
+  </g>
+  <text x="40" y="282" fill="#777" font-size="11">x4: 列 4 で確定済み</text>
+  <!-- row band of the contribution rows -->
+  <rect x="170" y="274" width="176" height="26" fill="#f2f2f2" stroke="#888"/>
+  <text x="258" y="291" fill="#555" font-size="11" text-anchor="middle">contribution 行（行バンド所有者）</text>
+
+  <!-- highlights: diagonal (3,3) rank 0 (green, origin and closer), tile (4,3) rank 2 (red) -->
+  <rect x="258" y="178" width="44" height="44" fill="none" stroke="#2e7d32" stroke-width="2.5"/>
+  <rect x="258" y="222" width="44" height="44" fill="none" stroke="#c0392b" stroke-width="2.5"/>
+
+  <!-- (2) master hands b3 to the diagonal owner of column 3 (rank 0 = master itself here): dashed blue -->
+  <path d="M126,200 C170,170 220,170 256,192" fill="none" stroke="#1f5f99" stroke-width="1.4" stroke-dasharray="4,3" marker-end="url(#barr-b)"/>
+  <!-- (3) token path: diagonal (3,3) -> tile (4,3) -> row band -> back to (3,3) -->
+  <path d="M270,224 L270,236" fill="none" stroke="#c0392b" stroke-width="2.2" marker-end="url(#barr-r)"/>
+  <path d="M280,268 L280,274" fill="none" stroke="#c0392b" stroke-width="2.2" marker-end="url(#barr-r)"/>
+  <path d="M346,287 C376,287 376,196 306,196" fill="none" stroke="#c0392b" stroke-width="2.2" marker-end="url(#barr-r)"/>
+  <!-- (4) multicast x3 along row 3 to tiles (3,2) rank 1 and (3,1) rank 0 -->
+  <path d="M256,212 L178,212" fill="none" stroke="#2e7d32" stroke-width="2.2" marker-end="url(#barr-g)"/>
+
+  <!-- ===== text ===== -->
+  <text x="400" y="70" fill="#1f5f99">① master が親から contribution 行の確定済みの解を受け取り、</text>
+  <text x="400" y="86" fill="#1f5f99">　行バンド所有者へその行の分を配る</text>
+  <text x="400" y="110" fill="#1f5f99">② master が処理開始時に各列のセグメント b_j を、その列の対角タイルの</text>
+  <text x="400" y="126" fill="#1f5f99">　所有ランクへ一括で配る（b3 → ランク 0。この例では自分自身）</text>
+  <text x="400" y="150" fill="#c0392b">③ 対角タイル (3,3) の所有ランク 0 を起点に、b3 を対角より下のタイル (4,3) の</text>
+  <text x="400" y="166" fill="#c0392b">　所有ランク 2 へ渡す。ランク 2 は L(4,3)ᵀ·x4 を差し引いて行バンド所有者へ、</text>
+  <text x="400" y="182" fill="#c0392b">　行バンド所有者も自分の行の因子 × 確定済みの解を差し引き、</text>
+  <text x="400" y="198" fill="#c0392b">　最後に受け取ったランクが b3 をランク 0 へ戻す</text>
+  <text x="400" y="222" fill="#2e7d32">④ ランク 0 が対角ブロックで x3 を確定し、行 3 のタイルを持つランク</text>
+  <text x="400" y="238" fill="#2e7d32">　（0 と 1）と master へマルチキャスト。次は左隣の列 2 へ進む</text>
+
+  <text x="40" y="340" fill="#555">各セグメントは常に 1 つのランクだけが保持し、各列で「対角所有者 → 対角より下のタイル所有者（昇順）→</text>
+  <text x="40" y="356" fill="#555">行バンド所有者 → 対角所有者」の順に渡される。差し引く順は逐次版と同じに固定してある。</text>
+  <text x="40" y="372" fill="#555">前進代入（前図）とは転置の関係で、セグメントは列に沿って動き、解は行方向へ配られる。</text>
+  <text x="40" y="388" fill="#555">列 4 では対角より下のタイルがないので、対角所有者（ランク 3）→ 行バンド所有者 → 対角所有者 の順になる。</text>
+
+  <!-- ===== legend ===== -->
+  <g stroke="#666">
+    <rect x="40" y="412" width="14" height="14" fill="#c6dbef"/>
+    <rect x="150" y="412" width="14" height="14" fill="#c8e6c9"/>
+    <rect x="260" y="412" width="14" height="14" fill="#fdd0a2"/>
+    <rect x="370" y="412" width="14" height="14" fill="#e1cfe8"/>
+  </g>
+  <text x="60" y="424" fill="#333">ランク 0</text>
+  <text x="170" y="424" fill="#333">ランク 1</text>
+  <text x="280" y="424" fill="#333">ランク 2</text>
+  <text x="390" y="424" fill="#333">ランク 3</text>
+</svg>

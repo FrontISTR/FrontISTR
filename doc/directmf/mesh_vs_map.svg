@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="860" height="400" viewBox="0 0 860 400" font-family="'Noto Sans CJK JP', 'Hiragino Sans', 'Yu Gothic', sans-serif" font-size="12">
+  <defs>
+    <marker id="mm-b" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 z" fill="#1f5f99"/>
+    </marker>
+    <marker id="mm-o" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 z" fill="#b35c00"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="860" height="400" fill="white"/>
+  <text x="40" y="34" fill="#333">メッシュ分割と写像は一致しない: 9 節点の 1 列のメッシュ、2 ランクの模式図</text>
+
+  <!-- ===== row A: mesh partition (fill = rank holding the row in hecMAT) ===== -->
+  <line x1="100" y1="110" x2="580" y2="110" stroke="#999" stroke-width="1.5"/>
+  <g stroke="#666">
+    <circle cx="100" cy="110" r="16" fill="#c6dbef"/>
+    <circle cx="160" cy="110" r="16" fill="#c6dbef"/>
+    <circle cx="220" cy="110" r="16" fill="#c6dbef"/>
+    <circle cx="280" cy="110" r="16" fill="#c6dbef"/>
+    <circle cx="340" cy="110" r="16" fill="#c6dbef"/>
+    <circle cx="400" cy="110" r="16" fill="#fdd0a2"/>
+    <circle cx="460" cy="110" r="16" fill="#fdd0a2"/>
+    <circle cx="520" cy="110" r="16" fill="#fdd0a2"/>
+    <circle cx="580" cy="110" r="16" fill="#fdd0a2"/>
+  </g>
+  <g fill="#333" text-anchor="middle">
+    <text x="100" y="114">1</text><text x="160" y="114">2</text><text x="220" y="114">3</text>
+    <text x="280" y="114">4</text><text x="340" y="114">5</text><text x="400" y="114">6</text>
+    <text x="460" y="114">7</text><text x="520" y="114">8</text><text x="580" y="114">9</text>
+  </g>
+  <text x="220" y="146" fill="#1f5f99" text-anchor="middle">ランク 0 の行</text>
+  <text x="490" y="146" fill="#b35c00" text-anchor="middle">ランク 1 の行</text>
+
+  <!-- ===== row B: mapping (fill = rank that factors the supernode) ===== -->
+  <line x1="100" y1="232" x2="580" y2="232" stroke="#999" stroke-width="1.5"/>
+  <g stroke="#666">
+    <circle cx="100" cy="232" r="16" fill="#fdd0a2"/>
+    <circle cx="160" cy="232" r="16" fill="#fdd0a2"/>
+    <circle cx="220" cy="232" r="16" fill="#fdd0a2"/>
+    <circle cx="280" cy="232" r="16" fill="#fdd0a2"/>
+    <circle cx="340" cy="232" r="16" fill="#e0e0e0" stroke-width="2.5"/>
+    <circle cx="400" cy="232" r="16" fill="#c6dbef"/>
+    <circle cx="460" cy="232" r="16" fill="#c6dbef"/>
+    <circle cx="520" cy="232" r="16" fill="#c6dbef"/>
+    <circle cx="580" cy="232" r="16" fill="#c6dbef"/>
+  </g>
+  <g fill="#333" text-anchor="middle">
+    <text x="100" y="236">1</text><text x="160" y="236">2</text><text x="220" y="236">3</text>
+    <text x="280" y="236">4</text><text x="340" y="236">5</text><text x="400" y="236">6</text>
+    <text x="460" y="236">7</text><text x="520" y="236">8</text><text x="580" y="236">9</text>
+  </g>
+  <text x="190" y="270" fill="#b35c00" text-anchor="middle">部分木 {1〜4} → ランク 1</text>
+  <text x="340" y="270" fill="#555" text-anchor="middle">セパレータ {5}</text>
+  <text x="340" y="286" fill="#555" text-anchor="middle">→ 上位フロント（ランク集合 {0,1}）</text>
+  <text x="490" y="270" fill="#1f5f99" text-anchor="middle">部分木 {6〜9} → ランク 0</text>
+
+  <!-- ===== value delivery arrows ===== -->
+  <path d="M190,156 L190,212" fill="none" stroke="#1f5f99" stroke-width="2" marker-end="url(#mm-b)"/>
+  <path d="M490,156 L490,212" fill="none" stroke="#b35c00" stroke-width="2" marker-end="url(#mm-o)"/>
+  <text x="198" y="188" fill="#1f5f99" font-size="11">ランク 0 → ランク 1</text>
+  <text x="498" y="188" fill="#b35c00" font-size="11">ランク 1 → ランク 0</text>
+
+  <!-- ===== row titles and notes ===== -->
+  <text x="630" y="86" fill="#333">メッシュ分割</text>
+  <text x="630" y="104" fill="#555" font-size="11">各ランクが hecMAT として持つ行。</text>
+  <text x="630" y="120" fill="#555" font-size="11">分散メッシュの読み込み時に決まる</text>
+  <text x="630" y="208" fill="#333">写像</text>
+  <text x="630" y="226" fill="#555" font-size="11">分解で各ランクが担当するスーパー</text>
+  <text x="630" y="242" fill="#555" font-size="11">ノード。symbolic 構造の重みだけ</text>
+  <text x="630" y="258" fill="#555" font-size="11">から決まり、メッシュ分割を見ない</text>
+  <text x="630" y="274" fill="#555" font-size="11">（この例では担当が入れ替わる。</text>
+  <text x="630" y="290" fill="#555" font-size="11">　{6〜9} が {1〜4} より重く、その</text>
+  <text x="630" y="306" fill="#555" font-size="11">　1.5 倍以下（昇格しない範囲）とする）</text>
+
+  <text x="40" y="326" fill="#555">・矢印は、分解の担当ランクが自分のスーパーノードの読む行をメッシュ分割上の持ち主から取り寄せる値の配送</text>
+  <text x="40" y="344" fill="#555">・送受信の経路表は symbolic 分解のとき（写像の直後）に 1 度だけ各ランクが通信なしで作り、以後は毎回の数値分解の前に値だけを流す</text>
+  <text x="40" y="362" fill="#555">・全体行列を全ランクに複製しないので、各ランクの行列のメモリは自分の担当分で済む（対角ブロックと添字の配列は全体の長さで持つ）</text>
+  <text x="40" y="380" fill="#777" font-size="11">（模式図。実際のメッシュ分割と写像は、ずれ方がこの例より複雑になる）</text>
+</svg>

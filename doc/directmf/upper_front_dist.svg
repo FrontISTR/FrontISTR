@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="430" viewBox="0 0 920 430" font-family="'Noto Sans CJK JP', 'Hiragino Sans', 'Yu Gothic', sans-serif" font-size="12">
+  <rect x="0" y="0" width="920" height="430" fill="white"/>
+  <text x="50" y="40" fill="#333">上位フロント 1 つのデータ分散（ランク集合 {0,1,2,3}、2×2 格子の例）</text>
+
+  <!-- ===== fully summed tiles: lower triangle 4x4, tile 44, origin (170,90), block cyclic on 2x2 grid ===== -->
+  <g stroke="#666">
+    <rect x="170" y="90" width="44" height="44" fill="#c6dbef"/>
+    <rect x="170" y="134" width="44" height="44" fill="#fdd0a2"/>
+    <rect x="214" y="134" width="44" height="44" fill="#e1cfe8"/>
+    <rect x="170" y="178" width="44" height="44" fill="#c6dbef"/>
+    <rect x="214" y="178" width="44" height="44" fill="#c8e6c9"/>
+    <rect x="258" y="178" width="44" height="44" fill="#c6dbef"/>
+    <rect x="170" y="222" width="44" height="44" fill="#fdd0a2"/>
+    <rect x="214" y="222" width="44" height="44" fill="#e1cfe8"/>
+    <rect x="258" y="222" width="44" height="44" fill="#fdd0a2"/>
+    <rect x="302" y="222" width="44" height="44" fill="#e1cfe8"/>
+  </g>
+  <g fill="#333" text-anchor="middle" font-size="11">
+    <text x="192" y="116">0</text>
+    <text x="192" y="160">2</text><text x="236" y="160">3</text>
+    <text x="192" y="204">0</text><text x="236" y="204">1</text><text x="280" y="204">0</text>
+    <text x="192" y="248">2</text><text x="236" y="248">3</text><text x="280" y="248">2</text><text x="324" y="248">3</text>
+  </g>
+  <!-- master tile highlight -->
+  <rect x="170" y="90" width="44" height="44" fill="none" stroke="#333" stroke-width="2.5"/>
+
+  <!-- ===== contribution row tiles as row bands ===== -->
+  <g stroke="#666">
+    <rect x="170" y="274" width="220" height="30" fill="#c6dbef"/>
+    <rect x="170" y="304" width="264" height="30" fill="#c8e6c9"/>
+    <rect x="170" y="334" width="308" height="30" fill="#e1cfe8"/>
+  </g>
+  <g fill="#333" text-anchor="middle" font-size="11">
+    <text x="376" y="293">0</text>
+    <text x="420" y="323">1</text>
+    <text x="464" y="353">3</text>
+  </g>
+  <!-- fs column boundary through the bands -->
+  <line x1="346" y1="270" x2="346" y2="368" stroke="#888" stroke-dasharray="4,3"/>
+
+  <!-- ===== annotations ===== -->
+  <line x1="512" y1="84" x2="218" y2="108" stroke="#999"/>
+  <text x="520" y="80" fill="#333">master（この例ではランク 0。格子の先頭の位置を占める）:</text>
+  <text x="520" y="96" fill="#333">ピボット採否の決定・DOF の入れ替えの記録・親への遅延列の受け渡し</text>
+
+  <text x="520" y="160" fill="#333">fully summed 部のタイル:</text>
+  <text x="520" y="176" fill="#555">フロント専用の 2D プロセス格子（2×2）に</text>
+  <text x="520" y="192" fill="#555">ブロックサイクリック配置。数字は所有ランク</text>
+  <text x="520" y="214" fill="#b35c00" font-size="11">※ 説明のため小さなフロントで 2×2 格子を描いた模式図。</text>
+  <text x="520" y="230" fill="#b35c00" font-size="11">　 格子の大きさの規則どおりなら、この 4 タイル列は 1×1 格子で、</text>
+  <text x="520" y="246" fill="#b35c00" font-size="11">　 2×2 格子になるのは fully summed 部が 8 タイル列以上のとき</text>
+
+  <text x="520" y="292" fill="#333">contribution 行タイル:</text>
+  <text x="520" y="308" fill="#555">行バンド（その行の、対角までの全列）として 1D 分散。</text>
+  <text x="520" y="324" fill="#555">更新量の積み上げを 4 ランクで等分し、各バンドの</text>
+  <text x="520" y="340" fill="#555">中点が入る区間のランクへ（例: 更新量 5:6:7 の</text>
+  <text x="520" y="356" fill="#555">3 本がランク 0・1・3 へ。ランク 2 はバンドなし）</text>
+
+  <text x="170" y="386" fill="#555">各バンドは fully summed 列（破線の左）と、contribution block の列のうち対角まで（右）にわたる</text>
+
+  <!-- ===== legend ===== -->
+  <g stroke="#666">
+    <rect x="170" y="402" width="14" height="14" fill="#c6dbef"/>
+    <rect x="280" y="402" width="14" height="14" fill="#c8e6c9"/>
+    <rect x="390" y="402" width="14" height="14" fill="#fdd0a2"/>
+    <rect x="500" y="402" width="14" height="14" fill="#e1cfe8"/>
+  </g>
+  <text x="190" y="414" fill="#333">ランク 0</text>
+  <text x="300" y="414" fill="#333">ランク 1</text>
+  <text x="410" y="414" fill="#333">ランク 2</text>
+  <text x="520" y="414" fill="#333">ランク 3</text>
+</svg>

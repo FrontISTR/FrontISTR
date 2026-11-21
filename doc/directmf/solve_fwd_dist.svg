@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="840" height="446" viewBox="0 0 840 446" font-family="'Noto Sans CJK JP', 'Hiragino Sans', 'Yu Gothic', sans-serif" font-size="12">
+  <defs>
+    <marker id="arr-r" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 z" fill="#c0392b"/>
+    </marker>
+    <marker id="arr-g" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 z" fill="#2e7d32"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="840" height="446" fill="white"/>
+  <text x="40" y="34" fill="#333">分散前進代入（模式図。fully summed 部、4×4 タイル、ランク配置は「上位フロントのデータ分散」の図と同じ）</text>
+
+  <!-- ===== right-hand-side segments (column vector) ===== -->
+  <text x="40" y="70" fill="#555">右辺の</text>
+  <text x="40" y="86" fill="#555">セグメント</text>
+  <g stroke="#666">
+    <rect x="100" y="90" width="24" height="44" fill="#eeeeee"/>
+    <rect x="100" y="134" width="24" height="44" fill="#eeeeee"/>
+    <rect x="100" y="178" width="24" height="44" fill="#eeeeee"/>
+    <rect x="100" y="222" width="24" height="44" fill="#eeeeee"/>
+    <rect x="100" y="274" width="24" height="26" fill="#f2f2f2"/>
+  </g>
+  <g fill="#555" font-size="11" text-anchor="middle">
+    <text x="112" y="117">b1</text><text x="112" y="161">b2</text>
+    <text x="112" y="205">b3</text><text x="112" y="249">b4</text>
+    <text x="112" y="291">cb</text>
+  </g>
+
+  <!-- ===== fs tiles: lower triangle 4x4, tile 44, origin (170,90), block cyclic on 2x2 grid ===== -->
+  <g stroke="#666">
+    <rect x="170" y="90" width="44" height="44" fill="#c6dbef"/>
+    <rect x="170" y="134" width="44" height="44" fill="#fdd0a2"/>
+    <rect x="214" y="134" width="44" height="44" fill="#e1cfe8"/>
+    <rect x="170" y="178" width="44" height="44" fill="#c6dbef"/>
+    <rect x="214" y="178" width="44" height="44" fill="#c8e6c9"/>
+    <rect x="258" y="178" width="44" height="44" fill="#c6dbef"/>
+    <rect x="170" y="222" width="44" height="44" fill="#fdd0a2"/>
+    <rect x="214" y="222" width="44" height="44" fill="#e1cfe8"/>
+    <rect x="258" y="222" width="44" height="44" fill="#fdd0a2"/>
+    <rect x="302" y="222" width="44" height="44" fill="#e1cfe8"/>
+  </g>
+  <g fill="#333" text-anchor="middle" font-size="11">
+    <text x="192" y="116">0</text>
+    <text x="192" y="160">2</text><text x="236" y="160">3</text>
+    <text x="192" y="204">0</text><text x="236" y="204">1</text><text x="280" y="204">0</text>
+    <text x="192" y="248">2</text><text x="236" y="248">3</text><text x="280" y="248">2</text><text x="324" y="248">3</text>
+  </g>
+  <!-- row band of the contribution rows -->
+  <rect x="170" y="274" width="176" height="26" fill="#f2f2f2" stroke="#888"/>
+  <text x="258" y="291" fill="#555" font-size="11" text-anchor="middle">contribution 行（行バンド所有者）</text>
+  <!-- diag tile of column 1 highlighted -->
+  <rect x="170" y="90" width="44" height="44" fill="none" stroke="#c0392b" stroke-width="2.5"/>
+  <!-- diag tile of column 2 highlighted (next) -->
+  <rect x="214" y="134" width="44" height="44" fill="none" stroke="#2e7d32" stroke-width="2.5"/>
+
+  <!-- (1) multicast of pivot values down column 1, through the band -->
+  <path d="M206,134 L206,292" fill="none" stroke="#c0392b" stroke-width="2.2" marker-end="url(#arr-r)"/>
+  <text x="150" y="322" fill="#c0392b">① 列 1 の対角タイル（ランク 0）が b1 の解を確定し、列 1 のタイルを持つランク</text>
+  <text x="150" y="338" fill="#c0392b">　（図の fully summed 部では 0 と 2。0 は自分自身）と行バンドの所有ランクへマルチキャスト</text>
+  <!-- (2) each tile owner updates its segment: small arrows from tiles to b2..b4 and cb -->
+  <g stroke="#c0392b" stroke-width="1.4" fill="none" stroke-dasharray="4,3">
+    <path d="M170,156 L128,156" marker-end="url(#arr-r)"/>
+    <path d="M170,200 L128,200" marker-end="url(#arr-r)"/>
+    <path d="M170,244 L128,244" marker-end="url(#arr-r)"/>
+    <path d="M170,287 L128,287" marker-end="url(#arr-r)"/>
+  </g>
+  <text x="380" y="110" fill="#c0392b">② 列 1 のタイルの所有ランクは、受け取った解の寄与を</text>
+  <text x="380" y="126" fill="#c0392b">　手元のセグメント b2〜b4 から引き、そのセグメントを</text>
+  <text x="380" y="142" fill="#c0392b">　次の列で同じ行のタイルを持つランクへ渡す。行バンドの</text>
+  <text x="380" y="158" fill="#c0392b">　所有ランクも contribution 行のセグメントから同じ寄与を引く</text>
+  <!-- (3) hand over to next column's diagonal owner -->
+  <path d="M216,104 L236,130" fill="none" stroke="#2e7d32" stroke-width="2.2" marker-end="url(#arr-g)"/>
+  <text x="380" y="192" fill="#2e7d32">③ 列 2 の対角タイル（ランク 3）へ進み、</text>
+  <text x="380" y="208" fill="#2e7d32">　更新済みの b2 で同じことを繰り返す</text>
+  <text x="380" y="242" fill="#555">④ 最後のピボット列まで処理し終えたら、残りの</text>
+  <text x="380" y="258" fill="#555">　contribution 行のセグメントを親の上位フロントへ渡し、</text>
+  <text x="380" y="274" fill="#555">　fully summed 部のセグメントは master へ戻す（親へ持ち</text>
+  <text x="380" y="290" fill="#555">　越した DOF の行の分は、解ではなく親への寄与）</text>
+
+  <text x="150" y="372" fill="#555">各セグメントは常に 1 つのランクだけが保持し、順送りに渡される。寄与を引く順は逐次版と同じ順に</text>
+  <text x="150" y="388" fill="#555">固定される（1 フロント内の差し引き順について。解のビット一致の範囲は本文の「決定性」参照）。後退代入は</text>
+  <text x="150" y="404" fill="#555">転置の関係で、右端の列から、セグメントが列に沿って動き（対角所有者 → 下のタイル所有者 →</text>
+  <text x="150" y="420" fill="#555">行バンド所有者 → 対角所有者）、解は行方向へ配られる</text>
+</svg>

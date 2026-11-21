@@ -1,0 +1,116 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="500" viewBox="0 0 980 500" font-family="'Noto Sans CJK JP', 'Hiragino Sans', 'Yu Gothic', sans-serif" font-size="12">
+  <defs>
+    <marker id="ov-o" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 z" fill="#d97a1a"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="980" height="500" fill="white"/>
+  <text x="40" y="30" fill="#333">MPI 分散の見取り図: 消去木の上で、どこを誰がどう処理するか（4 ランク、「写像の構築: 昇格と詰め込み」の例と同じ木）</text>
+
+  <!-- ===== stage band backgrounds ===== -->
+  <rect x="40" y="48" width="760" height="200" fill="#f5f5f5"/>
+  <rect x="40" y="262" width="760" height="140" fill="#fbfbfb"/>
+  <line x1="40" y1="255" x2="800" y2="255" stroke="#888" stroke-width="1.5" stroke-dasharray="6,4"/>
+
+  <!-- ===== upper fronts: shared by all ranks ===== -->
+  <!-- root -->
+  <rect x="330" y="62" width="200" height="58" rx="6" fill="#eeeeee" stroke="#666"/>
+  <text x="430" y="82" fill="#333" text-anchor="middle">根の上位フロント</text>
+  <g stroke="#666">
+    <rect x="370" y="92" width="16" height="16" fill="#c6dbef" stroke-width="2.6" stroke="#333"/>
+    <rect x="390" y="92" width="16" height="16" fill="#c8e6c9"/>
+    <rect x="410" y="92" width="16" height="16" fill="#fdd0a2"/>
+    <rect x="430" y="92" width="16" height="16" fill="#e1cfe8"/>
+  </g>
+  <text x="452" y="105" fill="#555" font-size="11">master: 0</text>
+
+  <!-- u1 -->
+  <rect x="150" y="160" width="200" height="58" rx="6" fill="#eeeeee" stroke="#666"/>
+  <text x="250" y="180" fill="#333" text-anchor="middle">上位フロント u1</text>
+  <g stroke="#666">
+    <rect x="190" y="190" width="16" height="16" fill="#c6dbef" stroke-width="2.6" stroke="#333"/>
+    <rect x="210" y="190" width="16" height="16" fill="#c8e6c9"/>
+    <rect x="230" y="190" width="16" height="16" fill="#fdd0a2"/>
+    <rect x="250" y="190" width="16" height="16" fill="#e1cfe8"/>
+  </g>
+  <text x="272" y="203" fill="#555" font-size="11">master: 0</text>
+
+  <!-- u2 -->
+  <rect x="510" y="160" width="200" height="58" rx="6" fill="#eeeeee" stroke="#666"/>
+  <text x="610" y="180" fill="#333" text-anchor="middle">上位フロント u2</text>
+  <g stroke="#666">
+    <rect x="550" y="190" width="16" height="16" fill="#c6dbef"/>
+    <rect x="570" y="190" width="16" height="16" fill="#c8e6c9"/>
+    <rect x="590" y="190" width="16" height="16" fill="#fdd0a2" stroke-width="2.6" stroke="#333"/>
+    <rect x="610" y="190" width="16" height="16" fill="#e1cfe8"/>
+  </g>
+  <text x="632" y="203" fill="#555" font-size="11">master: 2</text>
+
+  <!-- ===== subtrees: one rank each ===== -->
+  <g stroke="#666">
+    <rect x="80" y="300" width="130" height="64" rx="6" fill="#c6dbef"/>
+    <rect x="240" y="300" width="130" height="64" rx="6" fill="#c8e6c9"/>
+    <rect x="490" y="300" width="130" height="64" rx="6" fill="#fdd0a2"/>
+    <rect x="650" y="300" width="130" height="64" rx="6" fill="#e1cfe8"/>
+  </g>
+  <g fill="#333" text-anchor="middle">
+    <text x="145" y="324">部分木 s0</text><text x="145" y="342" font-size="11">ランク 0 だけで処理</text>
+    <text x="305" y="324">部分木 s1</text><text x="305" y="342" font-size="11">ランク 1 だけで処理</text>
+    <text x="555" y="324">部分木 s2</text><text x="555" y="342" font-size="11">ランク 2 だけで処理</text>
+    <text x="715" y="324">部分木 s3</text><text x="715" y="342" font-size="11">ランク 3 だけで処理</text>
+  </g>
+  <g fill="#555" font-size="10" text-anchor="middle">
+    <text x="145" y="358">（逐次＋OpenMP タスク）</text>
+    <text x="305" y="358">（逐次＋OpenMP タスク）</text>
+    <text x="555" y="358">（逐次＋OpenMP タスク）</text>
+    <text x="715" y="358">（逐次＋OpenMP タスク）</text>
+  </g>
+
+  <!-- ===== fan-in arrows (child cb to the ranks holding the parent) ===== -->
+  <g fill="none" stroke="#d97a1a" stroke-width="2" marker-end="url(#ov-o)">
+    <path d="M145,298 L215,222"/>
+    <path d="M305,298 L275,222"/>
+    <path d="M555,298 L585,222"/>
+    <path d="M715,298 L645,222"/>
+    <path d="M250,158 L390,124"/>
+    <path d="M610,158 L470,124"/>
+  </g>
+  <text x="322" y="272" fill="#b35c00" font-size="11">fan-in（部分木の根の cb は手元に保持し、</text>
+  <text x="322" y="286" fill="#b35c00" font-size="11">親の処理の中で親のデータを持つランクへ）</text>
+  <text x="560" y="140" fill="#b35c00" font-size="11">fan-in（u2 の cb を根へ）</text>
+
+  <!-- ===== stage labels (right column) ===== -->
+  <text x="815" y="72" fill="#333">上位フロント段階</text>
+  <text x="815" y="90" fill="#555" font-size="11">通信あり。全ランクが</text>
+  <text x="815" y="105" fill="#555" font-size="11">uplist の順（u1 → u2 →</text>
+  <text x="815" y="120" fill="#555" font-size="11">根）に 1 つずつ、</text>
+  <text x="815" y="135" fill="#555" font-size="11">ロックステップで共同処理。</text>
+  <text x="815" y="153" fill="#555" font-size="11">各フロントの中は</text>
+  <text x="815" y="168" fill="#555" font-size="11">fully summed 部が 2D 格子、</text>
+  <text x="815" y="183" fill="#555" font-size="11">contribution 行が行バンド</text>
+  <text x="815" y="201" fill="#555" font-size="11">（図「上位フロントの</text>
+  <text x="815" y="216" fill="#555" font-size="11">データ分散」が 1 つを拡大）</text>
+  <text x="815" y="250" fill="#333" font-size="11">↑ ここでエラー同期</text>
+  <text x="815" y="264" fill="#333" font-size="11">（allreduce）</text>
+  <text x="815" y="300" fill="#333">部分木段階</text>
+  <text x="815" y="318" fill="#555" font-size="11">通信なし。4 ランクの実測</text>
+  <text x="815" y="333" fill="#555" font-size="11">では数値分解の時間の</text>
+  <text x="815" y="348" fill="#555" font-size="11">8 割以上。部分木の根の</text>
+  <text x="815" y="363" fill="#555" font-size="11">cb は手元に保持しておく</text>
+
+  <!-- ===== legend and notes ===== -->
+  <g stroke="#666">
+    <rect x="40" y="420" width="14" height="14" fill="#c6dbef"/>
+    <rect x="130" y="420" width="14" height="14" fill="#c8e6c9"/>
+    <rect x="220" y="420" width="14" height="14" fill="#fdd0a2"/>
+    <rect x="310" y="420" width="14" height="14" fill="#e1cfe8"/>
+    <rect x="400" y="420" width="14" height="14" fill="#eeeeee" stroke-width="2.6" stroke="#333"/>
+  </g>
+  <text x="60" y="432" fill="#333">ランク 0</text>
+  <text x="150" y="432" fill="#333">ランク 1</text>
+  <text x="240" y="432" fill="#333">ランク 2</text>
+  <text x="330" y="432" fill="#333">ランク 3</text>
+  <text x="420" y="432" fill="#333">太枠 = そのフロントの master</text>
+  <text x="40" y="460" fill="#555">・担当（写像）は symbolic 構造の重みだけから、全ランクが通信なしで同一に決める（「写像の構築: 昇格と詰め込み」）</text>
+  <text x="40" y="478" fill="#555">・メッシュ分割（hecMAT の行の持ち主）とは一致しない。値は分解の前に担当ランクへ配送する（「MPI 分散」の流れの手順 4）</text>
+</svg>
