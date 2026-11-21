@@ -132,9 +132,14 @@ contains
         if ((PRECOND>=10 .and. PRECOND<20) .and. auto_sigma_diag==1 .and. SIGMA_DIAG<2.d0) then
           SIGMA_DIAG = SIGMA_DIAG + 0.1
           if (hecMESH%my_rank.eq.0) write(*,*) 'Increasing SIGMA_DIAG to', SIGMA_DIAG
+          ! a preconditioner already set up is reused unless numerical setup is requested
+          call hecmw_mat_set_flag_numfact(hecMAT, 1)
           cycle
         elseif ((METHOD==1 .or. METHOD==8 .or. METHOD==9) .and. METHOD2>1) then
-          if (auto_sigma_diag.eq.1) SIGMA_DIAG = 1.0
+          if (auto_sigma_diag.eq.1) then
+            SIGMA_DIAG = 1.0
+            if (PRECOND>=10 .and. PRECOND<20) call hecmw_mat_set_flag_numfact(hecMAT, 1)
+          endif
           METHOD = METHOD2
           cycle
         endif
