@@ -10,7 +10,11 @@ module m_fstr_Restart
   use m_fstr
   use mMechGauss, only: tGaussStatus
   use hecmw, only: hecmw_abort, hecmw_comm_get_comm
+  use elementInfo, only: fe_hex20n
   implicit none
+
+  !> First restart version whose header holds the version and which stores FORM362.
+  integer(kind=kint), parameter, private :: restart_version_form362 = 7
 
 contains
 
@@ -243,6 +247,73 @@ contains
     enddo
   end subroutine fstr_read_restart_shell_state
 
+  !> FORM362 of each 362 element, which decides how many material states it stores.
+  subroutine fstr_get_form362_of_elements(hecMESH, fstrSOLID, form362)
+    type(hecmwST_local_mesh), intent(in) :: hecMESH
+    type(fstr_solid), intent(in) :: fstrSOLID
+    integer(kind=kint), allocatable, intent(out) :: form362(:)
+    integer :: i, n
+
+    n = 0
+    do i = 1, hecMESH%n_elem
+      if( fstrSOLID%elements(i)%etype == fe_hex20n ) n = n + 1
+    enddo
+    allocate( form362(n) )
+    n = 0
+    do i = 1, hecMESH%n_elem
+      if( fstrSOLID%elements(i)%etype /= fe_hex20n ) cycle
+      n = n + 1
+      form362(n) = fstrSOLID%sections(hecMESH%section_ID(i))%elemopt362
+    enddo
+  end subroutine fstr_get_form362_of_elements
+
+  !> Store FORM362 of each 362 element ahead of the material states.
+  subroutine fstr_write_restart_form362(hecMESH, fstrSOLID, restart_version)
+    type(hecmwST_local_mesh), intent(in) :: hecMESH
+    type(fstr_solid), intent(in) :: fstrSOLID
+    integer(kind=kint), intent(in) :: restart_version
+    integer(kind=kint), allocatable :: form362(:)
+    integer(kind=kint) :: n(1), nerr
+
+    call fstr_get_form362_of_elements(hecMESH, fstrSOLID, form362)
+    if( restart_version < restart_version_form362 ) then
+      nerr = count( form362 /= kel362FI )
+      call hecmw_allreduce_I1(hecMESH, nerr, HECMW_MAX)
+      if( nerr > 0 ) call fstr_restart_abort('restart VERSION >= 7 is required for FORM362=RI.')
+      return
+    endif
+    n(1) = size(form362)
+    call hecmw_restart_add_int(n, 1)
+    if( n(1) > 0 ) call hecmw_restart_add_int(form362, n(1))
+  end subroutine fstr_write_restart_form362
+
+  !> Stop before reading the material states when they were stored by another rule of 362.
+  !> A file older than version 7 has no record of FORM362 and always holds the 27 states of FI.
+  subroutine fstr_check_restart_form362(hecMESH, fstrSOLID, file_version)
+    type(hecmwST_local_mesh), intent(in) :: hecMESH
+    type(fstr_solid), intent(in) :: fstrSOLID
+    integer(kind=kint), intent(in) :: file_version
+    integer(kind=kint), allocatable :: form362(:), saved(:)
+    integer(kind=kint) :: n(1), nerr
+
+    call fstr_get_form362_of_elements(hecMESH, fstrSOLID, form362)
+    nerr = 0
+    if( file_version >= restart_version_form362 ) then
+      call hecmw_restart_read_int(n)
+      if( n(1) /= size(form362) ) then
+        nerr = 1
+      else if( n(1) > 0 ) then
+        allocate( saved(n(1)) )
+        call hecmw_restart_read_int(saved)
+        nerr = count( saved /= form362 )
+      endif
+    else
+      nerr = count( form362 /= kel362FI )
+    endif
+    call hecmw_allreduce_I1(hecMESH, nerr, HECMW_MAX)
+    if( nerr > 0 ) call fstr_restart_abort('FORM362 of the restart file does not match the current model.')
+  end subroutine fstr_check_restart_form362
+
   !> Read in restart file
   !----------------------------------------------------------------------*
   subroutine fstr_read_restart(cstep,substep,step_count,ctime,dtime,hecMESH,fstrSOLID,fstrPARAM,contactNode)
@@ -257,11 +328,13 @@ contains
     type (fstr_solid),intent(inout)       :: fstrSOLID   !< fstr_solid
     type(fstr_param), intent(in)          :: fstrPARAM
 
-    integer :: i,j,restrt_step(3),nif(2),istat(1),nload_prev(1),naux(2)
+    integer :: i,j,restrt_step(4),nif(2),istat(1),nload_prev(1),naux(2)
     real(kind=kreal) :: times(3)
 
     call hecmw_restart_open()
 
+    ! A file older than version 7 has a shorter header and leaves restrt_step(4) at 0.
+    restrt_step = 0
     call hecmw_restart_read_int(restrt_step)
     if( fstrPARAM%restart_version >= 5 ) then
       if( myrank == 0 ) write(*,*) 'Reading restart file as new format(>=ver5.0)'
@@ -283,6 +356,7 @@ contains
     call hecmw_restart_read_real(fstrSOLID%QFORCE)
     call fstr_require_shell_restart_version(fstrSOLID, fstrPARAM%restart_version)
     if( fstrPARAM%restart_version >= 6 ) call fstr_read_restart_shell_state(hecMESH, fstrSOLID)
+    call fstr_check_restart_form362(hecMESH, fstrSOLID, restrt_step(4))
 
     do i= 1, hecMESH%n_elem
       if (hecmw_is_etype_link( fstrSOLID%elements(i)%etype )) cycle
@@ -366,12 +440,13 @@ contains
     type (fstr_solid), intent(in)         :: fstrSOLID  !< fstr_solid
     type(fstr_param), intent(in)          :: fstrPARAM
 
-    integer :: i,j,restrt_step(3),nif(2),istat(1),nload_prev(1),naux(2)
+    integer :: i,j,restrt_step(4),nif(2),istat(1),nload_prev(1),naux(2)
     real(kind=kreal) :: times(3)
 
     restrt_step(1) = cstep_ext
     restrt_step(2) = substep
     restrt_step(3) = step_count
+    restrt_step(4) = fstrPARAM%restart_version
     times(1) = ctime
     times(2) = dtime
     if( is_StepFinished ) then
@@ -380,7 +455,11 @@ contains
       times(3) = fstrSOLID%step_ctrl(cstep)%starttime
     end if
     istat(1) = fstrSOLID%AutoINC_stat
-    call hecmw_restart_add_int(restrt_step,size(restrt_step))
+    if( fstrPARAM%restart_version >= restart_version_form362 ) then
+      call hecmw_restart_add_int(restrt_step,4)
+    else
+      call hecmw_restart_add_int(restrt_step,3)
+    endif
     if( fstrPARAM%restart_version >= 5 ) then
       call hecmw_restart_add_real(times,size(times))
       call hecmw_restart_add_int(fstrSOLID%NRstat_i,size(fstrSOLID%NRstat_i))
@@ -409,6 +488,7 @@ contains
     call hecmw_restart_add_real(fstrSOLID%QFORCE,size(fstrSOLID%QFORCE))
     call fstr_require_shell_restart_version(fstrSOLID, fstrPARAM%restart_version)
     if( fstrPARAM%restart_version >= 6 ) call fstr_write_restart_shell_state(hecMESH, fstrSOLID)
+    call fstr_write_restart_form362(hecMESH, fstrSOLID, fstrPARAM%restart_version)
 
     do i= 1, hecMESH%n_elem
       if (hecmw_is_etype_link( fstrSOLID%elements(i)%etype )) cycle
@@ -473,12 +553,14 @@ contains
     type ( fstr_dynamic), intent(inout)   :: fstrDYNAMIC
     type(fstr_param), intent(in)          :: fstrPARAM
 
-    integer :: i,j,restrt_step(3),nif(2),istat(1),nload_prev(1),naux(2),dyna_int(1)
+    integer :: i,j,restrt_step(4),nif(2),istat(1),nload_prev(1),naux(2),dyna_int(1)
     real(kind=kreal) :: times(3),dyna_data(1)
 
     call hecmw_restart_open()
 
     !--- Common header (same format as static restart) ---
+    ! A file older than version 7 has a shorter header and leaves restrt_step(4) at 0.
+    restrt_step = 0
     call hecmw_restart_read_int(restrt_step)
     if( fstrPARAM%restart_version >= 5 ) then
       if( myrank == 0 ) write(*,*) 'Reading dynamic restart file as new format(>=ver5.0)'
@@ -500,6 +582,7 @@ contains
     call hecmw_restart_read_real(fstrSOLID%QFORCE)
     call fstr_require_shell_restart_version(fstrSOLID, fstrPARAM%restart_version)
     if( fstrPARAM%restart_version >= 6 ) call fstr_read_restart_shell_state(hecMESH, fstrSOLID)
+    call fstr_check_restart_form362(hecMESH, fstrSOLID, restrt_step(4))
 
     do i= 1, hecMESH%n_elem
       if (hecmw_is_etype_link( fstrSOLID%elements(i)%etype )) cycle
@@ -603,7 +686,7 @@ contains
     type ( fstr_dynamic), intent(in)      :: fstrDYNAMIC
     type(fstr_param), intent(in)          :: fstrPARAM
 
-    integer :: i,j,restrt_step(3),nif(2),istat(1),nload_prev(1),naux(2),dyna_int(1)
+    integer :: i,j,restrt_step(4),nif(2),istat(1),nload_prev(1),naux(2),dyna_int(1)
     real(kind=kreal) :: times(3),dyna_data(1)
 
     !--- Common header (same format as static restart) ---
@@ -614,7 +697,12 @@ contains
     else
       restrt_step(3) = 0
     endif
-    call hecmw_restart_add_int(restrt_step,size(restrt_step))
+    restrt_step(4) = fstrPARAM%restart_version
+    if( fstrPARAM%restart_version >= restart_version_form362 ) then
+      call hecmw_restart_add_int(restrt_step,4)
+    else
+      call hecmw_restart_add_int(restrt_step,3)
+    endif
     if( fstrPARAM%restart_version >= 5 ) then
       times(1) = fstrDYNAMIC%t_curr
       times(2) = fstrDYNAMIC%t_delta
@@ -637,6 +725,7 @@ contains
     call hecmw_restart_add_real(fstrSOLID%QFORCE,size(fstrSOLID%QFORCE))
     call fstr_require_shell_restart_version(fstrSOLID, fstrPARAM%restart_version)
     if( fstrPARAM%restart_version >= 6 ) call fstr_write_restart_shell_state(hecMESH, fstrSOLID)
+    call fstr_write_restart_form362(hecMESH, fstrSOLID, fstrPARAM%restart_version)
 
     do i= 1, hecMESH%n_elem
       if (hecmw_is_etype_link( fstrSOLID%elements(i)%etype )) cycle
