@@ -288,6 +288,11 @@ contains
         if (my_rank.eq.0 .and. ITERlog.eq.1)                              &
           &    write (*, '(2i8, 1pe16.6)') iter,I+1, RESID
 
+        if (RESID /= RESID) then  ! RESID is NaN
+          error = HECMW_SOLVER_ERROR_DIVERGE_NAN
+          exit OUTER
+        endif
+
         if (ESTCOND /= 0 .and. hecMESH%my_rank == 0) then
           if (mod(ITER,ESTCOND) == 0) call hecmw_estimate_condition_GMRES(I, H)
         endif
@@ -370,6 +375,10 @@ contains
       WW(I+1,S)= dsqrt(DNRM2/BNRM2)
       RESID    = WW( I+1,S )
 
+      if (RESID /= RESID) then  ! RESID is NaN
+        error = HECMW_SOLVER_ERROR_DIVERGE_NAN
+        exit OUTER
+      endif
       if ( RESID.le.TOL )   exit OUTER
       if ( ITER .gt.MAXIT ) then
         error = HECMW_SOLVER_ERROR_NOCONV_MAXIT
