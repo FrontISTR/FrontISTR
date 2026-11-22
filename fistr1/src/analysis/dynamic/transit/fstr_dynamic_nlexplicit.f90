@@ -440,7 +440,7 @@ contains
     call fstr_UpdateNewton( hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrDYN%t_curr, fstrDYN%t_delta, 0, fstrDYN%strainEnergy )
 
     ! ----- update reaction force at constrained DOFs using converged QFORCE
-    call fstr_Update_REACTION_SPC( cstep, hecMESH, fstrSOLID )
+    call fstr_Update_REACTION_SPC( cstep, hecMESH, fstrSOLID, fstrDYN )
 
     do j = 1 ,ndof*nnod
       fstrSOLID%unode(j) = fstrSOLID%unode(j) + fstrSOLID%dunode(j)

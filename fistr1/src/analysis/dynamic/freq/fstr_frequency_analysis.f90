@@ -531,7 +531,7 @@ contains
     hecMAT%X(1:ntotal) = disp(1:ntotal) - fstrSOLID%unode(1:ntotal) - fstrSOLID%dunode(1:ntotal)
     call fstr_apply_solution_increment( hecMESH, fstrSOLID, ndof, hecMAT%X )
     call fstr_UpdateNewton( hecMESH, hecMAT, fstrSOLID, fstrPARAM, 0.0D0, 0.0D0, 1 )
-    call fstr_Update_REACTION_SPC( 1, hecMESH, fstrSOLID )
+    call fstr_Update_REACTION_SPC( 1, hecMESH, fstrSOLID, fstrDYNAMIC )
 
     if( ndof == 2 ) then
       call fstr_NodalStress2D( hecMESH, fstrSOLID )
