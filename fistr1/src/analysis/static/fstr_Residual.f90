@@ -242,6 +242,7 @@ contains
       enddo OUTER
     endif
     deallocate( held )
+    call hecmw_update_R(hecMESH, fstrSOLID%REACTION, hecMESH%n_node, ndof)
   end subroutine fstr_Update_REACTION_SPC
 
 
