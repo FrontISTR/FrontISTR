@@ -423,6 +423,7 @@ contains
     character(len=HECMW_NAME_LEN) :: sect_orien
     character(19) :: form341list = 'FI,SELECTIVE_ESNS '
     character(19) :: form361list = 'FI,BBAR,IC,FBAR,UP '
+    character(19) :: form362list = 'FI,RI '
     character(19) :: form611list = 'EULER,TIMOSHENKO '
 
     fstr_ctrl_get_SECTION = -1
@@ -437,6 +438,10 @@ contains
     elemopt = 0
     if( fstr_ctrl_get_param_ex( ctrl, 'FORM361 ',   form361list, 0, 'P', elemopt )/= 0) return
     if( elemopt > 0 ) sections(sect_id)%elemopt361 = elemopt
+
+    elemopt = 0
+    if( fstr_ctrl_get_param_ex( ctrl, 'FORM362 ',   form362list, 0, 'P', elemopt )/= 0) return
+    if( elemopt > 0 ) sections(sect_id)%elemopt362 = elemopt
 
     elemopt = 0
     if( fstr_ctrl_get_param_ex( ctrl, 'FORM611 ', form611list, 0, 'P', elemopt )/= 0) return

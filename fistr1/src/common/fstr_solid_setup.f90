@@ -329,7 +329,7 @@ contains
     type(fstr_solid)                :: fstrSOLID
     integer(kind=kint), intent(in)  :: solution_type
 
-    integer :: i, j, ng, isect, ndof, id, nn, n_elem, nthick
+    integer :: i, j, ng, isect, ndof, id, nn, n_elem, nthick, elemopt362
 
     if( hecMESH%n_elem <=0 ) then
       stop "no element defined!"
@@ -353,11 +353,16 @@ contains
       if( hecMESH%elem_type(i)==301 ) fstrSOLID%elements(i)%etype=111
       if (hecmw_is_etype_link(fstrSOLID%elements(i)%etype)) cycle
       if (hecmw_is_etype_patch(fstrSOLID%elements(i)%etype)) cycle
-      ng = NumOfQuadPoints( fstrSOLID%elements(i)%etype )
+
+      isect= hecMESH%section_ID(i)
+      if( isect<0 .or. isect>hecMESH%section%n_sect )   &
+        stop "Error in element's section definition"
+      elemopt362 = kel362FI
+      if( fstrSOLID%elements(i)%etype == fe_hex20n ) elemopt362 = fstrSOLID%sections(isect)%elemopt362
+      ng = fstr_material_point_count( fstrSOLID%elements(i)%etype, elemopt362 )
       if( ng > fstrSOLID%maxn_gauss ) fstrSOLID%maxn_gauss = ng
       if(ng>0) allocate( fstrSOLID%elements(i)%gausses( ng ) )
 
-      isect= hecMESH%section_ID(i)
       ndof = getSpaceDimension( fstrSOLID%elements(i)%etype )
       if (ndof == 2) then              ! why do this???
         id=hecMESH%section%sect_opt(isect)
@@ -370,8 +375,6 @@ contains
         endif
       endif
 
-      if( isect<0 .or. isect>hecMESH%section%n_sect )   &
-        stop "Error in element's section definition"
       id = hecMESH%section%sect_mat_ID_item(isect)
       fstrSOLID%materials(id)%cdsys_ID = hecMESH%section%sect_orien_ID(isect)
       nn = hecMESH%elem_node_index(i)-hecMESH%elem_node_index(i-1)
@@ -2749,6 +2752,7 @@ contains
         fstrSOLID%sections(i)%elemopt361 = kel361FI
       end if
       fstrSOLID%sections(i)%elemopt341 = kel341FI
+      fstrSOLID%sections(i)%elemopt362 = kel362FI
       fstrSOLID%sections(i)%elemopt611 = kel611EULER
       ! INTERFACE sections are skipped in the loop below and keep this thickness
       fstrSOLID%sections(i)%thickness = 1.0d0
