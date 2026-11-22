@@ -341,7 +341,7 @@ contains
     endif
 
     ! --- PLASTIC STRAIN @gauss
-    if( fstrSOLID%output_ctrl(3)%outinfo%on(11) .and. fstrSOLID%StaticType/=3 ) then
+    if( fstrSOLID%output_ctrl(3)%outinfo%on(11) ) then ! .and. fstrSOLID%StaticType/=3 ) then
       id = HECMW_RESULT_DTYPE_ELEM
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(11), ndof )
       work(:) = 0.d0
