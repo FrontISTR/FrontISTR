@@ -105,8 +105,55 @@ run_fistr1 () {
   return 0
 }
 
+check_global_result () {
+  res_name=$1
+  if [ ! -e "$ref_dir/rmerge_global_step.txt" ]; then
+    return 0
+  fi
+
+  step=$(cat "$ref_dir/rmerge_global_step.txt")
+  case "$step" in
+    ''|*[!0-9]*)
+      echo_err "  invalid rmerge global step: $step"
+      : $((errors++))
+      return 0;;
+  esac
+
+  source_file="${res_name}.0.${step}"
+  merged_file="${res_name}.${step}"
+  expected_file="${res_name}.${step}.global"
+  if [ ! -s "$source_file" ]; then
+    echo_err "  missing result for rmerge global check: $source_file"
+    : $((errors++))
+    return 0
+  fi
+  sed -n '/^\*global/,/^\*data/p' "$source_file" > "$expected_file"
+  if [ ! -s "$expected_file" ]; then
+    echo_err "  missing global block in $source_file"
+    : $((errors++))
+    rm -f "$expected_file"
+    return 0
+  fi
+
+  rm -f "$merged_file"
+  if ! "$rmerge" -n "$mpi_num_process" -s "$step" -e "$step" \
+      "$res_name" > rmerge_global.log 2>&1; then
+    echo_err "  rmerge failed for global check at step $step"
+    tail -n 10 rmerge_global.log >&2
+    : $((errors++))
+  elif [ ! -s "$merged_file" ] || \
+      ! sed -n '/^\*global/,/^\*data/p' "$merged_file" | cmp -s "$expected_file" -; then
+    echo_err "  merged global block differs at step $step"
+    : $((errors++))
+  else
+    echo_success "  rmerge global block: success"
+  fi
+  rm -f "$expected_file"
+}
+
 check_result () {
   res_name=$1
+  check_global_result "$res_name"
   if ! ls $ref_dir/${res_name}.* > /dev/null 2>&1; then
     return 0
   fi
