@@ -1,0 +1,90 @@
+!! Multifrontal direct solver (METHOD=DIRECTmf): 2box_hex_nofric with a zero body force given
+!! FOLLOW=NO. Without a follower load the right-hand side is not rebuilt from scratch in each
+!! Newton iteration, so this checks that the right-hand side of the Lagrange multiplier rows is
+!! not carried over from the previous iteration. The load is zero, so the result equals that of
+!! 2box_hex_nofric.
+###################################
+#####   SOLVER INFORMATION    #####
+###################################
+!VERSION
+ 3
+!SOLUTION, TYPE=NLSTATIC
+!CONTACT_ALGO,TYPE=SLAGRANGE
+!WRITE,RESULT,FREQUENCY=10
+!OUTPUT_RES
+DISP,ON
+REACTION,ON
+NSTRAIN,OFF
+NSTRESS,ON
+NMISES,ON
+ESTRAIN,OFF
+ESTRESS,ON
+EMISES,ON
+ISTRAIN,ON
+ISTRESS,ON
+CONTACT_NFORCE,ON
+CONTACT_FRICTION,ON
+CONTACT_RELVEL,ON
+CONTACT_STATE,ON
+CONTACT_FTRACTION,ON
+CONTACT_NTRACTION,ON
+!OUTPUT_VIS
+DISP,ON
+REACTION,ON
+NSTRAIN,OFF
+NSTRESS,ON
+NMISES,ON
+CONTACT_NFORCE,ON
+CONTACT_FRICTION,ON
+CONTACT_RELVEL,ON
+CONTACT_STATE,ON
+CONTACT_FTRACTION,ON
+CONTACT_NTRACTION,ON
+!WRITE,LOG
+!SOLVER,METHOD=DIRECTmf,PRECOND=1,NSET=0,ITERLOG=NO,TIMELOG=NO
+ 5000, 1
+ 1.0e-06, 1.00, 0.0
+ 0.100, 0.100
+###################################
+#####   BOUNDARY CONDITIONS   #####
+###################################
+!BOUNDARY, GRPID=1
+ SET_1,1,1
+!BOUNDARY, GRPID=2
+ SET_2,2,2
+!BOUNDARY, GRPID=3
+ SET_3,3,3
+!BOUNDARY, GRPID=4
+ SET_4,3,3,-0.1
+!DLOAD, GRPID=5, FOLLOW=NO
+ BOX_TOP_1_SET_1, BX, 0.0
+###################################
+#####   CONTACT DEFINITIONS   #####
+###################################
+!CONTACT, INTERACTION=FSLID, GRPID=1
+CP1,0.0,5.0E+2
+###################################
+#####         MATERIAL        #####
+###################################
+!MATERIAL, NAME=MATERIAL_1
+!ELASTIC
+ 1.00000000E+03, 3.00000000E-01
+###################################
+#####       STEP CONTROL      #####
+###################################
+!STEP, SUBSTEPS=1, CONVERG=1.0e-6
+BOUNDARY,1
+BOUNDARY,2
+BOUNDARY,3
+BOUNDARY,4
+LOAD,5
+CONTACT,1
+###################################
+#####      FOR VISUALIZER     #####
+###################################
+!WRITE,VISUAL,FREQUENCY=10
+!VISUAL, method=PSR
+!surface_num=1
+!surface 1
+!output_type = BIN_VTK
+!END

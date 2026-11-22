@@ -247,12 +247,11 @@ contains
 
     integer(kind=kint), parameter :: NSUM = 13
     real(kind=kreal)   :: sq(NSUM)
-    integer(kind=kint) :: i, npndof, num_lagrange
+    integer(kind=kint) :: i, num_lagrange
     real(kind=kreal)   :: dx_t, dx_r, fref_t
     logical            :: has_rot, has_lag
 
     num_lagrange = hecMAT%lagmat%num_lagrange
-    npndof = hecMAT%NP*ndof
 
     has_rot = ( ndof == 6 )
 
@@ -265,7 +264,7 @@ contains
       call fstr_get_sqnorm_dofgroup( hecMESH, ndof, hecMAT%X,         sq(7), sq(8) )
       call fstr_get_sqnorm_dofgroup( hecMESH, ndof, fstrSOLID%dunode, sq(9), sq(10) )
       do i = 1, num_lagrange
-        sq(11) = sq(11) + hecMAT%X(npndof+i)*hecMAT%X(npndof+i)
+        sq(11) = sq(11) + hecMAT%lagmat%X_lagrange(i)*hecMAT%lagmat%X_lagrange(i)
         sq(12) = sq(12) + hecMAT%lagmat%Lagrange(i)*hecMAT%lagmat%Lagrange(i)
       enddo
     endif
@@ -346,11 +345,10 @@ contains
     integer(kind=kint), parameter :: IG_LOC(NLOC) = [ kcnvTranslation, kcnvRotation, kcnvTranslation, kcnvRotation ]
     real(kind=kreal)   :: vmax(NMAX), gmax(NMAX)
     integer(kind=kint) :: loc(2,NLOC), gnode(NLOC), gdof(NLOC)
-    integer(kind=kint) :: i, k, npndof, num_lagrange
+    integer(kind=kint) :: i, k, num_lagrange
     real(kind=kreal)   :: dx_t, dx_r, fref_t
 
     num_lagrange = hecMAT%lagmat%num_lagrange
-    npndof = hecMAT%NP*ndof
 
     vmax(:) = 0.0d0
     loc(:,:) = 0
@@ -361,7 +359,7 @@ contains
       call fstr_get_maxabs_dofgroup( hecMESH, ndof, hecMAT%X,         vmax(7), vmax(8), loc(:,3), loc(:,4) )
       call fstr_get_maxabs_dofgroup( hecMESH, ndof, fstrSOLID%dunode, vmax(9), vmax(10) )
       do i = 1, num_lagrange
-        vmax(11) = max( vmax(11), abs(hecMAT%X(npndof+i)) )
+        vmax(11) = max( vmax(11), abs(hecMAT%lagmat%X_lagrange(i)) )
         vmax(12) = max( vmax(12), abs(hecMAT%lagmat%Lagrange(i)) )
       enddo
     endif

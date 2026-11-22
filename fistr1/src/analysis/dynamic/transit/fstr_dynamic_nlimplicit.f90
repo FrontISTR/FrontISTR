@@ -402,6 +402,7 @@ contains
 
         call hecmw_mat_clear( hecMAT%conmat )
         call hecmw_mat_clear_b( hecMAT%conmat )
+        if( associated(hecMAT%lagmat%B_lagrange) ) hecMAT%lagmat%B_lagrange = 0.0d0
         hecMAT%conmat%X = 0.0d0
 
         if( fstr_is_contact_active() ) then
@@ -472,7 +473,7 @@ contains
         ! the static path (fstr_solve_NonLinear).
         if( fstr_is_contact_active() ) then
           do j=1,hecMAT%lagmat%num_lagrange
-            hecMAT%lagmat%lagrange(j) = hecMAT%lagmat%lagrange(j) + hecMAT%X(hecMESH%n_node*ndof+j)
+            hecMAT%lagmat%lagrange(j) = hecMAT%lagmat%lagrange(j) + hecMAT%lagmat%X_lagrange(j)
           enddo
         endif
 
@@ -507,6 +508,7 @@ contains
       if (contact_changed_global > 0) then
         call hecmw_mat_clear_b( hecMAT )
         call hecmw_mat_clear_b( hecMAT%conmat )
+        if( associated(hecMAT%lagmat%B_lagrange) ) hecMAT%lagmat%B_lagrange = 0.0d0
         call solve_LINEQ_contact_init(hecMESH,hecMAT,is_mat_symmetric)
       endif
 

@@ -265,7 +265,7 @@ contains
     type (hecmwST_matrix), pointer :: hecMATmpc
     real(kind=kreal) :: time_dumm
     integer(kind=kint) :: totalmpc, MPC_METHOD, i
-    integer(kind=kint) :: npndof, npndof_mpc, num_lagrange
+    integer(kind=kint) :: npndof
 
     totalmpc = hecMESH%mpc%n_mpc
     call hecmw_allreduce_I1 (hecMESH, totalmpc, hecmw_sum)
@@ -284,11 +284,6 @@ contains
       enddo
       time_dumm = 0.d0
       call hecmw_tback_x(hecMESH, hecMAT%NDOF, hecMAT%X, time_dumm)
-      num_lagrange = size(hecMAT%X) - npndof
-      npndof_mpc = hecMATmpc%NP * hecMATmpc%NDOF
-      do i = 1, num_lagrange
-        hecMAT%X(npndof+i) = hecMATmpc%X(npndof_mpc+i)
-      enddo
       hecMAT%Iarray=hecMATmpc%Iarray
       hecMAT%Rarray=hecMATmpc%Rarray
     end select

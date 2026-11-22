@@ -715,21 +715,19 @@ contains
     implicit none
     type (sparse_matrix), intent(inout) :: spMAT
     type (hecmwST_matrix), intent(in) :: hecMAT
-    integer :: nndof,npndof,ierr,i
+    integer :: nndof,ierr,i
     allocate(spMAT%rhs(spMAT%N_loc), stat=ierr)
     if (ierr /= 0) then
       write(*,*) " Allocation error, spMAT%rhs"
       call hecmw_abort(hecmw_comm_get_comm())
     endif
     nndof=hecMAT%N*hecMAT%ndof
-    npndof=hecMAT%NP*hecMAT%ndof
     do i=1,nndof
       spMAT%rhs(i) = hecMAT%b(i)
     enddo
-    ! skip external DOF in hecMAT%b
     if (hecMAT%lagmat%num_lagrange > 0) then
       do i=1,hecMAT%lagmat%num_lagrange
-        spMAT%rhs(nndof+i) = hecMAT%b(npndof+i)
+        spMAT%rhs(nndof+i) = hecMAT%lagmat%B_lagrange(i)
       enddo
     endif
   end subroutine sparse_matrix_contact_set_rhs
@@ -738,7 +736,7 @@ contains
     implicit none
     type (sparse_matrix), intent(inout) :: spMAT
     type (hecmwST_matrix), intent(in) :: hecMAT
-    integer :: nndof,npndof,ierr,ndof,i,i0,j
+    integer :: nndof,ierr,ndof,i,i0,j
     real(kind=kreal), allocatable :: rhs_con(:), rhs_con_sum(:)
 
     !   assemble contact components of external nodes only
@@ -775,14 +773,13 @@ contains
       call hecmw_abort(hecmw_comm_get_comm())
     endif
     nndof=hecMAT%N*hecMAT%ndof
-    npndof=hecMAT%NP*hecMAT%ndof
     do i=1,nndof
       spMAT%rhs(i) = rhs_con_sum(spMAT%offset+i) + hecMAT%b(i) + hecMAT%conmat%b(i)
     end do
     deallocate(rhs_con_sum)
     if (hecMAT%lagmat%num_lagrange > 0) then
       do i=1,hecMAT%lagmat%num_lagrange
-        spMAT%rhs(nndof+i) = hecMAT%conmat%b(npndof+i)
+        spMAT%rhs(nndof+i) = hecMAT%lagmat%B_lagrange(i)
       end do
     endif
   end subroutine sparse_matrix_para_contact_set_rhs
@@ -791,16 +788,15 @@ contains
     implicit none
     type (sparse_matrix), intent(inout) :: spMAT
     type (hecmwST_matrix), intent(inout) :: hecMAT
-    integer :: nndof,npndof,i
+    integer :: nndof,i
     nndof=hecMAT%N*hecMAT%ndof
-    npndof=hecMAT%NP*hecMAT%ndof
     do i=1,nndof
       hecMAT%x(i) = spMAT%rhs(i)
     enddo
     ! TODO: call update to get external DOF from neighboring domains???
     if (hecMAT%lagmat%num_lagrange > 0) then
       do i=1,hecMAT%lagmat%num_lagrange
-        hecMAT%x(npndof+i) = spMAT%rhs(nndof+i)
+        hecMAT%lagmat%X_lagrange(i) = spMAT%rhs(nndof+i)
       enddo
     endif
     deallocate(spMAT%rhs)

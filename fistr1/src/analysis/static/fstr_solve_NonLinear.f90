@@ -67,6 +67,7 @@ contains
     endif
 
     if( associated(hecMAT%conmat) ) call hecmw_mat_clear_b(hecMAT%conmat)
+    if( associated(hecMAT%lagmat%B_lagrange) ) hecMAT%lagmat%B_lagrange = 0.0d0
     if( fstr_is_contact_active() ) then
       call fstr_Update_NDForce_contact(cstep,ctAlgo,hecMESH,hecMAT,fstrSOLID)
       !    Consider SPC condition
@@ -551,7 +552,7 @@ contains
         ! ----- update the Lagrange multipliers
         if( fstr_is_contact_active() ) then
           do i = 1, hecMAT%lagmat%num_lagrange
-            hecMAT%lagmat%lagrange(i) = hecMAT%lagmat%lagrange(i)+hecMAT%X(hecMESH%n_node*ndof+i)
+            hecMAT%lagmat%lagrange(i) = hecMAT%lagmat%lagrange(i)+hecMAT%lagmat%X_lagrange(i)
           enddo
         endif
 
@@ -570,6 +571,7 @@ contains
 
         if( fstr_is_contact_active() )  then
           call hecmw_mat_clear_b( hecMAT%conmat )
+          if( associated(hecMAT%lagmat%B_lagrange) ) hecMAT%lagmat%B_lagrange = 0.0d0
           call fstr_Update_NDForce_contact(cstep,ctAlgo,hecMESH,hecMAT,fstrSOLID)
           !    Consider SPC condition
           call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, hecMAT%B)
@@ -619,6 +621,7 @@ contains
       if (contact_changed_global > 0) then
         call hecmw_mat_clear_b( hecMAT )
           call hecmw_mat_clear_b( hecMAT%conmat )
+        if( associated(hecMAT%lagmat%B_lagrange) ) hecMAT%lagmat%B_lagrange = 0.0d0
         call solve_LINEQ_contact_init(hecMESH, hecMAT, is_mat_symmetric)
       endif
 
@@ -638,6 +641,7 @@ contains
 
       if( fstr_is_contact_active() )  then
           call hecmw_mat_clear_b( hecMAT%conmat )
+        if( associated(hecMAT%lagmat%B_lagrange) ) hecMAT%lagmat%B_lagrange = 0.0d0
         call fstr_Update_NDForce_contact(cstep,ctAlgo,hecMESH,hecMAT,fstrSOLID)
         !    Consider SPC condition
         call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, hecMAT%B)

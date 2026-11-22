@@ -360,13 +360,6 @@ contains
     integer(kind=kint) :: inode, idof !< number of node; degree of freedom
     integer(kind=kint) :: isU, ieU, isL, ieL, i, l, k
     real(kind=kreal)   :: RHS !< value of prescribed displacement
-    real(kind=kreal), pointer :: B(:) !< right-hand side holding the rows of Lagrange multipliers
-
-    if( associated(hecMAT%conmat) ) then
-      B => hecMAT%conmat%B
-    else
-      B => hecMAT%B
-    endif
 
     isU = hecMAT%lagmat%indexU_lagrange(inode-1)+1
     ieU = hecMAT%lagmat%indexU_lagrange(inode)
@@ -377,7 +370,7 @@ contains
       ieL = hecMAT%lagmat%indexL_lagrange(l)
       k = hecmw_array_search_i(hecMAT%lagmat%itemL_lagrange,isL,ieL,inode)
       if(k < isL .or. k > ieL) cycle
-      B(hecMAT%NP*hecMAT%NDOF+l) = B(hecMAT%NP*hecMAT%NDOF+l) - hecMAT%lagmat%AL_lagrange((k-1)*3+idof)*RHS
+      hecMAT%lagmat%B_lagrange(l) = hecMAT%lagmat%B_lagrange(l) - hecMAT%lagmat%AL_lagrange((k-1)*3+idof)*RHS
       hecMAT%lagmat%AL_lagrange((k-1)*3+idof) = 0.0d0
     enddo
 

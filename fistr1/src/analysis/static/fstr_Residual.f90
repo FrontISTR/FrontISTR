@@ -329,7 +329,7 @@ contains
 
     ! Copy Lagrange multiplier residual
     do i = 1, num_lagrange
-      resid_vec(nndof + i) = hecMAT%conmat%B(npndof + i)
+      resid_vec(nndof + i) = hecMAT%lagmat%B_lagrange(i)
     enddo
 
   end subroutine fstr_assemble_residual_contact

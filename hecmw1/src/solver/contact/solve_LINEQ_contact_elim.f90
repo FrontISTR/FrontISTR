@@ -996,7 +996,7 @@ contains
     if (CONTACT_DEBUG >= 3) write(0,*) '    DEBUG3[',myrank,']: add hecMAT to K done'
   end subroutine assemble_matrix
 
-  !> \brief Assemble hecMAT%B and hecMAT%conmat%B into Btot
+  !> \brief Assemble hecMAT%B, hecMAT%conmat%B and hecMAT%lagmat%B_lagrange into Btot
   !>
   subroutine assemble_rhs(hecMESH, hecMAT, num_lagrange, slaves, Btot)
     type(hecmwST_local_mesh),   intent(in) :: hecMESH      !< original mesh
@@ -1015,12 +1015,17 @@ contains
     nndof  = hecMAT%N *ndof
 
     if (DEBUG_VECTOR) call debug_write_vector(hecMAT%B, 'RHS(hecMAT)', 'hecMAT%B', ndof, hecMAT%N, &
-        hecMAT%NP, .false., num_lagrange, slaves)
+        hecMAT%NP, .false., slaves=slaves)
     if (DEBUG_VECTOR) call debug_write_vector(hecMAT%conmat%B, 'RHS(hecMAT%conmat)', 'hecMAT%conmat%B', ndof, hecMAT%conmat%N, &
-        hecMAT%conmat%NP, .true., num_lagrange, slaves)
+        hecMAT%conmat%NP, .true., slaves=slaves)
+    if (DEBUG_VECTOR .and. num_lagrange > 0) call debug_write_vector(hecMAT%lagmat%B_lagrange, 'RHS(lag)', &
+        'hecMAT%lagmat%B_lagrange', 1, num_lagrange)
 
-    do i=1,npndof+num_lagrange
+    do i=1,npndof
       Btot(i) = hecMAT%conmat%B(i)
+    enddo
+    do i=1,num_lagrange
+      Btot(npndof+i) = hecMAT%lagmat%B_lagrange(i)
     enddo
 
     if (hecmw_comm_get_size() > 1) then
@@ -1218,7 +1223,9 @@ contains
     if (CONTACT_DEBUG >= 2) write(0,*) '  DEBUG2[',myrank,']: recovered lag'
 
     if (DEBUG_VECTOR) call debug_write_vector(hecMAT%X, 'Solution(original)', 'hecMAT%X', hecMAT%NDOF, hecMAT%N, &
-        hecMAT%NP, .false., size(slaves4lag), slaves)
+        hecMAT%NP, .false., slaves=slaves)
+    if (DEBUG_VECTOR .and. size(slaves4lag) > 0) call debug_write_vector(hecMAT%lagmat%X_lagrange, 'Solution(lag)', &
+        'hecMAT%lagmat%X_lagrange', 1, size(slaves4lag))
   end subroutine recover_solution
 
   !> \brief Recover solution for slave dofs
@@ -1308,8 +1315,8 @@ contains
     call hecmw_contact_comm_bcast_r(conCOMM, Btmp)
     !
     ! 4. {lag} = [Bs^-T] {Btmp_s}
-    xlag => hecMAT%X(npndof+1:npndof+num_lagrange)
-    xlag(:)=BUs_inv(:)*Btmp(slaves4lag(:))
+    xlag => hecMAT%lagmat%X_lagrange
+    if (num_lagrange > 0) xlag(:)=BUs_inv(:)*Btmp(slaves4lag(:))
     deallocate(Btmp)
   end subroutine comp_lag
 
@@ -1345,7 +1352,7 @@ contains
     !
     rlag => r(npndof+1:npndof+num_lagrange)
     blag => Btot(npndof+1:npndof+num_lagrange)
-    xlag => hecMAT%X(npndof+1:npndof+num_lagrange)
+    xlag => hecMAT%lagmat%X_lagrange
     !
     !! {r}    = {b} - [K] {x} - [Bt] {lag}
     !! {rlag} = {c} - [B] {x}
@@ -1442,8 +1449,8 @@ contains
     r_con(:) = 0.0d0
     !
     rlag => r(npndof+1:npndof+num_lagrange)
-    blag => hecMAT%conmat%B(npndof+1:npndof+num_lagrange)
-    xlag => hecMAT%X(npndof+1:npndof+num_lagrange)
+    blag => hecMAT%lagmat%B_lagrange
+    xlag => hecMAT%lagmat%X_lagrange
     !
     !! <SUMMARY>
     !! {r}    = {b} - [K] {x} - [Bt] {lag}

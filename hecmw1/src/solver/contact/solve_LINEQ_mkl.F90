@@ -61,6 +61,8 @@ contains
     integer(kind=kint)  :: phase_start
     real(kind=kreal)    :: t1,t2
     integer(kind=kint)  :: mpc_method
+    integer(kind=kint)  :: nndof, i
+    real(kind=kreal), pointer :: solx(:)
 
     t1=hecmw_wtime()
 
@@ -117,13 +119,20 @@ contains
     endif
 
     ! SOLVE
+    allocate(solx(spMAT%N_loc))
     if( hecMESH%PETOT.GT.1 ) then
-      call hecmw_clustermkl_wrapper(spMAT, phase_start, hecMAT%X, istat)
+      call hecmw_clustermkl_wrapper(spMAT, phase_start, solx, istat)
       call sparse_matrix_contact_get_rhs(spMAT, hecMAT)
     else
-      call hecmw_mkl_wrapper(spMAT, phase_start, hecMAT%X, istat)
+      call hecmw_mkl_wrapper(spMAT, phase_start, solx, istat)
+      nndof = hecMAT%N*hecMAT%NDOF
+      hecMAT%X(1:nndof) = solx(1:nndof)
+      do i = 1, hecMAT%lagmat%num_lagrange
+        hecMAT%lagmat%X_lagrange(i) = solx(nndof+i)
+      enddo
       deallocate(spMAT%rhs)
     endif
+    deallocate(solx)
 
     call hecmw_mat_dump_solution(hecMAT)
   end subroutine solve_LINEQ_MKL_contact

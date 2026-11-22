@@ -131,7 +131,7 @@ contains
 
   end subroutine calc_contact_pair_refStiff
 
-  !> \brief Assemble contact nodal force into residual vector (hecMAT%conmat%B).
+  !> \brief Assemble contact nodal force into residual vector (hecMAT%conmat%B, hecMAT%lagmat%B_lagrange).
   subroutine assemble_contact_force_residual(nnode,ndLocal,id_lagrange,ctNForce,ctTForce,hecMAT)
     integer(kind=kint), intent(in)       :: nnode              !< number of master nodes
     integer(kind=kint), intent(in)       :: ndLocal(nnode + 1) !< global node numbers
@@ -149,10 +149,10 @@ contains
     enddo
 
     ! Accumulate: several contributions can target the same Lagrange row (the caller
-    ! zero-clears hecMAT%conmat%B before the contact assembly).
+    ! zero-clears hecMAT%lagmat%B_lagrange before the contact assembly).
     if( id_lagrange > 0 ) then
-      hecMAT%conmat%B(hecMAT%conmat%NP*hecMAT%conmat%NDOF+id_lagrange) = &
-      hecMAT%conmat%B(hecMAT%conmat%NP*hecMAT%conmat%NDOF+id_lagrange) + ctNForce((nnode+1)*3+1) + ctTForce((nnode+1)*3+1)
+      hecMAT%lagmat%B_lagrange(id_lagrange) = &
+      hecMAT%lagmat%B_lagrange(id_lagrange) + ctNForce((nnode+1)*3+1) + ctTForce((nnode+1)*3+1)
     endif
 
   end subroutine assemble_contact_force_residual

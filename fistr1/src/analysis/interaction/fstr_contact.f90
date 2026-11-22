@@ -97,7 +97,7 @@ contains
 
   end subroutine fstr_AddContactStiffness
 
-  !> \brief Compute contact forces for residual vector (hecMAT%conmat%B).
+  !> \brief Compute contact forces for residual vector (hecMAT%conmat%B, hecMAT%lagmat%B_lagrange).
   subroutine fstr_Update_NDForce_contact(cstep,ctAlgo,hecMESH,hecMAT,fstrSOLID)
     integer(kind=kint), intent(in)       :: cstep
     integer(kind=kint), intent(in)       :: ctAlgo

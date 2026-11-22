@@ -458,6 +458,8 @@ module hecmw_util
     real(kind=kreal),    pointer  :: AL_lagrange(:) => null() !< values of non-zero items in lower part
     real(kind=kreal),    pointer  :: AU_lagrange(:) => null() !< values of non-zero items in upper part
     real(kind=kreal),    pointer  :: D_lagrange(:) => null() !< values of diagonal components for Lagrange multipliers
+    real(kind=kreal),    pointer  :: B_lagrange(:) => null() !< right-hand side of the rows of Lagrange multipliers
+    real(kind=kreal),    pointer  :: X_lagrange(:) => null() !< solution for Lagrange multipliers
 
     real(kind=kreal),    pointer  :: Lagrange(:) => null() !< values of Lagrange multipliers
   end type hecmwST_matrix_lagrange

@@ -188,47 +188,5 @@ contains
 
   end subroutine set_values_directsolver
 
-  !> \brief This subroutine gets the residual vector
-  subroutine getApproximateB(ntdf,x,y)
-
-    integer(kind=kint)     :: ntdf                       !< total degree of freedom
-    integer(kind=kint)     :: i, j, k
-    real(kind=kreal)        :: x(ntdf)                    !< solution vector
-    real(kind=kreal)        :: y(ntdf)                    !< residual vector
-
-    y = 0.0d0
-    do i = 1, ntdf
-      do j = pointers(i), pointers(i+1)-1
-        k = indices(j)
-        y(i) = y(i) + values(j)*x(k)
-        if( symmetricMatrixStruc .and. k/=i )&
-          y(k)=y(k)+values(j)*x(i)
-      enddo
-    enddo
-
-  end subroutine getApproximateB
-
-
-  subroutine checkResidual(hecMAT)
-    type(hecmwST_matrix)                    :: hecMAT    !< type hecmwST_matrix
-    integer(kind=kint)                       :: ntdf
-    real(kind=kreal), allocatable            :: y(:)           !< right-hand side vector
-    real(kind=kreal)                          :: residual_Max   !< maximum residual
-
-    ntdf = hecMAT%NP*hecMAT%NDOF + hecMAT%lagmat%num_lagrange
-
-    allocate(y(size(hecMAT%B)))
-    y = 0.0d0
-    call getApproximateB(ntdf,hecMAT%X,y)
-    residual_Max=maxval(dabs(y-hecMAT%B))
-    write(*,*)' maximum residual = ',residual_Max
-    if( dabs(residual_Max) >= 1.0d-8) then
-      write(*,*) ' ###Maximum residual exceeded 1.0d-8---Direct Solver### '
-      !        stop
-    endif
-    deallocate(y)
-
-  end subroutine checkResidual
-
 
 end module m_set_arrays_directsolver_contact
