@@ -48,6 +48,8 @@ contains
     real   (kind=kreal):: ALUtmp(6,6)
     integer(kind=kint ):: ip
 
+    call hecmw_precond_BILU_66_clear()
+
     N = hecMAT%N
     NP = hecMAT%NP
     NPL = hecMAT%NPL
