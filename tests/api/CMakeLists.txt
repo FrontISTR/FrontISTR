@@ -35,3 +35,20 @@ set_tests_properties(test_serial_api/param
     ENVIRONMENT CTEST_TEST_NAME=test_serial_api/param
 )
 
+add_executable(fstr_solid_api_test fstr_solid_api_test.c)
+target_link_libraries(fstr_solid_api_test PRIVATE fistr hecmw)
+add_test(NAME test_serial_api/solid COMMAND fstr_solid_api_test)
+set_tests_properties(test_serial_api/solid
+  PROPERTIES
+    LABELS api/solid,serial
+    ENVIRONMENT CTEST_TEST_NAME=test_serial_api/solid
+)
+
+add_executable(fstr_material_api_test fstr_material_api_test.c)
+target_link_libraries(fstr_material_api_test PRIVATE fistr hecmw)
+add_test(NAME test_serial_api/material COMMAND fstr_material_api_test)
+set_tests_properties(test_serial_api/material
+  PROPERTIES
+    LABELS api/material,solid
+    ENVIRONMENT CTEST_TEST_NAME=test_serial_api/material
+)

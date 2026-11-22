@@ -86,12 +86,16 @@ F90OBJFILEPOSTFIX       = @f90objfilepostfix@
 OBJS =
 
 OBJSF = \
-	fstr_api_param.@f90objfilepostfix@
+	fstr_api_param.@f90objfilepostfix@ \
+	fstr_api_material.@f90objfilepostfix@ \
+	fstr_api_solid.@f90objfilepostfix@
 
 INCLUDESF =
 
 HEADERS = \
-	fstr_api_param.h
+	fstr_api_param.h \
+	fstr_api_material.h \
+	fstr_api_solid.h
 
 #------------------------------------------------------------------------------#
 all: @build_target@

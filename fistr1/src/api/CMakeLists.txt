@@ -5,6 +5,8 @@
 
 target_sources(fistr PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/fstr_api_param.f90
+  ${CMAKE_CURRENT_LIST_DIR}/fstr_api_material.f90
+  ${CMAKE_CURRENT_LIST_DIR}/fstr_api_solid.f90
 )
 
 target_include_directories(fistr PUBLIC

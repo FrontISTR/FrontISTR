@@ -1,1 +1,3 @@
 fstr_api_param.o : fstr_api_param.f90
+fstr_api_material.o : fstr_api_material.f90
+fstr_api_solid.o : fstr_api_solid.f90
