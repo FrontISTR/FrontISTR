@@ -18,6 +18,7 @@ contains
     use hecmw_solver_direct_clusterMKL
     use hecmw_solver_direct_mf
     use hecmw_matrix_misc
+    use hecmw_matrix_dump
     use m_hecmw_comm_f
     implicit none
 
@@ -36,6 +37,10 @@ contains
       call hecmw_mat_set_flag_diverged(hecMAT, 0)
       return
     endif
+
+    ! the solvers below do not dump by themselves: every call of hecmw_mat_dump advances
+    ! the number in the dump file names
+    call hecmw_mat_dump(hecMAT, hecMESH)
 
     select case(hecMAT%Iarray(99))
         !* Call Iterative Solver
@@ -87,6 +92,8 @@ contains
         endif
         !C
     end select
+
+    call hecmw_mat_dump_solution(hecMAT)
 
   end subroutine hecmw_solve
 

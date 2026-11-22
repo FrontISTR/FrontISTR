@@ -10,7 +10,6 @@ module hecmw_solver_direct_MKL
   use m_sparse_matrix_hec
   use m_hecmw_MKL_wrapper
   use hecmw_matrix_ass
-  use hecmw_matrix_dump
 
   private
   public :: hecmw_solve_direct_MKL
@@ -31,8 +30,6 @@ contains
     real(kind=kreal) :: t1,t2
 
     t1=hecmw_wtime()
-
-    call hecmw_mat_dump(hecMAT, hecMESH)
 
     myrank=hecmw_comm_get_rank()
 
@@ -81,8 +78,6 @@ contains
 
     ! SOLVE
     call hecmw_mkl_wrapper(spMAT, phase_start, hecMAT%X, istat)
-
-    call hecmw_mat_dump_solution(hecMAT)
 
   end subroutine hecmw_solve_direct_MKL
 
