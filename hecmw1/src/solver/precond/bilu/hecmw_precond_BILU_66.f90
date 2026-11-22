@@ -1464,8 +1464,8 @@ contains
     !C | SORT and RECONSTRUCT matrix considering fill-in |
     !C +-------------------------------------------------+
     !C===
-    allocate (ALlu0(9*(NPL+NPLf1+NPLf2)))
-    allocate (AUlu0(9*(NPU+NPUf1+NPUf2)))
+    allocate (ALlu0(36*(NPL+NPLf1+NPLf2)))
+    allocate (AUlu0(36*(NPU+NPUf1+NPUf2)))
 
     ALlu0= 0.d0
     AUlu0= 0.d0
