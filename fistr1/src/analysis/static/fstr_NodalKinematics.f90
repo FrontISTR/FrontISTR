@@ -8,7 +8,7 @@
 !> drilling scalar) needed when the Newton solution increment cannot be applied as
 !> a simple vector addition to the nodal degrees of freedom.
 !>
-!> This path is used by elastic MITC3/MITC4 shells (731/741 and split-layout 761/781)
+!> This path is used by elastic MITC3/MITC4/MITC9 shells (731/741/743 and split-layout 761/781)
 !> under Total/Updated Lagrangian kinematics. Finite-rotation algebra lives in
 !> m_fstr_FiniteRotationKinematics; this module stores and advances the nodal frame state.
 module m_fstr_NodalKinematics
@@ -31,7 +31,7 @@ contains
   !> by adjacent local shell elements. Already-initialized nodes are left untouched,
   !> so repeated calls are idempotent.
   subroutine fstr_ensure_finite_rotation_state( hecMESH, fstrSOLID, ndof )
-    use elementInfo, only: fe_mitc3_shell, fe_mitc3_shell361, fe_mitc4_shell, fe_mitc4_shell361
+    use elementInfo, only: fe_mitc3_shell, fe_mitc3_shell361, fe_mitc4_shell, fe_mitc4_shell361, fe_mitc9_shell
     implicit none
 
     type (hecmwST_local_mesh), intent(in) :: hecMESH
@@ -42,7 +42,7 @@ contains
     integer(kind=kint) :: node_offset, rotation_mode, shell_nnode, triad_etype
     integer(kind=kint), allocatable :: node_mode(:), node_count(:)
     real(kind=kreal), allocatable :: director_sum(:,:), tangent_sum(:,:)
-    real(kind=kreal) :: ecoord(3, 8), triad(3, 3), trial(3, 3)
+    real(kind=kreal) :: ecoord(3, 9), triad(3, 3), trial(3, 3)
     real(kind=kreal) :: director(3), tangent(3), ref_axis(3), normv, proj
 
     if( .not. fstrSOLID%has_finite_rotation_kinematics ) return
@@ -82,6 +82,11 @@ contains
         node_offset = 4
         rotation_mode = 2
         triad_etype = fe_mitc4_shell
+      else if( ic_type == fe_mitc9_shell ) then
+        shell_nnode = 9
+        node_offset = 0
+        rotation_mode = 1
+        triad_etype = fe_mitc9_shell
       else
         cycle
       endif
@@ -323,10 +328,10 @@ contains
 
   end subroutine fstr_set_identity_triad
 
-  !> Reference nodal frame at a MITC3/MITC4 corner: e3 from the surface
+  !> Reference nodal frame at a MITC3/MITC4/MITC9 node: e3 from the surface
   !> normal (g1 x g2), e2 = e3 x e0, e1 = e2 x e3, then orthonormalized.
   subroutine fstr_reference_shell_triad( etype, nn, ecoord, inode, triad )
-    use elementInfo, only: fe_mitc3_shell, fe_mitc4_shell, getShapeDeriv, getNodalNaturalCoord
+    use elementInfo, only: fe_mitc3_shell, fe_mitc4_shell, fe_mitc9_shell, getShapeDeriv, getNodalNaturalCoord
     implicit none
 
     integer(kind=kint), intent(in) :: etype
@@ -341,7 +346,8 @@ contains
 
     call fstr_set_identity_triad( trial )
     if( .not. ((etype == fe_mitc3_shell .and. nn == 3) .or. &
-        (etype == fe_mitc4_shell .and. nn == 4)) .or. &
+        (etype == fe_mitc4_shell .and. nn == 4) .or. &
+        (etype == fe_mitc9_shell .and. nn == 9)) .or. &
         inode < 1 .or. inode > nn ) then
       triad(1:3, 1:3) = trial(1:3, 1:3)
       return

@@ -304,10 +304,8 @@ contains
     call ShellMITC_BasisFromCovariant(reference_basis, material_local_basis, material_reciprocal_basis, material_jacobian)
     integration_jacobian = ShellMITC_CovariantJacobian(reference_basis)
 
-    ! Finite-rotation MITC3/MITC4 use the current covariant tangent basis built above.
-    if( etype == fe_mitc9_shell ) then
-      tangent_basis = tangent_basis + translation_gradient
-    else if( .not. fstr_is_finite_rotation_shell_element(etype, nn) ) then
+    ! Finite-rotation shells use the current covariant tangent basis built above.
+    if( .not. fstr_is_finite_rotation_shell_element(etype, nn) ) then
       covariant_basis(:, SHELL_XI:SHELL_ETA) = covariant_basis(:, SHELL_XI:SHELL_ETA) + translation_gradient
       tangent_basis = covariant_basis(:, SHELL_XI:SHELL_ETA)
     endif
@@ -574,12 +572,8 @@ contains
     membrane_basis = kinematic_basis(:, SHELL_XI:SHELL_ETA)
     if( use_green_lagrange ) then
       translation_gradient = matmul(shell_disp(1:3, :), shapederiv)
-      if( etype == fe_mitc9_shell ) then
-        membrane_basis = membrane_basis+translation_gradient
-      else
-        kinematic_basis(:, SHELL_XI:SHELL_ETA) = kinematic_basis(:, SHELL_XI:SHELL_ETA)+translation_gradient
-        membrane_basis = kinematic_basis(:, SHELL_XI:SHELL_ETA)
-      endif
+      kinematic_basis(:, SHELL_XI:SHELL_ETA) = kinematic_basis(:, SHELL_XI:SHELL_ETA)+translation_gradient
+      membrane_basis = kinematic_basis(:, SHELL_XI:SHELL_ETA)
     endif
 
     call ShellMITC_BuildFirstStrainVariation(nn, ndof, zeta_tying, shapefunc, shapederiv, &
@@ -713,8 +707,7 @@ contains
         matmul(transpose(basis_variation(:, dof_index, :)), kinematic_basis))
     end do
 
-    ! In the TL MITC9 formulation only the translational membrane columns use
-    ! the translated metric basis; rotational columns retain the director basis.
+    ! Translational membrane columns use the current in-plane basis.
     do node = 1, nn
       do component = 1, min(3, ndof)
         dof_index = ndof*(node-1)+component

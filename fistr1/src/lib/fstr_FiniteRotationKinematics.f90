@@ -6,7 +6,7 @@
 
 module m_fstr_FiniteRotationKinematics
   use hecmw
-  use elementInfo, only: fe_mitc3_shell, fe_mitc3_shell361, fe_mitc4_shell, fe_mitc4_shell361
+  use elementInfo, only: fe_mitc3_shell, fe_mitc3_shell361, fe_mitc4_shell, fe_mitc4_shell361, fe_mitc9_shell
   use m_fstr, only: fstr_solid
   use mMaterial, only: tMaterial, TOTALLAG, UPDATELAG, isElastic
   implicit none
@@ -35,7 +35,8 @@ contains
       ( etype == fe_mitc3_shell .and. nn == 3 ) .or. &
       ( etype == fe_mitc3_shell361 .and. nn == 6 ) .or. &
       ( etype == fe_mitc4_shell .and. nn == 4 ) .or. &
-      ( etype == fe_mitc4_shell361 .and. nn == 8 )
+      ( etype == fe_mitc4_shell361 .and. nn == 8 ) .or. &
+      ( etype == fe_mitc9_shell .and. nn == 9 )
   end function fstr_is_finite_rotation_shell_element
 
   logical function fstr_uses_finite_rotation_kinematics( etype, nn, material )
@@ -116,6 +117,10 @@ contains
         shell_nnode = 4
         node_offset = 4
         node_mode = 2
+      else if( ic_type == fe_mitc9_shell ) then
+        shell_nnode = 9
+        node_offset = 0
+        node_mode = 1
       else
         cycle
       endif

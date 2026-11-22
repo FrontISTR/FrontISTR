@@ -756,8 +756,8 @@ contains
     implicit none
     type(tElement), intent(in) :: element
     real(kind=kreal), intent(inout) :: estrain(6), estress(6)
-    integer(kind=kint) :: ig, ilayer, ithick, ishell
-    real(kind=kreal) :: weight, total_weight
+    integer(kind=kint) :: ig, ilayer, ithick, ishell, ierr
+    real(kind=kreal) :: zeta_layer, layer_weight, weight, total_weight
     real(kind=kreal) :: avg_strain(6), avg_stress(6)
 
     if( .not. associated(element%shell_layer_gausses) ) return
@@ -772,13 +772,16 @@ contains
     avg_stress(1:6) = 0.0d0
     total_weight = 0.0d0
 
-    ! Average history points equally within each layer and weight layers by thickness.
+    ! Weight history points by the thickness quadrature within each layer and layers by thickness.
     do ig = 1, size(element%gausses)
       do ilayer = 1, element%shell_nlayer
-        weight = element%gausses(1)%pMaterial%shell_var(ilayer)%weight
+        layer_weight = element%gausses(1)%pMaterial%shell_var(ilayer)%weight
         do ithick = 1, element%shell_nthick
           ishell = fstr_shell_layer_gauss_index(element, ig, ilayer, ithick)
           if( ishell <= 0 ) cycle
+          call fstr_shell_layer_quadrature(element, ilayer, ithick, zeta_layer, weight, ierr)
+          if( ierr /= 0 ) cycle
+          weight = layer_weight*weight
           avg_strain(1:6) = avg_strain(1:6) &
             + element%shell_layer_gausses(ishell)%strain_out(1:6) * weight
           avg_stress(1:6) = avg_stress(1:6) &
@@ -1344,26 +1347,19 @@ contains
             ndstrain(1:nn,1:6), ndstress(1:nn,1:6), estrain, estress)
         else if( ic_type == 731 .or. ic_type == 741 .or. ic_type == 743 ) then
           ntot_lyr = fstrSOLID%elements(icel)%gausses(1)%pMaterial%totallyr
-          if( ic_type == 731 .or. ic_type == 741 ) then
-            do j = 1, nn
-              nbase = 9*(nodLOCAL(j)-1)
-              triad_cur(1:9,j) = 0.0D0
-              triad_ref(1:9,j) = 0.0D0
-              if( associated(fstrSOLID%shell_triad) )     triad_cur(1:9,j) = fstrSOLID%shell_triad(nbase+1:nbase+9)
-              if( associated(fstrSOLID%shell_ref_triad) ) triad_ref(1:9,j) = fstrSOLID%shell_ref_triad(nbase+1:nbase+9)
-            enddo
-          endif
+          do j = 1, nn
+            nbase = 9*(nodLOCAL(j)-1)
+            triad_cur(1:9,j) = 0.0D0
+            triad_ref(1:9,j) = 0.0D0
+            if( associated(fstrSOLID%shell_triad) )     triad_cur(1:9,j) = fstrSOLID%shell_triad(nbase+1:nbase+9)
+            if( associated(fstrSOLID%shell_ref_triad) ) triad_ref(1:9,j) = fstrSOLID%shell_ref_triad(nbase+1:nbase+9)
+          enddo
           mid_strain = 0.0d0
           mid_stress = 0.0d0
           do nlyr=1,ntot_lyr
-            if( ic_type == 731 .or. ic_type == 741 ) then
-              call ElementStress_Shell_MITC( ic_type, nn, 6, ecoord, fstrSOLID%elements(icel)%gausses, edisp, &
-                & ndstrain(1:nn,1:6), ndstress(1:nn,1:6), thick, 1.0d0, nlyr, &
-                & ndtriad=triad_cur(1:9,1:nn), ndreftriad=triad_ref(1:9,1:nn), cdsys_ID=cdsys_ID, coords=coords)
-            else
-              call ElementStress_Shell_MITC( ic_type, nn, 6, ecoord, fstrSOLID%elements(icel)%gausses, edisp, &
-                & ndstrain(1:nn,1:6), ndstress(1:nn,1:6), thick, 1.0d0, nlyr, cdsys_ID=cdsys_ID, coords=coords)
-            endif
+            call ElementStress_Shell_MITC( ic_type, nn, 6, ecoord, fstrSOLID%elements(icel)%gausses, edisp, &
+              & ndstrain(1:nn,1:6), ndstress(1:nn,1:6), thick, 1.0d0, nlyr, &
+              & ndtriad=triad_cur(1:9,1:nn), ndreftriad=triad_ref(1:9,1:nn), cdsys_ID=cdsys_ID, coords=coords)
             do j = 1, nn
               i = nodLOCAL(j)
               layer => fstrSOLID%SHELL%LAYER(nlyr)%PLUS
@@ -1376,14 +1372,9 @@ contains
             enddo
             call fstr_add_shell_mid(fstrSOLID%elements(icel),nlyr,nn,ndstrain,ndstress,mid_strain,mid_stress)
             !minus section
-            if( ic_type == 731 .or. ic_type == 741 ) then
-              call ElementStress_Shell_MITC( ic_type, nn, 6, ecoord, fstrSOLID%elements(icel)%gausses, edisp, &
-                & ndstrain(1:nn,1:6), ndstress(1:nn,1:6), thick,-1.0d0, nlyr, &
-                & ndtriad=triad_cur(1:9,1:nn), ndreftriad=triad_ref(1:9,1:nn), cdsys_ID=cdsys_ID, coords=coords)
-            else
-              call ElementStress_Shell_MITC( ic_type, nn, 6, ecoord, fstrSOLID%elements(icel)%gausses, edisp, &
-                & ndstrain(1:nn,1:6), ndstress(1:nn,1:6), thick,-1.0d0, nlyr, cdsys_ID=cdsys_ID, coords=coords)
-            endif
+            call ElementStress_Shell_MITC( ic_type, nn, 6, ecoord, fstrSOLID%elements(icel)%gausses, edisp, &
+              & ndstrain(1:nn,1:6), ndstress(1:nn,1:6), thick,-1.0d0, nlyr, &
+              & ndtriad=triad_cur(1:9,1:nn), ndreftriad=triad_ref(1:9,1:nn), cdsys_ID=cdsys_ID, coords=coords)
             do j = 1, nn
               i = nodLOCAL(j)
               layer => fstrSOLID%SHELL%LAYER(nlyr)%MINUS
