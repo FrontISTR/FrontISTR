@@ -462,7 +462,7 @@ contains
           &   t_delta,iter, fstrDYNAMIC%strainEnergy )
 
         ! ----- update reaction force at constrained DOFs using converged QFORCE
-        call fstr_Update_REACTION_SPC( cstep, hecMESH, fstrSOLID )
+        call fstr_Update_REACTION_SPC( cstep, hecMESH, fstrSOLID, fstrDYNAMIC )
 
         ! ----- update the Lagrange multipliers
         ! Done before the nlgeom early-exit so the multipliers are accumulated
