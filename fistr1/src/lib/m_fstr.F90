@@ -87,6 +87,9 @@ module m_fstr
   integer(kind=kint), parameter :: kel361FBAR   =  4
   integer(kind=kint), parameter :: kel361UP     =  5
 
+  integer(kind=kint), parameter :: kel362FI     =  1
+  integer(kind=kint), parameter :: kel362RI     =  2
+
   integer(kind=kint), parameter :: kel611EULER      =  1
   integer(kind=kint), parameter :: kel611TIMOSHENKO =  2
 
@@ -677,9 +680,17 @@ module m_fstr
     !integer              :: elemopt351=0
     !integer              :: elemopt352=0
     integer              :: elemopt361=0
-    !integer              :: elemopt362=0
+    integer              :: elemopt362=kel362FI
     integer              :: elemopt611=0
   end type tSection
+
+  !> Integration points of the material state of a 3D solid element:
+  !> gausses(i) of the element is the state at points(:,i).
+  type tSolidQuad
+    integer(kind=kint) :: npoints = 0
+    real(kind=kreal)   :: points(3,27)
+    real(kind=kreal)   :: weights(27)
+  end type tSolidQuad
 
 contains
 
@@ -697,6 +708,48 @@ contains
     endif
     call hecmw_abort( hecmw_comm_get_comm(), code )
   end subroutine fstr_abort
+
+  !> Number of material states of an element, which is the size of its gausses(:).
+  integer(kind=kint) function fstr_material_point_count( etype, elemopt362 )
+    use elementInfo, only: fe_hex20n, NumOfQuadPoints
+    integer(kind=kint), intent(in) :: etype
+    integer(kind=kint), intent(in) :: elemopt362
+
+    if( etype == fe_hex20n .and. elemopt362 == kel362RI ) then
+      fstr_material_point_count = 8
+    else
+      fstr_material_point_count = NumOfQuadPoints( etype )
+    endif
+  end function fstr_material_point_count
+
+  !> Select the points and weights that integrate the material state of a 3D solid.
+  !> The rule changes only the points: the shape functions remain those of etype.
+  subroutine fstr_get_solid_quad( etype, nstate, quad, elemopt362 )
+    use elementInfo, only: fe_hex20n, getQuadPoint, getWeight
+    use Quadrature, only: gauss3d2, weight3d2
+    integer(kind=kint), intent(in)           :: etype
+    integer(kind=kint), intent(in)           :: nstate     !< size of gausses(:) of the element
+    type(tSolidQuad), intent(out)            :: quad
+    integer(kind=kint), intent(in), optional :: elemopt362 !< FORM362 of the section
+    integer(kind=kint) :: option, i
+
+    option = kel362FI
+    if( present(elemopt362) ) option = elemopt362
+    quad%npoints = fstr_material_point_count( etype, option )
+    if( etype == fe_hex20n .and. quad%npoints /= nstate ) then
+      stop "The material states of a 362 element do not match its FORM362"
+    endif
+
+    if( etype == fe_hex20n .and. option == kel362RI ) then
+      quad%points(:,1:quad%npoints) = gauss3d2(:,1:quad%npoints)
+      quad%weights(1:quad%npoints)  = weight3d2(1:quad%npoints)
+    else
+      do i = 1, quad%npoints
+        call getQuadPoint( etype, i, quad%points(:,i) )
+        quad%weights(i) = getWeight( etype, i )
+      enddo
+    endif
+  end subroutine fstr_get_solid_quad
 
   subroutine fstr_nullify_initial_condition( cond )
     implicit none

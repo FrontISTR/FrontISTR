@@ -49,9 +49,10 @@ contains
   !----------------------------------------------------------------------*
   subroutine STF_C3                                                &
       (etype, nn, ecoord, gausses, stiff, cdsys_ID, coords, &
-      time, tincr, u ,temperature)
+      time, tincr, u ,temperature, elemopt362)
     !----------------------------------------------------------------------*
 
+    use m_fstr, only: tSolidQuad, fstr_get_solid_quad
     use mMechGauss
     use m_MatMatrix
     use m_common_struct
@@ -69,9 +70,11 @@ contains
     real(kind=kreal), intent(in)    :: tincr                  !< time increment
     real(kind=kreal), intent(in)    :: temperature(nn) !< temperature
     real(kind=kreal), intent(in), optional :: u(:,:)          !< nodal displacemwent
+    integer(kind=kint), intent(in), optional :: elemopt362    !< FORM362 of the section
 
     !---------------------------------------------------------------------
 
+    type(tSolidQuad) :: quad
     integer(kind=kint) :: flag
     integer(kind=kint), parameter :: ndof = 3
     real(kind=kreal) :: D(6, 6), B(6, NDOF*nn), DB(6, NDOF*nn)
@@ -93,9 +96,10 @@ contains
     elem(:, :) = ecoord(:, :)
     if( flag == UPDATELAG ) elem(:, :) = ecoord(:, :)+u(:, :)
 
-    do LX = 1, NumOfQuadPoints(etype)
+    call fstr_get_solid_quad( etype, size(gausses, kind=kint), quad, elemopt362 )
+    do LX = 1, quad%npoints
 
-      call getQuadPoint( etype, LX, naturalCoord(:) )
+      naturalCoord(:) = quad%points(:, LX)
       call getGlobalDeriv(etype, nn, naturalcoord, elem, det, gderiv)
 
       if( cdsys_ID > 0 ) then
@@ -117,7 +121,7 @@ contains
         D(:, :) = D(:, :)-mat
       endif
 
-      wg = getWeight(etype, LX)*det
+      wg = quad%weights(LX)*det
       B(1:6, 1:nn*ndof) = 0.0D0
       do j = 1, nn
         B(1, 3*j-2)=gderiv(j, 1)
@@ -387,7 +391,7 @@ contains
   !----------------------------------------------------------------------*
   subroutine TLOAD_C3                                 &
       (etype, nn, XX, YY, ZZ, TT, T0, reftemp, gausses, &
-      VECT, cdsys_ID, coords)
+      VECT, cdsys_ID, coords, elemopt362)
     !----------------------------------------------------------------------*
 
     use m_fstr
@@ -406,9 +410,11 @@ contains
     real(kind=kreal), intent(out)   :: VECT(nn*NDOF)
     integer(kind=kint), intent(in)  :: cdsys_ID
     real(kind=kreal), intent(inout) :: coords(3, 3)           !< variables to define material coordinate system
+    integer(kind=kint), intent(in), optional :: elemopt362    !< FORM362 of the section
 
     !---------------------------------------------------------------------
 
+    type(tSolidQuad) :: quad
     real(kind=kreal) :: ALP, ALP0, D(6, 6), B(6, ndof*nn)
     real(kind=kreal) :: det, ecoord(3, nn)
     integer(kind=kint) :: j, LX, serr
@@ -435,9 +441,10 @@ contains
     ecoord(3, :) = ZZ(:)
 
     ! LOOP FOR INTEGRATION POINTS
-    do LX = 1, NumOfQuadPoints(etype)
+    call fstr_get_solid_quad( etype, size(gausses, kind=kint), quad, elemopt362 )
+    do LX = 1, quad%npoints
 
-      call getQuadPoint( etype, LX, naturalCoord(:) )
+      naturalCoord(:) = quad%points(:, LX)
       call getShapeFunc( ETYPE, naturalcoord, H(1:nn) )
       call getGlobalDeriv( etype, nn, naturalcoord, ecoord, det, gderiv )
 
@@ -450,7 +457,7 @@ contains
       end if
 
       ! WEIGHT VALUE AT GAUSSIAN POINT
-      wg = getWeight(etype, LX)*det
+      wg = quad%weights(LX)*det
       B(1:6,1:nn*NDOF)=0.0D0
       do J=1,nn
         B(1,3*J-2)=gderiv(j,1)
@@ -790,7 +797,7 @@ contains
   !---------------------------------------------------------------------*
   subroutine UPDATE_C3                                       &
       (etype,nn,ecoord, u, ddu, cdsys_ID, coords, qf, &
-      gausses, time, tincr, TT, T0, TN, reftemp)
+      gausses, time, tincr, TT, T0, TN, reftemp, elemopt362)
     !---------------------------------------------------------------------*
 
     use m_fstr
@@ -815,8 +822,10 @@ contains
     real(kind=kreal), intent(in)      :: T0(nn)   !< reference temperature
     real(kind=kreal), intent(in)      :: TN(nn)   !< reference temperature
     real(kind=kreal), intent(in)      :: reftemp  !< reference temperature
+    integer(kind=kint), intent(in), optional :: elemopt362 !< FORM362 of the section
 
     ! LOCAL VARIABLES
+    type(tSolidQuad)   :: quad
     integer(kind=kint) :: flag
     integer(kind=kint), parameter :: ndof = 3
     real(kind=kreal)   :: B(6,ndof*nn), B1(6,ndof*nn), spfunc(nn), ina(1)
@@ -845,9 +854,10 @@ contains
     call fetch_TableData( MC_ORTHOEXP, gausses(1)%pMaterial%dict, alpo(:), ierr, ina )
     if( .not. ierr ) matlaniso = .true.
 
-    do LX = 1, NumOfQuadPoints(etype)
+    call fstr_get_solid_quad( etype, size(gausses, kind=kint), quad, elemopt362 )
+    do LX = 1, quad%npoints
 
-      call getQuadPoint( etype, LX, naturalCoord(:) )
+      naturalCoord(:) = quad%points(:, LX)
       call getGlobalDeriv(etype, nn, naturalcoord, elem, det, gderiv)
 
       if( cdsys_ID > 0 ) then
@@ -986,7 +996,7 @@ contains
       end if
 
       ! calculate the Internal Force
-      WG=getWeight( etype, LX )*DET
+      WG=quad%weights(LX)*DET
       qf(1:nn*ndof)                                                          &
         = qf(1:nn*ndof)+matmul( gausses(LX)%stress(1:6), B(1:6,1:nn*ndof) )*WG
 
