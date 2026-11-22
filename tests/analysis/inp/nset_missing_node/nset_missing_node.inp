@@ -1,0 +1,25 @@
+*HEADING
+ A cube of 1 x 1 x 1 with the nodes 11 to 18; the node set TIP names node 5, which does not exist
+*NODE, NSET=NALL
+11, 0.0, 0.0, 0.0
+12, 1.0, 0.0, 0.0
+13, 1.0, 1.0, 0.0
+14, 0.0, 1.0, 0.0
+15, 0.0, 0.0, 1.0
+16, 1.0, 0.0, 1.0
+17, 1.0, 1.0, 1.0
+18, 0.0, 1.0, 1.0
+*ELEMENT, TYPE=C3D8, ELSET=EALL
+ 1, 11, 12, 13, 14, 15, 16, 17, 18
+*NSET, NSET=XSYM
+ 11, 14, 15, 18
+*NSET, NSET=YSYM
+ 11, 12, 15, 16
+*NSET, NSET=ZSYM
+ 11, 12, 13, 14
+*NSET, NSET=TIP
+ 12, 13, 16, 17, 5
+*MATERIAL, NAME=M
+*ELASTIC
+ 1000.0, 0.3
+*SOLID SECTION, ELSET=EALL, MATERIAL=M

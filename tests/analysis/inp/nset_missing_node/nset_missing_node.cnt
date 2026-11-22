@@ -1,0 +1,18 @@
+# The node set TIP of the inp file names node 5, which is smaller than any node
+# number of the mesh and does not exist. The reader drops it with a warning, and
+# the cube of 1 x 1 x 1 with E = 1000 is pulled by 1 on the face x = 1, which
+# moves by 1.0E-03.
+!VERSION
+ 3
+!SOLUTION, TYPE=STATIC
+!BOUNDARY
+ XSYM, 1, 1, 0.0
+ YSYM, 2, 2, 0.0
+ ZSYM, 3, 3, 0.0
+!CLOAD
+ TIP, 1, 0.25
+!SOLVER, METHOD=CG, PRECOND=1, ITERLOG=NO, TIMELOG=NO
+ 10000, 1
+ 1.0e-10, 1.0, 0.0
+!WRITE, RESULT
+!END

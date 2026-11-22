@@ -238,7 +238,6 @@ struct hecmw_msgent hecmw_msg_table[] = {
 	{HECMW_IO_INP_E2104,"HECMW-IO-INP-E2104","*SOLID SECTION: COMPOSITE value must be positive integer"},
 	{HECMW_IO_INP_E2105,"HECMW-IO-INP-E2105","*SOLID SECTION: THICKNESS must be greater than 0.0"},
 	{HECMW_IO_INP_E2106,"HECMW-IO-INP-E2106","*SOLID SECTION: INTEGPOINTS must be positive integer"},
-	{HECMW_IO_INP_E2107,"HECMW-IO-INP-E2107","*SOLID SECTION: Only one secopt can be allowed in element group"},
 	{HECMW_IO_INP_E2108,"HECMW-IO-INP-E2108","*SOLID SECTION: Missing MATERIAL or COMPOSITE"},
 	{HECMW_IO_INP_E2200,"HECMW-IO-INP-E2200","*DENSITY: Invalid token"},
 	{HECMW_IO_INP_E2300,"HECMW-IO-INP-E2300","*ELASTIC: Invalid token"},

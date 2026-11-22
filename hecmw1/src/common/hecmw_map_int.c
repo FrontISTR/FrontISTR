@@ -132,7 +132,7 @@ int HECMW_map_int_add(struct hecmw_map_int *map, int key, void *value) {
   map->pairs[map->n_val].local = map->n_val;
 
   if (map->n_val > 0 && map->sorted) {
-    int key_prev = map->vals[map->n_val - 1].key;
+    int key_prev = map->pairs[map->n_val - 1].key;
 
     if (key_prev > key) map->sorted = map->checked = 0;
 
@@ -203,16 +203,16 @@ static int map_search(const struct hecmw_map_int *map, int key, size_t *index) {
   /* binary search */
 
   left  = 0;
-  right = map->n_val - 1;
+  right = map->n_val;
 
-  while (left <= right) {
+  while (left < right) {
     center = (left + right) / 2;
     ckey   = map->pairs[center].key;
 
     if (ckey < key)
       left = center + 1;
     else if (ckey > key)
-      right = center - 1;
+      right = center;
     else { /* ckey == key */
       *index = map->pairs[center].local;
       return HECMW_SUCCESS;

@@ -1,0 +1,17 @@
+# The model of plane_stress_strain with the CPE4 elements of PSTRAIN defined
+# after its *SOLID SECTION; PSTRAIN is listed by *ELSET before the section.
+# The plane option of PSTRAIN is taken from the CPE4 elements, so the right
+# end moves by 2.0E-03 in PSTRESS and by 1.82E-03 in PSTRAIN.
+!VERSION
+ 3
+!SOLUTION, TYPE=STATIC
+!BOUNDARY
+ LEFT, 1, 1, 0.0
+ BOTTOM, 2, 2, 0.0
+!CLOAD
+ RIGHT, 1, 0.5
+!SOLVER, METHOD=CG, PRECOND=1, ITERLOG=NO, TIMELOG=NO
+ 10000, 1
+ 1.0e-10, 1.0, 0.0
+!WRITE, RESULT
+!END
