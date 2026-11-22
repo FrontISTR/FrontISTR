@@ -248,7 +248,7 @@ contains
     enddo
 
     i = 1
-    call ILU1aNN (DkINV, Dlu0(NDOF2*(i-1)+1:NDOF2*NDOF2),NDOF)
+    call ILU1aNN (DkINV, Dlu0(NDOF2*(i-1)+1:NDOF2*i),NDOF)
     do ii=1,NDOF
       do ij=1,NDOF
         Dlu0(NDOF2*(i-1)+NDOF*(ii-1)+ij)= DkINV(ii,ij)
@@ -319,7 +319,7 @@ contains
 
         enddo
       enddo
-      call ILU1aNN (DkINV, Dlu0(NDOF2*(i-1)+1:NDOF2*NDOF2),NDOF)
+      call ILU1aNN (DkINV, Dlu0(NDOF2*(i-1)+1:NDOF2*i),NDOF)
 
       do ii=1,NDOF
         do ij=1,NDOF
@@ -345,9 +345,9 @@ contains
     integer(kind=kint ), intent(in):: NDOF, NP, NPU, NPL
     real   (kind=kreal), intent(in):: SIGMA_DIAG
 
-    real(kind=kreal), dimension(9*NPL), intent(in):: AL
-    real(kind=kreal), dimension(9*NPU), intent(in):: AU
-    real(kind=kreal), dimension(9*NP ), intent(in):: D
+    real(kind=kreal), dimension(NDOF*NDOF*NPL), intent(in):: AL
+    real(kind=kreal), dimension(NDOF*NDOF*NPU), intent(in):: AU
+    real(kind=kreal), dimension(NDOF*NDOF*NP ), intent(in):: D
 
     integer(kind=kint ), dimension(0:NP) ,intent(in) :: INU, INL
     integer(kind=kint ), dimension(  NPL),intent(in) :: IAL
@@ -355,11 +355,11 @@ contains
 
     integer(kind=kint), dimension(:), allocatable :: IW1, IW2
     integer(kind=kint), dimension(:), allocatable :: IWsL, IWsU
-    real (kind=kreal),  dimension(3,3) :: RHS_Aij, DkINV, Aik, Akj
+    real (kind=kreal),  dimension(NDOF,NDOF) :: RHS_Aij, DkINV, Aik, Akj
     integer(kind=kint) :: NPLf1,NPUf1,NDOF2
     integer(kind=kint) :: i,jj,jj1,ij0,kk,ik,kk1,kk2,L,iSk,iEk,iSj,iEj
     integer(kind=kint) :: icou,icou0,icouU,icouU1,icouU2,icouU3,icouL,icouL1,icouL2,icouL3
-    integer(kind=kint) :: j,k,iSL,iSU
+    integer(kind=kint) :: j,k,iSL,iSU,ii,ij
     !C
     !C +--------------+
     !C | find fill-in |
@@ -413,7 +413,7 @@ contains
     !C-- specify fill-in
     allocate (IWsL(0:NP), IWsU(0:NP))
     allocate (FI1L (NPL+NPLf1), FI1U (NPU+NPUf1))
-    allocate (ALlu0(9*(NPL+NPLf1)), AUlu0(9*(NPU+NPUf1)))
+    allocate (ALlu0(NDOF2*(NPL+NPLf1)), AUlu0(NDOF2*(NPU+NPUf1)))
 
     FI1L= 0
     FI1U= 0
@@ -501,17 +501,11 @@ contains
         FI1L (k+isL)= IW1(k)
         ik= IW2(k)
         if (ik.le.INL(i)-INL(i-1)) then
-          kk1= 9*( k+isL)
-          kk2= 9*(ik+INL(i-1))
-          ALlu0(kk1-8)= AL(kk2-8)
-          ALlu0(kk1-7)= AL(kk2-7)
-          ALlu0(kk1-6)= AL(kk2-6)
-          ALlu0(kk1-5)= AL(kk2-5)
-          ALlu0(kk1-4)= AL(kk2-4)
-          ALlu0(kk1-3)= AL(kk2-3)
-          ALlu0(kk1-2)= AL(kk2-2)
-          ALlu0(kk1-1)= AL(kk2-1)
-          ALlu0(kk1  )= AL(kk2  )
+          kk1= NDOF2*( k+isL-1)
+          kk2= NDOF2*(ik+INL(i-1)-1)
+          do ii=1,NDOF2
+            ALlu0(kk1+ii)= AL(kk2+ii)
+          end do
         endif
       enddo
       !C
@@ -536,17 +530,11 @@ contains
         FI1U (k+isU)= IW1(k)
         ik= IW2(k)
         if (ik.le.INU(i)-INU(i-1)) then
-          kk1= 9*( k+isU)
-          kk2= 9*(ik+INU(i-1))
-          AUlu0(kk1-8)= AU(kk2-8)
-          AUlu0(kk1-7)= AU(kk2-7)
-          AUlu0(kk1-6)= AU(kk2-6)
-          AUlu0(kk1-5)= AU(kk2-5)
-          AUlu0(kk1-4)= AU(kk2-4)
-          AUlu0(kk1-3)= AU(kk2-3)
-          AUlu0(kk1-2)= AU(kk2-2)
-          AUlu0(kk1-1)= AU(kk2-1)
-          AUlu0(kk1  )= AU(kk2  )
+          kk1= NDOF2*( k+isU-1)
+          kk2= NDOF2*(ik+INU(i-1)-1)
+          do ii=1,NDOF2
+            AUlu0(kk1+ii)= AU(kk2+ii)
+          end do
         endif
       enddo
 
@@ -566,28 +554,21 @@ contains
     !C | ILU(1) factorization |
     !C +----------------------+
     !C===
-    allocate (Dlu0(9*NP))
+    allocate (Dlu0(NDOF2*NP))
     Dlu0= D
     do i=1,NP
-      Dlu0(9*i-8)=Dlu0(9*i-8)*SIGMA_DIAG
-      Dlu0(9*i-4)=Dlu0(9*i-4)*SIGMA_DIAG
-      Dlu0(9*i  )=Dlu0(9*i  )*SIGMA_DIAG
+      do ii=1,NDOF
+        Dlu0(NDOF2*(i-1)+(ii-1)*NDOF+ii)=Dlu0(NDOF2*(i-1)+(ii-1)*NDOF+ii)*SIGMA_DIAG
+      end do
     enddo
 
     i = 1
-    call ILU1a33 (DkINV, &
-      Dlu0(9*i-8), Dlu0(9*i-7), Dlu0(9*i-6), &
-      Dlu0(9*i-5), Dlu0(9*i-4), Dlu0(9*i-3), &
-      Dlu0(9*i-2), Dlu0(9*i-1), Dlu0(9*i  ))
-    Dlu0(9*i-8)= DkINV(1,1)
-    Dlu0(9*i-7)= DkINV(1,2)
-    Dlu0(9*i-6)= DkINV(1,3)
-    Dlu0(9*i-5)= DkINV(2,1)
-    Dlu0(9*i-4)= DkINV(2,2)
-    Dlu0(9*i-3)= DkINV(2,3)
-    Dlu0(9*i-2)= DkINV(3,1)
-    Dlu0(9*i-1)= DkINV(3,2)
-    Dlu0(9*i  )= DkINV(3,3)
+    call ILU1aNN (DkINV, Dlu0(NDOF2*(i-1)+1:NDOF2*i),NDOF)
+    do ii=1,NDOF
+      do ij=1,NDOF
+        Dlu0(NDOF2*(i-1)+NDOF*(ii-1)+ij)= DkINV(ii,ij)
+      end do
+    end do
 
     do i= 2, NP
       IW1= 0
@@ -604,27 +585,19 @@ contains
       do kk= INL(i-1)+1, INL(i)
         k= IAL(kk)
 
-        DkINV(1,1)= Dlu0(9*k-8)
-        DkINV(1,2)= Dlu0(9*k-7)
-        DkINV(1,3)= Dlu0(9*k-6)
-        DkINV(2,1)= Dlu0(9*k-5)
-        DkINV(2,2)= Dlu0(9*k-4)
-        DkINV(2,3)= Dlu0(9*k-3)
-        DkINV(3,1)= Dlu0(9*k-2)
-        DkINV(3,2)= Dlu0(9*k-1)
-        DkINV(3,3)= Dlu0(9*k  )
+        do ii=1,NDOF
+          do ij=1,NDOF
+            DkINV(ii,ij)= Dlu0(NDOF2*(k-1)+NDOF*(ii-1)+ij)
+          end do
+        end do
 
         do kk1= inumFI1L(i-1)+1, inumFI1L(i)
           if (k.eq.FI1L(kk1)) then
-            Aik(1,1)= ALlu0(9*kk1-8)
-            Aik(1,2)= ALlu0(9*kk1-7)
-            Aik(1,3)= ALlu0(9*kk1-6)
-            Aik(2,1)= ALlu0(9*kk1-5)
-            Aik(2,2)= ALlu0(9*kk1-4)
-            Aik(2,3)= ALlu0(9*kk1-3)
-            Aik(3,1)= ALlu0(9*kk1-2)
-            Aik(3,2)= ALlu0(9*kk1-1)
-            Aik(3,3)= ALlu0(9*kk1  )
+            do ii=1,NDOF
+              do ij=1,NDOF
+                Aik(ii,ij)= ALlu0(NDOF2*(kk1-1)+NDOF*(ii-1)+ij)
+              end do
+            end do
             exit
           endif
         enddo
@@ -633,75 +606,52 @@ contains
           j= IAU(jj)
           do jj1= inumFI1U(k-1)+1, inumFI1U(k)
             if (j.eq.FI1U(jj1)) then
-              Akj(1,1)= AUlu0(9*jj1-8)
-              Akj(1,2)= AUlu0(9*jj1-7)
-              Akj(1,3)= AUlu0(9*jj1-6)
-              Akj(2,1)= AUlu0(9*jj1-5)
-              Akj(2,2)= AUlu0(9*jj1-4)
-              Akj(2,3)= AUlu0(9*jj1-3)
-              Akj(3,1)= AUlu0(9*jj1-2)
-              Akj(3,2)= AUlu0(9*jj1-1)
-              Akj(3,3)= AUlu0(9*jj1  )
+              do ii=1,NDOF
+                do ij=1,NDOF
+                  Akj(ii,ij)= AUlu0(NDOF2*(jj1-1)+NDOF*(ii-1)+ij)
+                end do
+              end do
               exit
             endif
           enddo
 
-          call ILU1bNN (RHS_Aij, DkINV, Aik, Akj,3)
+          call ILU1bNN (RHS_Aij, DkINV, Aik, Akj,NDOF)
 
           if (j.eq.i) then
-            Dlu0(9*i-8)= Dlu0(9*i-8) - RHS_Aij(1,1)
-            Dlu0(9*i-7)= Dlu0(9*i-7) - RHS_Aij(1,2)
-            Dlu0(9*i-6)= Dlu0(9*i-6) - RHS_Aij(1,3)
-            Dlu0(9*i-5)= Dlu0(9*i-5) - RHS_Aij(2,1)
-            Dlu0(9*i-4)= Dlu0(9*i-4) - RHS_Aij(2,2)
-            Dlu0(9*i-3)= Dlu0(9*i-3) - RHS_Aij(2,3)
-            Dlu0(9*i-2)= Dlu0(9*i-2) - RHS_Aij(3,1)
-            Dlu0(9*i-1)= Dlu0(9*i-1) - RHS_Aij(3,2)
-            Dlu0(9*i  )= Dlu0(9*i  ) - RHS_Aij(3,3)
+            do ii=1,NDOF
+              do ij=1,NDOF
+                Dlu0(NDOF2*(i-1)+NDOF*(ii-1)+ij)= Dlu0(NDOF2*(i-1)+NDOF*(ii-1)+ij) - RHS_Aij(ii,ij)
+              end do
+            end do
           endif
 
           if (j.lt.i) then
             ij0= IW1(j)
-            ALlu0(9*ij0-8)= ALlu0(9*ij0-8) - RHS_Aij(1,1)
-            ALlu0(9*ij0-7)= ALlu0(9*ij0-7) - RHS_Aij(1,2)
-            ALlu0(9*ij0-6)= ALlu0(9*ij0-6) - RHS_Aij(1,3)
-            ALlu0(9*ij0-5)= ALlu0(9*ij0-5) - RHS_Aij(2,1)
-            ALlu0(9*ij0-4)= ALlu0(9*ij0-4) - RHS_Aij(2,2)
-            ALlu0(9*ij0-3)= ALlu0(9*ij0-3) - RHS_Aij(2,3)
-            ALlu0(9*ij0-2)= ALlu0(9*ij0-2) - RHS_Aij(3,1)
-            ALlu0(9*ij0-1)= ALlu0(9*ij0-1) - RHS_Aij(3,2)
-            ALlu0(9*ij0  )= ALlu0(9*ij0  ) - RHS_Aij(3,3)
+            do ii=1,NDOF
+              do ij=1,NDOF
+                ALlu0(NDOF2*(ij0-1)+NDOF*(ii-1)+ij)= ALlu0(NDOF2*(ij0-1)+NDOF*(ii-1)+ij) - RHS_Aij(ii,ij)
+              end do
+            end do
           endif
 
           if (j.gt.i) then
             ij0= IW2(j)
-            AUlu0(9*ij0-8)= AUlu0(9*ij0-8) - RHS_Aij(1,1)
-            AUlu0(9*ij0-7)= AUlu0(9*ij0-7) - RHS_Aij(1,2)
-            AUlu0(9*ij0-6)= AUlu0(9*ij0-6) - RHS_Aij(1,3)
-            AUlu0(9*ij0-5)= AUlu0(9*ij0-5) - RHS_Aij(2,1)
-            AUlu0(9*ij0-4)= AUlu0(9*ij0-4) - RHS_Aij(2,2)
-            AUlu0(9*ij0-3)= AUlu0(9*ij0-3) - RHS_Aij(2,3)
-            AUlu0(9*ij0-2)= AUlu0(9*ij0-2) - RHS_Aij(3,1)
-            AUlu0(9*ij0-1)= AUlu0(9*ij0-1) - RHS_Aij(3,2)
-            AUlu0(9*ij0  )= AUlu0(9*ij0  ) - RHS_Aij(3,3)
+            do ii=1,NDOF
+              do ij=1,NDOF
+                AUlu0(NDOF2*(ij0-1)+NDOF*(ii-1)+ij)= AUlu0(NDOF2*(ij0-1)+NDOF*(ii-1)+ij) - RHS_Aij(ii,ij)
+              end do
+            end do
           endif
 
         enddo
       enddo
 
-      call ILU1a33 (DkINV, &
-        Dlu0(9*i-8), Dlu0(9*i-7), Dlu0(9*i-6), &
-        Dlu0(9*i-5), Dlu0(9*i-4), Dlu0(9*i-3), &
-        Dlu0(9*i-2), Dlu0(9*i-1), Dlu0(9*i  ))
-      Dlu0(9*i-8)= DkINV(1,1)
-      Dlu0(9*i-7)= DkINV(1,2)
-      Dlu0(9*i-6)= DkINV(1,3)
-      Dlu0(9*i-5)= DkINV(2,1)
-      Dlu0(9*i-4)= DkINV(2,2)
-      Dlu0(9*i-3)= DkINV(2,3)
-      Dlu0(9*i-2)= DkINV(3,1)
-      Dlu0(9*i-1)= DkINV(3,2)
-      Dlu0(9*i  )= DkINV(3,3)
+      call ILU1aNN (DkINV, Dlu0(NDOF2*(i-1)+1:NDOF2*i),NDOF)
+      do ii=1,NDOF
+        do ij=1,NDOF
+          Dlu0(NDOF2*(i-1)+NDOF*(ii-1)+ij)= DkINV(ii,ij)
+        end do
+      end do
     enddo
 
     deallocate (IW1, IW2)
@@ -722,9 +672,9 @@ contains
     integer(kind=kint ), intent(in):: NDOF, NP, NPU, NPL
     real   (kind=kreal), intent(in):: SIGMA_DIAG
 
-    real(kind=kreal), dimension(9*NPL), intent(in):: AL
-    real(kind=kreal), dimension(9*NPU), intent(in):: AU
-    real(kind=kreal), dimension(9*NP ), intent(in):: D
+    real(kind=kreal), dimension(NDOF*NDOF*NPL), intent(in):: AL
+    real(kind=kreal), dimension(NDOF*NDOF*NPU), intent(in):: AU
+    real(kind=kreal), dimension(NDOF*NDOF*NP ), intent(in):: D
 
     integer(kind=kint ), dimension(0:NP) ,intent(in) :: INU, INL
     integer(kind=kint ), dimension(  NPL),intent(in) :: IAL
@@ -735,11 +685,11 @@ contains
     integer(kind=kint), dimension(:), allocatable:: iconFI1L, iconFI1U
     integer(kind=kint), dimension(:), allocatable:: inumFI2L, inumFI2U
     integer(kind=kint), dimension(:), allocatable::     FI2L,     FI2U
-    real (kind=kreal), dimension(3,3) :: RHS_Aij, DkINV, Aik, Akj
+    real (kind=kreal), dimension(NDOF,NDOF) :: RHS_Aij, DkINV, Aik, Akj
     integer(kind=kint) :: NPLf1,NPLf2,NPUf1,NPUf2,iAS,iconIK,iconKJ,NDOF2
     integer(kind=kint) :: i,jj,ij0,kk,ik,kk1,kk2,L,iSk,iEk,iSj,iEj
     integer(kind=kint) :: icou,icouU,icouU1,icouU2,icouU3,icouL,icouL1,icouL2,icouL3
-    integer(kind=kint) :: j,k,iSL,iSU
+    integer(kind=kint) :: j,k,iSL,iSU,ii,ij
 
     !C
     !C +------------------+
@@ -1001,8 +951,8 @@ contains
     !C | SORT and RECONSTRUCT matrix considering fill-in |
     !C +-------------------------------------------------+
     !C===
-    allocate (ALlu0(9*(NPL+NPLf1+NPLf2)))
-    allocate (AUlu0(9*(NPU+NPUf1+NPUf2)))
+    allocate (ALlu0(NDOF2*(NPL+NPLf1+NPLf2)))
+    allocate (AUlu0(NDOF2*(NPU+NPUf1+NPUf2)))
 
     ALlu0= 0.d0
     AUlu0= 0.d0
@@ -1051,17 +1001,11 @@ contains
         FI1L (k+isL)= IW1(k)
         ik= IW2(k)
         if (ik.le.INL(i)-INL(i-1)) then
-          kk1= 9*( k+isL)
-          kk2= 9*(ik+INL(i-1))
-          ALlu0(kk1-8)= AL(kk2-8)
-          ALlu0(kk1-7)= AL(kk2-7)
-          ALlu0(kk1-6)= AL(kk2-6)
-          ALlu0(kk1-5)= AL(kk2-5)
-          ALlu0(kk1-4)= AL(kk2-4)
-          ALlu0(kk1-3)= AL(kk2-3)
-          ALlu0(kk1-2)= AL(kk2-2)
-          ALlu0(kk1-1)= AL(kk2-1)
-          ALlu0(kk1  )= AL(kk2  )
+          kk1= NDOF2*( k+isL-1)
+          kk2= NDOF2*(ik+INL(i-1)-1)
+          do ii=1,NDOF2
+            ALlu0(kk1+ii)= AL(kk2+ii)
+          end do
         endif
       enddo
 
@@ -1115,17 +1059,11 @@ contains
         FI1U (k+isU)= IW1(k)
         ik= IW2(k)
         if (ik.le.INU(i)-INU(i-1)) then
-          kk1= 9*( k+isU)
-          kk2= 9*(ik+INU(i-1))
-          AUlu0(kk1-8)= AU(kk2-8)
-          AUlu0(kk1-7)= AU(kk2-7)
-          AUlu0(kk1-6)= AU(kk2-6)
-          AUlu0(kk1-5)= AU(kk2-5)
-          AUlu0(kk1-4)= AU(kk2-4)
-          AUlu0(kk1-3)= AU(kk2-3)
-          AUlu0(kk1-2)= AU(kk2-2)
-          AUlu0(kk1-1)= AU(kk2-1)
-          AUlu0(kk1  )= AU(kk2  )
+          kk1= NDOF2*( k+isU-1)
+          kk2= NDOF2*(ik+INU(i-1)-1)
+          do ii=1,NDOF2
+            AUlu0(kk1+ii)= AU(kk2+ii)
+          end do
         endif
       enddo
 
@@ -1169,28 +1107,21 @@ contains
     !C | ILU(2) factorization |
     !C +----------------------+
     !C===
-    allocate (Dlu0(9*NP))
+    allocate (Dlu0(NDOF2*NP))
     Dlu0= D
     do i=1,NP
-      Dlu0(9*i-8)=Dlu0(9*i-8)*SIGMA_DIAG
-      Dlu0(9*i-4)=Dlu0(9*i-4)*SIGMA_DIAG
-      Dlu0(9*i  )=Dlu0(9*i  )*SIGMA_DIAG
+      do ii=1,NDOF
+        Dlu0(NDOF2*(i-1)+(ii-1)*NDOF+ii)=Dlu0(NDOF2*(i-1)+(ii-1)*NDOF+ii)*SIGMA_DIAG
+      end do
     enddo
 
     i = 1
-    call ILU1a33 (DkINV, &
-      Dlu0(9*i-8), Dlu0(9*i-7), Dlu0(9*i-6), &
-      Dlu0(9*i-5), Dlu0(9*i-4), Dlu0(9*i-3), &
-      Dlu0(9*i-2), Dlu0(9*i-1), Dlu0(9*i  ))
-    Dlu0(9*i-8)= DkINV(1,1)
-    Dlu0(9*i-7)= DkINV(1,2)
-    Dlu0(9*i-6)= DkINV(1,3)
-    Dlu0(9*i-5)= DkINV(2,1)
-    Dlu0(9*i-4)= DkINV(2,2)
-    Dlu0(9*i-3)= DkINV(2,3)
-    Dlu0(9*i-2)= DkINV(3,1)
-    Dlu0(9*i-1)= DkINV(3,2)
-    Dlu0(9*i  )= DkINV(3,3)
+    call ILU1aNN (DkINV, Dlu0(NDOF2*(i-1)+1:NDOF2*i),NDOF)
+    do ii=1,NDOF
+      do ij=1,NDOF
+        Dlu0(NDOF2*(i-1)+NDOF*(ii-1)+ij)= DkINV(ii,ij)
+      end do
+    end do
 
     do i= 2, NP
       IW1= 0
@@ -1208,97 +1139,66 @@ contains
         k= FI1L(kk)
         iconIK= iconFI1L(kk)
 
-        DkINV(1,1)= Dlu0(9*k-8)
-        DkINV(1,2)= Dlu0(9*k-7)
-        DkINV(1,3)= Dlu0(9*k-6)
-        DkINV(2,1)= Dlu0(9*k-5)
-        DkINV(2,2)= Dlu0(9*k-4)
-        DkINV(2,3)= Dlu0(9*k-3)
-        DkINV(3,1)= Dlu0(9*k-2)
-        DkINV(3,2)= Dlu0(9*k-1)
-        DkINV(3,3)= Dlu0(9*k  )
+        do ii=1,NDOF
+          do ij=1,NDOF
+            DkINV(ii,ij)= Dlu0(NDOF2*(k-1)+NDOF*(ii-1)+ij)
+          end do
+        end do
 
-        Aik(1,1)= ALlu0(9*kk-8)
-        Aik(1,2)= ALlu0(9*kk-7)
-        Aik(1,3)= ALlu0(9*kk-6)
-        Aik(2,1)= ALlu0(9*kk-5)
-        Aik(2,2)= ALlu0(9*kk-4)
-        Aik(2,3)= ALlu0(9*kk-3)
-        Aik(3,1)= ALlu0(9*kk-2)
-        Aik(3,2)= ALlu0(9*kk-1)
-        Aik(3,3)= ALlu0(9*kk  )
+        do ii=1,NDOF
+          do ij=1,NDOF
+            Aik(ii,ij)= ALlu0(NDOF2*(kk-1)+NDOF*(ii-1)+ij)
+          end do
+        end do
 
         do jj= inumFI1U(k-1)+1, inumFI1U(k)
           j= FI1U(jj)
           iconKJ= iconFI1U(jj)
 
           if ((iconIK+iconKJ).lt.2) then
-            Akj(1,1)= AUlu0(9*jj-8)
-            Akj(1,2)= AUlu0(9*jj-7)
-            Akj(1,3)= AUlu0(9*jj-6)
-            Akj(2,1)= AUlu0(9*jj-5)
-            Akj(2,2)= AUlu0(9*jj-4)
-            Akj(2,3)= AUlu0(9*jj-3)
-            Akj(3,1)= AUlu0(9*jj-2)
-            Akj(3,2)= AUlu0(9*jj-1)
-            Akj(3,3)= AUlu0(9*jj  )
+            do ii=1,NDOF
+              do ij=1,NDOF
+                Akj(ii,ij)= AUlu0(NDOF2*(jj-1)+NDOF*(ii-1)+ij)
+              end do
+            end do
 
-            call ILU1bNN (RHS_Aij, DkINV, Aik, Akj,3)
+            call ILU1bNN (RHS_Aij, DkINV, Aik, Akj,NDOF)
 
             if (j.eq.i) then
-              Dlu0(9*i-8)= Dlu0(9*i-8) - RHS_Aij(1,1)
-              Dlu0(9*i-7)= Dlu0(9*i-7) - RHS_Aij(1,2)
-              Dlu0(9*i-6)= Dlu0(9*i-6) - RHS_Aij(1,3)
-              Dlu0(9*i-5)= Dlu0(9*i-5) - RHS_Aij(2,1)
-              Dlu0(9*i-4)= Dlu0(9*i-4) - RHS_Aij(2,2)
-              Dlu0(9*i-3)= Dlu0(9*i-3) - RHS_Aij(2,3)
-              Dlu0(9*i-2)= Dlu0(9*i-2) - RHS_Aij(3,1)
-              Dlu0(9*i-1)= Dlu0(9*i-1) - RHS_Aij(3,2)
-              Dlu0(9*i  )= Dlu0(9*i  ) - RHS_Aij(3,3)
+              do ii=1,NDOF
+                do ij=1,NDOF
+                  Dlu0(NDOF2*(i-1)+NDOF*(ii-1)+ij)= Dlu0(NDOF2*(i-1)+NDOF*(ii-1)+ij) - RHS_Aij(ii,ij)
+                end do
+              end do
             endif
 
             if (j.lt.i) then
               ij0= IW1(j)
-              ALlu0(9*ij0-8)= ALlu0(9*ij0-8) - RHS_Aij(1,1)
-              ALlu0(9*ij0-7)= ALlu0(9*ij0-7) - RHS_Aij(1,2)
-              ALlu0(9*ij0-6)= ALlu0(9*ij0-6) - RHS_Aij(1,3)
-              ALlu0(9*ij0-5)= ALlu0(9*ij0-5) - RHS_Aij(2,1)
-              ALlu0(9*ij0-4)= ALlu0(9*ij0-4) - RHS_Aij(2,2)
-              ALlu0(9*ij0-3)= ALlu0(9*ij0-3) - RHS_Aij(2,3)
-              ALlu0(9*ij0-2)= ALlu0(9*ij0-2) - RHS_Aij(3,1)
-              ALlu0(9*ij0-1)= ALlu0(9*ij0-1) - RHS_Aij(3,2)
-              ALlu0(9*ij0  )= ALlu0(9*ij0  ) - RHS_Aij(3,3)
+              do ii=1,NDOF
+                do ij=1,NDOF
+                  ALlu0(NDOF2*(ij0-1)+NDOF*(ii-1)+ij)= ALlu0(NDOF2*(ij0-1)+NDOF*(ii-1)+ij) - RHS_Aij(ii,ij)
+                end do
+              end do
             endif
 
             if (j.gt.i) then
               ij0= IW2(j)
-              AUlu0(9*ij0-8)= AUlu0(9*ij0-8) - RHS_Aij(1,1)
-              AUlu0(9*ij0-7)= AUlu0(9*ij0-7) - RHS_Aij(1,2)
-              AUlu0(9*ij0-6)= AUlu0(9*ij0-6) - RHS_Aij(1,3)
-              AUlu0(9*ij0-5)= AUlu0(9*ij0-5) - RHS_Aij(2,1)
-              AUlu0(9*ij0-4)= AUlu0(9*ij0-4) - RHS_Aij(2,2)
-              AUlu0(9*ij0-3)= AUlu0(9*ij0-3) - RHS_Aij(2,3)
-              AUlu0(9*ij0-2)= AUlu0(9*ij0-2) - RHS_Aij(3,1)
-              AUlu0(9*ij0-1)= AUlu0(9*ij0-1) - RHS_Aij(3,2)
-              AUlu0(9*ij0  )= AUlu0(9*ij0  ) - RHS_Aij(3,3)
+              do ii=1,NDOF
+                do ij=1,NDOF
+                  AUlu0(NDOF2*(ij0-1)+NDOF*(ii-1)+ij)= AUlu0(NDOF2*(ij0-1)+NDOF*(ii-1)+ij) - RHS_Aij(ii,ij)
+                end do
+              end do
             endif
           endif
         enddo
       enddo
 
-      call ILU1a33 (DkINV, &
-        Dlu0(9*i-8), Dlu0(9*i-7), Dlu0(9*i-6), &
-        Dlu0(9*i-5), Dlu0(9*i-4), Dlu0(9*i-3), &
-        Dlu0(9*i-2), Dlu0(9*i-1), Dlu0(9*i  ))
-      Dlu0(9*i-8)= DkINV(1,1)
-      Dlu0(9*i-7)= DkINV(1,2)
-      Dlu0(9*i-6)= DkINV(1,3)
-      Dlu0(9*i-5)= DkINV(2,1)
-      Dlu0(9*i-4)= DkINV(2,2)
-      Dlu0(9*i-3)= DkINV(2,3)
-      Dlu0(9*i-2)= DkINV(3,1)
-      Dlu0(9*i-1)= DkINV(3,2)
-      Dlu0(9*i  )= DkINV(3,3)
+      call ILU1aNN (DkINV, Dlu0(NDOF2*(i-1)+1:NDOF2*i),NDOF)
+      do ii=1,NDOF
+        do ij=1,NDOF
+          Dlu0(NDOF2*(i-1)+NDOF*(ii-1)+ij)= DkINV(ii,ij)
+        end do
+      end do
     enddo
 
     deallocate (IW1, IW2)
@@ -1460,42 +1360,6 @@ contains
   !C
   !C    computes LU factorization of N*N Diagonal Block
   !C
-  subroutine ILU1a33 (ALU, D11,D12,D13,D21,D22,D23,D31,D32,D33)
-    use hecmw_util
-    implicit none
-    real(kind=kreal) :: ALU(3,3), PW(3)
-    real(kind=kreal) :: D11,D12,D13,D21,D22,D23,D31,D32,D33
-    integer(kind=kint) :: i,j,k
-
-    ALU(1,1)= D11
-    ALU(1,2)= D12
-    ALU(1,3)= D13
-    ALU(2,1)= D21
-    ALU(2,2)= D22
-    ALU(2,3)= D23
-    ALU(3,1)= D31
-    ALU(3,2)= D32
-    ALU(3,3)= D33
-
-    do k= 1, 3
-      if (ALU(k,k) == 0.d0) then
-        !write(*,*) ALU(1:3,1:3)
-        stop 'ERROR: Divide by zero in ILU setup'
-      endif
-      ALU(k,k)= 1.d0/ALU(k,k)
-      do i= k+1, 3
-        ALU(i,k)= ALU(i,k) * ALU(k,k)
-        do j= k+1, 3
-          PW(j)= ALU(i,j) - ALU(i,k)*ALU(k,j)
-        enddo
-        do j= k+1, 3
-          ALU(i,j)= PW(j)
-        enddo
-      enddo
-    enddo
-
-    return
-  end subroutine ILU1a33
   subroutine ILU1aNN (ALU, D, NDOF)
     use hecmw_util
     implicit none
