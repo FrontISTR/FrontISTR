@@ -130,12 +130,14 @@ contains
   !> Constrained DOFs are enumerated from BOUNDARY_ngrp_*, and (when present)
   !> VELOCITY_ngrp_* / ACCELERATION_ngrp_* with non-initial type. This subroutine
   !> must be called after fstr_UpdateNewton so that REACTION reflects the
-  !> converged internal nodal force of the current (sub)step.
-  subroutine fstr_Update_REACTION_SPC( cstep, hecMESH, fstrSOLID )
+  !> converged internal nodal force of the current (sub)step. In static analysis
+  !> (fstrDYNAMIC absent), the force an equation carries is added at its constrained terms.
+  subroutine fstr_Update_REACTION_SPC( cstep, hecMESH, fstrSOLID, fstrDYNAMIC )
     use m_fstr
     integer(kind=kint), intent(in)       :: cstep !< current step
     type(hecmwST_local_mesh), intent(in) :: hecMESH !< mesh information
     type(fstr_solid), intent(in)         :: fstrSOLID !< constraints and QFORCE
+    type(fstr_dynamic), intent(in), optional :: fstrDYNAMIC !< dynamic info (omit for static)
     !    Local variables
     integer(kind=kint) :: ndof, ig0, ig, ityp, iS0, iE0, ik, in, idof1, idof2, idof
     integer(kind=kint) :: grpid
@@ -223,7 +225,8 @@ contains
     ! multiplier lambda = (GL - QFORCE)/a at the eliminated first term (as in
     ! fstr_Update_NDForce_MPC), a constrained term k carries a_k*lambda. Without it, a support
     ! reached through an equation (a remote point held in place) reports no reaction.
-    if( associated(fstrSOLID%GL) ) then
+    ! Dynamic analyses do not assemble the load into GL, so this is limited to static analysis.
+    if( .not. present(fstrDYNAMIC) ) then
       OUTER: do ig0= 1, hecMESH%mpc%n_mpc
         iS0= hecMESH%mpc%mpc_index(ig0-1) + 1
         iE0= hecMESH%mpc%mpc_index(ig0)
