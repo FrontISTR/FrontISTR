@@ -450,8 +450,14 @@ contains
 
     if( ic_type==241 .or. ic_type==242 .or. ic_type==231 .or. ic_type==232 .or. ic_type==2322) then
       if( material%nlgeom_flag /= INFINITESIMAL ) call CreateMat_abort( ic_type, 2 )
-      call STF_C2( ic_type, nn, ecoord(1:2,1:nn), fstrSOLID%elements(icel)%gausses(:), thick, &
-        stiff_mat(1:nn*ndof,1:nn*ndof), fstrSOLID%elements(icel)%iset, u(1:2,1:nn) )
+      if( ic_type==241 .and. fstrSOLID%sections(isect)%elemopt241 == kel241RI ) then ! reduced integration
+        call STF_C2D4RI( ic_type, nn, ecoord(1:2,1:nn), fstrSOLID%elements(icel)%gausses(:), thick, &
+          stiff_mat(1:nn*ndof,1:nn*ndof), fstrSOLID%elements(icel)%iset, u(1:2,1:nn), &
+          fstrSOLID%elements(icel)%hg_shear )
+      else
+        call STF_C2( ic_type, nn, ecoord(1:2,1:nn), fstrSOLID%elements(icel)%gausses(:), thick, &
+          stiff_mat(1:nn*ndof,1:nn*ndof), fstrSOLID%elements(icel)%iset, u(1:2,1:nn) )
+      endif
 
     elseif( ic_type==301 ) then
       call STF_C1( nn, ecoord(:,1:nn), thick, fstrSOLID%elements(icel)%gausses(:), &
@@ -475,6 +481,10 @@ contains
         call STF_C3_up( ic_type, nn, ecoord(:,1:nn), fstrSOLID%elements(icel)%gausses(:), &
           stiff_mat(1:nn*ndof,1:nn*ndof), cdsys_ID, coords, time, tincr, &
           1, u(1:3,1:nn), tt(1:nn) )
+      else if( fstrSOLID%sections(isect)%elemopt361 == kel361RI ) then ! reduced integration element
+        call STF_C3D8RI( ic_type, nn, ecoord(:,1:nn), fstrSOLID%elements(icel)%gausses(:), &
+          stiff_mat(1:nn*ndof,1:nn*ndof), cdsys_ID, coords, time, tincr, u(1:3,1:nn), tt(1:nn), &
+          fstrSOLID%elements(icel)%hg_shear )
       endif
 
     elseif( ic_type==341 .or. ic_type==351 .or. ic_type==342 .or. ic_type==352 .or. ic_type==362 ) then

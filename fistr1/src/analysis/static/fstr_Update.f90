@@ -173,10 +173,17 @@ contains
 
         ! ===== calculate the Internal Force
         if( ic_type == 241 .or. ic_type == 242 .or. ic_type == 231 .or. ic_type == 232 .or. ic_type == 2322 ) then
-          call UPDATE_C2( ic_type,nn,ecoord(1:3,1:nn),fstrSOLID%elements(icel)%gausses(:), &
-            thick,fstrSOLID%elements(icel)%iset,                             &
-            total_disp(1:2,1:nn), ddu(1:2,1:nn), qf(1:nn*ndof),              &
-            tt(1:nn), tt0(1:nn), ttn(1:nn), fstrPARAM%ref_temp  )
+          if( ic_type == 241 .and. fstrSOLID%sections(isect)%elemopt241 == kel241RI ) then ! reduced integration
+            call UPDATE_C2D4RI( ic_type,nn,ecoord(1:3,1:nn),fstrSOLID%elements(icel)%gausses(:), &
+              thick,fstrSOLID%elements(icel)%iset,                             &
+              total_disp(1:2,1:nn), ddu(1:2,1:nn), qf(1:nn*ndof),              &
+              tt(1:nn), tt0(1:nn), ttn(1:nn), fstrPARAM%ref_temp, fstrSOLID%elements(icel)%hg_shear )
+          else
+            call UPDATE_C2( ic_type,nn,ecoord(1:3,1:nn),fstrSOLID%elements(icel)%gausses(:), &
+              thick,fstrSOLID%elements(icel)%iset,                             &
+              total_disp(1:2,1:nn), ddu(1:2,1:nn), qf(1:nn*ndof),              &
+              tt(1:nn), tt0(1:nn), ttn(1:nn), fstrPARAM%ref_temp  )
+          endif
 
         else if( ic_type == 301 ) then
           call UPDATE_C1( nn,ecoord(:,1:nn), thick, total_disp(1:3,1:nn), du(1:3,1:nn), &
@@ -208,6 +215,10 @@ contains
                      iter, time, tincr, 1, lambda, ddlambda, tt(1:nn), tt0(1:nn) )
               lambda(1) = lambda(1) + ddlambda(1)
               fstrSOLID%elements(icel)%p(1) = -2.0D0*lambda(1)
+          else if( fstrSOLID%sections(isect)%elemopt361 == kel361RI ) then ! reduced integration element
+            call UPDATE_C3D8RI( ic_type, nn, ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), cdsys_ID, coords, &
+              qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), time, tincr, &
+              tt(1:nn), tt0(1:nn), ttn(1:nn), fstrPARAM%ref_temp, fstrSOLID%elements(icel)%hg_shear )
           endif
         else if (ic_type == 341 .or. ic_type == 351 .or. ic_type == 342 .or. ic_type == 352 .or. ic_type == 362 ) then
           if( ic_type==341 .and. fstrSOLID%sections(isect)%elemopt341 == kel341SESNS ) cycle ! skip smoothed fem
