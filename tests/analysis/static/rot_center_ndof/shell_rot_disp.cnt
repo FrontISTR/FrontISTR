@@ -1,0 +1,28 @@
+########################################################
+## Rotational displacement BC on 741 shells (NDOF=6)
+##   Two separate plates are rotated by 0.1 rad about the
+##   z-axis through node 1 (!BOUNDARY, ROT_CENTER=CENTER).
+##   The rotation is given to dof 6, which is read as the
+##   z-component of the rotation vector.
+##   Check: u = R*(x - x_c) - (x - x_c) for all nodes;
+##   the center node 1 does not move.
+########################################################
+!VERSION
+ 3
+!SOLUTION, TYPE=NLSTATIC
+!BOUNDARY, GRPID=1
+ ALLN, 4, 6, 0.0
+!BOUNDARY, ROT_CENTER=CENTER, GRPID=1
+ ALLN, 6, 6, 0.1
+!MATERIAL, NAME=MAT1
+!ELASTIC
+ 1.00000000E+02, 3.00000000E-01
+!SOLVER,METHOD=CG,PRECOND=1,ITERLOG=NO,TIMELOG=NO
+ 5000, 1
+ 1.00e-08, 1.00, 0.0
+!STEP, SUBSTEPS=1
+BOUNDARY,1
+!WRITE,RESULT
+!OUTPUT_RES
+ DISP,ON
+!END

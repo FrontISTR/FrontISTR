@@ -49,11 +49,7 @@ contains
       idofS = ityp/10
       idofE = ityp - idofS*10
       do idof = idofS, idofE
-        if( idof > ndof ) then
-          rinfo%conds(rid)%vec(idof-ndof) = RHS
-        else
-          rinfo%conds(rid)%vec(idof) = RHS
-        endif
+        rinfo%conds(rid)%vec(mod(idof-1,3)+1) = RHS
       enddo
     enddo
   end subroutine gather_rotvel_info
@@ -74,11 +70,11 @@ contains
 
     ccoord = 0.d0
     cdisp  = 0.d0
-    do idof = 1, ndof
-      ccoord(idof) = hecmw_ngrp_get_totalvalue(hecMESH, ig, ndof, idof, hecMESH%node)
+    do idof = 1, min(ndof,3)
+      ccoord(idof) = hecmw_ngrp_get_totalvalue(hecMESH, ig, 3, idof, hecMESH%node)
       cdisp(idof)  = hecmw_ngrp_get_totalvalue(hecMESH, ig, ndof, idof, fstrSOLID%unode)
     enddo
-    ccoord(1:ndof) = ccoord(1:ndof) + cdisp(1:ndof)
+    ccoord = ccoord + cdisp
   end subroutine get_rotcenter_coord
 
   !C***
@@ -105,7 +101,7 @@ contains
 
     integer, optional :: iter
 
-    integer(kind=kint) :: ig0, ig, ityp, NDOF, iS0, iE0, ik, in, idofS, idofE, idof
+    integer(kind=kint) :: ig0, ig, ityp, NDOF, iS0, iE0, ik, in, idofS, idofE, idof, ntdof
     integer(kind=kint) :: flag_u, grpid
     real(kind=kreal)   :: b2, b3, b4, c1
     real(kind=kreal)   :: RHS, RHS0
@@ -135,6 +131,7 @@ contains
     c1 = 2.0*fstrDYNAMIC%t_delta
 
     NDOF = hecMAT%NDOF
+    ntdof = min(NDOF,3)
 
     n_rot = fstrSOLID%VELOCITY_ngrp_rot
     if( n_rot > 0 ) then
@@ -207,13 +204,14 @@ contains
           ! For constant omega about a fixed axis, the radius has no secular drift at gamma = 1/2, beta = 1/4;
           ! HHT (alpha < 0) introduces a small numerical shrinkage.
           cdiff = 0.d0
-          cdiff(1:NDOF) = hecMESH%node(NDOF*(in-1)+1:NDOF*in) &
-            + fstrSOLID%unode(NDOF*(in-1)+1:NDOF*in) - ccoord(1:NDOF) &
-            + b2*fstrDYNAMIC%VEL(NDOF*(in-1)+1:NDOF*in,1) + b3*fstrDYNAMIC%ACC(NDOF*(in-1)+1:NDOF*in,1)
+          cdiff(1:ntdof) = hecMESH%node(3*(in-1)+1:3*(in-1)+ntdof) &
+            + fstrSOLID%unode(NDOF*(in-1)+1:NDOF*(in-1)+ntdof) - ccoord(1:ntdof) &
+            + b2*fstrDYNAMIC%VEL(NDOF*(in-1)+1:NDOF*(in-1)+ntdof,1) &
+            + b3*fstrDYNAMIC%ACC(NDOF*(in-1)+1:NDOF*(in-1)+ntdof,1)
           call cross_product(omega, cdiff, wvec)
           call cross_product(omega, wvec, vnode)
           vnode(1:3) = (wvec(1:3) + b4*vnode(1:3))/(1.d0 + b4*b4*dot_product(omega, omega))
-          do idof = 1, NDOF
+          do idof = 1, ntdof
             if( present(iter) ) then
               if( iter>1 ) then
                 RHS = 0.d0
@@ -282,10 +280,10 @@ contains
         do ik = iS0, iE0
           in = hecMESH%node_group%grp_item(ik)
           cdiff = 0.d0
-          cdiff(1:NDOF) = hecMESH%node(NDOF*(in-1)+1:NDOF*in) &
-            + fstrSOLID%unode(NDOF*(in-1)+1:NDOF*in) - ccoord(1:NDOF)
+          cdiff(1:ntdof) = hecMESH%node(3*(in-1)+1:3*(in-1)+ntdof) &
+            + fstrSOLID%unode(NDOF*(in-1)+1:NDOF*(in-1)+ntdof) - ccoord(1:ntdof)
           call cross_product(omega, cdiff, vnode)
-          do idof = 1, NDOF
+          do idof = 1, ntdof
             RHS = fstrDYNAMIC%DISP(NDOF*in-(NDOF-idof),3) + c1*vnode(idof)
             hecMAT%B        (NDOF*in-(NDOF-idof)) = RHS
             fstrDYNAMIC%VEC1(NDOF*in-(NDOF-idof)) = 1.0d0
@@ -317,7 +315,7 @@ contains
     type(fstr_solid)         :: fstrSOLID
     type(fstr_dynamic)       :: fstrDYNAMIC
 
-    integer(kind=kint) :: NDOF, ig0, ig, ityp, iS0, iE0, ik, in, idofS, idofE, idof
+    integer(kind=kint) :: NDOF, ig0, ig, ityp, iS0, iE0, ik, in, idofS, idofE, idof, ntdof
 
     integer(kind=kint) :: flag_u, grpid
     real(kind=kreal)   :: RHS, t_curr
@@ -331,6 +329,7 @@ contains
 
     flag_u = 2
     NDOF = hecMAT%NDOF
+    ntdof = min(NDOF,3)
 
     n_rot = fstrSOLID%VELOCITY_ngrp_rot
     if( n_rot > 0 ) then
@@ -374,10 +373,10 @@ contains
       do ik = iS0, iE0
         in = hecMESH%node_group%grp_item(ik)
         cdiff = 0.d0
-        cdiff(1:NDOF) = hecMESH%node(NDOF*(in-1)+1:NDOF*in) &
-          + fstrSOLID%unode(NDOF*(in-1)+1:NDOF*in) - ccoord(1:NDOF)
+        cdiff(1:ntdof) = hecMESH%node(3*(in-1)+1:3*(in-1)+ntdof) &
+          + fstrSOLID%unode(NDOF*(in-1)+1:NDOF*(in-1)+ntdof) - ccoord(1:ntdof)
         call cross_product(omega, cdiff, vnode)
-        do idof = 1, NDOF
+        do idof = 1, ntdof
           fstrDYNAMIC%VEL (NDOF*in-(NDOF-idof),1) = vnode(idof)
         enddo
       enddo
@@ -401,7 +400,7 @@ contains
     type(fstr_dynamic)                   :: fstrDYNAMIC
     real(kind=kreal)                     :: t_curr
 
-    integer(kind=kint) :: ig0, ig, ityp, NDOF, iS0, iE0, ik, in, idofS, idofE, idof
+    integer(kind=kint) :: ig0, ig, ityp, NDOF, iS0, iE0, ik, in, idofS, idofE, idof, ntdof
     integer(kind=kint) :: flag_u
     real(kind=kreal)   :: b2, b3, b4, c1
     real(kind=kreal)   :: RHS, RHS0
@@ -431,6 +430,7 @@ contains
     c1 = 2.0*fstrDYNAMIC%t_delta
 
     NDOF = hecMAT%NDOF
+    ntdof = min(NDOF,3)
 
     n_rot = fstrSOLID%VELOCITY_ngrp_rot
     if( n_rot > 0 ) then
@@ -476,10 +476,10 @@ contains
         do ik = iS0, iE0
           in = hecMESH%node_group%grp_item(ik)
           cdiff = 0.d0
-          cdiff(1:NDOF) = hecMESH%node(NDOF*(in-1)+1:NDOF*in) &
-            + fstrSOLID%unode(NDOF*(in-1)+1:NDOF*in) - ccoord(1:NDOF)
+          cdiff(1:ntdof) = hecMESH%node(3*(in-1)+1:3*(in-1)+ntdof) &
+            + fstrSOLID%unode(NDOF*(in-1)+1:NDOF*(in-1)+ntdof) - ccoord(1:ntdof)
           call cross_product(omega, cdiff, vnode)
-          do idof = 1, NDOF
+          do idof = 1, ntdof
             RHS = fstrDYNAMIC%DISP(NDOF*in-(NDOF-idof),3) + c1*vnode(idof)
             hecMAT%B(NDOF*in-(NDOF-idof)) = RHS* fstrDYNAMIC%VEC1(NDOF*in-(NDOF-idof))
           enddo

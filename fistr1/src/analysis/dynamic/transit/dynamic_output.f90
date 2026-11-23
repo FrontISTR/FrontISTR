@@ -424,11 +424,8 @@ contains
       end if
       !C-- strain
       if( fstrDYNAMIC%iout_list(5) > 0 ) then
-        if (hecMESH%n_dof == 2 .or. hecMESH%n_dof == 3 .or. hecMESH%n_dof == 4) then
-          ncmp = 6
-        else
-          ncmp = 12
-        endif
+        ncmp = 6
+        if( hecMESH%n_dof == 2 ) ncmp = 3
         iunit = iunitS + fstrDYNAMIC%dynamic_IW8
         write( iunit, '(i10, i10,1pe13.4e3,i10,1p6e13.4e3)') &
           cstep, istep, t_curr, jj, &
@@ -436,11 +433,8 @@ contains
       end if
       !C-- stress
       if( fstrDYNAMIC%iout_list(6) > 0 ) then
-        if (hecMESH%n_dof == 2 .or. hecMESH%n_dof == 3 .or. hecMESH%n_dof == 4) then
-          ncmp = 6
-        else
-          ncmp = 12
-        endif
+        ncmp = 6
+        if( hecMESH%n_dof == 2 ) ncmp = 3
         iunit = iunitS + fstrDYNAMIC%dynamic_IW9
         write( iunit, '(i10, i10,1pe13.4e3,i10,1p7e13.4e3)') &
           cstep, istep, t_curr, jj, &

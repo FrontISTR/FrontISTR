@@ -73,7 +73,7 @@ contains
     type(hecmwST_local_mesh), intent(in) :: hecMESH
     type(fstr_solid), intent(inout)      :: fstrSOLID
     
-    integer(kind=kint) :: n_rot, rid, n_nodes, idof, ndof
+    integer(kind=kint) :: n_rot, rid, n_nodes, idof, ndof, ntdof
     integer(kind=kint) :: ig0, ig, ityp, iS0, iE0, ik, in, grpid, jj_n_amp
     real(kind=kreal)   :: aval, fval, tval
     real(kind=kreal)   :: normal(3), ccoord(3), cdisp(3), cdiff(3)
@@ -81,6 +81,7 @@ contains
     type(tRotInfo)     :: rinfo
     
     ndof = hecMESH%n_dof
+    ntdof = min(ndof,3)
 
     ! Initialize rotation information for torque loads
     n_rot = fstrSOLID%CLOAD_ngrp_rot
@@ -116,8 +117,7 @@ contains
           rinfo%conds(rid)%center_ngrp_id = fstrSOLID%CLOAD_ngrp_centerID(ig0)
           rinfo%conds(rid)%torque_ngrp_id = ig
         endif
-        if (ityp > ndof) ityp = ityp - ndof
-        rinfo%conds(rid)%vec(ityp) = aval
+        rinfo%conds(rid)%vec(mod(ityp-1,3)+1) = aval
         cycle
       endif
 
@@ -135,36 +135,37 @@ contains
 
       ! Get center node
       ig = rinfo%conds(rid)%center_ngrp_id
-      do idof = 1, ndof
-        ccoord(idof) = hecmw_ngrp_get_totalvalue(hecMESH, ig, ndof, idof, hecMESH%node)
+      do idof = 1, ntdof
+        ccoord(idof) = hecmw_ngrp_get_totalvalue(hecMESH, ig, 3, idof, hecMESH%node)
         cdisp(idof) = hecmw_ngrp_get_totalvalue(hecMESH, ig, ndof, idof, fstrSOLID%unode)
         cdisp(idof) = cdisp(idof) + hecmw_ngrp_get_totalvalue(hecMESH, ig, ndof, idof, fstrSOLID%dunode)
       enddo
-      ccoord(1:ndof) = ccoord(1:ndof) + cdisp(1:ndof)
+      ccoord(1:ntdof) = ccoord(1:ntdof) + cdisp(1:ntdof)
 
-      tval = dsqrt(dot_product(rinfo%conds(rid)%vec(1:ndof), rinfo%conds(rid)%vec(1:ndof)))
+      tval = dsqrt(dot_product(rinfo%conds(rid)%vec(1:3), rinfo%conds(rid)%vec(1:3)))
       if (tval < 1.d-16) then
         write(*,*) '###ERROR### : norm of torque vector must be > 0.0'
         call hecmw_abort(hecmw_comm_get_comm())
       endif
-      normal(1:ndof) = rinfo%conds(rid)%vec(1:ndof) / tval
+      normal(1:3) = rinfo%conds(rid)%vec(1:3) / tval
       tval = tval / dble(n_nodes)
 
+      cdiff = 0.d0
       ig = rinfo%conds(rid)%torque_ngrp_id
       iS0 = hecMESH%node_group%grp_index(ig-1) + 1
       iE0 = hecMESH%node_group%grp_index(ig)
       do ik = iS0, iE0
         in = hecMESH%node_group%grp_item(ik)
-        cdiff(1:ndof) = hecMESH%node(ndof*(in-1)+1:ndof*in) + fstrSOLID%unode(ndof*(in-1)+1:ndof*in) &
-          & + fstrSOLID%dunode(ndof*(in-1)+1:ndof*in) - ccoord(1:ndof)
-        call cross_product(normal,cdiff,vect(1:ndof))
-        fval = dot_product(vect(1:ndof), vect(1:ndof))
+        cdiff(1:ntdof) = hecMESH%node(3*(in-1)+1:3*(in-1)+ntdof) + fstrSOLID%unode(ndof*(in-1)+1:ndof*(in-1)+ntdof) &
+          & + fstrSOLID%dunode(ndof*(in-1)+1:ndof*(in-1)+ntdof) - ccoord(1:ntdof)
+        call cross_product(normal,cdiff,vect(1:3))
+        fval = dot_product(vect(1:3), vect(1:3))
         if (fval < 1.d-16) then
           write(*,*) '###ERROR### : torque node is at the same position as that of center node in rotational surface.'
           call hecmw_abort(hecmw_comm_get_comm())
         endif
-        vect(1:ndof) = (tval/fval) * vect(1:ndof)
-        fstrSOLID%GL(ndof*(in-1)+1:ndof*in) = fstrSOLID%GL(ndof*(in-1)+1:ndof*in) + vect(1:ndof)
+        vect(1:ntdof) = (tval/fval) * vect(1:ntdof)
+        fstrSOLID%GL(ndof*(in-1)+1:ndof*(in-1)+ntdof) = fstrSOLID%GL(ndof*(in-1)+1:ndof*(in-1)+ntdof) + vect(1:ntdof)
       enddo
     enddo
     if (n_rot > 0) call fstr_RotInfo_finalize(rinfo)

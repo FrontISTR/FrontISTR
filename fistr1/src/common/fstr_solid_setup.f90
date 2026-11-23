@@ -2269,6 +2269,10 @@ contains
         call fstr_setup_util_err_stop( 'fstr control file error : '//header_name// &
           ' : range of dof_ids and dof_ide is from 1 to 6' )
       end if
+      if( n_rotc > 0 .and. hecMESH%n_dof == 2 ) then
+        if( dof_ids(i) /= dof_ide(i) .or. mod(dof_ids(i),3) /= 0 ) call fstr_setup_util_err_stop( &
+          'fstr control file error : '//header_name//' : ROT_CENTER of a 2D model takes only dof 3 or 6 (about the z-axis)' )
+      end if
       fstrSOLID%BOUNDARY_ngrp_val(old_size+i) = vals(i)
       fstrSOLID%BOUNDARY_ngrp_type(old_size+i) = 10 * dof_ids(i) + dof_ide(i)
       fstrSOLID%BOUNDARY_ngrp_amp(old_size+i) = amp_id
@@ -2327,6 +2331,8 @@ contains
 
     call amp_name_to_id( hecMESH, header_name, amp_name, amp_id )
     do i=1,n
+      if( n_rotc > 0 .and. hecMESH%n_dof == 2 .and. mod(dofs(i),3) /= 0 ) call fstr_setup_util_err_stop( &
+        'fstr control file error : '//header_name//' : ROT_CENTER of a 2D model takes only dof 3 or 6 (about the z-axis)' )
       fstrSOLID%CLOAD_ngrp_amp(old_size+i) = amp_id
       fstrSOLID%CLOAD_ngrp_DOF(old_size+i) = dofs(i)
       fstrSOLID%CLOAD_ngrp_val(old_size+i) = vals(i)
@@ -2572,6 +2578,10 @@ contains
       if( (dof_ids(i) < 1).or.(6 < dof_ids(i)).or.(dof_ide(i) < 1).or.(6 < dof_ide(i)) ) then
         call fstr_setup_util_err_stop( 'fstr control file error : '//header_name// &
           ' : range of dof_ids and dof_ide is from 1 to 6' )
+      end if
+      if( n_rotc > 0 .and. hecMESH%n_dof == 2 ) then
+        if( dof_ids(i) /= dof_ide(i) .or. mod(dof_ids(i),3) /= 0 ) call fstr_setup_util_err_stop( &
+          'fstr control file error : '//header_name//' : ROT_CENTER of a 2D model takes only dof 3 or 6 (about the z-axis)' )
       end if
       fstrSOLID%VELOCITY_ngrp_type(j) = 10 * dof_ids(i) + dof_ide(i)
       fstrSOLID%VELOCITY_ngrp_amp(j) = amp_id

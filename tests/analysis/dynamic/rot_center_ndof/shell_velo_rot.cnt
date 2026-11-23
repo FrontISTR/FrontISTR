@@ -1,0 +1,40 @@
+########################################################
+## Rotational velocity BC on 741 shells (NDOF=6), implicit
+##   Two separate plates spin at wz = 0.1 rad/s about the
+##   z-axis through node 1 (!VELOCITY, ROT_CENTER=CENTER).
+##   The rotational dof 4-6 are not constrained.
+##   Check: v = w x (x + u - x_c), and the distance from
+##   the axis does not change.
+##   The monitor node writes all the quantities including
+##   the nodal strain and stress (6 components); it is
+##   the last node, so that reading them with a wrong
+##   interval goes beyond the arrays.
+########################################################
+!VERSION
+ 3
+!SOLUTION, TYPE=DYNAMIC
+!DYNAMIC
+ 1 , 1
+ 0.0, 1.0, 10, 0.1
+ 0.5, 0.25
+ 1, 1, 0.0, 0.0
+ 100, 12, 1
+ 1, 1, 1, 1, 1, 1
+!VELOCITY, TYPE=TRANSIT, ROT_CENTER=CENTER
+ ALLN, 3, 3, 0.1
+!MATERIAL, NAME=MAT1
+!ELASTIC
+ 1.00000000E+02, 3.00000000E-01
+!DENSITY
+ 1.00000000E-03
+!SOLVER,METHOD=CG,PRECOND=1,ITERLOG=NO,TIMELOG=NO
+ 500000, 2
+ 1.00e-08, 1.00, 0.0
+!STEP, SUBSTEPS=10
+0.1, 1.0, 1.0E-3, 0.1
+BOUNDARY, 1
+!WRITE,RESULT,FREQUENCY=5
+!OUTPUT_RES
+ DISP,ON
+ VEL,ON
+!END
