@@ -49,7 +49,7 @@ contains
   !----------------------------------------------------------------------*
   subroutine STF_C3                                                &
       (etype, nn, ecoord, gausses, stiff, cdsys_ID, coords, &
-      time, tincr, u ,temperature, elemopt362)
+      time, tincr, u ,temperature)
     !----------------------------------------------------------------------*
 
     use m_fstr, only: tSolidQuad, fstr_get_solid_quad
@@ -70,7 +70,6 @@ contains
     real(kind=kreal), intent(in)    :: tincr                  !< time increment
     real(kind=kreal), intent(in)    :: temperature(nn) !< temperature
     real(kind=kreal), intent(in), optional :: u(:,:)          !< nodal displacemwent
-    integer(kind=kint), intent(in), optional :: elemopt362    !< FORM362 of the section
 
     !---------------------------------------------------------------------
 
@@ -96,7 +95,7 @@ contains
     elem(:, :) = ecoord(:, :)
     if( flag == UPDATELAG ) elem(:, :) = ecoord(:, :)+u(:, :)
 
-    call fstr_get_solid_quad( etype, size(gausses, kind=kint), quad, elemopt362 )
+    call fstr_get_solid_quad( etype, size(gausses, kind=kint), quad )
     do LX = 1, quad%npoints
 
       naturalCoord(:) = quad%points(:, LX)
@@ -391,7 +390,7 @@ contains
   !----------------------------------------------------------------------*
   subroutine TLOAD_C3                                 &
       (etype, nn, XX, YY, ZZ, TT, T0, reftemp, gausses, &
-      VECT, cdsys_ID, coords, elemopt362)
+      VECT, cdsys_ID, coords)
     !----------------------------------------------------------------------*
 
     use m_fstr
@@ -410,7 +409,6 @@ contains
     real(kind=kreal), intent(out)   :: VECT(nn*NDOF)
     integer(kind=kint), intent(in)  :: cdsys_ID
     real(kind=kreal), intent(inout) :: coords(3, 3)           !< variables to define material coordinate system
-    integer(kind=kint), intent(in), optional :: elemopt362    !< FORM362 of the section
 
     !---------------------------------------------------------------------
 
@@ -441,7 +439,7 @@ contains
     ecoord(3, :) = ZZ(:)
 
     ! LOOP FOR INTEGRATION POINTS
-    call fstr_get_solid_quad( etype, size(gausses, kind=kint), quad, elemopt362 )
+    call fstr_get_solid_quad( etype, size(gausses, kind=kint), quad )
     do LX = 1, quad%npoints
 
       naturalCoord(:) = quad%points(:, LX)
@@ -797,7 +795,7 @@ contains
   !---------------------------------------------------------------------*
   subroutine UPDATE_C3                                       &
       (etype,nn,ecoord, u, ddu, cdsys_ID, coords, qf, &
-      gausses, time, tincr, TT, T0, TN, reftemp, elemopt362)
+      gausses, time, tincr, TT, T0, TN, reftemp)
     !---------------------------------------------------------------------*
 
     use m_fstr
@@ -822,7 +820,6 @@ contains
     real(kind=kreal), intent(in)      :: T0(nn)   !< reference temperature
     real(kind=kreal), intent(in)      :: TN(nn)   !< reference temperature
     real(kind=kreal), intent(in)      :: reftemp  !< reference temperature
-    integer(kind=kint), intent(in), optional :: elemopt362 !< FORM362 of the section
 
     ! LOCAL VARIABLES
     type(tSolidQuad)   :: quad
@@ -854,7 +851,7 @@ contains
     call fetch_TableData( MC_ORTHOEXP, gausses(1)%pMaterial%dict, alpo(:), ierr, ina )
     if( .not. ierr ) matlaniso = .true.
 
-    call fstr_get_solid_quad( etype, size(gausses, kind=kint), quad, elemopt362 )
+    call fstr_get_solid_quad( etype, size(gausses, kind=kint), quad )
     do LX = 1, quad%npoints
 
       naturalCoord(:) = quad%points(:, LX)
