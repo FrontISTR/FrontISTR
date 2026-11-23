@@ -240,6 +240,7 @@ fstr_res_info** fstr_get_all_result(char* name_ID, int step, int area_n,
     if (refine) {
       res[i]->result = HECMW_malloc(sizeof(struct hecmwST_result_data));
       if (!res[i]->result) return NULL;
+      res[i]->result->global_val_item = NULL;
 
       res[i]->result->ng_component = data->ng_component;
       res[i]->result->ng_dof = HECMW_malloc(data->ng_component * sizeof(int));
@@ -251,6 +252,15 @@ fstr_res_info** fstr_get_all_result(char* name_ID, int step, int area_n,
         res[i]->result->ng_dof[j]     = data->ng_dof[j];
         res[i]->result->global_label[j] = HECMW_strdup(data->global_label[j]);
         if (!res[i]->result->global_label[j]) return NULL;
+      }
+      num = 0;
+      for (j = 0; j < data->ng_component; j++) num += data->ng_dof[j];
+      if (num > 0) {
+        res[i]->result->global_val_item = HECMW_malloc(num * sizeof(double));
+        if (!res[i]->result->global_val_item) return NULL;
+        for (j = 0; j < num; j++) {
+          res[i]->result->global_val_item[j] = data->global_val_item[j];
+        }
       }
 
       res[i]->result->nn_component = data->nn_component;
