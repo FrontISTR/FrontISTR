@@ -3,6 +3,8 @@
 # (refine.txt). All 275 nodes of the refined embedded part must be caught in
 # the first scan, as in serial, also when the partitioner has replicated them
 # to the owners of the host elements only before the refinement.
+# For a distributed mesh, rmerge of the refined result at the step in
+# rmerge_global_step.txt must keep the *global block of area 0.
 ###################################
 #####   SOLVER INFORMATION    #####
 ###################################
@@ -11,6 +13,7 @@
 !SOLUTION, TYPE=STATIC, NONLINEAR
 !CONTACT_ALGO, TYPE=SLAGRANGE
 !WRITE,LOG
+!WRITE,RESULT,FREQUENCY=5
 !SOLVER,METHOD=CG,PRECOND=3,NSET=0,ITERLOG=NO,TIMELOG=NO
  5000, 1
  1.0e-06, 1.00, 0.0
