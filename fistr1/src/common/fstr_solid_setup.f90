@@ -319,11 +319,43 @@ contains
     enddo
   end subroutine
 
+  !> Mean initial temperature of the nodes of an element, in the order of fstr_UpdateNewton.
+  !> It does not change during the analysis, so that a restart finds the same value.
+  real(kind=kreal) function fstr_initial_element_temperature( hecMESH, icel )
+    use m_fstr
+    type(hecmwST_local_mesh), intent(in) :: hecMESH
+    integer(kind=kint), intent(in)       :: icel
+    integer(kind=kint) :: j, k, n, nod, initt
+
+    initt = 0
+    if( associated(g_InitialCnd) ) then
+      do j = 1, size(g_InitialCnd)
+        if( g_InitialCnd(j)%cond_name == "temperature" ) then
+          initt = j
+          exit
+        endif
+      enddo
+    endif
+
+    fstr_initial_element_temperature = 0.d0
+    n = hecMESH%elem_node_index(icel) - hecMESH%elem_node_index(icel-1)
+    do k = 1, n
+      nod = hecMESH%elem_node_item(hecMESH%elem_node_index(icel-1)+k)
+      if( initt > 0 ) then
+        fstr_initial_element_temperature = fstr_initial_element_temperature + g_InitialCnd(initt)%realval(nod)
+      else if( hecMESH%hecmw_flag_initcon == 1 ) then
+        fstr_initial_element_temperature = fstr_initial_element_temperature + hecMESH%node_init_val_item(nod)
+      endif
+    enddo
+    fstr_initial_element_temperature = fstr_initial_element_temperature/n
+  end function fstr_initial_element_temperature
+
   !> Initialize elements info in static calculation
   subroutine fstr_element_init( hecMESH, fstrSOLID, solution_type )
     use elementInfo
     use mMechGauss
     use m_fstr_FiniteRotationKinematics, only: fstr_uses_finite_rotation_kinematics
+    use m_static_LIB_hourglass, only: hourglass_shear_modulus
     use m_fstr
     type(hecmwST_local_mesh),target :: hecMESH
     type(fstr_solid)                :: fstrSOLID
@@ -401,6 +433,12 @@ contains
           fstrSOLID%elements(i)%aux = 0.0d0
         endif
         fstrSOLID%elements(i)%p(1) = 0.0d0
+      endif
+
+      if( ( fstrSOLID%elements(i)%etype == fe_quad4n .or. fstrSOLID%elements(i)%etype == fe_hex8n ) .and. &
+          fstr_element_is_reduced( fstrSOLID%elements(i) ) ) then
+        fstrSOLID%elements(i)%hg_shear = hourglass_shear_modulus( fstrSOLID%elements(i)%gausses(1)%pMaterial, &
+          fstr_initial_element_temperature( hecMESH, i ) )
       endif
 
     enddo

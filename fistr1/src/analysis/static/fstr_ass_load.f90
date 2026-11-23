@@ -551,8 +551,12 @@ contains
               call TLOAD_C3                                                          &
                 ( ic_type, nn, xx(1:nn), yy(1:nn), zz(1:nn), tt(1:nn), tt0(1:nn), fstrPARAM%ref_temp, &
                 fstrSOLID%elements(icel)%gausses, vect(1:nn*ndof), cdsys_ID, coords )
+      else if (fstrSOLID%sections(isect)%elemopt361 == kel361RI) then
+              call TLOAD_C3D8RI                                                      &
+                ( ic_type, nn, xx(1:nn), yy(1:nn), zz(1:nn), tt(1:nn), tt0(1:nn), fstrPARAM%ref_temp, &
+                fstrSOLID%elements(icel)%gausses, vect(1:nn*ndof), cdsys_ID, coords )
       endif
-    
+
     else if (ic_type == 341 .or. ic_type == 351 .or. &
              ic_type == 342 .or. ic_type == 352 .or. ic_type == 362) then
             call TLOAD_C3                                                                &

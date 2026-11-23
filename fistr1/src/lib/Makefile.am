@@ -113,6 +113,7 @@ OBJSF = \
         m_fstr.@f90objfilepostfix@ \
         fstr_FiniteRotationKinematics.@f90objfilepostfix@ \
         dynamic_mass.@f90objfilepostfix@ \
+        static_LIB_hourglass.@f90objfilepostfix@ \
         static_LIB_1d.@f90objfilepostfix@ \
         static_LIB_2d.@f90objfilepostfix@ \
         static_LIB_3d.@f90objfilepostfix@ \
@@ -120,6 +121,7 @@ OBJSF = \
         static_LIB_3d_vp.@f90objfilepostfix@ \
         static_LIB_C3D4_selectiveESNS.@f90objfilepostfix@ \
         static_LIB_C3D8.@f90objfilepostfix@ \
+        static_LIB_C3D8RI.@f90objfilepostfix@ \
         static_LIB_Fbar.@f90objfilepostfix@ \
         static_LIB_3dIC.@f90objfilepostfix@ \
         static_LIB_beam.@f90objfilepostfix@ \

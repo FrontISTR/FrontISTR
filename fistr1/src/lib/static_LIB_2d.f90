@@ -532,6 +532,35 @@ contains
     !
   end subroutine UPDATE_C2
   !
+  !> Stiffness of the one point 241 (FORM241=RI): the center point, which STF_C2 takes
+  !> from the size of gausses, and the hourglass control.
+  subroutine STF_C2D4RI( etype, nn, ecoord, gausses, thick, stiff, iset, u, hg_shear )
+    use mMechGauss
+    use m_static_LIB_hourglass, only: add_hourglass_stiffness
+    integer(kind=kint), intent(in) :: etype, nn, iset
+    real(kind=kreal), intent(in)   :: ecoord(2,nn), thick, u(:,:), hg_shear
+    type(tGaussStatus), intent(in) :: gausses(:)
+    real(kind=kreal), intent(out)  :: stiff(:,:)
+
+    call STF_C2( etype, nn, ecoord, gausses, thick, stiff, iset, u )
+    call add_hourglass_stiffness( etype, nn, 2, ecoord, thick, hg_shear, stiff )
+  end subroutine STF_C2D4RI
+
+  !> Internal force of the one point 241 (FORM241=RI).
+  subroutine UPDATE_C2D4RI( etype, nn, ecoord, gausses, thick, iset, u, ddu, qf, &
+      TT, T0, TN, reftemp, hg_shear )
+    use mMechGauss
+    use m_static_LIB_hourglass, only: add_hourglass_force
+    integer(kind=kint), intent(in)    :: etype, nn, iset
+    real(kind=kreal), intent(in)      :: ecoord(3,nn), thick, u(2,nn), ddu(2,nn)
+    real(kind=kreal), intent(in)      :: TT(nn), T0(nn), TN(nn), reftemp, hg_shear
+    type(tGaussStatus), intent(inout) :: gausses(:)
+    real(kind=kreal), intent(out)     :: qf(:)
+
+    call UPDATE_C2( etype, nn, ecoord, gausses, thick, iset, u, ddu, qf, TT, T0, TN, reftemp )
+    call add_hourglass_force( etype, nn, 2, ecoord(1:2,1:nn), thick, hg_shear, u+ddu, qf )
+  end subroutine UPDATE_C2D4RI
+
   !----------------------------------------------------------------------*
   subroutine NodalStress_C2(NN,gausses,ndstrain,ndstress)
     !----------------------------------------------------------------------*
