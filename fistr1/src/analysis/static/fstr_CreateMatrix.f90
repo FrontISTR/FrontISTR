@@ -482,8 +482,7 @@ contains
       ! return stiff_mat = 0 here and still compute the element mass below.
       if( .not. (ic_type==341 .and. fstrSOLID%sections(isect)%elemopt341 == kel341SESNS) ) then
         call STF_C3( ic_type, nn, ecoord(:,1:nn), fstrSOLID%elements(icel)%gausses(:), &
-          stiff_mat(1:nn*ndof,1:nn*ndof), cdsys_ID, coords, time, tincr, u(1:3,1:nn), tt(1:nn), &
-          elemopt362=fstrSOLID%sections(isect)%elemopt362 )
+          stiff_mat(1:nn*ndof,1:nn*ndof), cdsys_ID, coords, time, tincr, u(1:3,1:nn), tt(1:nn) )
       endif
 
     else if( ic_type == 511 ) then

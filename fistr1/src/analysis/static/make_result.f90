@@ -305,7 +305,7 @@ contains
               do j = 1, nitem
                 work(nitem*(i-1)+j) = fstrSOLID%elements(i)%gausses(k)%strain_out(j)
               enddo
-            else if( fstrSOLID%elements(i)%etype == fe_hex20n ) then
+            else if( fstr_element_is_reduced( fstrSOLID%elements(i) ) ) then
               work(nitem*(i-1)+1:nitem*i) = 0.d0
             endif
           end if
@@ -335,7 +335,7 @@ contains
               do j = 1, nitem
                 work(nitem*(i-1)+j) = fstrSOLID%elements(i)%gausses(k)%stress_out(j)
               enddo
-            else if( fstrSOLID%elements(i)%etype == fe_hex20n ) then
+            else if( fstr_element_is_reduced( fstrSOLID%elements(i) ) ) then
               work(nitem*(i-1)+1:nitem*i) = 0.d0
             endif
           end if
@@ -364,7 +364,7 @@ contains
           else if( associated(fstrSOLID%elements(i)%gausses) ) then
             if( k <= size(fstrSOLID%elements(i)%gausses) ) then
               work(i) = fstrSOLID%elements(i)%gausses(k)%plstrain
-            else if( fstrSOLID%elements(i)%etype == fe_hex20n ) then
+            else if( fstr_element_is_reduced( fstrSOLID%elements(i) ) ) then
               work(i) = 0.d0
             endif
           endif

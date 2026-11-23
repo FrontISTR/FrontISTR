@@ -10,11 +10,13 @@ module m_fstr_Restart
   use m_fstr
   use mMechGauss, only: tGaussStatus
   use hecmw, only: hecmw_abort, hecmw_comm_get_comm
-  use elementInfo, only: fe_hex20n
+  use elementInfo, only: fe_quad4n, fe_quad8n, fe_hex8n, fe_hex20n
   implicit none
 
-  !> First restart version whose header holds the version and which stores FORM362.
+  !> First restart version whose header holds the version. It stores the rule of 362 only.
   integer(kind=kint), parameter, private :: restart_version_form362 = 7
+  !> First restart version that stores the rule of every element with a reduced integration.
+  integer(kind=kint), parameter, private :: restart_version_reduced = 8
 
 contains
 
@@ -247,72 +249,88 @@ contains
     enddo
   end subroutine fstr_read_restart_shell_state
 
-  !> FORM362 of each 362 element, which decides how many material states it stores.
-  subroutine fstr_get_form362_of_elements(hecMESH, fstrSOLID, form362)
+  !> Whether a restart file of the version records the integration rule of the element type.
+  logical function fstr_restart_records_rule(etype, version)
+    integer(kind=kint), intent(in) :: etype, version
+
+    if( version >= restart_version_reduced ) then
+      fstr_restart_records_rule = etype == fe_quad4n .or. etype == fe_quad8n .or. &
+        etype == fe_hex8n .or. etype == fe_hex20n
+    else
+      fstr_restart_records_rule = version == restart_version_form362 .and. etype == fe_hex20n
+    endif
+  end function fstr_restart_records_rule
+
+  !> The rule of each element that a file of the version records (1: FI, 2: RI), which
+  !> decides how many material states it stores. nmissing counts the elements with a
+  !> reduced rule that the version cannot record.
+  subroutine fstr_get_restart_rules(hecMESH, fstrSOLID, version, rules, nmissing)
     type(hecmwST_local_mesh), intent(in) :: hecMESH
     type(fstr_solid), intent(in) :: fstrSOLID
-    integer(kind=kint), allocatable, intent(out) :: form362(:)
+    integer(kind=kint), intent(in) :: version
+    integer(kind=kint), allocatable, intent(out) :: rules(:)
+    integer(kind=kint), intent(out) :: nmissing
     integer :: i, n
 
+    nmissing = 0
     n = 0
     do i = 1, hecMESH%n_elem
-      if( fstrSOLID%elements(i)%etype == fe_hex20n ) n = n + 1
+      if( fstr_restart_records_rule(fstrSOLID%elements(i)%etype, version) ) then
+        n = n + 1
+      else if( fstr_element_is_reduced(fstrSOLID%elements(i)) ) then
+        nmissing = nmissing + 1
+      endif
     enddo
-    allocate( form362(n) )
+    allocate( rules(n) )
     n = 0
     do i = 1, hecMESH%n_elem
-      if( fstrSOLID%elements(i)%etype /= fe_hex20n ) cycle
+      if( .not. fstr_restart_records_rule(fstrSOLID%elements(i)%etype, version) ) cycle
       n = n + 1
-      form362(n) = fstrSOLID%sections(hecMESH%section_ID(i))%elemopt362
+      rules(n) = merge( 2, 1, fstr_element_is_reduced(fstrSOLID%elements(i)) )
     enddo
-  end subroutine fstr_get_form362_of_elements
+  end subroutine fstr_get_restart_rules
 
-  !> Store FORM362 of each 362 element ahead of the material states.
-  subroutine fstr_write_restart_form362(hecMESH, fstrSOLID, restart_version)
+  !> Store the integration rules ahead of the material states.
+  subroutine fstr_write_restart_rules(hecMESH, fstrSOLID, restart_version)
     type(hecmwST_local_mesh), intent(in) :: hecMESH
     type(fstr_solid), intent(in) :: fstrSOLID
     integer(kind=kint), intent(in) :: restart_version
-    integer(kind=kint), allocatable :: form362(:)
+    integer(kind=kint), allocatable :: rules(:)
     integer(kind=kint) :: n(1), nerr
 
-    call fstr_get_form362_of_elements(hecMESH, fstrSOLID, form362)
-    if( restart_version < restart_version_form362 ) then
-      nerr = count( form362 /= kel362FI )
-      call hecmw_allreduce_I1(hecMESH, nerr, HECMW_MAX)
-      if( nerr > 0 ) call fstr_restart_abort('restart VERSION >= 7 is required for FORM362=RI.')
-      return
-    endif
-    n(1) = size(form362)
+    call fstr_get_restart_rules(hecMESH, fstrSOLID, restart_version, rules, nerr)
+    call hecmw_allreduce_I1(hecMESH, nerr, HECMW_MAX)
+    if( nerr > 0 ) call fstr_restart_abort( &
+      'restart VERSION >= 8 is required for FORM241, FORM242 or FORM361=RI, and >= 7 for FORM362=RI.')
+    if( restart_version < restart_version_form362 ) return
+    n(1) = size(rules)
     call hecmw_restart_add_int(n, 1)
-    if( n(1) > 0 ) call hecmw_restart_add_int(form362, n(1))
-  end subroutine fstr_write_restart_form362
+    if( n(1) > 0 ) call hecmw_restart_add_int(rules, n(1))
+  end subroutine fstr_write_restart_rules
 
-  !> Stop before reading the material states when they were stored by another rule of 362.
-  !> A file older than version 7 has no record of FORM362 and always holds the 27 states of FI.
-  subroutine fstr_check_restart_form362(hecMESH, fstrSOLID, file_version)
+  !> Stop before reading the material states when they were stored by another rule.
+  !> A file older than version 7 has no record of the rules and holds the states of FI.
+  subroutine fstr_check_restart_rules(hecMESH, fstrSOLID, file_version)
     type(hecmwST_local_mesh), intent(in) :: hecMESH
     type(fstr_solid), intent(in) :: fstrSOLID
     integer(kind=kint), intent(in) :: file_version
-    integer(kind=kint), allocatable :: form362(:), saved(:)
+    integer(kind=kint), allocatable :: rules(:), saved(:)
     integer(kind=kint) :: n(1), nerr
 
-    call fstr_get_form362_of_elements(hecMESH, fstrSOLID, form362)
-    nerr = 0
+    call fstr_get_restart_rules(hecMESH, fstrSOLID, file_version, rules, nerr)
     if( file_version >= restart_version_form362 ) then
       call hecmw_restart_read_int(n)
-      if( n(1) /= size(form362) ) then
-        nerr = 1
+      if( n(1) /= size(rules) ) then
+        nerr = nerr + 1
       else if( n(1) > 0 ) then
         allocate( saved(n(1)) )
         call hecmw_restart_read_int(saved)
-        nerr = count( saved /= form362 )
+        nerr = nerr + count( saved /= rules )
       endif
-    else
-      nerr = count( form362 /= kel362FI )
     endif
     call hecmw_allreduce_I1(hecMESH, nerr, HECMW_MAX)
-    if( nerr > 0 ) call fstr_restart_abort('FORM362 of the restart file does not match the current model.')
-  end subroutine fstr_check_restart_form362
+    if( nerr > 0 ) call fstr_restart_abort('The integration rule of the restart file does not match the current model.')
+  end subroutine fstr_check_restart_rules
 
   !> Read in restart file
   !----------------------------------------------------------------------*
@@ -356,7 +374,7 @@ contains
     call hecmw_restart_read_real(fstrSOLID%QFORCE)
     call fstr_require_shell_restart_version(fstrSOLID, fstrPARAM%restart_version)
     if( fstrPARAM%restart_version >= 6 ) call fstr_read_restart_shell_state(hecMESH, fstrSOLID)
-    call fstr_check_restart_form362(hecMESH, fstrSOLID, restrt_step(4))
+    call fstr_check_restart_rules(hecMESH, fstrSOLID, restrt_step(4))
 
     do i= 1, hecMESH%n_elem
       if (hecmw_is_etype_link( fstrSOLID%elements(i)%etype )) cycle
@@ -488,7 +506,7 @@ contains
     call hecmw_restart_add_real(fstrSOLID%QFORCE,size(fstrSOLID%QFORCE))
     call fstr_require_shell_restart_version(fstrSOLID, fstrPARAM%restart_version)
     if( fstrPARAM%restart_version >= 6 ) call fstr_write_restart_shell_state(hecMESH, fstrSOLID)
-    call fstr_write_restart_form362(hecMESH, fstrSOLID, fstrPARAM%restart_version)
+    call fstr_write_restart_rules(hecMESH, fstrSOLID, fstrPARAM%restart_version)
 
     do i= 1, hecMESH%n_elem
       if (hecmw_is_etype_link( fstrSOLID%elements(i)%etype )) cycle
@@ -582,7 +600,7 @@ contains
     call hecmw_restart_read_real(fstrSOLID%QFORCE)
     call fstr_require_shell_restart_version(fstrSOLID, fstrPARAM%restart_version)
     if( fstrPARAM%restart_version >= 6 ) call fstr_read_restart_shell_state(hecMESH, fstrSOLID)
-    call fstr_check_restart_form362(hecMESH, fstrSOLID, restrt_step(4))
+    call fstr_check_restart_rules(hecMESH, fstrSOLID, restrt_step(4))
 
     do i= 1, hecMESH%n_elem
       if (hecmw_is_etype_link( fstrSOLID%elements(i)%etype )) cycle
@@ -725,7 +743,7 @@ contains
     call hecmw_restart_add_real(fstrSOLID%QFORCE,size(fstrSOLID%QFORCE))
     call fstr_require_shell_restart_version(fstrSOLID, fstrPARAM%restart_version)
     if( fstrPARAM%restart_version >= 6 ) call fstr_write_restart_shell_state(hecMESH, fstrSOLID)
-    call fstr_write_restart_form362(hecMESH, fstrSOLID, fstrPARAM%restart_version)
+    call fstr_write_restart_rules(hecMESH, fstrSOLID, fstrPARAM%restart_version)
 
     do i= 1, hecMESH%n_elem
       if (hecmw_is_etype_link( fstrSOLID%elements(i)%etype )) cycle

@@ -329,7 +329,7 @@ contains
     type(fstr_solid)                :: fstrSOLID
     integer(kind=kint), intent(in)  :: solution_type
 
-    integer :: i, j, ng, isect, ndof, id, nn, n_elem, nthick, elemopt362
+    integer :: i, j, ng, isect, ndof, id, nn, n_elem, nthick
 
     if( hecMESH%n_elem <=0 ) then
       stop "no element defined!"
@@ -357,9 +357,8 @@ contains
       isect= hecMESH%section_ID(i)
       if( isect<0 .or. isect>hecMESH%section%n_sect )   &
         stop "Error in element's section definition"
-      elemopt362 = kel362FI
-      if( fstrSOLID%elements(i)%etype == fe_hex20n ) elemopt362 = fstrSOLID%sections(isect)%elemopt362
-      ng = fstr_material_point_count( fstrSOLID%elements(i)%etype, elemopt362 )
+      ng = fstr_material_point_count( fstrSOLID%elements(i)%etype, &
+        fstr_section_is_reduced( fstrSOLID%elements(i)%etype, fstrSOLID%sections(isect) ) )
       if( ng > fstrSOLID%maxn_gauss ) fstrSOLID%maxn_gauss = ng
       if(ng>0) allocate( fstrSOLID%elements(i)%gausses( ng ) )
 
@@ -2751,6 +2750,8 @@ contains
       else
         fstrSOLID%sections(i)%elemopt361 = kel361FI
       end if
+      fstrSOLID%sections(i)%elemopt241 = kel241FI
+      fstrSOLID%sections(i)%elemopt242 = kel242FI
       fstrSOLID%sections(i)%elemopt341 = kel341FI
       fstrSOLID%sections(i)%elemopt362 = kel362FI
       fstrSOLID%sections(i)%elemopt611 = kel611EULER
