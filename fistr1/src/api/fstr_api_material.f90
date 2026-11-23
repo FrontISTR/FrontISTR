@@ -11,6 +11,10 @@ module fstr_api_material
 
 contains
 
+  !> @brief Retrive material handler from the solid analysis derived type
+  !! @param[in] solid : A solid analysis handler
+  !! @param[in] cid : Index of material property
+  !! @return Material property handler of type(c_ptr)
   type(c_ptr) function fstr_api_solid_material(solid,cid) &
     bind(C,name='fstr_api_solid_material')
     use m_fstr, only : fstr_solid
@@ -22,6 +26,9 @@ contains
     fstr_api_solid_material = c_loc(fstrSOLID%materials(cid))
   end function
 
+  !> @brief Retrive material type
+  !! @param[in] material : A material property handler
+  !! @return Material type
   integer(c_int) function fstr_api_material_type(material) &
     bind(C,name='fstr_api_material_type')
     implicit none
@@ -31,6 +38,10 @@ contains
     fstr_api_material_type = mat%mtype
   end function
 
+  !> @brief Retrive material name
+  !! @param[in] material : A material property handler
+  !! @param[inout] name : A material name
+  !! @param[in] namelen : Length of name
   subroutine fstr_api_material_get_name(material,name,namelen) &
     bind(C,name='fstr_api_material_get_name')
     use hecmw_api_common
@@ -43,6 +54,9 @@ contains
     call f_c_str_copy(mat%name, name, namelen)
   end subroutine
 
+  !> @brief Set material name
+  !! @param[in] material : A material property handler
+  !! @param[in] name : A material name
   subroutine fstr_api_material_set_name(material,mat_name) &
     bind(C,name='fstr_api_material_set_name')
     use hecmw_util, only : HECMW_NAME_LEN
@@ -58,6 +72,9 @@ contains
     mat%name = mat_name_f
   end subroutine
 
+  !> @brief Is material property elastic?
+  !! @param[in] material : A material property handler
+  !! @return A logical value indicating whether it is elastic
   logical(c_bool) function fstr_api_material_isElastic(material) &
     bind(C,name='fstr_api_material_isElastic')
     implicit none
@@ -67,6 +84,9 @@ contains
     fstr_api_material_isElastic = isElastic(mat%mtype)
   end function
 
+  !> @brief Is material property elastoplastic?
+  !! @param[in] material : A material property handler
+  !! @return A logical value indicating whether it is elastoplastic
   logical(c_bool) function fstr_api_material_isElastoplastic(material) &
     bind(C,name='fstr_api_material_isElastoplastic')
     implicit none
@@ -76,6 +96,9 @@ contains
     fstr_api_material_isElastoplastic = isElastoplastic(mat%mtype)
   end function
 
+  !> @brief Is material property hyperelastic?
+  !! @param[in] material : A material property handler
+  !! @return A logical value indicating whether it is hyperelastic
   logical(c_bool) function fstr_api_material_isHyperelastic(material) &
     bind(C,name='fstr_api_material_isHyperelastic')
     implicit none
@@ -85,6 +108,9 @@ contains
     fstr_api_material_isHyperelastic = isHyperelastic(mat%mtype)
   end function
 
+  !> @brief Is material property viscoelastic?
+  !! @param[in] material : A material property handler
+  !! @return A logical value indicating whether it is viscoelastic
   logical(c_bool) function fstr_api_material_isViscoelastic(material) &
     bind(C,name='fstr_api_material_isViscoelastic')
     implicit none
@@ -94,6 +120,9 @@ contains
     fstr_api_material_isViscoelastic = isViscoelastic(mat%mtype)
   end function
 
+  !> @brief Is material property creep?
+  !! @param[in] material : A material property handler
+  !! @return A logical value indicating whether it is creep
   logical(c_bool) function fstr_api_material_isCreep(material) &
     bind(C,name='fstr_api_material_isCreep')
     implicit none
@@ -103,6 +132,9 @@ contains
     fstr_api_material_isCreep = isCreep(mat%mtype)
   end function
 
+  !> @brief Retirive the type of geometric nonlinearity
+  !! @param[in] material : A material property handler
+  !! @return the type of geometric nonlinearity
   integer(c_int) function fstr_api_material_nlgeom(material) &
     bind(C,name='fstr_api_material_nlgeom')
     implicit none
@@ -112,6 +144,9 @@ contains
     fstr_api_material_nlgeom = mat%nlgeom_flag
   end function
 
+  !> @brief Set the type of geometric nonlinearity
+  !! @param[in] material : A material property handler
+  !! @param[in] nlgeom : The type of geometric nonlinearity
   subroutine fstr_api_material_set_nlgeom(material,nlgeom) &
     bind(C,name='fstr_api_material_set_nlgeom')
     implicit none
@@ -122,6 +157,10 @@ contains
     mat%nlgeom_flag = nlgeom
   end subroutine
 
+  !> @brief Retirive elastic parameters
+  !! @param[in] material : A material property handler
+  !! @param[out] youngs : Young's modulus
+  !! @param[out] poisson : Poisson's ratio
   subroutine fstr_api_material_get_elastic(material,youngs,poisson) &
     bind(C,name='fstr_api_material_get_elastic')
     implicit none
@@ -146,6 +185,10 @@ contains
     end if
   end subroutine
 
+  !> @brief Set elastic parameters
+  !! @param[in] material : A material property handler
+  !! @param[in] youngs : Young's modulus
+  !! @param[in] poisson : Poisson's ratio
   subroutine fstr_api_material_set_elastic(material,youngs,poisson) &
     bind(C,name='fstr_api_material_set_elastic')
     implicit none
@@ -171,6 +214,9 @@ contains
     deallocate(fval)
   end subroutine
 
+  !> @brief Retirive density
+  !! @param[in] material : A material property handler
+  !! @return Density
   real(c_double) function fstr_api_material_density(material) &
     bind(C,name='fstr_api_material_density')
     implicit none
@@ -180,6 +226,9 @@ contains
     fstr_api_material_density = mat%variables(M_DENSITY)
   end function
 
+  !> @brief Set density
+  !! @param[in] material : A material property handler
+  !! @param[in] density : Density
   subroutine fstr_api_material_set_density(material,density) &
     bind(C,name='fstr_api_material_set_density')
     implicit none
@@ -190,6 +239,9 @@ contains
     mat%variables(M_DENSITY) = density
   end subroutine
 
+  !> @brief Retirive coefficient of linear expansion
+  !! @param[in] material : A material property handler
+  !! @return Coefficient of linear expansion
   real(c_double) function fstr_api_material_expansion(material) &
     bind(C,name='fstr_api_material_expansion')
     implicit none
@@ -199,6 +251,9 @@ contains
     fstr_api_material_expansion = mat%variables(M_EXPANSION)
   end function
 
+  !> @brief Set coefficient of linear expansion
+  !! @param[in] material : A material property handler
+  !! @return Coefficient of linear expansion
   subroutine fstr_api_material_set_expansion(material,expansion) &
     bind(C,name='fstr_api_material_set_expansion')
     implicit none
@@ -209,6 +264,13 @@ contains
     mat%variables(M_EXPANSION) = expansion
   end subroutine
 
+  !> @brief Retirive yield criterion, hardening rule and size of plastic parameters
+  !! @param[in] material : A material property handler
+  !! @param[out] yield : Yield criterion
+  !! @param[out] harden : Hardening rule
+  !! @param[out] nvar : Size of parameters
+  !! @param[out] rows : Number of rows in the table
+  !! @param[out] cols : Number of cols in the table
   subroutine fstr_api_material_get_plastic_size(material,yield,harden,nvar,rows,cols) &
     bind(C,name='fstr_api_material_get_plastic_size')
     use hecmw_api_common, only : f_c_str_copy
@@ -302,6 +364,9 @@ contains
     end if
   end subroutine
 
+  !> @brief Retirive parameters of plastic material
+  !! @param[in] material : A material property handler
+  !! @param[out] variables : Parameters (nvar + rows*cols)
   subroutine fstr_api_material_get_plastic_vars(material,variables) &
     bind(C,name='fstr_api_material_get_plastic_vars')
     implicit none
@@ -391,6 +456,13 @@ contains
     end if
   end subroutine
 
+  !> @brief Set yield criterion, hardening rule and parameters
+  !! @param[in] material : A material property handler
+  !! @param[in] yield : Yield criterion
+  !! @param[in] harden : Hardening rule
+  !! @param[in] variables : Parameters
+  !! @param[in] rows : Number of rows in the table
+  !! @param[in] cols : Number of cols in the table
   subroutine fstr_api_material_set_plastic(material,yield,harden,variables,rows,cols) &
     bind(C,name='fstr_api_material_set_plastic')
     use hecmw_api_common, only : c_f_str_copy
@@ -513,6 +585,10 @@ contains
 
   end subroutine
 
+  !> @brief Retirive type and parameters of hyperelastic material
+  !! @param[in] material : A material property handler
+  !! @param[out] type : Hyperelastic type
+  !! @param[out] variables : Parameters
   subroutine fstr_api_material_get_hyperelastic(material,type,variables) &
     bind(C,name='fstr_api_material_get_hyperelastic')
     use mMaterial
@@ -554,6 +630,10 @@ contains
     endif
   end subroutine
 
+  !> @brief Set type and parameters of hyperelastic material
+  !! @param[in] material : A material property handler
+  !! @param[in] type : Hyperelastic type
+  !! @param[in] variables : Parameters
   subroutine fstr_api_material_set_hyperelastic(material,type,variables) &
     bind(C,name='fstr_api_material_set_hyperelastic')
     use mMaterial
@@ -605,6 +685,10 @@ contains
     endif
   end subroutine
 
+  !> @brief Retirive size of viscoelastic parameter table
+  !! @param[in] material : A material property handler
+  !! @param[out] rows : Number of rows in the table
+  !! @param[out] cols : Number of cols in the table
   subroutine fstr_api_material_get_viscoelastic_size(material,rows,cols) &
     bind(C,name='fstr_api_material_get_viscoelastic_size')
     use mMaterial
@@ -623,6 +707,9 @@ contains
     cols = dicval%tbcol
   end subroutine
 
+  !> @brief Retrive viscoelastic parameters
+  !! @param[in] material : A material property handler
+  !! @param[out] variables : Parameters (rows*cols)
   subroutine fstr_api_material_get_viscoelastic_vars(material,variables) &
     bind(C,name='fstr_api_material_get_viscoelastic_vars')
     use mMaterial
@@ -644,6 +731,11 @@ contains
     end do
   end subroutine
 
+  !> @brief Set viscoelastic parameter table
+  !! @param[in] material : A material property handler
+  !! @param[in] variables : Parameters (rows*cols)
+  !! @param[in] rows : Number of rows in the table
+  !! @param[in] cols : Number of cols in the table
   subroutine fstr_api_material_set_viscoelastic(material,variables,rows,cols) &
     bind(C,name='fstr_api_material_set_viscoelastic')
     use mMaterial
@@ -672,6 +764,11 @@ contains
 
   end subroutine
 
+  !> @brief Retirive type and size of creep parameter table
+  !! @param[in] material : A material property handler
+  !! @param[out] type : Creep type
+  !! @param[out] rows : Number of rows in the table
+  !! @param[out] cols : Number of cols in the table
   subroutine fstr_api_material_get_creep_size(material,type,rows,cols) &
     bind(C,name='fstr_api_material_get_creep_size')
     use mMaterial
@@ -696,6 +793,9 @@ contains
     endif
   end subroutine
 
+  !> @brief Retrive creep parameters
+  !! @param[in] material : A material property handler
+  !! @param[out] variables : Parameters (rows*cols)
   subroutine fstr_api_material_get_creep_vars(material,variables) &
     bind(C,name='fstr_api_material_get_creep_vars')
     use mMaterial
@@ -719,6 +819,12 @@ contains
     end if
   end subroutine
 
+  !> @brief Set creep parameter table
+  !! @param[in] material : A material property handler
+  !! @param[in] type : Creep type
+  !! @param[in] variables : Parameters (rows*cols)
+  !! @param[in] rows : Number of rows in the table
+  !! @param[in] cols : Number of cols in the table
   subroutine fstr_api_material_set_creep(material,type,variables,rows,cols) &
     bind(C,name='fstr_api_material_set_creep')
     use mMaterial

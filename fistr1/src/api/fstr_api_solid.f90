@@ -10,6 +10,8 @@ module fstr_api_solid
 
 contains
 
+  !> @brief Generating solid analysis handler
+  !! @return Solid analysis handler of type(c_ptr)
   type(c_ptr) function fstr_api_solid_new() &
     bind(C,name='fstr_api_solid_new')
     implicit none
@@ -19,6 +21,8 @@ contains
     fstr_api_solid_new = c_loc(fstrSOLID)
   end function
 
+  !> @brief Destroying the solid analysis handler
+  !! @param[in] solid : Solid analysis handler
   subroutine fstr_api_solid_delete(solid) &
     bind(C,name='fstr_api_solid_delete')
     use m_fstr_setup
@@ -29,6 +33,10 @@ contains
     call fstr_solid_finalize( fstrSOLID )
   end subroutine
 
+  !> @brief Initialize of the solid analysis derived type
+  !! @param[in] solid : A solid analysis handler
+  !! @param[in] mesh : A mesh handler
+  !! @param[in] param : A parameter handler
   subroutine fstr_api_solid_init(solid,mesh,param) &
     bind(C,name='fstr_api_solid_init')
     use m_fstr_setup
@@ -50,6 +58,9 @@ contains
     call fstr_solid_init_output(fstrSOLID)
   end subroutine
 
+  !> @brief Retrieve number of material properties
+  !! @param[in] solid : A solid analysis handler
+  !! @return Number of material properties
   integer(c_int) function fstr_api_solid_nmaterial_tot(solid) &
     bind(C,name='fstr_api_solid_nmaterial_tot')
     implicit none
@@ -62,6 +73,9 @@ contains
     endif
   end function
 
+  !> @brief Generate and initialize material properties
+  !! @param[in] solid : A solid analysis handler
+  !! @param[in] n : Number of materials
   subroutine fstr_api_solid_init_material(solid,n) &
     bind(C,name='fstr_api_solid_init_material')
     implicit none
