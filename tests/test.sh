@@ -107,7 +107,8 @@ run_fistr1 () {
 
 check_global_result () {
   res_name=$1
-  if [ ! -e "$ref_dir/rmerge_global_step.txt" ]; then
+  # rmerge of refined single-domain results is affected by issue #1024.
+  if [ "$mpi_num_process" -eq 1 ] || [ ! -e "$ref_dir/rmerge_global_step.txt" ]; then
     return 0
   fi
 
