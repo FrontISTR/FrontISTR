@@ -432,8 +432,12 @@ contains
         call fstr_check_convergence(hecMESH, hecMAT, fstrSOLID, fstrPARAM, &
             ndof, iter, istep, cstep, &
             resid_work, cnvstat, iterStatus)
-        if (iterStatus == kitrConverged) exit
+        if (iterStatus == kitrConverged) then
+          call hecmw_ebc_finalize(hecEBC)
+          exit
+        endif
         if (iterStatus == kitrDiverged .or. iterStatus == kitrFloatingError) then
+          call hecmw_ebc_finalize(hecEBC)
           fstrSOLID%NRstat_i(knstCITER) = count_step
           return
         endif
