@@ -45,6 +45,7 @@ contains
     real(kind=kreal)   :: OMEGA
 
     integer(kind=kint) :: auto_sigma_diag
+    real(kind=kreal), allocatable :: X0(:)
 
     !C PARAMETERs
     ITER      = hecmw_mat_get_iter(hecMAT)
@@ -83,6 +84,9 @@ contains
 
     !C ITERATIVE solver
     error=0
+    ! retries start again from this initial guess; the solution of a diverged attempt can be far off
+    allocate(X0(size(hecMAT%X)))
+    X0(:) = hecMAT%X(:)
     !! Auto Sigma_diag loop
     do
       call hecmw_mat_set_flag_converged(hecMAT, 0)
@@ -132,10 +136,17 @@ contains
         if ((PRECOND>=10 .and. PRECOND<20) .and. auto_sigma_diag==1 .and. SIGMA_DIAG<2.d0) then
           SIGMA_DIAG = SIGMA_DIAG + 0.1
           if (hecMESH%my_rank.eq.0) write(*,*) 'Increasing SIGMA_DIAG to', SIGMA_DIAG
+          ! a preconditioner already set up is reused unless numerical setup is requested
+          call hecmw_mat_set_flag_numfact(hecMAT, 1)
+          hecMAT%X(:) = X0(:)
           cycle
         elseif ((METHOD==1 .or. METHOD==8 .or. METHOD==9) .and. METHOD2>1) then
-          if (auto_sigma_diag.eq.1) SIGMA_DIAG = 1.0
+          if (auto_sigma_diag.eq.1) then
+            SIGMA_DIAG = 1.0
+            if (PRECOND>=10 .and. PRECOND<20) call hecmw_mat_set_flag_numfact(hecMAT, 1)
+          endif
           METHOD = METHOD2
+          hecMAT%X(:) = X0(:)
           cycle
         endif
       endif
@@ -143,6 +154,7 @@ contains
       if (auto_sigma_diag.eq.1) call hecmw_mat_set_sigma_diag(hecMAT, -1.d0)
       exit
     enddo
+    deallocate(X0)
 
     if (error.ne.0) then
       call hecmw_solve_error (hecMESH, error)
