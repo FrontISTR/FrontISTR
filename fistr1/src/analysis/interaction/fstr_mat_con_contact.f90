@@ -467,7 +467,7 @@ contains
   !> getNewListOFrelatednodesANDLagrangeMultipliers_ss / register_pair_to_sparsity).
   !>
   !> Returns .true. if any currently-active (slave_surf, master) mortar pair has a
-  !> slave-node x master-node coupling that is NOT present in the matrix profile of hecMAT%conmat.
+  !> slave-node x master-node coupling that is NOT present in the matrix profile of hecMAT.
   !> Such a missing coupling means the active master has drifted beyond the reserved 1-ring
   !> via a silent facet-hop / re-association (one that does not increment the structural
   !> change counters, so fstr_is_matrixStructure_changed stays false), and the next contact
@@ -520,7 +520,7 @@ contains
   end function fstr_s2s_profile_needs_refresh
 
   !> \brief True if every slave-node x master-node coupling of one (slave_surf, master)
-  !> mortar pair is present in the hecMAT%conmat profile. See fstr_s2s_profile_needs_refresh for
+  !> mortar pair is present in the hecMAT profile. See fstr_s2s_profile_needs_refresh for
   !> why only cross couplings are checked (slave-slave / master-master are base FE terms).
   logical function pair_cross_profile_complete( slave_nodes, master_surf, hecMAT )
     integer(kind=kint), intent(in)   :: slave_nodes(:)  !< slave surface node ids
@@ -532,7 +532,7 @@ contains
     pair_cross_profile_complete = .true.
     do s = 1, size(slave_nodes)
       do m = 1, size(master_surf%nodes)
-        if( .not. hecmw_mat_profile_has_node( hecMAT%conmat, slave_nodes(s), master_surf%nodes(m) ) ) then
+        if( .not. hecmw_mat_profile_has_node( hecMAT, slave_nodes(s), master_surf%nodes(m) ) ) then
           pair_cross_profile_complete = .false.
           return
         endif

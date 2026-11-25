@@ -131,7 +131,7 @@ contains
 
   end subroutine calc_contact_pair_refStiff
 
-  !> \brief Assemble contact nodal force into residual vector (hecMAT%conmat%B, hecMAT%lagmat%B_lagrange).
+  !> \brief Assemble contact nodal force into residual vector (hecMAT%B, hecMAT%lagmat%B_lagrange).
   subroutine assemble_contact_force_residual(nnode,ndLocal,id_lagrange,ctNForce,ctTForce,hecMAT)
     integer(kind=kint), intent(in)       :: nnode              !< number of master nodes
     integer(kind=kint), intent(in)       :: ndLocal(nnode + 1) !< global node numbers
@@ -145,7 +145,7 @@ contains
     do i = 1, nnode + 1
       inod = ndLocal(i)
       idx = (inod-1)*3+1
-      hecMAT%conmat%B(idx:idx+2) = hecMAT%conmat%B(idx:idx+2) + ctNForce((i-1)*3+1:(i-1)*3+3) + ctTForce((i-1)*3+1:(i-1)*3+3)
+      hecMAT%B(idx:idx+2) = hecMAT%B(idx:idx+2) + ctNForce((i-1)*3+1:(i-1)*3+3) + ctTForce((i-1)*3+1:(i-1)*3+3)
     enddo
 
     ! Accumulate: several contributions can target the same Lagrange row (the caller
@@ -493,7 +493,7 @@ contains
               slvpos=coord(3*ndLocal(1)-2:3*ndLocal(1)) + disp(3*ndLocal(1)-2:3*ndLocal(1)))
 
             ! Assemble contact stiffness matrix into global stiffness matrix
-            call hecmw_mat_ass_elem(hecMAT%conmat, nnode+1, ndLocal, stiffness)
+            call hecmw_mat_ass_elem(hecMAT, nnode+1, ndLocal, stiffness)
 
           end if
 
@@ -515,7 +515,7 @@ contains
               contact%nPenalty * contact%refStiff, stiffness, force)
 
             ! Assemble contact stiffness matrix into global stiffness matrix
-            call hecmw_mat_ass_elem(hecMAT%conmat, nnode+1, ndLocal, stiffness)
+            call hecmw_mat_ass_elem(hecMAT, nnode+1, ndLocal, stiffness)
 
           end if
 
@@ -527,7 +527,7 @@ contains
           stiffness, smoothing_type=contact%smoothing)
 
         ! Assemble full damping stiffness for slave+master contact element
-        call hecmw_mat_ass_elem(hecMAT%conmat, nnode+1, ndLocal, stiffness)
+        call hecmw_mat_ass_elem(hecMAT, nnode+1, ndLocal, stiffness)
 
       endif
 
@@ -579,7 +579,7 @@ contains
         ndLocal(nnode_s+1:nnode_s+nnode_m) = contact%master(ctsurf)%nodes(1:nnode_m)
         do a = 1, nnode_s
           if( .not. active_n(a,g) ) cycle
-          call hecmw_mat_ass_elem(hecMAT%conmat, nnode_s+nnode_m, ndLocal, stiff_n(:,:,a,g))
+          call hecmw_mat_ass_elem(hecMAT, nnode_s+nnode_m, ndLocal, stiff_n(:,:,a,g))
         enddo
       enddo
 
@@ -592,7 +592,7 @@ contains
           ndLocal(nnode_s+1:nnode_s+nnode_m) = contact%master(ctsurf)%nodes(1:nnode_m)
           do a = 1, nnode_s
             if( .not. active_t(a,g) ) cycle
-            call hecmw_mat_ass_elem(hecMAT%conmat, nnode_s+nnode_m, ndLocal, stiff_t(:,:,a,g))
+            call hecmw_mat_ass_elem(hecMAT, nnode_s+nnode_m, ndLocal, stiff_t(:,:,a,g))
           enddo
         enddo
         deallocate(stiff_t, active_t)
@@ -605,7 +605,7 @@ contains
 
   !>\brief This subroutine calculates contact nodal force for each contact pair
   !! and assembles it into contact matrix and/or force arrays.
-  !! When purpose == kctForResidual, forces are assembled into hecMAT%conmat%B.
+  !! When purpose == kctForResidual, forces are assembled into hecMAT%B.
   !! When purpose == kctForOutput, forces are stored in CONT_NFORCE/CONT_FRIC using multiplier only (no penalty).
   subroutine calcu_contact_ndforce_NodeSurf( purpose, ctAlgo, contact, coord, disp, ddisp, &
     hecMAT, CONT_NFORCE, CONT_FRIC )
@@ -847,7 +847,7 @@ contains
           do j = 1, nnode_s + nnode_m
             nd = ndLocal(j)
             if( purpose == kctForResidual ) then
-              hecMAT%conmat%B(3*nd-2:3*nd) = hecMAT%conmat%B(3*nd-2:3*nd) + ctNForce(3*j-2:3*j,a,g)
+              hecMAT%B(3*nd-2:3*nd) = hecMAT%B(3*nd-2:3*nd) + ctNForce(3*j-2:3*j,a,g)
             else if ( purpose == kctForOutput ) then
               CONT_NFORCE(3*nd-2:3*nd) = CONT_NFORCE(3*nd-2:3*nd) + ctNForce(3*j-2:3*j,a,g)
             end if
@@ -867,7 +867,7 @@ contains
             do j = 1, nnode_s + nnode_m
               nd = ndLocal(j)
               if( purpose == kctForResidual ) then
-                hecMAT%conmat%B(3*nd-2:3*nd) = hecMAT%conmat%B(3*nd-2:3*nd) + ctTForce(3*j-2:3*j,a,g)
+                hecMAT%B(3*nd-2:3*nd) = hecMAT%B(3*nd-2:3*nd) + ctTForce(3*j-2:3*j,a,g)
               else if( purpose == kctForOutput ) then
                 CONT_FRIC(3*nd-2:3*nd) = CONT_FRIC(3*nd-2:3*nd) + ctTForce(3*j-2:3*j,a,g)
               end if
