@@ -136,9 +136,6 @@ contains
     numNon0_lagrange = countNon0LU_lagrange/2
     call hecmw_construct_hecMAT_from_nodeRelated(hecMAT%N, hecMAT%NP, hecMAT%NDOF, &
     & numNon0_node, list_nodeRelated, hecMAT)
-    if( .not. associated(hecMAT%conmat) ) allocate(hecMAT%conmat)
-    call hecmw_construct_hecMAT_from_nodeRelated(hecMAT%N, hecMAT%NP, hecMAT%NDOF, &
-    & numNon0_node, list_nodeRelated, hecMAT%conmat)
     if( contact_algo == kcaSLagrange ) call hecmw_construct_hecLagMAT_from_nodeRelated(hecMAT%NP, &
     & hecMAT%NDOF, num_lagrange, numNon0_lagrange, is_contact_active_flag, list_nodeRelated, hecMAT)
     call hecmw_finalize_nodeRelated(list_nodeRelated)

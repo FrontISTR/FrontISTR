@@ -142,9 +142,6 @@ contains
     call fstr_scan_contact_state(restart_step_num, restart_step_num, 0, &
           ctAlgo, hecMESH, fstrSOLID, infoCTChange)
 
-    if( .not. associated(hecMAT%conmat) ) allocate(hecMAT%conmat)
-    call hecmw_mat_copy_profile( hecMAT, hecMAT%conmat )
-
     if ( fstr_is_contact_active() ) then
       call fstr_mat_con_contact( restart_step_num, ctAlgo, hecMAT, fstrSOLID, &
           fstr_is_contact_active())
@@ -333,7 +330,7 @@ contains
     ndof = hecMAT%NDOF
     nn = ndof*ndof
     allocate(coord(hecMESH%n_node*ndof))
-    allocate(resid_work(hecMESH%n_node*ndof + hecMAT%conmat%NP*ndof))
+    allocate(resid_work(hecMESH%n_node*ndof + hecMAT%NP*ndof))
 
     a1 = .5d0/fstrDYNAMIC%beta - 1.d0
     a2 = 1.d0/(fstrDYNAMIC%beta*t_delta)

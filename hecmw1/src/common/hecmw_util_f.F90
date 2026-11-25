@@ -477,7 +477,6 @@ module hecmw_util
     real   (kind=kreal), dimension(100) :: Rarray=0.0d0
     logical :: symmetric = .true.
     type(hecmwST_matrix_lagrange) :: lagmat !< Lagrange multiplier-related part (contact analysis)
-    type(hecmwST_matrix), pointer :: conmat => null() !< contact contribution kept apart with the same profile (contact analysis)
   end type hecmwST_matrix
 contains
 
@@ -914,7 +913,6 @@ contains
     nullify( P%itemL )
     nullify( P%itemU )
     nullify( P%itemA )
-    nullify( P%conmat )
   end subroutine hecmw_nullify_matrix
 
   subroutine hecmw_print_matrix( fname, P )

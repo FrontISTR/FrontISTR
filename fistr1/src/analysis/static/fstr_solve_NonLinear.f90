@@ -239,8 +239,6 @@ contains
         if(hecMESH%my_rank==0) write(*,*) "---Scanning initial contact state---"
         call fstr_scan_contact_state( cstep, sub_step, 0, ctAlgo, hecMESH, fstrSOLID, infoCTChange )
       endif
-      if( .not. associated(hecMAT%conmat) ) allocate(hecMAT%conmat)
-      call hecmw_mat_copy_profile( hecMAT, hecMAT%conmat )
       if ( fstr_is_contact_active() ) then
         call fstr_mat_con_contact(cstep, ctAlgo, hecMAT, fstrSOLID, fstr_is_contact_active())
       elseif( hecMAT%Iarray(99)==4 ) then
@@ -259,7 +257,7 @@ contains
 
     stepcnt = 0
     allocate(coord(hecMESH%n_node*ndof))
-    allocate(resid_work(hecMESH%n_node*ndof + hecMAT%conmat%NP*ndof))
+    allocate(resid_work(hecMESH%n_node*ndof + hecMAT%NP*ndof))
 
     ! ----- Augmentation loop. In case of no contact, it is inactive
     n_al_step = fstrPARAM%augiter
@@ -481,8 +479,6 @@ contains
       else
         call fstr_scan_contact_state( cstep, sub_step, 0, ctAlgo, hecMESH, fstrSOLID, infoCTChange )
       endif
-        if( .not. associated(hecMAT%conmat) ) allocate(hecMAT%conmat)
-        call hecmw_mat_copy_profile( hecMAT, hecMAT%conmat )
       if ( fstr_is_contact_active() ) then
         call fstr_mat_con_contact(cstep, ctAlgo, hecMAT, fstrSOLID, fstr_is_contact_active())
       elseif( hecMAT%Iarray(99)==4 ) then
@@ -499,7 +495,7 @@ contains
     stepcnt = 0
     count_step = 0
     allocate(coord(hecMESH%n_node*ndof))
-    allocate(resid_work(hecMESH%n_node*ndof + hecMAT%conmat%NP*ndof))
+    allocate(resid_work(hecMESH%n_node*ndof + hecMAT%NP*ndof))
 
     loopFORcontactAnalysis: do while( .TRUE. )
       count_step = count_step+1
