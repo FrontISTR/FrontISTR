@@ -31,6 +31,7 @@ contains
     type(fstr_solid), pointer :: fstrSOLID
     call c_f_pointer(cptr=solid, fptr=fstrSOLID)
     call fstr_solid_finalize( fstrSOLID )
+    deallocate( fstrSOLID )
   end subroutine
 
   !> @brief Initialize of the solid analysis derived type

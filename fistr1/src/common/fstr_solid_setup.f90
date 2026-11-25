@@ -463,24 +463,25 @@ contains
       enddo
       deallocate( fstrSOLID%materials )
     endif
-    if( .not. associated(fstrSOLID%elements ) ) return
-    do i=1,size(fstrSOLID%elements)
-      if( associated(fstrSOLID%elements(i)%gausses) ) then
-        do j=1,size(fstrSOLID%elements(i)%gausses)
-          call fstr_finalize_gauss(fstrSOLID%elements(i)%gausses(j))
-        enddo
-        deallocate( fstrSOLID%elements(i)%gausses )
-      endif
-      call fstr_finalize_shell_layer_gausses( fstrSOLID%elements(i) )
-      if(associated(fstrSOLID%elements(i)%equiForces) ) then
-        deallocate(fstrSOLID%elements(i)%equiForces)
-      endif
-      if( associated(fstrSOLID%elements(i)%aux) ) then
-        deallocate(fstrSOLID%elements(i)%aux)
-      endif
-    enddo
+    if( associated(fstrSOLID%elements ) ) then
+      do i=1,size(fstrSOLID%elements)
+        if( associated(fstrSOLID%elements(i)%gausses) ) then
+          do j=1,size(fstrSOLID%elements(i)%gausses)
+            call fstr_finalize_gauss(fstrSOLID%elements(i)%gausses(j))
+          enddo
+          deallocate( fstrSOLID%elements(i)%gausses )
+        endif
+        call fstr_finalize_shell_layer_gausses( fstrSOLID%elements(i) )
+        if(associated(fstrSOLID%elements(i)%equiForces) ) then
+          deallocate(fstrSOLID%elements(i)%equiForces)
+        endif
+        if( associated(fstrSOLID%elements(i)%aux) ) then
+          deallocate(fstrSOLID%elements(i)%aux)
+        endif
+      enddo
+      deallocate( fstrSOLID%elements )
+    endif
 
-    deallocate( fstrSOLID%elements )
     if( associated( fstrSOLID%mpc_const ) ) then
       deallocate( fstrSOLID%mpc_const )
     endif

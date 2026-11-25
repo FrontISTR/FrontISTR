@@ -49,6 +49,6 @@ target_link_libraries(fstr_material_api_test PRIVATE fistr hecmw)
 add_test(NAME test_serial_api/material COMMAND fstr_material_api_test)
 set_tests_properties(test_serial_api/material
   PROPERTIES
-    LABELS api/material,solid
+    LABELS api/material,serial
     ENVIRONMENT CTEST_TEST_NAME=test_serial_api/material
 )

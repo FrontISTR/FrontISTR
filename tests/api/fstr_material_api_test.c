@@ -41,6 +41,7 @@ int main(void)
     assert(strcmp("MAT1",buf)==0);
     fstr_api_material_set_elastic(mat1,1000.0,0.3);
     assert(fstr_api_material_type(mat1)==ELASTIC);
+    assert(fstr_api_material_nlgeom(mat1)==TOTALLAG);
     double youngs,poisson;
     fstr_api_material_get_elastic(mat1,&youngs,&poisson);
     assert(youngs==1000.0);
@@ -60,19 +61,19 @@ int main(void)
     // plastic
     fstr_api_material_set_name(mat2,"MAT2");
     double plas_var[] = {
-        1.0, 2.0, 3.0,
-        1.1, 2.1, 3.1,
-        1.2, 2.2, 3.2,
-        1.3, 2.3, 3.3,
-        1.4, 2.4, 3.4,
+        250.0, 0.0, 20.0,
+        300.0, 0.1, 20.0,
+        200.0, 0.0, 400.0,
+        240.0, 0.1, 400.0,
     };
-    fstr_api_material_set_plastic(mat2,"MISES","MULTILINEAR",plas_var,5,3);
+    fstr_api_material_set_plastic(mat2,"MISES","MULTILINEAR",plas_var,4,3);
+    assert(fstr_api_material_nlgeom(mat2)==UPDATELAG);
     char yield[32], harden[32];
     int nvars, rows, cols;
     fstr_api_material_get_plastic_size(mat2,yield,harden,&nvars,&rows,&cols);
     printf("%d %d %d\n", nvars, rows, cols);
     assert(nvars==0);
-    assert(rows==5);
+    assert(rows==4);
     assert(cols==3);
     double var[100];
     fstr_api_material_get_plastic_vars(mat2,var);
@@ -110,6 +111,7 @@ int main(void)
         0.71, 1.7029, 0.1408
     };
     fstr_api_material_set_hyperelastic(mat5,"ARRUDA-BOYCE",hyper_var);
+    assert(fstr_api_material_nlgeom(mat5)==TOTALLAG);
     char type[32];
     fstr_api_material_get_hyperelastic(mat5,type,var);
     assert(strcmp("ARRUDA-BOYCE",type)==0);

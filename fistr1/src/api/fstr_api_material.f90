@@ -201,6 +201,7 @@ contains
 
     call c_f_pointer(cptr=material, fptr=mat)
     mat%mtype = ELASTIC
+    mat%nlgeom_flag = TOTALLAG
 
     mat%variables(M_YOUNGS) = youngs
     mat%variables(M_POISSON) = poisson
@@ -485,6 +486,7 @@ contains
     call c_f_pointer(cptr=material, fptr=mat)
     call c_f_str_copy(yield, yield_f, HECMW_NAME_LEN)
     call c_f_str_copy(harden, harden_f, HECMW_NAME_LEN)
+    mat%nlgeom_flag = UPDATELAG
 
     if(yield_f=="MISES") then
       if(harden_f=="BILINEAR") then
@@ -494,7 +496,7 @@ contains
       else if(harden_f=="MULTILINEAR") then
         mat%mtype = EPLASTIC + 10
         fval = reshape(variables(1:cols*rows), [cols,rows], order=[1,2])
-        call init_table( mattable, cols-2, cols, rows, fval )
+        call init_table( mattable, cols-1, cols, rows, fval )
         call dict_add_key( mat%dict, MC_YIELD, mattable )
         call finalize_table( mattable )
       else if(harden_f=="SWIFT") then
@@ -502,7 +504,7 @@ contains
         mat%variables(M_PLCONST1) = variables(1)
         mat%variables(M_PLCONST2) = variables(2)
         mat%variables(M_PLCONST3) = variables(3)
-      else if(harden_f=="RAMBERRG-OSWOOD") then
+      else if(harden_f=="RAMBERG-OSGOOD") then
         mat%mtype = EPLASTIC + 30
         mat%variables(M_PLCONST1) = variables(1)
         mat%variables(M_PLCONST2) = variables(2)
@@ -534,7 +536,7 @@ contains
       else if(harden_f=="MULTILINEAR") then
         mat%mtype = EPLASTIC + 110
         phi = variables(1)*PI/180.d0
-        if( variables(1) >= 0.d0 ) then
+        if( variables(2) >= 0.d0 ) then
           psi = variables(2)*PI/180.d0
         else
           psi = phi
@@ -650,17 +652,16 @@ contains
 
     call c_f_pointer(cptr=material, fptr=mat)
     call c_f_str_copy(type, type_f, HECMW_NAME_LEN)
+    mat%nlgeom_flag = TOTALLAG
 
     if(type_f=="NEOHOOKE") then
       mat%mtype = NEOHOOKE
-      mat%nlgeom_flag = TOTALLAG
       mat%nfstatus = 0
       mat%variables(M_PLCONST1) = variables(1)
       mat%variables(M_PLCONST2) = 0.d0
       mat%variables(M_PLCONST3) = variables(2)
     else if(type_f=="MOONEY-RIVLIN") then
       mat%mtype = MOONEYRIVLIN
-      mat%nlgeom_flag = TOTALLAG
       mat%nfstatus = 0
       mat%variables(M_PLCONST1) = variables(1)
       mat%variables(M_PLCONST2) = variables(2)
