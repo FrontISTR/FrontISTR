@@ -20,7 +20,6 @@ module hecmw_local_matrix
   public :: hecmw_localmat_assemble
   public :: hecmw_localmat_add
   public :: hecmw_localmat_init_with_hecmat
-  public :: hecmw_localmat_add_hecmat
   public :: hecmw_localmat_multmat
   public :: hecmw_localmat_make_hecmat
 
@@ -1144,8 +1143,8 @@ contains
     nn_int = hecMESH%nn_internal
     !
     if (FLG_CHECK_NONZERO_NUMERICALLY) then
-      ! efficient for assembling hecMAT%conmat which has same non-zero profile as hecMAT
-      ! but only dofs related to cntact are actually non-zero
+      ! efficient for assembling hecMAT in contact analysis, whose external rows
+      ! are actually non-zero only at dofs related to contact
       call check_external_nz_blocks(BTmat, nn_int, incl_nz)
     else
       ! probably good enough to assemble T or T^t
@@ -2485,16 +2484,11 @@ contains
   !   call sort_and_uniq_rows(Cmat)
   ! end subroutine hecmw_localmat_add
 
-  subroutine hecmw_localmat_init_with_hecmat(BKmat, hecMAT, num_lagrange)
+  subroutine hecmw_localmat_init_with_hecmat(BKmat, hecMAT)
     implicit none
     type (hecmwST_local_matrix), intent(inout) :: BKmat
     type (hecmwST_matrix), intent(in) :: hecMAT
-    integer(kind=kint), optional, intent(in) :: num_lagrange
-    integer(kind=kint) :: ndof, ndof2, i, idx, idx2, js, je, j, k
-    integer(kind=kint), allocatable :: incl_nz(:), cnt(:)
-    logical :: check_nonzero
-    check_nonzero = .false.
-    !check_nonzero = .true.  !!! always checking nonzero seems to be faster
+    integer(kind=kint) :: ndof, ndof2, i, idx, js, je, j
     !
     ndof = hecMAT%NDOF
     ndof2 = ndof*ndof
@@ -2503,167 +2497,41 @@ contains
     BKmat%nc = hecMAT%NP
     BKmat%ndof = ndof
     !
-    if (present(num_lagrange)) then       !!! TEMPORARY (DUE TO WRONG hecMAT%conmat WHEN num_lagrange==0) !!!
-      check_nonzero = .true.
-    endif
-    !
-    if (check_nonzero) then
-      allocate(incl_nz(hecMAT%NPL + hecMAT%NPU + hecMAT%NP))
-      allocate(cnt(BKmat%nr))
-      incl_nz(:) = 0
-      !$omp parallel default(none), &
-        !$omp& private(i,idx,js,je,j,k), &
-        !$omp& shared(BKmat,hecMAT,cnt,ndof2,incl_nz)
-      !$omp do
-      do i = 1, BKmat%nr
-        idx = hecMAT%indexL(i-1) + (i-1) + hecMAT%indexU(i-1)
-        cnt(i) = 0
-        ! lower
-        js = hecMAT%indexL(i-1)+1
-        je = hecMAT%indexL(i)
-        do j = js, je
-          idx = idx + 1
-          do k = 1, ndof2
-            if (hecMAT%AL(ndof2*(j-1)+k) /= 0.0d0) then
-              incl_nz(idx) = 1
-              cnt(i) = cnt(i) + 1
-              exit
-            endif
-          enddo
-        enddo
-        ! diag
+    BKmat%nnz = hecMAT%NPL + hecMAT%NP + hecMAT%NPU
+    allocate(BKmat%index(0:BKmat%nr))
+    allocate(BKmat%item(BKmat%nnz))
+    allocate(BKmat%A(ndof2 * BKmat%nnz))
+    BKmat%index(0) = 0
+    !$omp parallel do default(none), &
+      !$omp& private(i,idx,js,je,j), &
+      !$omp& shared(BKmat,hecMAT,ndof2)
+    do i = 1, BKmat%nr
+      idx = hecMAT%indexL(i-1) + (i-1) + hecMAT%indexU(i-1)
+      ! lower
+      js = hecMAT%indexL(i-1)+1
+      je = hecMAT%indexL(i)
+      do j = js, je
         idx = idx + 1
-        do k = 1, ndof2
-          if (hecMAT%D(ndof2*(i-1)+k) /= 0.0d0) then
-            incl_nz(idx) = 1
-            cnt(i) = cnt(i) + 1
-            exit
-          endif
-        enddo
-        ! upper
-        js = hecMAT%indexU(i-1)+1
-        je = hecMAT%indexU(i)
-        do j = js, je
-          idx = idx + 1
-          do k = 1, ndof2
-            if (hecMAT%AU(ndof2*(j-1)+k) /= 0.0d0) then
-              incl_nz(idx) = 1
-              cnt(i) = cnt(i) + 1
-              exit
-            endif
-          enddo
-        enddo
-        if (idx /= hecMAT%indexL(i) + i + hecMAT%indexU(i)) stop 'ERROR: hecmw_localmat_init_with_hecmat: count'
+        BKmat%item(idx) = hecMAT%itemL(j)
+        BKmat%A(ndof2*(idx-1)+1:ndof2*idx) = hecMAT%AL(ndof2*(j-1)+1:ndof2*j)
       enddo
-      !$omp end do
-      !$omp end parallel
-      ! index
-      allocate(BKmat%index(0:BKmat%nr))
-      call make_index(BKmat%nr, cnt, BKmat%index)
-      deallocate(cnt)
-      BKmat%nnz = BKmat%index(BKmat%nr)
-      ! item, A
-      allocate(BKmat%item(BKmat%nnz))
-      allocate(BKmat%A(ndof2 * BKmat%nnz))
-      !$omp parallel default(none), &
-        !$omp& private(i,idx,idx2,js,je,j), &
-        !$omp& shared(BKmat,hecMAT,ndof2,incl_nz)
-      !$omp do
-      do i = 1, BKmat%nr
-        idx = hecMAT%indexL(i-1) + (i-1) + hecMAT%indexU(i-1)
-        idx2 = BKmat%index(i-1)
-        ! lower
-        js = hecMAT%indexL(i-1)+1
-        je = hecMAT%indexL(i)
-        do j = js, je
-          idx = idx + 1
-          if (incl_nz(idx) == 1) then
-            idx2 = idx2 + 1
-            BKmat%item(idx2) = hecMAT%itemL(j)
-            BKmat%A(ndof2*(idx2-1)+1:ndof2*idx2) = hecMAT%AL(ndof2*(j-1)+1:ndof2*j)
-          endif
-        enddo
-        ! diag
+      ! diag
+      idx = idx + 1
+      BKmat%item(idx) = i
+      BKmat%A(ndof2*(idx-1)+1:ndof2*idx) = hecMAT%D(ndof2*(i-1)+1:ndof2*i)
+      ! upper
+      js = hecMAT%indexU(i-1)+1
+      je = hecMAT%indexU(i)
+      do j = js, je
         idx = idx + 1
-        if (incl_nz(idx) == 1) then
-          idx2 = idx2 + 1
-          BKmat%item(idx2) = i
-          BKmat%A(ndof2*(idx2-1)+1:ndof2*idx2) = hecMAT%D(ndof2*(i-1)+1:ndof2*i)
-        endif
-        ! upper
-        js = hecMAT%indexU(i-1)+1
-        je = hecMAT%indexU(i)
-        do j = js, je
-          idx = idx + 1
-          if (incl_nz(idx) == 1) then
-            idx2 = idx2 + 1
-            BKmat%item(idx2) = hecMAT%itemU(j)
-            BKmat%A(ndof2*(idx2-1)+1:ndof2*idx2) = hecMAT%AU(ndof2*(j-1)+1:ndof2*j)
-          endif
-        enddo
-        if (idx /= hecMAT%indexL(i) + i + hecMAT%indexU(i)) stop 'ERROR: hecmw_localmat_init_with_hecmat: copy'
-        if (idx2 /= BKmat%index(i)) stop 'ERROR: hecmw_localmat_init_with_hecmat: index'
+        BKmat%item(idx) = hecMAT%itemU(j)
+        BKmat%A(ndof2*(idx-1)+1:ndof2*idx) = hecMAT%AU(ndof2*(j-1)+1:ndof2*j)
       enddo
-      !$omp end do
-      !$omp end parallel
-      deallocate(incl_nz)
-    else
-      BKmat%nnz = hecMAT%NPL + hecMAT%NP + hecMAT%NPU
-      allocate(BKmat%index(0:BKmat%nr))
-      allocate(BKmat%item(BKmat%nnz))
-      allocate(BKmat%A(ndof2 * BKmat%nnz))
-      BKmat%index(0) = 0
-      !$omp parallel do default(none), &
-        !$omp& private(i,idx,js,je,j), &
-        !$omp& shared(BKmat,hecMAT,ndof2)
-      do i = 1, BKmat%nr
-        idx = hecMAT%indexL(i-1) + (i-1) + hecMAT%indexU(i-1)
-        ! lower
-        js = hecMAT%indexL(i-1)+1
-        je = hecMAT%indexL(i)
-        do j = js, je
-          idx = idx + 1
-          BKmat%item(idx) = hecMAT%itemL(j)
-          BKmat%A(ndof2*(idx-1)+1:ndof2*idx) = hecMAT%AL(ndof2*(j-1)+1:ndof2*j)
-        enddo
-        ! diag
-        idx = idx + 1
-        BKmat%item(idx) = i
-        BKmat%A(ndof2*(idx-1)+1:ndof2*idx) = hecMAT%D(ndof2*(i-1)+1:ndof2*i)
-        ! upper
-        js = hecMAT%indexU(i-1)+1
-        je = hecMAT%indexU(i)
-        do j = js, je
-          idx = idx + 1
-          BKmat%item(idx) = hecMAT%itemU(j)
-          BKmat%A(ndof2*(idx-1)+1:ndof2*idx) = hecMAT%AU(ndof2*(j-1)+1:ndof2*j)
-        enddo
-        BKmat%index(i) = idx
-        if (idx /= hecMAT%indexL(i) + i + hecMAT%indexU(i)) stop 'ERROR: hecmw_localmat_init_with_hecmat: copy'
-      enddo
-      !$omp end parallel do
-    endif
+      BKmat%index(i) = idx
+      if (idx /= hecMAT%indexL(i) + i + hecMAT%indexU(i)) stop 'ERROR: hecmw_localmat_init_with_hecmat: copy'
+    enddo
+    !$omp end parallel do
   end subroutine hecmw_localmat_init_with_hecmat
-
-  subroutine hecmw_localmat_add_hecmat(BKmat, hecMAT)
-    implicit none
-    type (hecmwST_local_matrix), intent(inout) :: BKmat
-    type (hecmwST_matrix), intent(in) :: hecMAT
-    type (hecmwST_local_matrix) :: W1mat, W2mat
-    !! Should Be Simple If Non-Zero Profile Is Kept !!
-    call hecmw_localmat_init_with_hecmat(W1mat, hecMAT)
-    call debug_write_matrix(W1mat, 'BKmat (hecMAT)', DEBUG_MATRIX)
-    call hecmw_localmat_add(BKmat, W1mat, W2mat)
-    call hecmw_localmat_free(BKmat)
-    call hecmw_localmat_free(W1mat)
-    BKmat%nr = W2mat%nr
-    BKmat%nc = W2mat%nc
-    BKmat%nnz = W2mat%nnz
-    BKmat%ndof = W2mat%ndof
-    BKmat%index => W2mat%index
-    BKmat%item => W2mat%item
-    BKmat%A => W2mat%A
-  end subroutine hecmw_localmat_add_hecmat
 
   subroutine hecmw_localmat_multmat(BKmat, BTmat, hecMESH, BKTmat)
     implicit none
