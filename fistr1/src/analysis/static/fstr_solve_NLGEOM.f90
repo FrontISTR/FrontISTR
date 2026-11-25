@@ -196,7 +196,6 @@ contains
               call fstr_set_contact_active( infoCTChange%active )   ! restore last scan-set active
               call fstr_mat_con_contact( tot_step, fstrPARAM%contact_algo, hecMAT, fstrSOLID, &
                 &  fstr_is_contact_active())
-              hecMAT%conmat%B(:) = 0.0d0
               call solve_LINEQ_contact_init(hecMESH, hecMAT, fstr_is_matrixStruct_symmetric(fstrSOLID, hecMESH))
             endif
             if( hecMESH%my_rank == 0 ) write(*,*) '### State has been restored at time =',fstr_get_time()

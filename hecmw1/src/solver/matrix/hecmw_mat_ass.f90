@@ -433,7 +433,7 @@ contains
         do j = 1, nnode + 1
           jnod = ndLocal(j)
           call stf_get_block(stiffness(1:(nnode+1)*3,1:(nnode+1)*3), 3, i, j, a)
-          call hecmw_mat_add_node(hecMAT%conmat, inod, jnod, a)
+          call hecmw_mat_add_node(hecMAT, inod, jnod, a)
         enddo
       enddo
 
