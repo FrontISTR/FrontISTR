@@ -15,7 +15,6 @@ module hecmw_matrix_misc
   public :: hecmw_mat_clear_b_external
   public :: hecmw_mat_init
   public :: hecmw_mat_finalize
-  public :: hecmw_mat_copy_profile
   public :: hecmw_mat_copy_val
 
   public :: hecmw_mat_set_iter
@@ -276,7 +275,7 @@ contains
     call hecmw_mat_set_solver_type( hecMAT, 1 )
   end subroutine hecmw_mat_init
 
-  recursive subroutine hecmw_mat_finalize( hecMAT )
+  subroutine hecmw_mat_finalize( hecMAT )
     type(hecmwST_matrix) :: hecMAT
     if (associated(hecMAT%D)) deallocate(hecMAT%D)
     if (associated(hecMAT%B)) deallocate(hecMAT%B)
@@ -302,39 +301,7 @@ contains
     if (associated(hecMAT%lagmat%B_lagrange)) deallocate(hecMAT%lagmat%B_lagrange)
     if (associated(hecMAT%lagmat%X_lagrange)) deallocate(hecMAT%lagmat%X_lagrange)
     if (associated(hecMAT%lagmat%Lagrange)) deallocate(hecMAT%lagmat%Lagrange)
-    if (associated(hecMAT%conmat)) then
-      call hecmw_mat_finalize(hecMAT%conmat)
-      deallocate(hecMAT%conmat)
-    endif
   end subroutine hecmw_mat_finalize
-
-  subroutine hecmw_mat_copy_profile( hecMATorg, hecMAT )
-    type(hecmwST_matrix), intent(in) :: hecMATorg
-    type(hecmwST_matrix), intent(inout) :: hecMAT
-    hecMAT%N    = hecMATorg%N
-    hecMAT%NP   = hecMATorg%NP
-    hecMAT%NDOF = hecMATorg%NDOF
-    hecMAT%NPL  = hecMATorg%NPL
-    hecMAT%NPU  = hecMATorg%NPU
-    allocate(hecMAT%indexL(0:size(hecMATorg%indexL)-1))
-    allocate(hecMAT%indexU(0:size(hecMATorg%indexU)-1))
-    allocate(hecMAT%itemL (size(hecMATorg%itemL )))
-    allocate(hecMAT%itemU (size(hecMATorg%itemU )))
-    allocate(hecMAT%D (size(hecMATorg%D )))
-    allocate(hecMAT%AL(size(hecMATorg%AL)))
-    allocate(hecMAT%AU(size(hecMATorg%AU)))
-    allocate(hecMAT%B (size(hecMATorg%B )))
-    allocate(hecMAT%X (size(hecMATorg%X )))
-    hecMAT%indexL = hecMATorg%indexL
-    hecMAT%indexU = hecMATorg%indexU
-    hecMAT%itemL  = hecMATorg%itemL
-    hecMAT%itemU  = hecMATorg%itemU
-    hecMAT%D  = 0.d0
-    hecMAT%AL = 0.d0
-    hecMAT%AU = 0.d0
-    hecMAT%B  = 0.d0
-    hecMAT%X  = 0.d0
-  end subroutine hecmw_mat_copy_profile
 
   subroutine hecmw_mat_copy_val( hecMATorg, hecMAT )
     type(hecmwST_matrix), intent(in) :: hecMATorg
