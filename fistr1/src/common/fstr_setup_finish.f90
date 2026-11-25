@@ -20,6 +20,7 @@ module m_fstr_setup_finish
     , fstr_solid_init_output
   use mContactParam
   use m_static_get_prop
+  use m_heat_init, only: heat_init_material, heat_init_amplitude
   implicit none
 
   !> Counts of the input for fstr_setup_prepare and fstr_setup_finish, independent of the input file format.
@@ -79,6 +80,10 @@ contains
     fstrSOLID%n_embeds = counts%embed_pairs
     if( counts%embed_pairs>0 )  allocate( fstrSOLID%embeds( counts%embed_pairs ) )
     if( counts%weld_lines>0 ) allocate( fstrHEAT%weldline( counts%weld_lines ) )
+    if( fstrPARAM%solution_type == kstHEAT ) then
+      call heat_init_material ( hecMESH, fstrHEAT )
+      call heat_init_amplitude( hecMESH, fstrHEAT )
+    endif
     if( counts%initial_conditions>0 ) allocate( g_InitialCnd( counts%initial_conditions ) )
     if( counts%steps>0 ) then
       allocate( fstrSOLID%step_ctrl( counts%steps ) )

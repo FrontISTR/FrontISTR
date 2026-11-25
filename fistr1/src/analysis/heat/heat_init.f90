@@ -195,9 +195,13 @@ contains
 
     fstrHEAT%AMPLITUDEtot= hecMESH%amp%n_amp
 
+    if(associated(fstrHEAT%AMPLtab)) deallocate(fstrHEAT%AMPLtab)
+    if(associated(fstrHEAT%AMPL)) deallocate(fstrHEAT%AMPL)
+    if(associated(fstrHEAT%AMPLtime)) deallocate(fstrHEAT%AMPLtime)
+
     allocate (fstrHEAT%AMPLtab (fstrHEAT%AMPLITUDEtot) )
-    allocate (fstrHEAT%AMPL    (fstrHEAT%AMPLITUDEtot,namax),                &
-      fstrHEAT%AMPLtime(fstrHEAT%AMPLITUDEtot,namax) )
+    allocate (fstrHEAT%AMPL    (fstrHEAT%AMPLITUDEtot,namax) )
+    allocate (fstrHEAT%AMPLtime(fstrHEAT%AMPLITUDEtot,namax) )
 
     fstrHEAT%AMPLtab  = 0
     fstrHEAT%AMPL     = 0.d0
@@ -224,6 +228,9 @@ contains
     !C | AMP-TABLE |
     !C +-----------+
     !C===
+    if(associated(fstrHEAT%AMPLfuncA)) deallocate(fstrHEAT%AMPLfuncA)
+    if(associated(fstrHEAT%AMPLfuncB)) deallocate(fstrHEAT%AMPLfuncB)
+
     allocate ( fstrHEAT%AMPLfuncA( fstrHEAT%AMPLITUDEtot,namax+1 ) )
     allocate ( fstrHEAT%AMPLfuncB( fstrHEAT%AMPLITUDEtot,namax+1 ) )
 
@@ -297,15 +304,31 @@ contains
       enddo
     enddo
 
-    allocate (fstrHEAT%RHOtab  (fstrHEAT%MATERIALtot),               &
-      fstrHEAT%CPtab   (fstrHEAT%MATERIALtot),                       &
-      fstrHEAT%CONDtab (fstrHEAT%MATERIALtot))
-    allocate (fstrHEAT%RHO     (fstrHEAT%MATERIALtot,m1max),         &
-      fstrHEAT%RHOtemp (fstrHEAT%MATERIALtot,m1max))
-    allocate (fstrHEAT%CP      (fstrHEAT%MATERIALtot,m2max),         &
-      fstrHEAT%CPtemp  (fstrHEAT%MATERIALtot,m2max))
-    allocate (fstrHEAT%COND    (fstrHEAT%MATERIALtot,m3max),         &
-      fstrHEAT%CONDtemp(fstrHEAT%MATERIALtot,m3max))
+    if(associated(fstrHEAT%RHOtab)) deallocate(fstrHEAT%RHOtab)
+    if(associated(fstrHEAT%CPtab)) deallocate(fstrHEAT%CPtab)
+    if(associated(fstrHEAT%CONDtab)) deallocate(fstrHEAT%CONDtab)
+    if(associated(fstrHEAT%RHO)) deallocate(fstrHEAT%RHO)
+    if(associated(fstrHEAT%RHOtemp)) deallocate(fstrHEAT%RHOtemp)
+    if(associated(fstrHEAT%CP)) deallocate(fstrHEAT%CP)
+    if(associated(fstrHEAT%CPtemp)) deallocate(fstrHEAT%CPtemp)
+    if(associated(fstrHEAT%COND)) deallocate(fstrHEAT%COND)
+    if(associated(fstrHEAT%CONDtemp)) deallocate(fstrHEAT%CONDtemp)
+    if(associated(fstrHEAT%RHOfuncA)) deallocate(fstrHEAT%RHOfuncA)
+    if(associated(fstrHEAT%RHOfuncB)) deallocate(fstrHEAT%RHOfuncB)
+    if(associated(fstrHEAT%CPfuncA)) deallocate(fstrHEAT%CPfuncA)
+    if(associated(fstrHEAT%CPfuncB)) deallocate(fstrHEAT%CPfuncB)
+    if(associated(fstrHEAT%CONDfuncA)) deallocate(fstrHEAT%CONDfuncA)
+    if(associated(fstrHEAT%CONDfuncB)) deallocate(fstrHEAT%CONDfuncB)
+
+    allocate (fstrHEAT%RHOtab  (fstrHEAT%MATERIALtot) )
+    allocate (fstrHEAT%CPtab   (fstrHEAT%MATERIALtot) )
+    allocate (fstrHEAT%CONDtab (fstrHEAT%MATERIALtot) )
+    allocate (fstrHEAT%RHO     (fstrHEAT%MATERIALtot,m1max) )
+    allocate (fstrHEAT%RHOtemp (fstrHEAT%MATERIALtot,m1max) )
+    allocate (fstrHEAT%CP      (fstrHEAT%MATERIALtot,m2max) )
+    allocate (fstrHEAT%CPtemp  (fstrHEAT%MATERIALtot,m2max) )
+    allocate (fstrHEAT%COND    (fstrHEAT%MATERIALtot,m3max) )
+    allocate (fstrHEAT%CONDtemp(fstrHEAT%MATERIALtot,m3max) )
 
     fstrHEAT%RHO  = 0.d0
     fstrHEAT%CP   = 0.d0

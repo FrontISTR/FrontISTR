@@ -139,12 +139,12 @@ contains
 
     ! ------- hecMAT setting -------------
     call hecmw_mat_con(hecMESH, hecMAT, kstHEAT == fstrPARAM%solution_type)
-    hecMAT%NDOF = hecMESH%n_dof
     if( kstHEAT == fstrPARAM%solution_type ) then
-      call heat_init_material (hecMESH,fstrHEAT)
-      call heat_init_amplitude(hecMESH,fstrHEAT)
       hecMAT%NDOF = 1
-    endif
+    else
+      hecMAT%NDOF = hecMESH%n_dof
+    end if
+
     call hecMAT_init( hecMAT )
   end subroutine fstr_init
 
