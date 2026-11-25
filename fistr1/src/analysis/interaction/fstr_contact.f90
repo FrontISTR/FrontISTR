@@ -97,7 +97,7 @@ contains
 
   end subroutine fstr_AddContactStiffness
 
-  !> \brief Compute contact forces for residual vector (hecMAT%conmat%B, hecMAT%lagmat%B_lagrange).
+  !> \brief Compute contact forces for residual vector (hecMAT%B, hecMAT%lagmat%B_lagrange).
   subroutine fstr_Update_NDForce_contact(cstep,ctAlgo,hecMESH,hecMAT,fstrSOLID)
     integer(kind=kint), intent(in)       :: cstep
     integer(kind=kint), intent(in)       :: ctAlgo
@@ -129,7 +129,7 @@ contains
   !! fstr_calc_contact_output_force (which reads hecMAT%lagmat%Lagrange) cannot be used,
   !! and CONT_NFORCE was left at zero for result/visualization output. This routine
   !! fills CONT_NFORCE from the stored multipliers, reusing the same element force
-  !! routine as the implicit path. It needs neither hecMAT%lagmat nor hecMAT%conmat.
+  !! routine as the implicit path. It needs no hecMAT.
   subroutine fstr_calc_contact_output_force_exp( hecMESH, fstrSOLID )
     type(hecmwST_local_mesh), intent(in) :: hecMESH
     type(fstr_solid), intent(inout)      :: fstrSOLID
@@ -148,7 +148,7 @@ contains
   end subroutine fstr_calc_contact_output_force_exp
 
   !> \brief Core routine: compute contact nodal forces for all contact/embed pairs.
-  !! purpose == kctForResidual: assemble into hecMAT%conmat%B
+  !! purpose == kctForResidual: assemble into hecMAT%B
   !! purpose == kctForOutput:   store into CONT_NFORCE/CONT_FRIC (zero-cleared first)
   subroutine fstr_contact_ndforce_core(purpose,cstep,ctAlgo,hecMESH,hecMAT,fstrSOLID)
     integer(kind=kint), intent(in)       :: purpose

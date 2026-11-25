@@ -103,7 +103,6 @@ contains
     real(kind=kreal) :: t1, t2, resid
     integer(kind=kint) :: ndof
     integer(kind=kint) :: contact_elim, solver_type
-    logical :: conMAT_added
 
     contact_elim = hecmw_mat_get_contact_elim(hecMAT)
     solver_type = hecmw_mat_get_solver_type(hecMAT)
@@ -119,7 +118,6 @@ contains
     t1 = hecmw_wtime()
 
     istat = 0
-    conMAT_added = .false.
     ! the direct-solver branches below report failure through istat only and never
     ! touch these flags; clear them so a stale verdict from an earlier solve is not
     ! mistaken for this one's. The elimination branch overwrites them with the real result.
@@ -137,15 +135,9 @@ contains
               ' please use MUMPS or DIRECTmkl instead'
           call hecmw_abort(hecmw_comm_get_comm())
         else
-          call add_conMAT_to_hecMAT(hecMAT)
-          conMAT_added = .true.
           call solve_LINEQ_serial_lag_hecmw(hecMESH,hecMAT,hecEBC)
         endif
       elseif( solver_type==3 )then
-        if( hecmw_comm_get_size() == 1 )then
-          call add_conMAT_to_hecMAT(hecMAT)
-          conMAT_added = .true.
-        endif
         call solve_LINEQ_MKL_contact(hecMESH,hecMAT,hecEBC,istat)
       elseif( solver_type==5 ) then
         call solve_LINEQ_mumps_contact(hecMESH,hecMAT,hecEBC,istat)
@@ -155,8 +147,6 @@ contains
               ' without elimination; specify CONTACT_ELIM=1 or use MUMPS or DIRECTmkl instead'
           call hecmw_abort(hecmw_comm_get_comm())
         else
-          call add_conMAT_to_hecMAT(hecMAT)
-          conMAT_added = .true.
           call solve_LINEQ_mf_contact(hecMESH,hecMAT,hecEBC,istat)
         endif
       else
@@ -172,8 +162,7 @@ contains
     ! the final residual of every direct solver is printed here, as hecmw_solve does on the
     ! other paths; the solvers print at most the history of their own refinement
     if( contact_elim/=1 .and. hecmw_mat_get_iterlog(hecMAT) > 0 )then
-      ! hecMAT%conmat keeps its values after it is added to hecMAT, so it is left out then
-      resid = rel_resid_lagrange(hecMESH,hecMAT,.not. conMAT_added)
+      resid = rel_resid_lagrange(hecMESH,hecMAT)
       if( hecmw_comm_get_rank()==0 ) write(*,"(a,1pe12.5)") '### Relative residual =', resid
     endif
 
@@ -200,39 +189,11 @@ contains
   end function any_lagrange
 
 
-  subroutine add_conMAT_to_hecMAT(hecMAT)
-    type (hecmwST_matrix),          intent(inout) :: hecMAT
-
-
-    integer(kind=kint) :: ndof,ndof2,i
-
-    ndof = hecMAT%NDOF
-    ndof2 = ndof*ndof
-
-    do i=1,hecMAT%NP*ndof
-      hecMAT%B(i) = hecMAT%B(i) + hecMAT%conmat%B(i)
-    enddo
-
-    do i=1,hecMAT%NP*ndof2
-      hecMAT%D(i) = hecMAT%D(i) + hecMAT%conmat%D(i)
-    enddo
-
-    do i=1,hecMAT%NPL*ndof2
-      hecMAT%AL(i) = hecMAT%AL(i) + hecMAT%conmat%AL(i)
-    enddo
-
-    do i=1,hecMAT%NPU*ndof2
-      hecMAT%AU(i) = hecMAT%AU(i) + hecMAT%conmat%AU(i)
-    enddo
-  end subroutine add_conMAT_to_hecMAT
-
-
   !> relative residual of the system with the Lagrange multiplier rows, measured on the matrices
-  !> the solver input is built from; with_conmat when hecMAT%conmat has not been added to hecMAT
-  function rel_resid_lagrange(hecMESH, hecMAT, with_conmat) result(resid)
+  !> the solver input is built from
+  function rel_resid_lagrange(hecMESH, hecMAT) result(resid)
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_matrix),     intent(in) :: hecMAT
-    logical,                   intent(in) :: with_conmat
     real(kind=kreal) :: resid
 
     integer(kind=kint) :: ndof, ndof2, nndof, npndof, i, idof, jdof, j, k, l, irow
@@ -247,34 +208,33 @@ contains
     allocate(y(npndof), yc(npndof), bc(npndof))
     call hecmw_matvec(hecMESH, hecMAT, hecMAT%X, y)
 
-    ! the contact part and the multiplier columns also have entries on the external rows,
-    ! which are this rank's share of the rows of the owner rank
+    ! the external rows and the multiplier columns have entries that are this rank's share
+    ! of the rows of the owner rank
     yc(:) = 0.0d0
-    bc(:) = 0.0d0
-    if( with_conmat )then
-      do i = 1, hecMAT%NP
-        do idof = 1, ndof
-          irow = ndof*(i-1)+idof
-          bc(irow) = hecMAT%conmat%B(irow)
+    do i = 1, npndof
+      bc(i) = hecMAT%B(i)
+    enddo
+    do i = hecMAT%N+1, hecMAT%NP
+      do idof = 1, ndof
+        irow = ndof*(i-1)+idof
+        do jdof = 1, ndof
+          yc(irow) = yc(irow) + hecMAT%D(ndof2*(i-1)+ndof*(idof-1)+jdof)*hecMAT%X(ndof*(i-1)+jdof)
+        enddo
+        do k = hecMAT%indexL(i-1)+1, hecMAT%indexL(i)
+          j = hecMAT%itemL(k)
           do jdof = 1, ndof
-            yc(irow) = yc(irow) + hecMAT%conmat%D(ndof2*(i-1)+ndof*(idof-1)+jdof)*hecMAT%X(ndof*(i-1)+jdof)
+            yc(irow) = yc(irow) + hecMAT%AL(ndof2*(k-1)+ndof*(idof-1)+jdof)*hecMAT%X(ndof*(j-1)+jdof)
           enddo
-          do k = hecMAT%conmat%indexL(i-1)+1, hecMAT%conmat%indexL(i)
-            j = hecMAT%conmat%itemL(k)
-            do jdof = 1, ndof
-              yc(irow) = yc(irow) + hecMAT%conmat%AL(ndof2*(k-1)+ndof*(idof-1)+jdof)*hecMAT%X(ndof*(j-1)+jdof)
-            enddo
-          enddo
-          do k = hecMAT%conmat%indexU(i-1)+1, hecMAT%conmat%indexU(i)
-            j = hecMAT%conmat%itemU(k)
-            do jdof = 1, ndof
-              yc(irow) = yc(irow) + hecMAT%conmat%AU(ndof2*(k-1)+ndof*(idof-1)+jdof)*hecMAT%X(ndof*(j-1)+jdof)
-            enddo
+        enddo
+        do k = hecMAT%indexU(i-1)+1, hecMAT%indexU(i)
+          j = hecMAT%itemU(k)
+          do jdof = 1, ndof
+            yc(irow) = yc(irow) + hecMAT%AU(ndof2*(k-1)+ndof*(idof-1)+jdof)*hecMAT%X(ndof*(j-1)+jdof)
           enddo
         enddo
       enddo
-      call hecmw_assemble_R(hecMESH, bc, hecMAT%NP, ndof)
-    endif
+    enddo
+    call hecmw_assemble_R(hecMESH, bc, hecMAT%NP, ndof)
     if( hecMAT%lagmat%num_lagrange > 0 )then
       do i = 1, hecMAT%NP
         do l = hecMAT%lagmat%indexU_lagrange(i-1)+1, hecMAT%lagmat%indexU_lagrange(i)
@@ -288,11 +248,9 @@ contains
     endif
     call hecmw_assemble_R(hecMESH, yc, hecMAT%NP, ndof)
 
-    ! near convergence the parts of the right-hand side in hecMAT and conmat nearly cancel, so
-    ! they are summed before the products are subtracted, as in the solver input
     sums(:) = 0.0d0
     do i = 1, nndof
-      bi = hecMAT%B(i) + bc(i)
+      bi = bc(i)
       sums(1) = sums(1) + (bi - (y(i) + yc(i)))**2
       sums(2) = sums(2) + bi**2
     enddo
