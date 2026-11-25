@@ -268,6 +268,7 @@ contains
     !** Local variables
     real(kind=kreal) :: ALPHA, a1_2inv, ai, factor, ci
     integer(kind=kint) :: ndof, impc, iS, iE, i, inod, idof
+    logical :: is_internal_i
 
     if( hecmw_mat_get_penalized_b(hecMAT) == 1) return
 
@@ -288,6 +289,9 @@ contains
 
       do i = iS, iE
         inod = hecMESH%mpc%mpc_item(i)
+
+        is_internal_i = (hecMESH%node_ID(2*inod) == hecmw_comm_get_rank())
+        if (.not. is_internal_i) cycle
 
         idof = hecMESH%mpc%mpc_dof(i)
         ai = hecMESH%mpc%mpc_val(i)

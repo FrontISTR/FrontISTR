@@ -11,6 +11,8 @@ module hecmw_matrix_misc
   private
   public :: hecmw_mat_clear
   public :: hecmw_mat_clear_b
+  public :: hecmw_mat_clear_external
+  public :: hecmw_mat_clear_b_external
   public :: hecmw_mat_init
   public :: hecmw_mat_finalize
   public :: hecmw_mat_copy_profile
@@ -209,6 +211,24 @@ contains
     hecMAT%B = 0.0d0
     call hecmw_mat_set_penalized_b( hecMAT, 0 )
   end subroutine hecmw_mat_clear_b
+
+  !> Clear the rows of external nodes, which then hold only what is to be added to the owner rank
+  subroutine hecmw_mat_clear_external( hecMAT )
+    type(hecmwST_matrix) :: hecMAT
+    integer(kind=kint) :: ndof2
+
+    ndof2 = hecMAT%NDOF * hecMAT%NDOF
+    hecMAT%D(ndof2*hecMAT%N+1:ndof2*hecMAT%NP) = 0.0d0
+    hecMAT%AL(ndof2*hecMAT%indexL(hecMAT%N)+1:ndof2*hecMAT%indexL(hecMAT%NP)) = 0.0d0
+    hecMAT%AU(ndof2*hecMAT%indexU(hecMAT%N)+1:ndof2*hecMAT%indexU(hecMAT%NP)) = 0.0d0
+  end subroutine hecmw_mat_clear_external
+
+  !> Clear the right-hand side of the rows of external nodes (see hecmw_mat_clear_external)
+  subroutine hecmw_mat_clear_b_external( hecMAT )
+    type(hecmwST_matrix) :: hecMAT
+
+    hecMAT%B(hecMAT%NDOF*hecMAT%N+1:hecMAT%NDOF*hecMAT%NP) = 0.0d0
+  end subroutine hecmw_mat_clear_b_external
 
   subroutine hecmw_mat_init( hecMAT )
     type(hecmwST_matrix) :: hecMAT
