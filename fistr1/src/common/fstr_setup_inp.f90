@@ -98,10 +98,11 @@ contains
     type(fstr_card_table) :: T
 
     ! The cards of the inp format. The conditions go into the default step, as in a cnt file without !STEP.
+    ! The analysis cards share a sequence, so that the second one in the step is found.
     call fstr_card_add( T, 'STEP',     first=fstr_setup_inp_STEP )
     call fstr_card_add( T, 'END STEP' )
-    call fstr_card_add( T, 'STATIC',   first=fstr_setup_inp_STATIC )
-    call fstr_card_add( T, 'FREQUENCY', first=fstr_setup_inp_FREQUENCY )
+    call fstr_card_add( T, 'STATIC',   first=fstr_setup_inp_STATIC, seq='analysis' )
+    call fstr_card_add( T, 'FREQUENCY', first=fstr_setup_inp_FREQUENCY, seq='analysis' )
     call fstr_card_add( T, 'BOUNDARY', first=fstr_setup_inp_BOUNDARY )
     call fstr_card_add( T, 'CLOAD',    first=fstr_setup_inp_CLOAD )
 
@@ -269,6 +270,8 @@ contains
     integer(kind=kint) :: ctrl
     type(fstr_param_pack) :: P
 
+    if( P%STATE%slot%first > 1 ) call fstr_setup_inp_err_stop( ctrl, 'only one analysis card is allowed in a step' )
+
     P%PARAM%solution_type = kstSTATIC
   end subroutine fstr_setup_inp_STATIC
 
@@ -286,6 +289,8 @@ contains
     integer(kind=kint) :: rcode, storage
     real(kind=kreal) :: fmin, fmax
     character(len=HECMW_NAME_LEN) :: solver
+
+    if( P%STATE%slot%first > 1 ) call fstr_setup_inp_err_stop( ctrl, 'only one analysis card is allowed in a step' )
 
     solver = ' '
     rcode = fstr_ctrl_get_param_ex( ctrl, 'SOLVER ', '# ', 0, 'S', solver )
