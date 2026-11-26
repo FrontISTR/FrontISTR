@@ -12,7 +12,6 @@ typedef enum {
   INFINITESIMAL = 0,
   TOTALLAG  = 1,
   UPDATELAG = 2,
-  CAUCHY = 2,
 } fstr_material_nlgeom;
 
 typedef enum {
