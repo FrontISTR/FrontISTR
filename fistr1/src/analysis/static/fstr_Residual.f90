@@ -55,7 +55,6 @@ contains
 
     !    Consider SPC condition
     call fstr_Update_NDForce_SPC( cstep, hecMESH, fstrSOLID, hecMAT%B )
-    if(associated(hecMAT%conmat)) call fstr_Update_NDForce_SPC( cstep, hecMESH, fstrSOLID, hecMAT%conmat%B )
 
     !
     call hecmw_update_R(hecMESH,hecMAT%B,hecMESH%n_node, ndof)
@@ -335,10 +334,10 @@ contains
     call hecmw_innerProduct_R(hecMESH, ndof, force, displacement, fstr_get_energy)
   end function
 
-  !> \brief Assemble contact residual vector (hecMAT%B + hecMAT%conmat%B + Lagrange) into a single vector.
+  !> \brief Assemble contact residual vector (hecMAT%B + Lagrange) into a single vector.
   !>
-  !> hecMAT%conmat holds the contact contribution on its own partition boundary, so it
-  !> has to be summed across subdomains before being added to hecMAT%B.
+  !> The rows of external nodes of hecMAT%B hold the contact contribution of this subdomain,
+  !> so they have to be summed onto the owner subdomain.
   subroutine fstr_assemble_residual_contact(hecMAT, hecMESH, resid_vec, nresid)
     use m_fstr
     implicit none
@@ -349,22 +348,17 @@ contains
 
     integer(kind=kint) :: i, ndof, nndof, npndof, num_lagrange
 
-    ndof = hecMAT%conmat%ndof
-    nndof = hecMAT%conmat%N * ndof
-    npndof = hecMAT%conmat%NP * ndof
+    ndof = hecMAT%ndof
+    nndof = hecMAT%N * ndof
+    npndof = hecMAT%NP * ndof
     num_lagrange = hecMAT%lagmat%num_lagrange
     nresid = nndof + num_lagrange
 
-    ! Copy hecMAT%conmat%B and assemble across MPI
+    ! Copy hecMAT%B and assemble across MPI
     do i = 1, npndof
-      resid_vec(i) = hecMAT%conmat%B(i)
+      resid_vec(i) = hecMAT%B(i)
     enddo
-    call hecmw_assemble_R(hecMESH, resid_vec, hecMAT%conmat%NP, hecMAT%conmat%NDOF)
-
-    ! Add hecMAT%B (node DOFs only)
-    do i = 1, nndof
-      resid_vec(i) = resid_vec(i) + hecMAT%B(i)
-    enddo
+    call hecmw_assemble_R(hecMESH, resid_vec, hecMAT%NP, hecMAT%NDOF)
 
     ! Copy Lagrange multiplier residual
     do i = 1, num_lagrange

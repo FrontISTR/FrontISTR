@@ -142,9 +142,6 @@ contains
     call fstr_scan_contact_state(restart_step_num, restart_step_num, 0, &
           ctAlgo, hecMESH, fstrSOLID, infoCTChange)
 
-    if( .not. associated(hecMAT%conmat) ) allocate(hecMAT%conmat)
-    call hecmw_mat_copy_profile( hecMAT, hecMAT%conmat )
-
     if ( fstr_is_contact_active() ) then
       call fstr_mat_con_contact( restart_step_num, ctAlgo, hecMAT, fstrSOLID, &
           fstr_is_contact_active())
@@ -208,7 +205,6 @@ contains
             if( is_interaction_active ) then
               call fstr_mat_con_contact( tot_step, fstrPARAM%contact_algo, hecMAT, fstrSOLID, &
                 &  fstr_is_contact_active())
-              hecMAT%conmat%B(:) = 0.0d0
               call solve_LINEQ_contact_init(hecMESH, hecMAT, fstr_is_matrixStruct_symmetric(fstrSOLID, hecMESH))
             endif
             if( hecMESH%my_rank == 0 ) write(*,*) '### State has been restored at time =',fstr_get_time()
@@ -334,7 +330,7 @@ contains
     ndof = hecMAT%NDOF
     nn = ndof*ndof
     allocate(coord(hecMESH%n_node*ndof))
-    allocate(resid_work(hecMESH%n_node*ndof + hecMAT%conmat%NP*ndof))
+    allocate(resid_work(hecMESH%n_node*ndof + hecMAT%NP*ndof))
 
     a1 = .5d0/fstrDYNAMIC%beta - 1.d0
     a2 = 1.d0/(fstrDYNAMIC%beta*t_delta)
@@ -400,10 +396,9 @@ contains
 
         call fstr_Update_NDForce_MPC( hecMESH, hecMAT%B )
 
-        call hecmw_mat_clear( hecMAT%conmat )
-        call hecmw_mat_clear_b( hecMAT%conmat )
+        call hecmw_mat_clear_external( hecMAT )
+        call hecmw_mat_clear_b_external( hecMAT )
         if( associated(hecMAT%lagmat%B_lagrange) ) hecMAT%lagmat%B_lagrange = 0.0d0
-        hecMAT%conmat%X = 0.0d0
 
         if( fstr_is_contact_active() ) then
           call fstr_Update_NDForce_contact(cstep,ctAlgo,hecMESH,hecMAT,fstrSOLID)
@@ -420,10 +415,13 @@ contains
           &  fstrPARAM, hecEBC, t_curr+t_delta, stepcnt)
         ! the residual at the constrained DOFs is the reaction; the solver call below
         ! overwrites these entries anyway, so put the prescribed values there for the check
-        do j = 1, hecMAT%NP*ndof
+        do j = 1, hecMAT%N*ndof
           if( hecEBC%mark(j) == 0 ) cycle
           hecMAT%B(j) = hecEBC%val(j)
-          hecMAT%conmat%B(j) = 0.0d0
+        enddo
+        do j = hecMAT%N*ndof+1, hecMAT%NP*ndof
+          if( hecEBC%mark(j) == 0 ) cycle
+          hecMAT%B(j) = 0.0d0
         enddo
 
         ! ----- check convergence
@@ -511,7 +509,6 @@ contains
       call hecmw_allreduce_I1(hecMESH,contact_changed_global,HECMW_MAX)
       if (contact_changed_global > 0) then
         call hecmw_mat_clear_b( hecMAT )
-        call hecmw_mat_clear_b( hecMAT%conmat )
         if( associated(hecMAT%lagmat%B_lagrange) ) hecMAT%lagmat%B_lagrange = 0.0d0
         call solve_LINEQ_contact_init(hecMESH,hecMAT,is_mat_symmetric)
       endif

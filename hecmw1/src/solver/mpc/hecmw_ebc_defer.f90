@@ -81,7 +81,6 @@ contains
     call hecmw_ebc_extend(hecMESH, hecMAT, hecEBC)
     call hecmw_ebc_convert_slave(hecMESH, hecMAT, hecEBC)
     call hecmw_ebc_impose(hecMAT, hecEBC, 1.d0)
-    if (associated(hecMAT%conmat)) call hecmw_ebc_impose(hecMAT%conmat, hecEBC, 0.d0)
   end subroutine hecmw_ebc_apply
 
   !C
