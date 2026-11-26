@@ -189,9 +189,8 @@ contains
               case( '*BOUNDARY', '*CLOAD' )
                 supported = param == 'AMPLITUDE'
               end select
-              if( .not. supported .and. P%MESH%my_rank == 0 ) write(*,'(a,a,a,i0,a,a,a)') ' Warning: ', &
-                trim(header_name), ' (line:', fstr_ctrl_get_c_h_line_no( ctrl ), ') : unsupported parameter ', &
-                trim(param), ' is skipped'
+              if( .not. supported ) call fstr_setup_inp_warn( ctrl, P, &
+                'unsupported parameter '//trim(param)//' is skipped' )
             endif
             comma = next_comma
           enddo
