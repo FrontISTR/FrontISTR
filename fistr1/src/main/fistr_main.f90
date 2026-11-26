@@ -13,7 +13,6 @@ module m_fstr_main
   use m_fstr_solve_nlgeom
   use m_fstr_solve_eigen
   use m_static_echo
-  use m_heat_init
   use m_heat_echo
   use m_fstr_precheck
   use m_fstr_rcap_io

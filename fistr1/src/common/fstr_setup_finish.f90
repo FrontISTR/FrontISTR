@@ -18,9 +18,11 @@ module m_fstr_setup_finish
     , fstr_element_init &
     , fstr_solid_init_section &
     , fstr_solid_init_output
+  use m_fstr_heat_setup, only &
+    : heat_init_material &
+    , heat_init_amplitude
   use mContactParam
   use m_static_get_prop
-  use m_heat_init, only: heat_init_material, heat_init_amplitude
   implicit none
 
   !> Counts of the input for fstr_setup_prepare and fstr_setup_finish, independent of the input file format.
