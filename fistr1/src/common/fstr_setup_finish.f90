@@ -336,11 +336,12 @@ contains
   subroutine fstr_check_reduced_inputs(hecMESH, fstrSOLID)
     type(hecmwST_local_mesh), intent(in) :: hecMESH
     type(fstr_solid), intent(in) :: fstrSOLID
-    integer(kind=kint) :: i
+    integer(kind=kint) :: i, sect_opt
 
     do i = 1, hecMESH%n_elem
       if( hecMESH%elem_type(i) /= 241 .and. hecMESH%elem_type(i) /= 242 ) cycle
-      if( hecMESH%section%sect_opt(hecMESH%section_ID(i)) /= 2 ) cycle
+      sect_opt = hecMESH%section%sect_opt(hecMESH%section_ID(i))
+      if( sect_opt /= HECMW_SECT_OPT_ASYMMETRY .and. sect_opt /= HECMW_SECT_OPT_ASYMMETRY_RI ) cycle
       if( .not. fstr_element_is_reduced(fstrSOLID%elements(i)) ) cycle
       write(*,*) '###ERROR### : FORM241=RI and FORM242=RI are not supported for axisymmetric sections'
       write(ILOG,*) '###ERROR### : FORM241=RI and FORM242=RI are not supported for axisymmetric sections'
