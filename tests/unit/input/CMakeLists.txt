@@ -3,7 +3,8 @@
 # This software is released under the MIT License, see License.txt
 ###############################################################################
 
-foreach(case data_line solver_twice parameters unknown_card)
+foreach(case data_line solver_twice parameters unknown_card static_frequency frequency_static
+    frequency_matrixstorage frequency_no_data frequency_zero)
   add_test(NAME test_serial_unit/input/${case}
     COMMAND ${CMAKE_COMMAND}
       -DPROGRAM=$<TARGET_FILE:fistr1>
