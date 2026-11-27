@@ -3,7 +3,8 @@
 # This software is released under the MIT License, see License.txt
 ###############################################################################
 
-foreach(case data_line solver_twice parameters unknown_card)
+foreach(case data_line solver_twice parameters unknown_card step_warnings nonlinear_solver step_amplitude time_delay
+    nlgeom_later load_overlap load_cancelled static_missing op_new_later)
   add_test(NAME test_serial_unit/input/${case}
     COMMAND ${CMAKE_COMMAND}
       -DPROGRAM=$<TARGET_FILE:fistr1>

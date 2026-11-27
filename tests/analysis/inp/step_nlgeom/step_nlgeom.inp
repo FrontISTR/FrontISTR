@@ -1,0 +1,63 @@
+**
+** Two steps of a geometrically nonlinear static analysis read from this inp file alone, without a cnt file.
+** Step 1 has automatic increments with *AUTOINC_PARAM, a FrontISTR's own card referred to by AUTOINCPARAM
+** of *STEP, and step 2 has fixed increments by DIRECT with *CONVERG_PARAM referred to by CONVERGPARAM.
+** NLGEOM of step 1 stays in step 2. The load at the tip in -z of step 2 replaces that of step 1,
+** so that it changes linearly in step 2 from the value at the end of step 1.
+**
+*HEADING
+cantilever, 4 x 1 x 1 C3D8 elements
+*NODE, NSET=NALL
+1, 0.0, 0.0, 0.0
+2, 1.0, 0.0, 0.0
+3, 2.0, 0.0, 0.0
+4, 3.0, 0.0, 0.0
+5, 4.0, 0.0, 0.0
+6, 0.0, 1.0, 0.0
+7, 1.0, 1.0, 0.0
+8, 2.0, 1.0, 0.0
+9, 3.0, 1.0, 0.0
+10, 4.0, 1.0, 0.0
+11, 0.0, 0.0, 1.0
+12, 1.0, 0.0, 1.0
+13, 2.0, 0.0, 1.0
+14, 3.0, 0.0, 1.0
+15, 4.0, 0.0, 1.0
+16, 0.0, 1.0, 1.0
+17, 1.0, 1.0, 1.0
+18, 2.0, 1.0, 1.0
+19, 3.0, 1.0, 1.0
+20, 4.0, 1.0, 1.0
+*ELEMENT, TYPE=C3D8, ELSET=EALL
+1, 1, 2, 7, 6, 11, 12, 17, 16
+2, 2, 3, 8, 7, 12, 13, 18, 17
+3, 3, 4, 9, 8, 13, 14, 19, 18
+4, 4, 5, 10, 9, 14, 15, 20, 19
+*NSET, NSET=FIX
+1, 6, 11, 16
+*NSET, NSET=TIP
+5, 10, 15, 20
+*MATERIAL, NAME=M
+*ELASTIC
+1000.0, 0.3
+*SOLID SECTION, ELSET=EALL, MATERIAL=M
+*AUTOINC_PARAM, NAME=AI1
+0.5, 10, 100, 10, 2
+1.5, 4, 50, 5, 1
+0.25, 5
+*CONVERG_PARAM, NAME=CP1
+RESIDUAL, L2, CHECK, 1.0e-6
+*BOUNDARY
+FIX, 1, 3
+*STEP, NLGEOM, AUTOINCPARAM=AI1
+*STATIC
+0.2, 1.0, 0.01, 0.5
+*CLOAD
+TIP, 3, -1.0
+*END STEP
+*STEP, CONVERGPARAM=CP1
+*STATIC, DIRECT
+0.5, 1.0
+*CLOAD
+TIP, 3, -2.0
+*END STEP
