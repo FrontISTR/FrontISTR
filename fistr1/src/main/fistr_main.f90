@@ -13,7 +13,6 @@ module m_fstr_main
   use m_fstr_solve_nlgeom
   use m_fstr_solve_eigen
   use m_static_echo
-  use m_heat_init
   use m_heat_echo
   use m_fstr_precheck
   use m_fstr_rcap_io
@@ -139,12 +138,12 @@ contains
 
     ! ------- hecMAT setting -------------
     call hecmw_mat_con(hecMESH, hecMAT, kstHEAT == fstrPARAM%solution_type)
-    hecMAT%NDOF = hecMESH%n_dof
     if( kstHEAT == fstrPARAM%solution_type ) then
-      call heat_init_material (hecMESH,fstrHEAT)
-      call heat_init_amplitude(hecMESH,fstrHEAT)
       hecMAT%NDOF = 1
-    endif
+    else
+      hecMAT%NDOF = hecMESH%n_dof
+    end if
+
     call hecMAT_init( hecMAT )
   end subroutine fstr_init
 

@@ -262,6 +262,10 @@ contains
       if (my_rank.eq.0.and.ITERlog.eq.1) write (*,'(i7, 1pe16.6)') ITER, RESID
       !C#####
 
+      if (RESID /= RESID) then  ! RESID is NaN
+        error = HECMW_SOLVER_ERROR_DIVERGE_NAN
+        exit
+      endif
       if ( RESID.le.TOL   ) then
         if ( mod(ITER,N_ITER_RECOMPUTE_R)==0 ) exit
         !C----- recompute R to make sure it is really converged

@@ -48,6 +48,8 @@ contains
     real   (kind=kreal):: ALUtmp(6,6)
     integer(kind=kint ):: ip
 
+    call hecmw_precond_BILU_66_clear()
+
     N = hecMAT%N
     NP = hecMAT%NP
     NPL = hecMAT%NPL
@@ -1462,8 +1464,8 @@ contains
     !C | SORT and RECONSTRUCT matrix considering fill-in |
     !C +-------------------------------------------------+
     !C===
-    allocate (ALlu0(9*(NPL+NPLf1+NPLf2)))
-    allocate (AUlu0(9*(NPU+NPUf1+NPUf2)))
+    allocate (ALlu0(36*(NPL+NPLf1+NPLf2)))
+    allocate (AUlu0(36*(NPU+NPUf1+NPUf2)))
 
     ALlu0= 0.d0
     AUlu0= 0.d0

@@ -225,6 +225,10 @@ contains
         if (my_rank.eq.0.and.ITERLog.eq.1) write (*,'(i7, 1pe16.6)') ITER, RESID
         !C#####
 
+        if (RESID /= RESID) then  ! RESID is NaN
+          error = HECMW_SOLVER_ERROR_DIVERGE_NAN
+          exit OUTER
+        endif
         if ( RESID.le.TOL )   exit OUTER
         if ( ITER.gt.MAXIT ) then
           error = HECMW_SOLVER_ERROR_NOCONV_MAXIT

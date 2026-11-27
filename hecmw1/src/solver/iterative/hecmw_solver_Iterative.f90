@@ -146,6 +146,8 @@ contains
             if (PRECOND>=10 .and. PRECOND<20) call hecmw_mat_set_flag_numfact(hecMAT, 1)
           endif
           METHOD = METHOD2
+          ! switch only once: METHOD2 may itself be PipeCG or GroppCG
+          METHOD2 = 0
           hecMAT%X(:) = X0(:)
           cycle
         endif
