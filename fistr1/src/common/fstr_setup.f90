@@ -147,8 +147,10 @@ contains
     call fstr_card_add( T, 'MPC',                first=fstr_setup_MPC )
 
     ! Counted in the first reading to allocate the arrays they are stored in, and stored in the second reading.
-    ! !CONTACT also uses !CONTACT_ALGO, and !CONTACT_INTERFERENCE refers to the pairs of !CONTACT.
+    ! !CONTACT also uses !CONTACT_ALGO and refers by name to !CONTACT_PARAM and !INTERACTION_PROPERTY read before it,
+    ! and !CONTACT_INTERFERENCE refers to the pairs of !CONTACT.
     call fstr_card_add( T, 'ORIENTATION',          second=fstr_setup_ORIENTATION )
+    call fstr_card_add( T, 'INTERACTION_PROPERTY', second=fstr_setup_INTERACTION_PROPERTY )
     call fstr_card_add( T, 'CONTACT',              second=fstr_setup_CONTACT, by_line=.true. )
     call fstr_card_add( T, 'EMBED',                second=fstr_setup_EMBED, by_line=.true. )
     call fstr_card_add( T, 'CONTACT_INTERFERENCE', second=fstr_setup_CONTACT_INTERFERENCE, by_line=.true. )
@@ -177,6 +179,10 @@ contains
     call fstr_card_add( T, 'WRITE',                first=fstr_setup_WRITE_flags, second=fstr_setup_WRITE_store )
     call fstr_card_add( T, 'OUTPUT_RES',           second=fstr_setup_OUTPUT_RES )
     call fstr_card_add( T, 'OUTPUT_VIS',           second=fstr_setup_OUTPUT_VIS )
+
+    ! Stored in the interaction property of the last !INTERACTION_PROPERTY
+    call fstr_card_add( T, 'FRICTION',             second=fstr_setup_FRICTION )
+    call fstr_card_add( T, 'PENALTY',              second=fstr_setup_PENALTY )
 
     ! Stored in the material of the last !MATERIAL
     call fstr_card_add( T, 'ELASTIC',              second=fstr_setup_ELASTIC )
@@ -213,6 +219,7 @@ contains
     counts%embed_pairs           = fstr_card_total( T, total, 'EMBED' )
     counts%contact_interferences = fstr_card_total( T, total, 'CONTACT_INTERFERENCE' )
     counts%contact_params        = fstr_card_total( T, total, 'CONTACT_PARAM' )
+    counts%interaction_properties = fstr_card_total( T, total, 'INTERACTION_PROPERTY' )
     counts%weld_lines            = fstr_card_total( T, total, 'WELD_LINE' )
     counts%initial_conditions    = fstr_card_total( T, total, 'INITIAL_CONDITION' )
     counts%steps                 = fstr_card_total( T, total, 'steps' )

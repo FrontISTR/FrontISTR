@@ -15,6 +15,8 @@ module mContactParam
   public :: init_ContactParam
   public :: tContactInterference
   public :: init_Contact_IF
+  public :: tInteractionProperty
+  public :: init_InteractionProperty
 
   type tContactParam
     character(HECMW_NAME_LEN) :: name    !< name of contact parameter set
@@ -43,6 +45,14 @@ module mContactParam
     character(HECMW_NAME_LEN) :: cp_name
   end type tContactInterference
 
+  !> Interaction property: the friction and the penalties that contact pairs refer to by name
+  type tInteractionProperty
+    character(HECMW_NAME_LEN) :: name    !< name of interaction property
+    real(kind=kreal) :: fcoeff           !< friction coefficient
+    real(kind=kreal) :: nPenalty         !< normal penalty
+    real(kind=kreal) :: tPenalty         !< tangential penalty
+  end type tInteractionProperty
+
 contains
 
   subroutine init_ContactParam( cparam )
@@ -70,5 +80,14 @@ contains
     contact_if%end_pos     = 0.d0
     contact_if%cp_name = ''
   end subroutine init_Contact_IF
+
+  !> The penalties default to those of !CONTACT without NPENALTY, TPENALTY and factor
+  subroutine init_InteractionProperty( iprop )
+    type(tInteractionProperty), intent(out) :: iprop
+    iprop%name         = ''
+    iprop%fcoeff       = 0.d0
+    iprop%nPenalty     = 5.d0
+    iprop%tPenalty     = 0.5d0
+  end subroutine init_InteractionProperty
 
 end module mContactParam

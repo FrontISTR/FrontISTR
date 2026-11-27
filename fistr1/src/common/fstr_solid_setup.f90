@@ -1533,7 +1533,9 @@ contains
     type(fstr_solid), pointer :: fstrSOLID
     integer(kind=kint) :: c_contact, n, k
     real(kind=kreal) :: ee, pp, rho, alpha
-    character(len=HECMW_NAME_LEN) :: mName
+    character(len=HECMW_NAME_LEN) :: mName, ipName
+    character(len=256) :: msg
+    logical :: line_values
     type(fstr_card_slot) :: slot
 
     slot = P%STATE%slot
@@ -1543,15 +1545,26 @@ contains
     n = fstr_ctrl_get_data_line_n( ctrl )
     c_contact = slot%first - 1
     if( .not. fstr_ctrl_get_CONTACT( ctrl, n, fstrSOLID%contacts(slot%first:slot%last)   &
-        ,ee, pp, rho, alpha, mName, k ) ) then
+        ,ee, pp, rho, alpha, mName, k, ipName, line_values ) ) then
       write(*,*) '### Error: Fail in read in contact condition : ', c_contact
       write(ILOG,*) '### Error: Fail in read in contact condition : ', c_contact
       stop HECMW_EXIT_INPUT
     endif
+    if( ipName /= '' .and. P%MESH%my_rank == 0 ) then
+      msg = ''
+      if( line_values ) msg = 'fcoef and factor of the data lines'
+      if( ee>0.d0 .or. pp>0.d0 ) msg = 'NPENALTY and TPENALTY'
+      if( line_values .and. ( ee>0.d0 .or. pp>0.d0 ) ) msg = 'fcoef and factor of the data lines, NPENALTY and TPENALTY'
+      if( msg /= '' ) then
+        msg = ' ### Warning: !CONTACT : '//trim(msg)//' are not used with INTERACTION_PROPERTY='//trim(ipName)
+        write(*,'(/a/)') trim(msg)
+        write(ILOG,'(/a/)') trim(msg)
+      endif
+    endif
     ! initialize contact condition (cdotp and mut are now obsolete - penalty is in tContact)
     if( rho>0.d0 ) cgn = rho
     if( alpha>0.d0 ) cgt = alpha
-    call fstr_solid_init_contacts( P%MESH, fstrSOLID, fstrPARAM, c_contact, n, mName, k )
+    call fstr_solid_init_contacts( P%MESH, fstrSOLID, fstrPARAM, c_contact, n, mName, k, ipName )
   end subroutine fstr_setup_CONTACT
 
   !-----------------------------------------------------------------------------!
@@ -2775,8 +2788,9 @@ contains
   !> Initialize !CONTACT                                                        !
   !-----------------------------------------------------------------------------!
   !> Checks and initializes contacts(is+1:is+n), whose pairs are already read. cparam_name is the
-  !> name of !CONTACT_PARAM; the default parameters are used if it is not found.
-  subroutine fstr_solid_init_contacts( hecMESH, fstrSOLID, fstrPARAM, is, n, cparam_name, smoothing )
+  !> name of !CONTACT_PARAM; the default parameters are used if it is not found. iprop_name is the name of
+  !> the interaction property, whose friction and penalties replace those of the pairs if it is not blank.
+  subroutine fstr_solid_init_contacts( hecMESH, fstrSOLID, fstrPARAM, is, n, cparam_name, smoothing, iprop_name )
     implicit none
     type(hecmwST_local_mesh), pointer         :: hecMESH
     type(fstr_solid)                          :: fstrSOLID
@@ -2785,8 +2799,9 @@ contains
     integer(kind=kint), intent(in)            :: n
     character(len=HECMW_NAME_LEN), intent(in) :: cparam_name
     integer(kind=kint), intent(in)            :: smoothing
+    character(len=HECMW_NAME_LEN), intent(in) :: iprop_name
 
-    integer(kind=kint) :: i, cparam_id
+    integer(kind=kint) :: i, cparam_id, iprop_id
     integer(kind=kint) :: ss_nslav, ss_nmas_vis, ss_nmas_glob, ss_bad   ! MORTAR=YES visibility guard scratch
     logical :: isOK
 
@@ -2796,6 +2811,16 @@ contains
         cparam_id = i; exit
       endif
     enddo
+    iprop_id = 0
+    if( iprop_name /= '' ) then
+      do i=1,size(fstrPARAM%intprop)
+        if( hecmw_streqr( fstrPARAM%intprop(i)%name, iprop_name ) ) then
+          iprop_id = i; exit
+        endif
+      enddo
+      if( iprop_id == 0 ) call fstr_setup_util_err_stop( '### Error: !CONTACT : INTERACTION_PROPERTY='// &
+        trim(iprop_name)//' is not defined before !CONTACT' )
+    endif
     do i=1,n
       fstrSOLID%contacts(is+i)%smoothing = smoothing
       if( .not. fstr_contact_check( fstrSOLID%contacts(is+i), hecMESH ) ) then
@@ -2808,6 +2833,16 @@ contains
         ! friction terms; see getContactStiffness_Alag
         fstrSOLID%contacts(is+i)%symmetric = .not. fstrPARAM%fric_cone_follow
         fstrSOLID%contacts(is+i)%eps_fric_band = fstrPARAM%eps_fric_band
+      endif
+      if( iprop_id > 0 ) then
+        if( fstrSOLID%contacts(is+i)%algtype == CONTACTTIED .and. fstrPARAM%intprop(iprop_id)%fcoeff > 0.d0 &
+          & .and. hecMESH%my_rank == 0 ) then
+          write(*,'(/a/)')    ' ### Warning: !CONTACT : the friction of INTERACTION_PROPERTY='// &
+            trim(iprop_name)//' is not used with INTERACTION=TIED'
+          write(ILOG,'(/a/)') ' ### Warning: !CONTACT : the friction of INTERACTION_PROPERTY='// &
+            trim(iprop_name)//' is not used with INTERACTION=TIED'
+        endif
+        call fstr_contact_set_property( fstrSOLID%contacts(is+i), fstrPARAM%intprop(iprop_id) )
       endif
       if( fstrSOLID%contacts(is+i)%method == CONTACTS2S ) then
         ! Only the static path is wired for MORTAR=YES. The implicit dynamic solver calls

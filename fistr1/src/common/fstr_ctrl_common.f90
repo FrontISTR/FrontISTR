@@ -623,7 +623,9 @@ contains
   end function fstr_ctrl_get_CONTACTALGO
 
   !>  Read in contact definition
-  logical function fstr_ctrl_get_CONTACT( ctrl, n, contact, np, tp, ntol, ttol, cpname, smoothing )
+  !>  With INTERACTION_PROPERTY=, the friction coefficient and the factor of the data lines are optional,
+  !>  and line_values tells if any of them is given.
+  logical function fstr_ctrl_get_CONTACT( ctrl, n, contact, np, tp, ntol, ttol, cpname, smoothing, ipname, line_values )
     use fstr_setup_util
     integer(kind=kint), intent(in)    :: ctrl          !< ctrl file
     integer(kind=kint), intent(in)    :: n             !< number of item defined in this section
@@ -634,6 +636,8 @@ contains
     real(kind=kreal), intent(out)      :: ttol           !< tolrence along contact tangent
     character(len=*), intent(out)      :: cpname         !< name of contact parameter
     integer(kind=kint), intent(out)    :: smoothing     !< kcsNONE or kcsNAGATA
+    character(len=*), intent(out)      :: ipname         !< name of interaction property, blank if not given
+    logical, intent(out)               :: line_values    !< if the data lines give fcoef or factor with ipname
 
     integer           :: rcode, mortar, expansion
     character(len=30) :: s1 = 'TIED,GLUED,SSLID,FSLID '
@@ -641,10 +645,14 @@ contains
     character(len=HECMW_NAME_LEN) :: cp_name(n)
     real(kind=kreal)  :: fcoeff(n),tPenalty(n)
     real(kind=kreal)  :: damp_alpha, damp_gact
+    real(kind=kreal), parameter :: unset = -huge(1.d0)
 
     write(ss,*)  HECMW_NAME_LEN
 
     fstr_ctrl_get_CONTACT = .false.
+    line_values = .false.
+    ipname = ''
+    if( fstr_ctrl_get_param_ex( ctrl, 'INTERACTION_PROPERTY ', '# ', 0, 'S', ipname ) /= 0 ) return
     contact(1)%ctype = 1   ! pure slave-master contact; default value
     contact(1)%algtype = CONTACTSSLID ! small sliding contact; default value
     rcode = fstr_ctrl_get_param_ex( ctrl, 'INTERACTION ', s1, 0, 'P', contact(1)%algtype )
@@ -662,8 +670,18 @@ contains
     tPenalty = 0.5d0
 
     if( contact(1)%algtype==CONTACTSSLID .or. contact(1)%algtype==CONTACTFSLID ) then
-      write( data_fmt, '(a,a,a)') 'S', trim(adjustl(ss)),'Rr '
-      if( fstr_ctrl_get_data_array_ex( ctrl, data_fmt, cp_name, fcoeff, tPenalty ) /= 0 ) return
+      if( ipname == '' ) then
+        write( data_fmt, '(a,a,a)') 'S', trim(adjustl(ss)),'Rr '
+        if( fstr_ctrl_get_data_array_ex( ctrl, data_fmt, cp_name, fcoeff, tPenalty ) /= 0 ) return
+      else
+        fcoeff = unset
+        tPenalty = unset
+        write( data_fmt, '(a,a,a)') 'S', trim(adjustl(ss)),'rr '
+        if( fstr_ctrl_get_data_array_ex( ctrl, data_fmt, cp_name, fcoeff, tPenalty ) /= 0 ) return
+        line_values = any( fcoeff > unset ) .or. any( tPenalty > unset )
+        fcoeff = 0.d0
+        tPenalty = 0.5d0
+      endif
       do rcode=1,n
         contact(rcode)%pair_name = cp_name(rcode)
         contact(rcode)%fcoeff = fcoeff(rcode)
@@ -873,6 +891,85 @@ contains
 
     fstr_ctrl_get_CONTACTPARAM = 0
   end function fstr_ctrl_get_CONTACTPARAM
+
+  !> Read in !INTERACTION_PROPERTY
+  function fstr_ctrl_get_INTERACTION_PROPERTY( ctrl, iprop )
+    implicit none
+    integer(kind=kint)         :: ctrl
+    type(tInteractionProperty) :: iprop !< interaction property
+    integer(kind=kint) :: fstr_ctrl_get_INTERACTION_PROPERTY
+
+    fstr_ctrl_get_INTERACTION_PROPERTY = -1
+    if( fstr_ctrl_get_param_ex( ctrl, 'NAME ', '# ', 1, 'S', iprop%name ) /=0 ) return
+    fstr_ctrl_get_INTERACTION_PROPERTY = 0
+  end function fstr_ctrl_get_INTERACTION_PROPERTY
+
+  !> Read in !FRICTION of an interaction property: a friction coefficient independent of the contact state
+  function fstr_ctrl_get_FRICTION( ctrl, fcoeff )
+    implicit none
+    integer(kind=kint) :: ctrl
+    real(kind=kreal)   :: fcoeff !< friction coefficient
+    integer(kind=kint) :: fstr_ctrl_get_FRICTION
+
+    integer(kind=kint) :: ftype, depends
+    character(len=HECMW_NAME_LEN) :: amp
+    character(len=128) :: msg
+
+    fstr_ctrl_get_FRICTION = -1
+    ftype = 1
+    if( fstr_ctrl_get_param_ex( ctrl, 'TYPE ', 'COULOMB ', 0, 'P', ftype ) /= 0 ) return
+    depends = 0
+    if( fstr_ctrl_get_param_ex( ctrl, 'DEPENDENCIES ', '# ', 0, 'I', depends ) /= 0 ) return
+    amp = ''
+    if( fstr_ctrl_get_param_ex( ctrl, 'AMP ', '# ', 0, 'S', amp ) /= 0 ) return
+
+    msg = ''
+    if( depends /= 0 ) then
+      msg = 'fstr control file error : !FRICTION : DEPENDENCIES other than 0 is not supported yet.'
+    else if( amp /= '' ) then
+      msg = 'fstr control file error : !FRICTION : AMP is not supported yet.'
+    else if( fstr_ctrl_get_data_line_n( ctrl ) /= 1 ) then
+      msg = 'fstr control file error : !FRICTION : give one data line with the friction coefficient.'
+    else if( fstr_ctrl_get_data_ex( ctrl, 1, 'R ', fcoeff ) /= 0 ) then
+      return
+    else if( fcoeff < 0.d0 ) then
+      msg = 'fstr control file error : !FRICTION : the friction coefficient must be >= 0.'
+    endif
+    if( msg /= '' ) then
+      write(*,*) trim(msg)
+      write(ILOG,*) trim(msg)
+      return
+    endif
+    fstr_ctrl_get_FRICTION = 0
+  end function fstr_ctrl_get_FRICTION
+
+  !> Read in !PENALTY of an interaction property: factors of the reference stiffness of the contact pair,
+  !> which default to those of !CONTACT
+  function fstr_ctrl_get_PENALTY( ctrl, nPenalty, tPenalty )
+    implicit none
+    integer(kind=kint) :: ctrl
+    real(kind=kreal)   :: nPenalty     !< normal penalty
+    real(kind=kreal)   :: tPenalty     !< tangential penalty
+    integer(kind=kint) :: fstr_ctrl_get_PENALTY
+
+    character(len=128) :: msg
+
+    fstr_ctrl_get_PENALTY = -1
+    if( fstr_ctrl_get_data_line_n( ctrl ) /= 1 ) then
+      msg = 'fstr control file error : !PENALTY : give one data line with the normal and the tangential penalty.'
+      write(*,*) trim(msg)
+      write(ILOG,*) trim(msg)
+      return
+    endif
+    if( fstr_ctrl_get_data_ex( ctrl, 1, 'rr ', nPenalty, tPenalty ) /= 0 ) return
+    if( nPenalty <= 0.d0 .or. tPenalty <= 0.d0 ) then
+      msg = 'fstr control file error : !PENALTY : the penalties must be > 0.'
+      write(*,*) trim(msg)
+      write(ILOG,*) trim(msg)
+      return
+    endif
+    fstr_ctrl_get_PENALTY = 0
+  end function fstr_ctrl_get_PENALTY
 
   !>  Read in contact interference
   function fstr_ctrl_get_CONTACT_IF( ctrl, n, contact_if )

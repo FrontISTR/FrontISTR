@@ -482,6 +482,17 @@ contains
     fstr_contact_init = .true.
   end function
 
+  !>  Sets the friction and the penalties of an interaction property to a contact pair initialized by
+  !>  fstr_contact_init. A tied pair keeps no friction.
+  subroutine fstr_contact_set_property( contact, iprop )
+    type(tContact), intent(inout)          :: contact  !< contact definition
+    type(tInteractionProperty), intent(in) :: iprop    !< interaction property
+
+    if( contact%algtype /= CONTACTTIED ) contact%fcoeff = iprop%fcoeff
+    contact%nPenalty = iprop%nPenalty
+    contact%tPenalty = iprop%tPenalty
+  end subroutine fstr_contact_set_property
+
   !>  Initializer of tContactState for embed case
   logical function fstr_embed_init( embed, hecMESH, cparam )
     type(tContact), intent(inout)     :: embed  !< contact definition

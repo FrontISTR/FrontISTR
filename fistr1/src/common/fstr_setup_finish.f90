@@ -32,6 +32,7 @@ module m_fstr_setup_finish
     integer(kind=kint) :: embed_pairs = 0
     integer(kind=kint) :: contact_interferences = 0
     integer(kind=kint) :: contact_params = 0
+    integer(kind=kint) :: interaction_properties = 0
     integer(kind=kint) :: weld_lines = 0
     integer(kind=kint) :: initial_conditions = 0
     integer(kind=kint) :: steps = 0
@@ -113,6 +114,10 @@ contains
     allocate( fstrPARAM%contactparam(0:counts%contact_params) )
     do i=0,counts%contact_params
       call init_ContactParam( fstrPARAM%contactparam(i) )
+    end do
+    allocate( fstrPARAM%intprop(counts%interaction_properties) )
+    do i=1,counts%interaction_properties
+      call init_InteractionProperty( fstrPARAM%intprop(i) )
     end do
     if( counts%contact_interferences>0 )then
       allocate( fstrPARAM%contact_if( counts%contact_interferences ) )

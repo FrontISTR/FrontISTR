@@ -7,11 +7,13 @@
 module m_fstr_param_setup
   use m_fstr
   use hecmw_setup_util, only &
-    : node_grp_name_to_id_ex
+    : node_grp_name_to_id_ex &
+    , hecmw_streqr
   use fstr_setup_util, only &
     : fstr_param_pack &
     , fstr_card_slot &
     , fstr_ctrl_err_stop &
+    , fstr_setup_util_err_stop &
     , append_new_amplitude
   use fstr_ctrl_common
   use fstr_ctrl_static
@@ -588,6 +590,89 @@ contains
       stop HECMW_EXIT_INPUT
     endif
   end subroutine fstr_setup_CONTACT_PARAM
+
+  !-----------------------------------------------------------------------------!
+  !> Read in !INTERACTION_PROPERTY                                              !
+  !-----------------------------------------------------------------------------!
+  !> P%STATE%ipid is set to the interaction property of this card.
+  subroutine fstr_setup_INTERACTION_PROPERTY( ctrl, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    type(fstr_param_pack) :: P
+
+    type(fstr_param), pointer :: fstrPARAM
+    type(fstr_card_slot) :: slot
+    integer(kind=kint) :: i
+
+    slot = P%STATE%slot
+    fstrPARAM => P%PARAM
+
+    if( fstr_ctrl_get_INTERACTION_PROPERTY( ctrl, fstrPARAM%intprop(slot%first) ) /= 0 ) then
+      write(*,*) '### Error: Fail in read in INTERACTION_PROPERTY definition : ' , slot%first
+      write(ILOG,*) '### Error: Fail in read in INTERACTION_PROPERTY definition : ', slot%first
+      stop HECMW_EXIT_INPUT
+    endif
+    do i=1,slot%first-1
+      if( hecmw_streqr( fstrPARAM%intprop(i)%name, fstrPARAM%intprop(slot%first)%name ) ) &
+        call fstr_setup_util_err_stop( '### Error: !INTERACTION_PROPERTY : NAME='// &
+        trim(fstrPARAM%intprop(slot%first)%name)//' is defined twice' )
+    enddo
+    P%STATE%ipid = slot%first
+  end subroutine fstr_setup_INTERACTION_PROPERTY
+
+  !> Interaction property of the last !INTERACTION_PROPERTY, for a card of interaction properties.
+  !> Stops at such a card given before the first !INTERACTION_PROPERTY.
+  integer(kind=kint) function fstr_setup_current_intprop( ctrl, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    type(fstr_param_pack) :: P
+
+    integer(kind=kint) :: rcode
+    character(len=HECMW_NAME_LEN) :: header_name
+
+    if( P%STATE%ipid == 0 ) then
+      rcode = fstr_ctrl_get_c_h_name( ctrl, header_name, HECMW_NAME_LEN )
+      call fstr_setup_util_err_stop( '### Error: '//trim(header_name)// &
+        ' : given before the first !INTERACTION_PROPERTY; put it after !INTERACTION_PROPERTY, NAME=<name>' )
+    endif
+    fstr_setup_current_intprop = P%STATE%ipid
+  end function fstr_setup_current_intprop
+
+  !-----------------------------------------------------------------------------!
+  !> Read in !FRICTION                                                          !
+  !-----------------------------------------------------------------------------!
+  subroutine fstr_setup_FRICTION( ctrl, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    type(fstr_param_pack) :: P
+
+    integer(kind=kint) :: ipid
+
+    ipid = fstr_setup_current_intprop( ctrl, P )
+    if( fstr_ctrl_get_FRICTION( ctrl, P%PARAM%intprop(ipid)%fcoeff ) /= 0 ) then
+      write(*,*) '### Error: Fail in read in FRICTION definition : ' , ipid
+      write(ILOG,*) '### Error: Fail in read in FRICTION definition : ', ipid
+      stop HECMW_EXIT_INPUT
+    endif
+  end subroutine fstr_setup_FRICTION
+
+  !-----------------------------------------------------------------------------!
+  !> Read in !PENALTY                                                           !
+  !-----------------------------------------------------------------------------!
+  subroutine fstr_setup_PENALTY( ctrl, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    type(fstr_param_pack) :: P
+
+    integer(kind=kint) :: ipid
+
+    ipid = fstr_setup_current_intprop( ctrl, P )
+    if( fstr_ctrl_get_PENALTY( ctrl, P%PARAM%intprop(ipid)%nPenalty, P%PARAM%intprop(ipid)%tPenalty ) /= 0 ) then
+      write(*,*) '### Error: Fail in read in PENALTY definition : ' , ipid
+      write(ILOG,*) '### Error: Fail in read in PENALTY definition : ', ipid
+      stop HECMW_EXIT_INPUT
+    endif
+  end subroutine fstr_setup_PENALTY
 
   !-----------------------------------------------------------------------------!
   !> Read in !CONTACT_INTERFERENCE                                              !

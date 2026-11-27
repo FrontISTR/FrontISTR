@@ -188,6 +188,7 @@ module m_fstr
     real( kind=kreal )   :: eps_fric_band=0.d0        !< hysteresis half-band of the stick/slip switch (0 = no band)
     type(tContactParam), pointer :: contactparam(:)=>null()  !< parameter sets for contact scan
     type(tContactInterference), pointer :: contact_if(:)=>null()  !< parameter sets for contact scan
+    type(tInteractionProperty), pointer :: intprop(:)=>null()     !< interaction properties of contact pairs
 
     !> for auto increment and cutback
     type(tParamAutoInc), pointer :: ainc(:)=>null()      !< auto increment control
@@ -719,6 +720,7 @@ contains
     nullify( P%global_local_ID)
     nullify( P%contactparam )
     nullify( P%contact_if )
+    nullify( P%intprop )
     nullify( P%ainc )
     nullify( P%timepoints )
     nullify( P%cnvparam )
@@ -1233,6 +1235,7 @@ contains
 
     if(associated(fstrPARAM%contactparam)) deallocate(fstrPARAM%contactparam)
     if(associated(fstrPARAM%contact_if)) deallocate(fstrPARAM%contact_if)
+    if(associated(fstrPARAM%intprop)) deallocate(fstrPARAM%intprop)
 
     if(associated(fstrPARAM%ainc)) deallocate(fstrPARAM%ainc)
     if(associated(fstrPARAM%timepoints)) then
