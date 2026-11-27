@@ -186,6 +186,7 @@ contains
   end subroutine
 
   !> @brief Set elastic parameters
+  !! @remark Don't change nlgeom parameter (different from loading a cnt file)
   !! @param[in] material : A material property handler
   !! @param[in] youngs : Young's modulus
   !! @param[in] poisson : Poisson's ratio
@@ -201,7 +202,6 @@ contains
 
     call c_f_pointer(cptr=material, fptr=mat)
     mat%mtype = ELASTIC
-    mat%nlgeom_flag = TOTALLAG
 
     mat%variables(M_YOUNGS) = youngs
     mat%variables(M_POISSON) = poisson
@@ -458,6 +458,7 @@ contains
   end subroutine
 
   !> @brief Set yield criterion, hardening rule and parameters
+  !! @remark Don't change nlgeom parameter (different from loading a cnt file)
   !! @param[in] material : A material property handler
   !! @param[in] yield : Yield criterion
   !! @param[in] harden : Hardening rule
@@ -486,7 +487,6 @@ contains
     call c_f_pointer(cptr=material, fptr=mat)
     call c_f_str_copy(yield, yield_f, HECMW_NAME_LEN)
     call c_f_str_copy(harden, harden_f, HECMW_NAME_LEN)
-    mat%nlgeom_flag = UPDATELAG
 
     if(yield_f=="MISES") then
       if(harden_f=="BILINEAR") then
@@ -633,6 +633,7 @@ contains
   end subroutine
 
   !> @brief Set type and parameters of hyperelastic material
+  !! @remark Don't change nlgeom parameter (different from loading a cnt file)
   !! @param[in] material : A material property handler
   !! @param[in] type : Hyperelastic type
   !! @param[in] variables : Parameters
@@ -652,7 +653,6 @@ contains
 
     call c_f_pointer(cptr=material, fptr=mat)
     call c_f_str_copy(type, type_f, HECMW_NAME_LEN)
-    mat%nlgeom_flag = TOTALLAG
 
     if(type_f=="NEOHOOKE") then
       mat%mtype = NEOHOOKE
@@ -733,6 +733,7 @@ contains
   end subroutine
 
   !> @brief Set viscoelastic parameter table
+  !! @remark Don't change nlgeom parameter (different from loading a cnt file)
   !! @param[in] material : A material property handler
   !! @param[in] variables : Parameters (rows*cols)
   !! @param[in] rows : Number of rows in the table
@@ -756,7 +757,6 @@ contains
     call c_f_pointer(cptr=material, fptr=mat)
     fval = reshape(variables(1:cols*rows), [cols,rows], order=[1,2])
 
-    mat%nlgeom_flag = TOTALLAG
     depends = 1
     call init_table( mattable, depends, cols, rows, fval )
     call dict_add_key( mat%dict, MC_VISCOELASTIC, mattable )
@@ -821,6 +821,7 @@ contains
   end subroutine
 
   !> @brief Set creep parameter table
+  !! @remark Don't change nlgeom parameter (different from loading a cnt file)
   !! @param[in] material : A material property handler
   !! @param[in] type : Creep type
   !! @param[in] variables : Parameters (rows*cols)
@@ -850,7 +851,6 @@ contains
     fval = reshape(variables(1:cols*rows), [cols,rows], order=[1,2])
 
     if(type_f=="NORTON") then
-      mat%nlgeom_flag = UPDATELAG
       depends = cols-3
       call init_table( mattable, depends, cols, rows, fval )
       call dict_add_key( mat%dict, MC_NORTON, mattable )

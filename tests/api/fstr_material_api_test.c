@@ -33,6 +33,7 @@ int main(void)
     assert(fstr_api_material_type(mat2)==MATERIAL_NOT_DEFINED);
     assert(fstr_api_material_type(mat3)==MATERIAL_NOT_DEFINED);
     assert(fstr_api_material_type(mat4)==MATERIAL_NOT_DEFINED);
+    assert(fstr_api_material_nlgeom(mat1)==INFINITESIMAL);
 
     // elastic
     fstr_api_material_set_name(mat1,"MAT1");
@@ -41,6 +42,8 @@ int main(void)
     assert(strcmp("MAT1",buf)==0);
     fstr_api_material_set_elastic(mat1,1000.0,0.3);
     assert(fstr_api_material_type(mat1)==ELASTIC);
+    assert(fstr_api_material_nlgeom(mat1)==INFINITESIMAL);
+    fstr_api_material_set_nlgeom(mat1,TOTALLAG);
     assert(fstr_api_material_nlgeom(mat1)==TOTALLAG);
     double youngs,poisson;
     fstr_api_material_get_elastic(mat1,&youngs,&poisson);
@@ -67,17 +70,17 @@ int main(void)
         240.0, 0.1, 400.0,
     };
     fstr_api_material_set_plastic(mat2,"MISES","MULTILINEAR",plas_var,4,3);
+    assert(fstr_api_material_nlgeom(mat2)==INFINITESIMAL);
+    fstr_api_material_set_nlgeom(mat2,UPDATELAG);
     assert(fstr_api_material_nlgeom(mat2)==UPDATELAG);
     char yield[32], harden[32];
     int nvars, rows, cols;
     fstr_api_material_get_plastic_size(mat2,yield,harden,&nvars,&rows,&cols);
-    printf("%d %d %d\n", nvars, rows, cols);
     assert(nvars==0);
     assert(rows==4);
     assert(cols==3);
     double var[100];
     fstr_api_material_get_plastic_vars(mat2,var);
-    printf("%f %f %f %f %f\n",var[0],var[1],var[2],var[3],var[4]);
     for(int i=0;i<rows*cols;i++){
         assert(var[i]==plas_var[i]);
     }
@@ -111,6 +114,8 @@ int main(void)
         0.71, 1.7029, 0.1408
     };
     fstr_api_material_set_hyperelastic(mat5,"ARRUDA-BOYCE",hyper_var);
+    assert(fstr_api_material_nlgeom(mat5)==INFINITESIMAL);
+    fstr_api_material_set_nlgeom(mat5,TOTALLAG);
     assert(fstr_api_material_nlgeom(mat5)==TOTALLAG);
     char type[32];
     fstr_api_material_get_hyperelastic(mat5,type,var);
