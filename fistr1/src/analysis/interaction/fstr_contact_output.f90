@@ -22,8 +22,6 @@ module m_fstr_contact_output
   public :: fstr_setup_parancon_contactvalue
   public :: update_contact_state_vectors
 
-  private :: calc_nodalarea_surfelement
-
 contains
 
   subroutine initialize_contact_output_vectors(fstrSOLID,hecMAT)
@@ -183,43 +181,6 @@ contains
     end do
 
     deallocate(coord)
-  end subroutine
-
-  subroutine calc_nodalarea_surfelement( etype, ecoord, sid, vect )
-    integer(kind=kint), intent(in)   :: etype
-    real(kind=kreal), intent(in)     :: ecoord(:,:)
-    integer(kind=kint), intent(in)   :: sid
-    real(kind=kreal), intent(out)    :: vect(:)
-
-    integer(kind=kint), parameter :: NDOF=3
-    integer(kind=kint) :: nod(l_max_surface_node)
-    integer(kind=kint) :: nsur, stype, ig0, i
-    real(kind=kreal)   :: localcoord(2), normal(3), area, wg
-    real(kind=kreal)   :: scoord(NDOF,l_max_surface_node), H(l_max_surface_node)
-
-    vect(:) = 0.d0
-
-    call getSubFace( etype, sid, stype, nod )
-    nsur = getNumberOfNodes( stype )
-    do i=1,nsur
-      scoord(1:NDOF,i) = ecoord(1:NDOF,nod(i))
-    end do
-
-    area = 0.d0
-    do ig0=1,NumOfQuadPoints( stype )
-      call getQuadPoint( stype, ig0, localcoord(1:2) )
-      call getShapeFunc( stype, localcoord(1:2), H(1:nsur) )
-
-      wg=getWeight( stype, ig0 )
-      ! normal = dx/dr_1 \times dx/dr_2
-      normal(1:3) = SurfaceNormal( stype, nsur, localcoord(1:2), scoord(1:NDOF,1:nsur) )
-      area = area + dsqrt(dot_product(normal,normal))*wg
-    enddo
-    area = area/dble(nsur)
-    do i=1,nsur
-      vect(nod(i)) = area
-    end do
-
   end subroutine
 
   subroutine fstr_setup_parancon_contactvalue(hecMESH,ndof,vec,vtype)
