@@ -1,0 +1,43 @@
+###################################################################################
+##### !PENALTY, TYPE=ABSOLUTE in the normal direction (stiffness per unit area) of a
+##### NODE-SURF pair. Two stacked blocks, uniform pressure p = 1.0 on the upper block,
+##### nu = 0 and symmetric boundary conditions. With AUGITER=1 and one substep the
+##### contact holds the pressure by the penalty only, so every slave node penetrates
+##### by p/K = 1.0/2.0E+3 = 5.0E-4, independently of the mesh, and its contact force
+##### is p times its share of the slave surface.
+###################################################################################
+!VERSION
+ 3
+!SOLUTION, TYPE=NLSTATIC
+!CONTACT_ALGO, TYPE=ALAGRANGE, AUGITER=1
+!WRITE,RESULT
+!WRITE,LOG
+!OUTPUT_RES
+DISP,ON
+REACTION,ON
+CONTACT_NFORCE,ON
+CONTACT_FRICTION,ON
+CONTACT_STATE,ON
+!SOLVER,METHOD=CG,PRECOND=1,NSET=0,ITERLOG=NO,TIMELOG=NO
+ 5000, 1
+ 1.0e-10, 1.00, 0.0
+ 0.100, 0.100
+!BOUNDARY, GRPID=1
+ BOTTOM, 3, 3, 0.0
+ XSYM,   1, 1, 0.0
+ YSYM,   2, 2, 0.0
+!DLOAD, GRPID=1
+ TOP, S, 1.0
+!INTERACTION_PROPERTY, NAME=IP1
+!PENALTY, TYPE=ABSOLUTE
+ 2.0E+3, 2.0E+1
+!CONTACT, GRPID=1, INTERACTION=SSLID, INTERACTION_PROPERTY=IP1
+ CP1
+!MATERIAL, NAME=MAT1
+!ELASTIC
+ 1.0E+03, 0.0
+!STEP, SUBSTEPS=1, MAXITER=20, CONVERG=1.0E-8
+ BOUNDARY, 1
+ LOAD, 1
+ CONTACT, 1
+!END

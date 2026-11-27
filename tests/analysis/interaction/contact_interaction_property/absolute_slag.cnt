@@ -1,0 +1,47 @@
+###################################################################################
+##### !PENALTY, TYPE=ABSOLUTE in the tangential direction with the Lagrange multiplier
+##### method. The upper of two stacked blocks is pressed by p = 1.0 and pushed along x
+##### by a small load that friction (mu = 0.3) holds in the stick state. The friction
+##### force of each slave node is K_T * A * s, with K_T = 20.0 per unit area, A the
+##### share of the node in the slave surface and s its tangential slip.
+###################################################################################
+!VERSION
+ 3
+!SOLUTION, TYPE=NLSTATIC
+!CONTACT_ALGO, TYPE=SLAGRANGE
+!WRITE,RESULT
+!WRITE,LOG
+!OUTPUT_RES
+DISP,ON
+REACTION,ON
+CONTACT_NFORCE,ON
+CONTACT_FRICTION,ON
+CONTACT_STATE,ON
+# PRECOND=3: the SSOR preconditioner (PRECOND=1) reorders the matrix with threads and
+# overruns its arrays on this model with 2 processes and 2 threads
+!SOLVER,METHOD=GMRES,PRECOND=3,NSET=0,ITERLOG=NO,TIMELOG=NO
+ 5000, 1
+ 1.0e-10, 1.00, 0.0
+ 0.100, 0.100
+!BOUNDARY, GRPID=1
+ BOTTOM, 1, 3, 0.0
+ UYSYM,  2, 2, 0.0
+!DLOAD, GRPID=1
+ TOP, S, 1.0
+!CLOAD, GRPID=1
+ TOPN, 1, 2.0E-3
+!INTERACTION_PROPERTY, NAME=IP1
+!FRICTION
+ 0.3
+!PENALTY, TYPE=ABSOLUTE
+ 2.0E+3, 2.0E+1
+!CONTACT, GRPID=1, INTERACTION=SSLID, INTERACTION_PROPERTY=IP1
+ CP1
+!MATERIAL, NAME=MAT1
+!ELASTIC
+ 1.0E+03, 0.0
+!STEP, SUBSTEPS=1, MAXITER=20, CONVERG=1.0E-8
+ BOUNDARY, 1
+ LOAD, 1
+ CONTACT, 1
+!END
