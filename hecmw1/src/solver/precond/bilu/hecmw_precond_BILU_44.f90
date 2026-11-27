@@ -211,7 +211,7 @@ contains
     integer(kind=kint) :: i,jj,ij0,kk
     integer(kind=kint) :: j,k
     allocate (IW1(NP) , IW2(NP))
-    allocate(Dlu0(9*NP), ALlu0(9*NPL), AUlu0(9*NPU))
+    allocate(Dlu0(16*NP), ALlu0(16*NPL), AUlu0(16*NPU))
     allocate(inumFI1L(0:NP), inumFI1U(0:NP), FI1L(NPL), FI1U(NPU))
 
     do i=1,16*NP
