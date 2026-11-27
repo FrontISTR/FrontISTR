@@ -123,10 +123,16 @@ contains
 
     ! Report penalty settings
     if (hecmw_comm_get_rank() == 0) then
-      write(*,'(A,A,A,1pE12.3,A,1pE12.3,A,1pE12.3)') "  Contact [", &
-        trim(contact%pair_name), "] set penalty: normal & tied ", &
-        contact%nPenalty * contact%refStiff, ", tangential ", &
-        contact%tPenalty * contact%refStiff, ", refStiff ", contact%refStiff
+      if( contact%penalty_type == kcpABSOLUTE ) then
+        write(*,'(A,A,A,1pE12.3,A,1pE12.3)') "  Contact [", &
+          trim(contact%pair_name), "] set penalty per unit area: normal & tied ", &
+          contact%nPenalty, ", tangential ", contact%tPenalty
+      else
+        write(*,'(A,A,A,1pE12.3,A,1pE12.3,A,1pE12.3)') "  Contact [", &
+          trim(contact%pair_name), "] set penalty: normal & tied ", &
+          contact%nPenalty * contact%refStiff, ", tangential ", &
+          contact%tPenalty * contact%refStiff, ", refStiff ", contact%refStiff
+      endif
     endif
 
   end subroutine calc_contact_pair_refStiff
@@ -214,7 +220,7 @@ contains
 
       ! Update multiplier and calculate forces
       call updateContactMultiplier_Alag(contact%states(i), ndLocal(1:nn+1), hecMESH%node, disp, ddisp, &
-        contact%nPenalty * contact%refStiff, contact%tPenalty * contact%refStiff, &
+        contact%nPenalty * contact_penalty_scale(contact, i), contact%tPenalty * contact_penalty_scale(contact, i), &
         contact%fcoeff, contact%master(master), lgnt, ctchanged, ctNForce, ctTForce, jump_ratio_local, contact%smoothing)
 
       ! Track maximum jump ratio
@@ -231,9 +237,9 @@ contains
     ! Adjust tPenalty
     threthold = 100.d0
     if (max_jump_ratio > threthold) then
-      mut_old = contact%tPenalty * contact%refStiff
+      mut_old = contact%tPenalty * contact_penalty_scale(contact)
       contact%tPenalty = contact%tPenalty * max(1.d0/dsqrt(threthold), 1.0d0/dsqrt(max_jump_ratio))
-      mut_new = contact%tPenalty * contact%refStiff
+      mut_new = contact%tPenalty * contact_penalty_scale(contact)
       if (hecmw_comm_get_rank() == 0) then
         write(*,'(A,A,A,1pE12.3,A,1pE12.3,A)') "  Contact [", trim(contact%pair_name), &
           "] tangential penalty adjusted: ", mut_old, " -> ", mut_new, " (friction jump)"
@@ -270,8 +276,8 @@ contains
     integer(kind=kint)  :: fstate
 
     ! ===== mortar multiplier update (per slave segment) =====
-    mu = contact%nPenalty * contact%refStiff
-    rho_t = contact%tPenalty * contact%refStiff   ! tangential penalty, used only if fcoeff/=0
+    mu = contact%nPenalty * contact_penalty_scale(contact)
+    rho_t = contact%tPenalty * contact_penalty_scale(contact)   ! tangential penalty, used only if fcoeff/=0
     do i = 1, size(contact%slave_surf)
       if( contact%slave_surf(i)%state == CONTACTFREE ) cycle
 
@@ -369,11 +375,9 @@ contains
     real(kind=kreal)    :: edisp(3*l_max_elem_node+3)
     real(kind=kreal)    :: mu                          !< penalty from contact
 
-    ! Calculate penalty from contact structure
-    mu = contact%nPenalty * contact%refStiff
-
     do i= 1, size(contact%slave)
       if( .not. is_contact_active(contact%states(i)%state) ) cycle   ! only STICK/SLIP
+      mu = contact%nPenalty * contact_penalty_scale(contact, i)
       slave = contact%slave(i)
       edisp(1:3) = disp(3*slave-2:3*slave)+ddisp(3*slave-2:3*slave)
       master = contact%states(i)%surface
@@ -475,7 +479,8 @@ contains
             id_lagrange = contact%states(j)%id_lagrange
             lagrange = hecMAT%lagmat%Lagrange(id_lagrange)
             call getContactStiffness_Slag(contact%states(j), contact%master(ctsurf), iter, &
-              contact%tPenalty, contact%fcoeff, lagrange, stiffness, smoothing_type=contact%smoothing)
+              contact%tPenalty * contact_penalty_scale(contact, j), contact%fcoeff, lagrange, stiffness, &
+              smoothing_type=contact%smoothing)
 
             ! Assemble contact stiffness matrix of contact pair into global stiffness matrix
             call hecmw_mat_ass_contactlag(nnode, ndLocal, id_lagrange, contact%fcoeff, stiffness, hecMAT)
@@ -487,7 +492,7 @@ contains
               eledisp(k*3+1:k*3+3) = ddisp(3*ndLocal(k+1)-2:3*ndLocal(k+1))
             enddo
             call getContactStiffness_Alag(contact%states(j), contact%master(ctsurf), elecoord(:,1:nnode), &
-              contact%nPenalty * contact%refStiff, contact%tPenalty * contact%refStiff, &
+              contact%nPenalty * contact_penalty_scale(contact, j), contact%tPenalty * contact_penalty_scale(contact, j), &
               contact%fcoeff, contact%symmetric, stiffness, force, &
               smoothing_type=contact%smoothing, edisp=eledisp(1:nnode*3+3), iter=iter, &
               slvpos=coord(3*ndLocal(1)-2:3*ndLocal(1)) + disp(3*ndLocal(1)-2:3*ndLocal(1)))
@@ -512,7 +517,7 @@ contains
 
           else if( ctAlgo == kcaALagrange ) then
             call getTiedStiffness_Alag(contact%states(j), contact%master(ctsurf), &
-              contact%nPenalty * contact%refStiff, stiffness, force)
+              contact%nPenalty * contact_penalty_scale(contact, j), stiffness, force)
 
             ! Assemble contact stiffness matrix into global stiffness matrix
             call hecmw_mat_ass_elem(hecMAT, nnode+1, ndLocal, stiffness)
@@ -561,12 +566,12 @@ contains
       if( contact%fcoeff /= 0.d0 ) then
         allocate(stiff_t(24,24,nnode_s,unique_count), active_t(nnode_s,unique_count))
         call getContactStiffness_Alag_SurfSurf( contact%slave_surf(i), contact%master, coord, disp, ddisp, &
-          contact%nPenalty * contact%refStiff, contact%tPenalty * contact%refStiff, contact%fcoeff, &
+          contact%nPenalty * contact_penalty_scale(contact), contact%tPenalty * contact_penalty_scale(contact), contact%fcoeff, &
           contact%symmetric, contact%eps_fric_band, unique_count, maplist, master_idxs, &
           stiff_n, active_n, stiff_t, active_t )
       else
         call getContactStiffness_Alag_SurfSurf( contact%slave_surf(i), contact%master, coord, disp, ddisp, &
-          contact%nPenalty * contact%refStiff, contact%tPenalty * contact%refStiff, contact%fcoeff, &
+          contact%nPenalty * contact_penalty_scale(contact), contact%tPenalty * contact_penalty_scale(contact), contact%fcoeff, &
           contact%symmetric, contact%eps_fric_band, unique_count, maplist, master_idxs, &
           stiff_n, active_n )
       endif
@@ -669,8 +674,8 @@ contains
           mu_n = 0.0d0
           mu_t = 0.0d0
         else
-          mu_n = contact%nPenalty * contact%refStiff
-          mu_t = contact%tPenalty * contact%refStiff
+          mu_n = contact%nPenalty * contact_penalty_scale(contact, j)
+          mu_t = contact%tPenalty * contact_penalty_scale(contact, j)
         endif
 
         if( algtype == CONTACTSSLID .or. algtype == CONTACTFSLID ) then
@@ -681,7 +686,8 @@ contains
             id_lagrange = contact%states(j)%id_lagrange
             lagrange = hecMAT%lagmat%Lagrange(id_lagrange)
             call getContactNodalForce_Slag(contact%states(j),contact%master(ctsurf),ndCoord,ndDu,    &
-              contact%tPenalty,contact%fcoeff,lagrange,ctNForce,ctTForce,.true.,contact%smoothing)
+              contact%tPenalty * contact_penalty_scale(contact, j),contact%fcoeff,lagrange,ctNForce,ctTForce, &
+              .true.,contact%smoothing)
 
           else if( ctAlgo == kcaALagrange ) then
             id_lagrange = 0
@@ -826,12 +832,12 @@ contains
       if( contact%fcoeff /= 0.d0 ) then
         allocate(ctTForce(24,nnode_s,unique_count), active_t(nnode_s,unique_count))
         call getContactNodalForce_Alag_SurfSurf( purpose, contact%slave_surf(i), contact%master, coord, disp, ddisp, &
-          contact%nPenalty * contact%refStiff, contact%tPenalty * contact%refStiff, contact%fcoeff, &
+          contact%nPenalty * contact_penalty_scale(contact), contact%tPenalty * contact_penalty_scale(contact), contact%fcoeff, &
           contact%symmetric, contact%eps_fric_band, unique_count, maplist, master_idxs, &
           ctNForce, active_n, ctTForce, active_t )
       else
         call getContactNodalForce_Alag_SurfSurf( purpose, contact%slave_surf(i), contact%master, coord, disp, ddisp, &
-          contact%nPenalty * contact%refStiff, contact%tPenalty * contact%refStiff, contact%fcoeff, &
+          contact%nPenalty * contact_penalty_scale(contact), contact%tPenalty * contact_penalty_scale(contact), contact%fcoeff, &
           contact%symmetric, contact%eps_fric_band, unique_count, maplist, master_idxs, &
           ctNForce, active_n )
       endif

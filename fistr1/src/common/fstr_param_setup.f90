@@ -667,7 +667,8 @@ contains
     integer(kind=kint) :: ipid
 
     ipid = fstr_setup_current_intprop( ctrl, P )
-    if( fstr_ctrl_get_PENALTY( ctrl, P%PARAM%intprop(ipid)%nPenalty, P%PARAM%intprop(ipid)%tPenalty ) /= 0 ) then
+    if( fstr_ctrl_get_PENALTY( ctrl, P%PARAM%intprop(ipid)%penalty_type, &
+        P%PARAM%intprop(ipid)%nPenalty, P%PARAM%intprop(ipid)%tPenalty ) /= 0 ) then
       write(*,*) '### Error: Fail in read in PENALTY definition : ' , ipid
       write(ILOG,*) '### Error: Fail in read in PENALTY definition : ', ipid
       stop HECMW_EXIT_INPUT

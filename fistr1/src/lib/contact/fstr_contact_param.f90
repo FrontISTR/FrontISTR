@@ -17,6 +17,11 @@ module mContactParam
   public :: init_Contact_IF
   public :: tInteractionProperty
   public :: init_InteractionProperty
+  public :: kcpFACTOR, kcpABSOLUTE
+
+  !> meaning of the penalties of an interaction property
+  integer(kind=kint), parameter :: kcpFACTOR   = 1  !< factors of the reference stiffness of the contact pair
+  integer(kind=kint), parameter :: kcpABSOLUTE = 2  !< stiffnesses per unit contact area
 
   type tContactParam
     character(HECMW_NAME_LEN) :: name    !< name of contact parameter set
@@ -49,6 +54,7 @@ module mContactParam
   type tInteractionProperty
     character(HECMW_NAME_LEN) :: name    !< name of interaction property
     real(kind=kreal) :: fcoeff           !< friction coefficient
+    integer(kind=kint) :: penalty_type   !< kcpFACTOR or kcpABSOLUTE
     real(kind=kreal) :: nPenalty         !< normal penalty
     real(kind=kreal) :: tPenalty         !< tangential penalty
   end type tInteractionProperty
@@ -86,6 +92,7 @@ contains
     type(tInteractionProperty), intent(out) :: iprop
     iprop%name         = ''
     iprop%fcoeff       = 0.d0
+    iprop%penalty_type = kcpFACTOR
     iprop%nPenalty     = 5.d0
     iprop%tPenalty     = 0.5d0
   end subroutine init_InteractionProperty

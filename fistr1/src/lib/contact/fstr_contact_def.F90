@@ -140,6 +140,8 @@ module mContactDef
     real(kind=kreal)              :: nPenalty                !< normal penalty coefficient
     real(kind=kreal)              :: tPenalty                !< tangential penalty coefficient
     real(kind=kreal)              :: refStiff                !< reference stiffness for penalty calculation
+    integer                       :: penalty_type = kcpFACTOR !< nPenalty and tPenalty are kcpFACTOR or kcpABSOLUTE
+    real(kind=kreal), pointer     :: slave_area(:)=>null()   !< area of each slave node (NODE-SURF with kcpABSOLUTE)
     real(kind=kreal)              :: damp_alpha              !< damping coefficient (dimensionless, scaled by refStiff)
     real(kind=kreal)              :: damp_gact               !< damping activation distance [length] (<=0: disabled)
 
@@ -260,6 +262,7 @@ contains
       deallocate(contact%master)
     endif
     if( associated(contact%states) ) deallocate(contact%states)
+    if( associated(contact%slave_area) ) deallocate(contact%slave_area)
     call hecmw_contact_comm_finalize(contact%comm)
     call bucketDB_finalize( contact%master_bktDB )
   end subroutine
@@ -483,15 +486,77 @@ contains
   end function
 
   !>  Sets the friction and the penalties of an interaction property to a contact pair initialized by
-  !>  fstr_contact_init. A tied pair keeps no friction.
-  subroutine fstr_contact_set_property( contact, iprop )
+  !>  fstr_contact_init. A tied pair keeps no friction. Collective over the ranks for penalties per unit area
+  !>  of a NODE-SURF pair, which needs the slave surface group (contact%surf_id1_sgrp > 0).
+  subroutine fstr_contact_set_property( contact, iprop, hecMESH )
     type(tContact), intent(inout)          :: contact  !< contact definition
     type(tInteractionProperty), intent(in) :: iprop    !< interaction property
+    type(hecmwST_local_mesh), pointer      :: hecMESH  !< mesh definition
 
     if( contact%algtype /= CONTACTTIED ) contact%fcoeff = iprop%fcoeff
+    contact%penalty_type = iprop%penalty_type
     contact%nPenalty = iprop%nPenalty
     contact%tPenalty = iprop%tPenalty
+    if( contact%penalty_type == kcpABSOLUTE .and. contact%method == CONTACTN2S ) &
+      call fstr_contact_init_slave_area( contact, hecMESH )
   end subroutine fstr_contact_set_property
+
+  !>  Area of each slave node of a contact pair in the initial configuration: the area of each face of the slave
+  !>  surface group divided equally among the nodes of the face, summed over the faces and the ranks
+  subroutine fstr_contact_init_slave_area( contact, hecMESH )
+    type(tContact), intent(inout)     :: contact  !< contact definition
+    type(hecmwST_local_mesh), pointer :: hecMESH  !< mesh definition
+
+    integer  :: i, j, cgrp, ic, etype, nn, iss, nd
+    real(kind=kreal) :: ecoord(3, l_max_elem_node), vect(l_max_elem_node)
+    real(kind=kreal), allocatable :: area(:)
+
+    allocate( area(hecMESH%n_node) )
+    area(:) = 0.d0
+    cgrp = contact%surf_id1_sgrp
+    ! each face is taken on the rank owning its element, so that the sum over the ranks takes it once
+    do i = hecMESH%surf_group%grp_index(cgrp-1)+1, hecMESH%surf_group%grp_index(cgrp)
+      ic = hecMESH%surf_group%grp_item(2*i-1)
+      if( hecMESH%elem_ID(ic*2) /= hecMESH%my_rank ) cycle
+      etype = hecMESH%elem_type(ic)
+      nn = hecmw_get_max_node( etype )
+      iss = hecMESH%elem_node_index(ic-1)
+      do j = 1, nn
+        nd = hecMESH%elem_node_item(iss+j)
+        ecoord(1:3,j) = hecMESH%node(3*nd-2:3*nd)
+      enddo
+      call calc_nodalarea_surfelement( etype, ecoord, hecMESH%surf_group%grp_item(2*i), vect )
+      do j = 1, nn
+        nd = hecMESH%elem_node_item(iss+j)
+        area(nd) = area(nd) + vect(j)
+      enddo
+    enddo
+    call hecmw_assemble_R( hecMESH, area, hecMESH%n_node, 1 )
+    call hecmw_update_R( hecMESH, area, hecMESH%n_node, 1 )
+
+    if( associated(contact%slave_area) ) deallocate(contact%slave_area)
+    allocate( contact%slave_area(size(contact%slave)) )
+    do j = 1, size(contact%slave)
+      contact%slave_area(j) = area(contact%slave(j))
+    enddo
+    deallocate( area )
+  end subroutine fstr_contact_init_slave_area
+
+  !>  Factor of nPenalty and tPenalty in the penalty stiffness of a contact pair: refStiff for factors of the
+  !>  reference stiffness, and for stiffnesses per unit area, the area of slave node j of a NODE-SURF pair,
+  !>  or 1 without j (SURF-SURF, whose penalty is per unit area)
+  pure real(kind=kreal) function contact_penalty_scale( contact, j )
+    type(tContact), intent(in)               :: contact  !< contact definition
+    integer(kind=kint), intent(in), optional :: j        !< slave node of a NODE-SURF pair
+
+    if( contact%penalty_type /= kcpABSOLUTE ) then
+      contact_penalty_scale = contact%refStiff
+    else if( present(j) ) then
+      contact_penalty_scale = contact%slave_area(j)
+    else
+      contact_penalty_scale = 1.d0
+    endif
+  end function contact_penalty_scale
 
   !>  Initializer of tContactState for embed case
   logical function fstr_embed_init( embed, hecMESH, cparam )

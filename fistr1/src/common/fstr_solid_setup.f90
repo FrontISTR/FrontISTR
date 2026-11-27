@@ -2842,7 +2842,16 @@ contains
           write(ILOG,'(/a/)') ' ### Warning: !CONTACT : the friction of INTERACTION_PROPERTY='// &
             trim(iprop_name)//' is not used with INTERACTION=TIED'
         endif
-        call fstr_contact_set_property( fstrSOLID%contacts(is+i), fstrPARAM%intprop(iprop_id) )
+        ! the area of the slave nodes is taken from the slave surface group, which NODE-SURF pairs do not have
+        if( fstrPARAM%intprop(iprop_id)%penalty_type == kcpABSOLUTE .and. &
+          & fstrSOLID%contacts(is+i)%method == CONTACTN2S .and. fstrSOLID%contacts(is+i)%surf_id1_sgrp <= 0 ) then
+          write(*,*)    '### Error: !PENALTY, TYPE=ABSOLUTE needs a slave surface : ', i+is
+          write(ILOG,*) '### Error: !PENALTY, TYPE=ABSOLUTE needs a slave surface : ', i+is
+          write(*,*)    '           Define the contact pair by !CONTACT PAIR, TYPE=SURF-SURF.'
+          write(ILOG,*) '           Define the contact pair by !CONTACT PAIR, TYPE=SURF-SURF.'
+          stop HECMW_EXIT_MODEL
+        endif
+        call fstr_contact_set_property( fstrSOLID%contacts(is+i), fstrPARAM%intprop(iprop_id), hecMESH )
       endif
       if( fstrSOLID%contacts(is+i)%method == CONTACTS2S ) then
         ! Only the static path is wired for MORTAR=YES. The implicit dynamic solver calls

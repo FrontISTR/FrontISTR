@@ -943,25 +943,40 @@ contains
     fstr_ctrl_get_FRICTION = 0
   end function fstr_ctrl_get_FRICTION
 
-  !> Read in !PENALTY of an interaction property: factors of the reference stiffness of the contact pair,
-  !> which default to those of !CONTACT
-  function fstr_ctrl_get_PENALTY( ctrl, nPenalty, tPenalty )
+  !> Read in !PENALTY of an interaction property.
+  !> TYPE=FACTOR gives factors of the reference stiffness of the contact pair, which default to those of !CONTACT,
+  !> and TYPE=ABSOLUTE gives stiffnesses per unit contact area.
+  function fstr_ctrl_get_PENALTY( ctrl, penalty_type, nPenalty, tPenalty )
     implicit none
     integer(kind=kint) :: ctrl
+    integer(kind=kint) :: penalty_type !< kcpFACTOR or kcpABSOLUTE
     real(kind=kreal)   :: nPenalty     !< normal penalty
     real(kind=kreal)   :: tPenalty     !< tangential penalty
     integer(kind=kint) :: fstr_ctrl_get_PENALTY
 
+    integer(kind=kint) :: ptype
     character(len=128) :: msg
 
     fstr_ctrl_get_PENALTY = -1
+    ptype = 1
+    if( fstr_ctrl_get_param_ex( ctrl, 'TYPE ', 'FACTOR,ABSOLUTE ', 0, 'P', ptype ) /= 0 ) return
+    if( ptype == 2 ) then
+      penalty_type = kcpABSOLUTE
+    else
+      penalty_type = kcpFACTOR
+    endif
+
     if( fstr_ctrl_get_data_line_n( ctrl ) /= 1 ) then
       msg = 'fstr control file error : !PENALTY : give one data line with the normal and the tangential penalty.'
       write(*,*) trim(msg)
       write(ILOG,*) trim(msg)
       return
     endif
-    if( fstr_ctrl_get_data_ex( ctrl, 1, 'rr ', nPenalty, tPenalty ) /= 0 ) return
+    if( penalty_type == kcpABSOLUTE ) then
+      if( fstr_ctrl_get_data_ex( ctrl, 1, 'RR ', nPenalty, tPenalty ) /= 0 ) return
+    else
+      if( fstr_ctrl_get_data_ex( ctrl, 1, 'rr ', nPenalty, tPenalty ) /= 0 ) return
+    endif
     if( nPenalty <= 0.d0 .or. tPenalty <= 0.d0 ) then
       msg = 'fstr control file error : !PENALTY : the penalties must be > 0.'
       write(*,*) trim(msg)
