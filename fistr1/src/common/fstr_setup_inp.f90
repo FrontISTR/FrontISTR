@@ -216,6 +216,9 @@ contains
               case( '*CLOAD' )
                 supported = param == 'AMPLITUDE' .or. param == 'OP'
               end select
+              ! FrontISTR cannot shift the time of an amplitude
+              if( param == 'TIME DELAY' .and. ( header_name == '*BOUNDARY' .or. header_name == '*CLOAD' ) ) &
+                call fstr_setup_inp_err_stop( ctrl, 'TIME DELAY is not supported yet' )
               if( .not. supported .and. P%MESH%my_rank == 0 ) write(*,'(a,a,a,i0,a,a,a)') ' Warning: ', &
                 trim(header_name), ' (line:', fstr_ctrl_get_c_h_line_no( ctrl ), ') : unsupported parameter ', &
                 trim(param), ' is skipped'
