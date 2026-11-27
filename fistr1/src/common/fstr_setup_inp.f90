@@ -14,10 +14,14 @@ module m_fstr_setup_inp
     : fstr_setup_SECTION &
     , fstr_setup_WRITE_flags &
     , fstr_setup_WRITE_store &
+    , fstr_setup_step_links &
     , fstr_solid_append_boundary &
     , fstr_solid_append_cload
   use m_fstr_param_setup, only &
-    : fstr_setup_SOLVER
+    : fstr_setup_SOLVER &
+    , fstr_setup_NONLINEAR_SOLVER &
+    , fstr_setup_AUTOINC_PARAM &
+    , fstr_setup_CONVERG_PARAM
   use m_fstr_setup_finish
   use fstr_ctrl_util_f
   implicit none
@@ -76,15 +80,23 @@ contains
       call fstr_ctrl_err_stop
     end if
 
+    P%STATE%step = 0
     call fstr_setup_inp_read_cards( ctrl, T, 1, total, P )
 
-    ! ----- counts stay 0, since no card of the table is stored in the arrays that fstr_setup_prepare allocates
+    ! ----- the other counts stay 0, since the other cards are not stored in the arrays that fstr_setup_prepare allocates
+    counts%steps          = fstr_card_total( T, total, 'STEP' )
+    counts%autoinc_params = fstr_card_total( T, total, 'AUTOINC_PARAM' )
+    counts%converg_params = fstr_card_total( T, total, 'CONVERG_PARAM' )
+    if( counts%steps > 0 .and. fstr_card_total( T, total, 'STATIC' ) /= counts%steps ) &
+      call fstr_setup_util_err_stop( '### Error: *STEP : each step needs one *STATIC' )
     call fstr_setup_prepare( P, counts )
     call fstr_setup_inp_formulation( P )
 
     ! -----
     rcode = fstr_ctrl_rewind( ctrl )
+    P%STATE%step = 0
     call fstr_setup_inp_read_cards( ctrl, T, 2, total, P )
+    call fstr_setup_inp_steps( P )
 
     call fstr_setup_finish( P, counts )
     rcode = fstr_ctrl_close( ctrl )
@@ -92,21 +104,25 @@ contains
   end subroutine fstr_setup_inp
 
   !> Adds the cards of an inp file to the table T, by the names without the '*' of the header.
-  !> The cards of the inp format are read in the first reading, so that fstr_setup_prepare knows the analysis type
-  !> and all the boundary conditions.
+  !> The cards of the inp format are read in the first reading, so that fstr_setup_prepare knows the analysis type,
+  !> the steps and all the boundary conditions. The second reading stores the steps that fstr_setup_prepare allocates.
   subroutine fstr_setup_inp_cards( T )
     implicit none
     type(fstr_card_table) :: T
 
-    ! The cards of the inp format. The conditions go into the default step, as in a cnt file without !STEP.
-    call fstr_card_add( T, 'STEP',     first=fstr_setup_inp_STEP )
+    ! The cards of the inp format. Without *STEP, the conditions go into the default step, as in a cnt file
+    ! without !STEP. *STEP also refers by name to *AUTOINC_PARAM and *CONVERG_PARAM read before it.
+    call fstr_card_add( T, 'STEP',     first=fstr_setup_inp_STEP, second=fstr_setup_inp_STEP_store )
     call fstr_card_add( T, 'END STEP' )
-    call fstr_card_add( T, 'STATIC',   first=fstr_setup_inp_STATIC )
+    call fstr_card_add( T, 'STATIC',   first=fstr_setup_inp_STATIC, second=fstr_setup_inp_STATIC_store )
     call fstr_card_add( T, 'BOUNDARY', first=fstr_setup_inp_BOUNDARY )
     call fstr_card_add( T, 'CLOAD',    first=fstr_setup_inp_CLOAD )
 
     ! FrontISTR's own cards, read as the cnt cards
     call fstr_card_add( T, 'SOLVER',   first=fstr_setup_SOLVER )
+    call fstr_card_add( T, 'NONLINEAR_SOLVER', first=fstr_setup_NONLINEAR_SOLVER )
+    call fstr_card_add( T, 'AUTOINC_PARAM',    second=fstr_setup_AUTOINC_PARAM )
+    call fstr_card_add( T, 'CONVERG_PARAM',    second=fstr_setup_CONVERG_PARAM )
     call fstr_card_add( T, 'SECTION',  second=fstr_setup_SECTION )
     call fstr_card_add( T, 'WRITE',    first=fstr_setup_inp_WRITE, second=fstr_setup_WRITE_store )
 
@@ -125,6 +141,11 @@ contains
     call fstr_card_add( T, 'SHELL SECTION' )
     call fstr_card_add( T, 'EQUATION' )
     call fstr_card_add( T, 'AMPLITUDE' )
+
+    ! The controls of the iterations and the times of the output requests, skipped with a warning.
+    ! They do not change the results at the end of a step.
+    call fstr_card_add( T, 'CONTROLS',       first=fstr_setup_inp_skipped )
+    call fstr_card_add( T, 'TIME POINTS',    first=fstr_setup_inp_skipped )
 
     ! Output requests, skipped with a warning. FrontISTR writes its own result file.
     call fstr_card_add( T, 'NODE PRINT',     first=fstr_setup_inp_output_request )
@@ -173,7 +194,7 @@ contains
             param = header
             if( next_comma > 0 ) param = header(:next_comma-1)
             if( len_trim(param) > 0 ) then
-              i = scan( param, '= ' )
+              i = index( param, '=' )
               if( i > 0 ) param = param(:i-1)
               do i = 1, len_trim(param)
                 c = iachar( param(i:i) )
@@ -182,7 +203,10 @@ contains
               supported = .false.
               select case( trim(header_name) )
               case( '*STEP' )
-                supported = param == 'NLGEOM'
+                supported = param == 'NLGEOM' .or. param == 'INC' .or. param == 'AUTOINCPARAM' &
+                  .or. param == 'CONVERGPARAM'
+              case( '*STATIC' )
+                supported = param == 'DIRECT'
               case( '*BOUNDARY', '*CLOAD' )
                 supported = param == 'AMPLITUDE'
               end select
@@ -224,6 +248,8 @@ contains
   !-----------------------------------------------------------------------------!
   !> Read in *STEP                                                              !
   !-----------------------------------------------------------------------------!
+  !> P%STATE%step is set to this step. NLGEOM given in the first step makes the analysis geometrically nonlinear,
+  !> as NLSTATIC of !SOLUTION, and stays in the later steps as in the inp format.
   subroutine fstr_setup_inp_STEP( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
@@ -231,7 +257,8 @@ contains
 
     integer(kind=kint) :: rcode, is_nlgeom, nlgeom
 
-    if( P%STATE%slot%first > 1 ) call fstr_setup_inp_err_stop( ctrl, 'more than one step is not supported yet' )
+    P%STATE%step = P%STATE%slot%first
+    if( P%STATE%step > 1 ) call fstr_setup_inp_err_stop( ctrl, 'more than one step is not supported yet' )
 
     is_nlgeom = 0
     rcode = fstr_ctrl_get_param_ex( ctrl, 'NLGEOM ', '# ', 0, 'E', is_nlgeom )
@@ -239,20 +266,88 @@ contains
     nlgeom = 1
     rcode = fstr_ctrl_get_param_ex( ctrl, 'NLGEOM ', 'YES,NO ', 0, 'P', nlgeom )
     if( rcode /= 0 ) call fstr_ctrl_err_stop
-    if( nlgeom == 1 ) call fstr_setup_inp_err_stop( ctrl, 'NLGEOM is not supported yet' )
+    if( nlgeom == 1 ) P%PARAM%nlgeom = .true.
   end subroutine fstr_setup_inp_STEP
+
+  !> Read in *STEP after fstr_setup_prepare and store the step: INC is the upper bound of the automatic increments
+  !> (100 by default), and FrontISTR's own AUTOINCPARAM and CONVERGPARAM refer to *AUTOINC_PARAM and *CONVERG_PARAM
+  !> as those of !STEP.
+  subroutine fstr_setup_inp_STEP_store( ctrl, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    type(fstr_param_pack) :: P
+
+    integer(kind=kint) :: rcode, inc
+    character(len=HECMW_NAME_LEN) :: ainc_name, cnv_name
+
+    P%STATE%step = P%STATE%slot%first
+    inc = 100
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'INC ', '# ', 0, 'I', inc )
+    if( rcode /= 0 ) call fstr_ctrl_err_stop
+    if( inc < 1 ) call fstr_setup_inp_err_stop( ctrl, 'INC must be positive' )
+    ainc_name = ' '
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'AUTOINCPARAM ', '# ', 0, 'S', ainc_name )
+    if( rcode /= 0 ) call fstr_ctrl_err_stop
+    cnv_name = ' '
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'CONVERGPARAM ', '# ', 0, 'S', cnv_name )
+    if( rcode /= 0 ) call fstr_ctrl_err_stop
+
+    P%SOLID%step_ctrl(P%STATE%step)%num_substep = inc
+    call fstr_setup_step_links( P%PARAM, P%SOLID, P%DYN, P%STATE%step, ' ', ainc_name, cnv_name )
+  end subroutine fstr_setup_inp_STEP_store
 
   !-----------------------------------------------------------------------------!
   !> Read in *STATIC                                                            !
   !-----------------------------------------------------------------------------!
-  !> The data line of the time increments is not used in a linear analysis.
   subroutine fstr_setup_inp_STATIC( ctrl, P )
     implicit none
     integer(kind=kint) :: ctrl
     type(fstr_param_pack) :: P
 
+    if( P%STATE%step > 0 .and. P%STATE%slot%first /= P%STATE%step ) &
+      call fstr_setup_inp_err_stop( ctrl, 'each step needs one *STATIC' )
     P%PARAM%solution_type = kstSTATIC
   end subroutine fstr_setup_inp_STATIC
+
+  !> Read in *STATIC after fstr_setup_prepare and store its time increments in the step. The data line is the initial
+  !> increment, the time period of the step, and the minimum and the maximum increments, used in a geometrically
+  !> nonlinear analysis: DIRECT fixes the increment to the initial one, and the increments are automatic without it.
+  !> A step of a linear analysis is solved at once over the time period 1, whatever the data line is.
+  subroutine fstr_setup_inp_STATIC_store( ctrl, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    type(fstr_param_pack) :: P
+
+    integer(kind=kint) :: rcode, is_direct, k
+    real(kind=kreal) :: dt, period, dtmin, dtmax
+
+    k = P%STATE%step
+    if( k == 0 .or. .not. P%PARAM%nlgeom ) return
+    is_direct = 0
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'DIRECT ', '# ', 0, 'E', is_direct )
+    dt = 1.0d0
+    period = 1.0d0
+    dtmin = -1.0d0
+    dtmax = 1.0d+30
+    if( fstr_ctrl_get_data_line_n( ctrl ) > 0 ) then
+      rcode = fstr_ctrl_get_data_ex( ctrl, 1, 'rrrr ', dt, period, dtmin, dtmax )
+      if( rcode /= 0 ) call fstr_ctrl_err_stop
+    endif
+    if( dt <= 0.0d0 .or. period <= 0.0d0 ) &
+      call fstr_setup_inp_err_stop( ctrl, 'the time increment and the time period must be positive' )
+    if( dtmin < 0.0d0 ) dtmin = min( dt, 1.0d-5*period )
+
+    P%SOLID%step_ctrl(k)%initdt = dt
+    P%SOLID%step_ctrl(k)%elapsetime = period
+    if( is_direct == 1 ) then
+      P%SOLID%step_ctrl(k)%inc_type = stepFixedInc
+      P%SOLID%step_ctrl(k)%num_substep = max( int( (period + 0.999999999d0*dt)/dt ), 1 )
+    else
+      P%SOLID%step_ctrl(k)%inc_type = stepAutoInc
+      P%SOLID%step_ctrl(k)%mindt = min( dtmin, dt )
+      P%SOLID%step_ctrl(k)%maxdt = dtmax
+    endif
+  end subroutine fstr_setup_inp_STATIC_store
 
   !-----------------------------------------------------------------------------!
   !> Read in *BOUNDARY                                                          !
@@ -349,6 +444,41 @@ contains
     write(*,'(a,a,a,i0,a)') ' Warning: ', trim(header_name), ' (line:', fstr_ctrl_get_c_h_line_no( ctrl ), &
       ') is skipped. The results are written to the result file of FrontISTR'
   end subroutine fstr_setup_inp_output_request
+
+  !> A card of the inp format skipped with a warning
+  subroutine fstr_setup_inp_skipped( ctrl, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    type(fstr_param_pack) :: P
+
+    integer(kind=kint) :: rcode
+    character(len=HECMW_NAME_LEN) :: header_name
+
+    if( P%MESH%my_rank /= 0 ) return
+    rcode = fstr_ctrl_get_c_h_name_inp( ctrl, header_name, HECMW_NAME_LEN )
+    write(*,'(a,a,a,i0,a)') ' Warning: ', trim(header_name), ' (line:', fstr_ctrl_get_c_h_line_no( ctrl ), &
+      ') is skipped'
+  end subroutine fstr_setup_inp_skipped
+
+  !> Makes each step of the inp file take the conditions given in it
+  subroutine fstr_setup_inp_steps( P )
+    implicit none
+    type(fstr_param_pack) :: P
+
+    integer(kind=kint) :: k
+
+    if( .not. associated(P%SOLID%step_ctrl) ) return
+    do k = 1, size(P%SOLID%step_ctrl)
+      if( P%SOLID%BOUNDARY_ngrp_tot > 0 ) then
+        allocate( P%SOLID%step_ctrl(k)%Boundary(1) )
+        P%SOLID%step_ctrl(k)%Boundary(1) = 1
+      endif
+      if( P%SOLID%CLOAD_ngrp_tot > 0 ) then
+        allocate( P%SOLID%step_ctrl(k)%Load(1) )
+        P%SOLID%step_ctrl(k)%Load(1) = 1
+      endif
+    enddo
+  end subroutine fstr_setup_inp_steps
 
   !> Sets the formulation of 361 and 362 of the sections by the inp element names, which hecmw1 keeps in sect_opt:
   !> C3D8 is computed with FBAR, C3D8I with IC, C3D20 with FI, and C3D8R and C3D20R with RI. Called after the

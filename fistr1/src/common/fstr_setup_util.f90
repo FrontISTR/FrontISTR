@@ -23,6 +23,7 @@ module fstr_setup_util
     integer(kind=kint) :: version = 0  !< !VERSION
     integer(kind=kint) :: cid = 0      !< material of the last !MATERIAL, 0 before the first one
     integer(kind=kint) :: cache = 1    !< material expected at the next !MATERIAL
+    integer(kind=kint) :: step = 0     !< *STEP of an inp file the card is in, 0 before the first one
   end type fstr_card_state
 
   !> Package of all data needs to initialize
