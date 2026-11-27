@@ -98,9 +98,11 @@ contains
     type(fstr_card_table) :: T
 
     ! The cards of the inp format. The conditions go into the default step, as in a cnt file without !STEP.
+    ! The analysis cards share a sequence, so that the second one in the step is found.
     call fstr_card_add( T, 'STEP',     first=fstr_setup_inp_STEP )
     call fstr_card_add( T, 'END STEP' )
-    call fstr_card_add( T, 'STATIC',   first=fstr_setup_inp_STATIC )
+    call fstr_card_add( T, 'STATIC',   first=fstr_setup_inp_STATIC, seq='analysis' )
+    call fstr_card_add( T, 'FREQUENCY', first=fstr_setup_inp_FREQUENCY, seq='analysis' )
     call fstr_card_add( T, 'BOUNDARY', first=fstr_setup_inp_BOUNDARY )
     call fstr_card_add( T, 'CLOAD',    first=fstr_setup_inp_CLOAD )
 
@@ -162,7 +164,7 @@ contains
       rcode = fstr_ctrl_get_c_h_name_inp( ctrl, header_name, HECMW_NAME_LEN )
       if( ipass == 1 ) then
         select case( trim(header_name) )
-        case( '*STEP', '*END STEP', '*STATIC', '*BOUNDARY', '*CLOAD' )
+        case( '*STEP', '*END STEP', '*STATIC', '*FREQUENCY', '*BOUNDARY', '*CLOAD' )
           rcode = fstr_ctrl_get_line( ctrl, fstr_ctrl_get_c_h_pos(ctrl), header, len(header) )
           if( rcode /= 0 ) call fstr_ctrl_err_stop
           comma = index( header, ',' )
@@ -182,12 +184,13 @@ contains
               select case( trim(header_name) )
               case( '*STEP' )
                 supported = param == 'NLGEOM'
+              case( '*FREQUENCY' )
+                supported = param == 'SOLVER' .or. param == 'STORAGE'
               case( '*BOUNDARY', '*CLOAD' )
                 supported = param == 'AMPLITUDE'
               end select
-              if( .not. supported .and. P%MESH%my_rank == 0 ) write(*,'(a,a,a,i0,a,a,a)') ' Warning: ', &
-                trim(header_name), ' (line:', fstr_ctrl_get_c_h_line_no( ctrl ), ') : unsupported parameter ', &
-                trim(param), ' is skipped'
+              if( .not. supported ) call fstr_setup_inp_warn( ctrl, P, &
+                'unsupported parameter '//trim(param)//' is skipped' )
             endif
             comma = next_comma
           enddo
@@ -220,6 +223,22 @@ contains
     call fstr_setup_util_err_stop( trim(s) )
   end subroutine fstr_setup_inp_err_stop
 
+  !> Writes msg about the card at the current header of ctrl and its line in the inp file as a warning
+  subroutine fstr_setup_inp_warn( ctrl, P, msg )
+    implicit none
+    integer(kind=kint) :: ctrl
+    type(fstr_param_pack) :: P
+    character(len=*), intent(in) :: msg
+
+    integer(kind=kint) :: rcode
+    character(len=HECMW_NAME_LEN) :: header_name
+
+    if( P%MESH%my_rank /= 0 ) return
+    rcode = fstr_ctrl_get_c_h_name_inp( ctrl, header_name, HECMW_NAME_LEN )
+    write(*,'(a,a,a,i0,a,a)') ' Warning: ', trim(header_name), ' (line:', fstr_ctrl_get_c_h_line_no( ctrl ), &
+      ') : ', msg
+  end subroutine fstr_setup_inp_warn
+
   !-----------------------------------------------------------------------------!
   !> Read in *STEP                                                              !
   !-----------------------------------------------------------------------------!
@@ -250,8 +269,54 @@ contains
     integer(kind=kint) :: ctrl
     type(fstr_param_pack) :: P
 
+    if( P%STATE%slot%first > 1 ) call fstr_setup_inp_err_stop( ctrl, 'only one analysis card is allowed in a step' )
+
     P%PARAM%solution_type = kstSTATIC
   end subroutine fstr_setup_inp_STATIC
+
+  !-----------------------------------------------------------------------------!
+  !> Read in *FREQUENCY                                                         !
+  !-----------------------------------------------------------------------------!
+  !> The data line is the number of eigenfrequencies, and the lower and the upper value of a frequency range.
+  !> The lowest eigenfrequencies are computed whatever the range is, since the range of the inp format only selects
+  !> the ones written out. All of them are written to the result file.
+  subroutine fstr_setup_inp_FREQUENCY( ctrl, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    type(fstr_param_pack) :: P
+
+    integer(kind=kint) :: rcode, storage
+    real(kind=kreal) :: fmin, fmax
+    character(len=HECMW_NAME_LEN) :: solver
+
+    if( P%STATE%slot%first > 1 ) call fstr_setup_inp_err_stop( ctrl, 'only one analysis card is allowed in a step' )
+
+    solver = ' '
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'SOLVER ', '# ', 0, 'S', solver )
+    if( rcode /= 0 ) call fstr_ctrl_err_stop
+    if( solver == 'MATRIXSTORAGE' ) then
+      call fstr_setup_inp_err_stop( ctrl, 'SOLVER=MATRIXSTORAGE is not supported' )
+    else if( solver /= ' ' ) then
+      call fstr_setup_inp_warn( ctrl, P, 'SOLVER='//trim(solver)// &
+        ' is skipped. The linear solver is given by *SOLVER, DIRECTmf by default' )
+    endif
+
+    storage = 2
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'STORAGE ', 'YES,NO ', 0, 'P', storage )
+    if( rcode /= 0 ) call fstr_ctrl_err_stop
+    if( storage == 1 ) call fstr_setup_inp_warn( ctrl, P, &
+      'STORAGE=YES is skipped. The eigenmodes are written to the result file of FrontISTR' )
+
+    fmin = 0.0d0
+    fmax = -1.0d0
+    rcode = fstr_ctrl_get_data_ex( ctrl, 1, 'Irr ', P%EIGEN%nget, fmin, fmax )
+    if( rcode /= 0 ) call fstr_ctrl_err_stop
+    if( P%EIGEN%nget < 1 ) call fstr_setup_inp_err_stop( ctrl, 'the number of eigenfrequencies must be positive' )
+    if( fmin > 0.0d0 .or. fmax >= 0.0d0 ) call fstr_setup_inp_warn( ctrl, P, &
+      'the frequency range is skipped. All the eigenmodes computed are written to the result file' )
+
+    P%PARAM%solution_type = kstEIGEN
+  end subroutine fstr_setup_inp_FREQUENCY
 
   !-----------------------------------------------------------------------------!
   !> Read in *BOUNDARY                                                          !
