@@ -110,6 +110,8 @@ file		([a-zA-Z]:)*[\\/._a-zA-Z0-9-]+
 "*"SOLID" "?SECTION		{ return flag_header ? HECMW_INPLEX_H_SOLID_SECTION : ' '; }
 ^"*"SPECIFIC" "?HEAT	{ set_flag_header(1); return HECMW_INPLEX_H_SPECIFIC_HEAT; }
 "*"SPECIFIC" "?HEAT		{ return flag_header ? HECMW_INPLEX_H_SPECIFIC_HEAT : ' '; }
+^"*"SURFACE	{ set_flag_header(1); return HECMW_INPLEX_H_SURFACE; }
+"*"SURFACE		{ return flag_header ? HECMW_INPLEX_H_SURFACE : ' '; }
 ^"*"SYSTEM	{ set_flag_header(1); return HECMW_INPLEX_H_SYSTEM; }
 "*"SYSTEM	{ return flag_header ? HECMW_INPLEX_H_SYSTEM : ' '; }
 ^"*"TIE	{ set_flag_header(1); return HECMW_INPLEX_H_TIE; }

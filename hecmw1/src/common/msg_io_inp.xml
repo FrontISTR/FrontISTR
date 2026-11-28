@@ -302,6 +302,18 @@
 			<message>*DLOAD: Invalid token</message>
 			<description>*DLOAD読み込み中に予期しないトークンを検出した</description>
 		</define>
+		<define type="error" name="E2900">
+			<message>*SURFACE: Invalid token</message>
+			<description>*SURFACE読み込み中に予期しないトークンを検出した</description>
+		</define>
+		<define type="error" name="E2901">
+			<message>*SURFACE: Missing NAME</message>
+			<description>*SURFACEの必須パラメータNAMEが見つからない</description>
+		</define>
+		<define type="error" name="E2902">
+			<message>*SURFACE: Cannot make the group</message>
+			<description>*SURFACEの面または節点をグループにできない</description>
+		</define>
 	</table>
 </msg-table>
 

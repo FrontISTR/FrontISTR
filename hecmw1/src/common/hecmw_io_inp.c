@@ -21,6 +21,7 @@
 #include "hecmw_path.h"
 #include "hecmw_conn_conv.h"
 #include "hecmw_map_int.h"
+#include "hecmw_varray_int.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -3690,6 +3691,289 @@ static int read_solid_section(void) {
 }
 
 /*----------------------------------------------------------------------------*/
+
+/* *SURFACE of TYPE=NODE, added to the node groups in post_inp, so that a node
+ * set of the same name defined after it is found too */
+static struct node_surf_data {
+  char name[HECMW_NAME_LEN + 1];
+  struct hecmw_varray_int node;
+  struct node_surf_data *next;
+} * nodesurf;
+
+/* The face of a surface group for the face label Sx of an element of the
+ * HECMW type etype, or 0 if there is none. The faces of the solid and the
+ * two-dimensional elements are numbered as in the inp format. FrontISTR has
+ * no face for the labels of the shells and the beams. */
+static int get_surface_face(int etype, const char *label) {
+  int face;
+  char *end;
+
+  if (!HECMW_is_etype_solid(etype) && !HECMW_is_etype_surface(etype)) return 0;
+  if (label[0] != 'S' || label[1] == '\0') return 0;
+  face = strtol(label + 1, &end, 10);
+  if (*end != '\0' || face < 1 || face > HECMW_get_max_surf(etype)) return 0;
+  return face;
+}
+
+static int add_node_surf_data(const char *name,
+                              const struct hecmw_varray_int *node) {
+  struct node_surf_data *p;
+
+  for (p = nodesurf; p && strcmp(p->name, name) != 0; p = p->next)
+    ;
+  if (p == NULL) {
+    p = HECMW_malloc(sizeof(*p));
+    if (p == NULL) {
+      set_err(errno, "");
+      return -1;
+    }
+    snprintf(p->name, sizeof(p->name), "%s", name);
+    HECMW_varray_int_init(&p->node);
+    p->next  = nodesurf;
+    nodesurf = p;
+  }
+  if (HECMW_varray_int_cat(&p->node, node) != HECMW_SUCCESS) {
+    set_err(errno, "");
+    return -1;
+  }
+  return 0;
+}
+
+/* A node surface whose name is that of a node set is not added, since the
+ * names of the surfaces and the sets are separate in the inp format */
+static int set_node_surf_data(void) {
+  struct node_surf_data *p;
+
+  for (p = nodesurf; p; p = p->next) {
+    if (HECMW_io_get_ngrp(p->name)) {
+      if (is_control_input) {
+        set_err_noloc(HECMW_IO_INP_E2902,
+                      "NAME=%s, a node set has the same name", p->name);
+        return -1;
+      }
+      HECMW_print_msg(HECMW_LOG_WARN, HECMW_IO_INP_W0099,
+                      "*SURFACE, NAME=%s: a node set has the same name",
+                      p->name);
+      continue;
+    }
+    if (HECMW_varray_int_nval(&p->node) > 0 &&
+        HECMW_io_add_ngrp(p->name, (int)HECMW_varray_int_nval(&p->node),
+                          HECMW_varray_int_get_v(&p->node)) < 0)
+      return -1;
+  }
+  return 0;
+}
+
+static void free_node_surf_data(void) {
+  struct node_surf_data *p, *q;
+
+  for (p = nodesurf; p; p = q) {
+    q = p->next;
+    HECMW_varray_int_finalize(&p->node);
+    HECMW_free(p);
+  }
+  nodesurf = NULL;
+}
+
+/* TYPE=ELEMENT makes a surface group of the element faces, and TYPE=NODE a
+ * node group. A data line is an element or an element set and the face label,
+ * or a node or a node set. A card that cannot be made into a group stops the
+ * reading of an inp file alone, and is skipped with a warning when the file is
+ * only the mesh of a cnt file, as every *SURFACE was skipped before. */
+static int read_surface(void) {
+  int token, i, is_node = 0, rtc = -1, msgno = HECMW_IO_INP_E2900;
+  size_t n;
+  struct hecmw_varray_int item, surf;
+  char name[HECMW_NAME_LEN + 1]  = "";
+  char label[HECMW_NAME_LEN + 1] = "";
+  char set[HECMW_NAME_LEN + 1];
+  char msg[HECMW_MSG_LEN + 1];
+  char *p;
+  struct hecmw_io_id_array *ids = NULL;
+
+  HECMW_varray_int_init(&item);
+  HECMW_varray_int_init(&surf);
+
+  /* *SURFACE */
+  token = HECMW_inplex_next_token();
+  HECMW_assert(token == HECMW_INPLEX_H_SURFACE);
+  token = HECMW_inplex_next_token();
+  while (token == ',') {
+    token = HECMW_inplex_next_token();
+    if (token == HECMW_INPLEX_K_NAME) {
+      if (HECMW_inplex_next_token() != '=' ||
+          HECMW_inplex_next_token() != HECMW_INPLEX_NAME) {
+        snprintf(msg, sizeof(msg),
+                 "NAME must be '=' and a name beginning with a letter");
+        goto problem;
+      }
+      p = HECMW_inplex_get_text();
+      if (strlen(p) > HECMW_NAME_LEN) {
+        snprintf(msg, sizeof(msg), "NAME is too long: %s", p);
+        goto problem;
+      }
+      snprintf(name, sizeof(name), "%s", p);
+      HECMW_toupper(name);
+      if (HECMW_io_is_reserved_name(name)) {
+        snprintf(msg, sizeof(msg), "Reserved name: %s", name);
+        goto problem;
+      }
+    } else if (token == HECMW_INPLEX_K_TYPE) {
+      if (HECMW_inplex_next_token() != '=' || !HECMW_inplex_next_token()) {
+        snprintf(msg, sizeof(msg), "'=' required after TYPE");
+        goto problem;
+      }
+      snprintf(set, sizeof(set), "%s", HECMW_inplex_get_text());
+      HECMW_toupper(set);
+      if (strcmp(set, "NODE") == 0) {
+        is_node = 1;
+      } else if (strcmp(set, "ELEMENT") == 0) {
+        is_node = 0;
+      } else {
+        snprintf(msg, sizeof(msg), "TYPE=%s is not supported", set);
+        goto problem;
+      }
+    } else {
+      snprintf(msg, sizeof(msg), "Unknown parameter %s",
+               token ? HECMW_inplex_get_text() : "");
+      goto problem;
+    }
+    token = HECMW_inplex_next_token();
+  }
+  if (token != HECMW_INPLEX_NL) {
+    snprintf(msg, sizeof(msg), "',' or NL required");
+    goto problem;
+  }
+  if (name[0] == '\0') {
+    msgno = HECMW_IO_INP_E2901;
+    msg[0] = '\0';
+    goto problem;
+  }
+
+  /* data lines */
+  while (1) {
+    size_t first = HECMW_varray_int_nval(&item);
+
+    do {
+      token = HECMW_inplex_next_token();
+    } while (token == HECMW_INPLEX_NL);
+    if (token == 0) break;
+    if (HECMW_inplex_get_text()[0] == '*') {
+      HECMW_inplex_unput_token();
+      break;
+    }
+
+    /* element or node, or its set */
+    if (token == HECMW_INPLEX_INT) {
+      if (HECMW_varray_int_append(&item, HECMW_inplex_get_number()) !=
+          HECMW_SUCCESS)
+        goto alloc_error;
+    } else if (token == ',') {
+      snprintf(msg, sizeof(msg), "%s or its set required",
+               is_node ? "Node" : "Element");
+      goto problem;
+    } else {
+      snprintf(set, sizeof(set), "%s", HECMW_inplex_get_text());
+      HECMW_toupper(set);
+      ids = is_node ? HECMW_io_get_node_in_ngrp(set)
+                    : HECMW_io_get_elem_in_egrp(set);
+      if (ids == NULL) {
+        msgno = HECMW_IO_INP_E2902;
+        snprintf(msg, sizeof(msg), "%s set %s is not defined",
+                 is_node ? "node" : "element", set);
+        goto problem;
+      }
+      for (i = 0; i < ids->n; i++) {
+        if (HECMW_varray_int_append(&item, ids->id[i]) != HECMW_SUCCESS)
+          goto alloc_error;
+      }
+      HECMW_free(ids->id);
+      HECMW_free(ids);
+      ids = NULL;
+    }
+
+    /* face label */
+    token = HECMW_inplex_next_token();
+    if (!is_node) {
+      if (token != ',' || !(token = HECMW_inplex_next_token()) ||
+          token == ',' || token == HECMW_INPLEX_NL) {
+        snprintf(msg, sizeof(msg), "Face label required after the element");
+        goto problem;
+      }
+      snprintf(label, sizeof(label), "%s", HECMW_inplex_get_text());
+      HECMW_toupper(label);
+      if (elem_type) HECMW_map_int_check_dup(elem_type);
+      for (n = first; n < HECMW_varray_int_nval(&item); n++) {
+        int eid       = HECMW_varray_int_get(&item, n);
+        Integer *type = elem_type ? HECMW_map_int_get(elem_type, eid) : NULL;
+        int face;
+
+        msgno = HECMW_IO_INP_E2902;
+        if (type == NULL) {
+          snprintf(msg, sizeof(msg),
+                   "element %d is not defined before *SURFACE", eid);
+          goto problem;
+        }
+        face = get_surface_face(get_HECMW_etype(type->i), label);
+        if (face == 0) {
+          snprintf(msg, sizeof(msg),
+                   "face %s of element %d (type %d) is not supported", label,
+                   eid, get_HECMW_etype(type->i));
+          goto problem;
+        }
+        if (HECMW_varray_int_append(&surf, face) != HECMW_SUCCESS)
+          goto alloc_error;
+      }
+      msgno = HECMW_IO_INP_E2900;
+      token = HECMW_inplex_next_token();
+    }
+    if (token == ',') token = HECMW_inplex_next_token();
+    if (token != HECMW_INPLEX_NL && token != 0) {
+      snprintf(msg, sizeof(msg), "NL required after the %s",
+               is_node ? "node" : "face label");
+      goto problem;
+    }
+    if (token == 0) break;
+  }
+
+  n = HECMW_varray_int_nval(&item);
+  if (n == 0) {
+    rtc = 0;
+  } else if (is_node) {
+    if (add_node_surf_data(name, &item) == 0) rtc = 0;
+  } else {
+    if (HECMW_io_add_sgrp(name, (int)n, HECMW_varray_int_get_v(&item),
+                          HECMW_varray_int_get_v(&surf)) >= 0)
+      rtc = 0;
+  }
+  goto finalize;
+
+alloc_error:
+  set_err(errno, "");
+  goto finalize;
+problem:
+  if (is_control_input) {
+    if (msgno == HECMW_IO_INP_E2902) {
+      set_err(msgno, "NAME=%s, %s", name, msg);
+    } else {
+      set_err(msgno, "%s", msg);
+    }
+  } else {
+    log_warn(HECMW_IO_INP_W0099, "*SURFACE, NAME=%s: %s", name, msg);
+    skip_to_next_keyword();
+    rtc = 0;
+  }
+finalize:
+  HECMW_varray_int_finalize(&item);
+  HECMW_varray_int_finalize(&surf);
+  if (ids) {
+    HECMW_free(ids->id);
+    HECMW_free(ids);
+  }
+  return rtc;
+}
+
+/*----------------------------------------------------------------------------*/
 static int read_boundary_keyword(void) {
   int token;
   /* static int isFirst = 0; */
@@ -4056,6 +4340,7 @@ static struct read_func_table {
     {HECMW_INPLEX_H_SHELL_SECTION, read_shell_section},
     {HECMW_INPLEX_H_SOLID_SECTION, read_solid_section},
     {HECMW_INPLEX_H_SPECIFIC_HEAT, read_specific_heat},
+    {HECMW_INPLEX_H_SURFACE, read_surface},
 };
 
 #define N_READ_FUNC (sizeof(read_func_table) / sizeof(read_func_table[0]))
@@ -4129,6 +4414,8 @@ static int post_inp(void) {
   rtc = set_solid_sect_secopt();
   free_solid_sect_data();
   n_split_egrp = 0;
+  if (rtc == 0) rtc = set_node_surf_data();
+  free_node_surf_data();
 
   if (elem_type) {
     HECMW_map_int_finalize(elem_type);
