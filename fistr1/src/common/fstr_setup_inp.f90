@@ -4,7 +4,8 @@
 !-------------------------------------------------------------------------------
 !> \brief This module provides functions to read in the analysis data of an inp file
 !! and do necessary preparation for following calculation, like m_fstr_setup for a cnt file.
-!! hecmw1 reads the mesh, the materials and the sections of the same file.
+!! hecmw1 reads the mesh, the materials and the sections of the same file,
+!! and the material constants that hecmw1 does not read are added here to the materials of the mesh.
 !! The cards of the inp format are read in its syntax, and the cards of FrontISTR's own settings
 !! are the cnt cards with '*' as the header character, read by the readers of the cnt cards.
 module m_fstr_setup_inp
@@ -18,8 +19,11 @@ module m_fstr_setup_inp
     , fstr_setup_WRITE_flags &
     , fstr_setup_WRITE_store &
     , fstr_setup_step_links &
+    , fstr_setup_MATERIAL &
+    , fstr_setup_EXPANSION_COEFF &
     , fstr_solid_append_boundary &
-    , fstr_solid_append_cload
+    , fstr_solid_append_cload &
+    , fstr_solid_append_temperature
   use m_fstr_param_setup, only &
     : fstr_setup_SOLVER &
     , fstr_setup_NONLINEAR_SOLVER &
@@ -86,7 +90,8 @@ contains
     P%STATE%step = 0
     call fstr_setup_inp_read_cards( ctrl, T, 1, total, P )
 
-    ! ----- the other counts stay 0, since the other cards are not stored in the arrays that fstr_setup_prepare allocates
+    ! ----- the other counts stay 0: the materials are those of the mesh,
+    ! and the other cards are not stored in the arrays that fstr_setup_prepare allocates
     counts%steps          = fstr_card_total( T, total, 'STEP' )
     counts%autoinc_params = fstr_card_total( T, total, 'AUTOINC_PARAM' )
     counts%converg_params = fstr_card_total( T, total, 'CONVERG_PARAM' )
@@ -109,7 +114,8 @@ contains
 
   !> Adds the cards of an inp file to the table T, by the names without the '*' of the header.
   !> The cards of the inp format are read in the first reading, so that fstr_setup_prepare knows the analysis type,
-  !> the steps and all the boundary conditions. The second reading stores the steps that fstr_setup_prepare allocates.
+  !> the steps and all the boundary conditions. The second reading stores the steps that fstr_setup_prepare allocates,
+  !> and the material constants into the materials that fstr_setup_prepare makes from the mesh.
   subroutine fstr_setup_inp_cards( T )
     implicit none
     type(fstr_card_table) :: T
@@ -123,6 +129,12 @@ contains
     call fstr_card_add( T, 'FREQUENCY', first=fstr_setup_inp_FREQUENCY, seq='analysis' )
     call fstr_card_add( T, 'BOUNDARY', first=fstr_setup_inp_BOUNDARY )
     call fstr_card_add( T, 'CLOAD',    first=fstr_setup_inp_CLOAD )
+    call fstr_card_add( T, 'TEMPERATURE', first=fstr_setup_inp_TEMPERATURE )
+    call fstr_card_add( T, 'INITIAL CONDITIONS', first=fstr_setup_inp_INITIAL_CONDITIONS )
+
+    ! The material constants that hecmw1 does not read, stored in the material of the last *MATERIAL
+    call fstr_card_add( T, 'MATERIAL',  second=fstr_setup_MATERIAL )
+    call fstr_card_add( T, 'EXPANSION', second=fstr_setup_inp_EXPANSION )
 
     ! FrontISTR's own cards, read as the cnt cards
     call fstr_card_add( T, 'SOLVER',   first=fstr_setup_SOLVER )
@@ -138,7 +150,6 @@ contains
     call fstr_card_add( T, 'ELEMENT' )
     call fstr_card_add( T, 'NSET' )
     call fstr_card_add( T, 'ELSET' )
-    call fstr_card_add( T, 'MATERIAL' )
     call fstr_card_add( T, 'ELASTIC' )
     call fstr_card_add( T, 'DENSITY' )
     call fstr_card_add( T, 'CONDUCTIVITY' )
@@ -169,8 +180,8 @@ contains
 
   !> Reads the cards of the inp file in order, and calls the reader of each card in the table T for the reading ipass
   !> (1 or 2), as fstr_setup_read_cards does for a cnt file. The first reading stops at a card not in T, since the cards
-  !> of the inp format that are not read yet would change the analysis. A parameter of an analysis card that its reader
-  !> does not read is skipped with a warning.
+  !> of the inp format that are not read yet would change the analysis. A parameter of a card of the analysis data that
+  !> its reader does not read is skipped with a warning.
   subroutine fstr_setup_inp_read_cards( ctrl, T, ipass, total, P )
     implicit none
     integer(kind=kint) :: ctrl
@@ -190,7 +201,8 @@ contains
       rcode = fstr_ctrl_get_c_h_name_inp( ctrl, header_name, HECMW_NAME_LEN )
       if( ipass == 1 ) then
         select case( trim(header_name) )
-        case( '*STEP', '*END STEP', '*STATIC', '*FREQUENCY', '*BOUNDARY', '*CLOAD' )
+        case( '*STEP', '*END STEP', '*STATIC', '*FREQUENCY', '*BOUNDARY', '*CLOAD', &
+            '*TEMPERATURE', '*INITIAL CONDITIONS', '*EXPANSION' )
           rcode = fstr_ctrl_get_line( ctrl, fstr_ctrl_get_c_h_pos(ctrl), header, len(header) )
           if( rcode /= 0 ) call fstr_ctrl_err_stop
           comma = index( header, ',' )
@@ -219,6 +231,12 @@ contains
                 supported = param == 'AMPLITUDE' .or. param == 'OP' .or. param == 'FIXED'
               case( '*CLOAD' )
                 supported = param == 'AMPLITUDE' .or. param == 'OP'
+              case( '*TEMPERATURE' )
+                supported = param == 'AMPLITUDE' .or. param == 'USER' .or. param == 'SUBMODEL' .or. param == 'FILE'
+              case( '*INITIAL CONDITIONS' )
+                supported = param == 'TYPE'
+              case( '*EXPANSION' )
+                supported = param == 'TYPE' .or. param == 'ZERO'
               end select
               ! FrontISTR cannot shift the time of an amplitude
               if( param == 'TIME DELAY' .and. ( header_name == '*BOUNDARY' .or. header_name == '*CLOAD' ) ) &
@@ -670,6 +688,106 @@ contains
     P%SOLID%CLOAD_ngrp_rotID(n) = P%SOLID%CLOAD_ngrp_rotID(src)
     P%SOLID%CLOAD_ngrp_centerID(n) = P%SOLID%CLOAD_ngrp_centerID(src)
   end subroutine fstr_setup_inp_cancel_cload
+
+  !-----------------------------------------------------------------------------!
+  !> Read in *TEMPERATURE                                                       !
+  !-----------------------------------------------------------------------------!
+  !> A data line is a node or a node set and its temperature at the end of the step. The temperature gradients of
+  !> shells and beams after it are not read. The nodes not given keep their initial temperature.
+  subroutine fstr_setup_inp_TEMPERATURE( ctrl, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    type(fstr_param_pack) :: P
+
+    integer(kind=kint) :: rcode, n, i, is_given
+    character(len=HECMW_NAME_LEN) :: data_fmt
+    character(len=HECMW_NAME_LEN), allocatable :: grp_names(:)
+    real(kind=kreal), allocatable :: vals(:)
+    character(len=9), parameter :: params(4) = [ 'AMPLITUDE', 'USER     ', 'SUBMODEL ', 'FILE     ' ]
+
+    do i = 1, size(params)
+      is_given = 0
+      rcode = fstr_ctrl_get_param_ex( ctrl, params(i)//' ', '# ', 0, 'E', is_given )
+      if( is_given /= 0 ) call fstr_setup_inp_err_stop( ctrl, trim(params(i))//' is not supported yet' )
+    end do
+    if( P%STATE%step > 1 ) call fstr_setup_inp_err_stop( ctrl, 'given in a step after the first step is not supported yet' )
+    call fstr_setup_inp_check_constant_materials( ctrl, P )
+
+    n = fstr_ctrl_get_data_line_n( ctrl )
+    allocate( grp_names(n), vals(n) )
+    if( n > 0 ) then
+      write( data_fmt, '(a,i0,a)' ) 'S', HECMW_NAME_LEN, 'R '
+      rcode = fstr_ctrl_get_data_array_ex( ctrl, data_fmt, grp_names, vals )
+      if( rcode /= 0 ) call fstr_ctrl_err_stop
+    endif
+
+    call fstr_solid_append_temperature( P%MESH, P%SOLID, '*TEMPERATURE', 1, n, grp_names, vals )
+  end subroutine fstr_setup_inp_TEMPERATURE
+
+  !-----------------------------------------------------------------------------!
+  !> Read in *INITIAL CONDITIONS                                                !
+  !-----------------------------------------------------------------------------!
+  !> hecmw1 reads the initial temperatures of TYPE=TEMPERATURE into the mesh, and FrontISTR uses them as given to every node.
+  subroutine fstr_setup_inp_INITIAL_CONDITIONS( ctrl, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    type(fstr_param_pack) :: P
+
+    integer(kind=kint) :: rcode, n
+    character(len=HECMW_NAME_LEN) :: type_name
+
+    type_name = ' '
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'TYPE ', '# ', 0, 'S', type_name )
+    if( rcode /= 0 ) call fstr_ctrl_err_stop
+    if( type_name /= 'TEMPERATURE' ) &
+      call fstr_setup_inp_err_stop( ctrl, 'TYPE='//trim(type_name)//' is not supported yet' )
+
+    n = 0
+    if( P%MESH%hecmw_flag_initcon == 1 ) n = P%MESH%node_init_val_index(P%MESH%n_node)
+    if( n /= P%MESH%n_node ) call fstr_setup_inp_err_stop( ctrl, 'the initial temperature must be given to all the nodes' )
+    call fstr_setup_inp_check_constant_materials( ctrl, P )
+  end subroutine fstr_setup_inp_INITIAL_CONDITIONS
+
+  !> Stops at the card of ctrl if a material constant read by hecmw1 has a table of temperatures, since FrontISTR
+  !> takes one value independent of the temperature from the materials of the mesh
+  subroutine fstr_setup_inp_check_constant_materials( ctrl, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    type(fstr_param_pack) :: P
+
+    integer(kind=kint) :: i
+
+    do i = 1, P%MESH%material%n_mat_subitem
+      if( P%MESH%material%mat_table_index(i) - P%MESH%material%mat_table_index(i-1) > 1 ) then
+        call fstr_setup_inp_err_stop( ctrl, &
+          'not supported yet with a material constant depending on the temperature (*ELASTIC, *DENSITY)' )
+      endif
+    end do
+  end subroutine fstr_setup_inp_check_constant_materials
+
+  !-----------------------------------------------------------------------------!
+  !> Read in *EXPANSION                                                         !
+  !-----------------------------------------------------------------------------!
+  !> Stored by the reader of !EXPANSION_COEF in the material of the last *MATERIAL. Only a coefficient independent of
+  !> the temperature is read. Its thermal strain alpha (T - T0) does not depend on ZERO, the reference temperature of
+  !> the coefficient, which is not used.
+  subroutine fstr_setup_inp_EXPANSION( ctrl, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    type(fstr_param_pack) :: P
+
+    integer(kind=kint) :: rcode, is_type
+
+    if( P%STATE%cid == 0 ) call fstr_setup_inp_err_stop( ctrl, 'given before *MATERIAL' )
+    is_type = 0
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'TYPE ', '# ', 0, 'E', is_type )
+    if( is_type /= 0 ) call fstr_setup_inp_err_stop( ctrl, &
+      'TYPE is not supported yet; omit it for an isotropic coefficient' )
+    if( fstr_ctrl_get_data_line_n( ctrl ) /= 1 ) call fstr_setup_inp_err_stop( ctrl, &
+      'only a coefficient independent of the temperature, in one data line, is supported yet' )
+
+    call fstr_setup_EXPANSION_COEFF( ctrl, P )
+  end subroutine fstr_setup_inp_EXPANSION
 
   !-----------------------------------------------------------------------------!
   !> Read in *WRITE                                                             !
