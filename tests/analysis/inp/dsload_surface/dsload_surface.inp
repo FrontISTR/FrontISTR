@@ -1,0 +1,81 @@
+**
+** Pressures of *DSLOAD on the surfaces of *SURFACE, read from this inp file alone.
+** Body A is a cantilever of 4 C3D8 elements fixed at x=0. The surface STOP has the top faces of the element
+** set EA (S2, z=1) and SEND the end face of element 4 (S4, x=4), with the pressures 0.1 and 0.2.
+** Body B is a C3D10 element whose midside nodes hecmw1 reorders, fixed at its face z=0, with the surface STET
+** of its slanted face (S3, x+y+z=7) and the pressure 0.8 scaled by the amplitude HALF (0.5 at the time 1.0).
+** The loads sum to (-0.2, 0, -0.4) on body A and (-0.2, -0.2, -0.2) on body B.
+** The node surface SNODE is read as a node group, which no condition uses. The element of body B is defined
+** first, so that the elements are not in the order of their numbers when *SURFACE refers to them.
+**
+*HEADING
+pressures of *DSLOAD on C3D8 and C3D10 elements
+*NODE, NSET=NALL
+1, 0.0, 0.0, 0.0
+2, 1.0, 0.0, 0.0
+3, 2.0, 0.0, 0.0
+4, 3.0, 0.0, 0.0
+5, 4.0, 0.0, 0.0
+6, 0.0, 1.0, 0.0
+7, 1.0, 1.0, 0.0
+8, 2.0, 1.0, 0.0
+9, 3.0, 1.0, 0.0
+10, 4.0, 1.0, 0.0
+11, 0.0, 0.0, 1.0
+12, 1.0, 0.0, 1.0
+13, 2.0, 0.0, 1.0
+14, 3.0, 0.0, 1.0
+15, 4.0, 0.0, 1.0
+16, 0.0, 1.0, 1.0
+17, 1.0, 1.0, 1.0
+18, 2.0, 1.0, 1.0
+19, 3.0, 1.0, 1.0
+20, 4.0, 1.0, 1.0
+201, 6.0, 0.0, 0.0
+202, 7.0, 0.0, 0.0
+203, 6.0, 1.0, 0.0
+204, 6.0, 0.0, 1.0
+205, 6.5, 0.0, 0.0
+206, 6.5, 0.5, 0.0
+207, 6.0, 0.5, 0.0
+208, 6.0, 0.0, 0.5
+209, 6.5, 0.0, 0.5
+210, 6.0, 0.5, 0.5
+*ELEMENT, TYPE=C3D10, ELSET=EB
+21, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210
+*ELEMENT, TYPE=C3D8, ELSET=EA
+1, 1, 2, 7, 6, 11, 12, 17, 16
+2, 2, 3, 8, 7, 12, 13, 18, 17
+3, 3, 4, 9, 8, 13, 14, 19, 18
+4, 4, 5, 10, 9, 14, 15, 20, 19
+*NSET, NSET=FIXA
+1, 6, 11, 16
+*NSET, NSET=FIXB
+201, 202, 203, 205, 206, 207
+*SURFACE, NAME=STOP
+EA, S2
+*SURFACE, NAME=SEND, TYPE=ELEMENT
+4, S4
+*SURFACE, NAME=STET
+21, S3
+*SURFACE, NAME=SNODE, TYPE=NODE
+FIXA,
+5
+*MATERIAL, NAME=M
+*ELASTIC
+1000.0, 0.3
+*SOLID SECTION, ELSET=EA, MATERIAL=M
+*SOLID SECTION, ELSET=EB, MATERIAL=M
+*AMPLITUDE, NAME=HALF
+0.0, 0.0, 1.0, 0.5
+*BOUNDARY
+FIXA, 1, 3
+FIXB, 1, 3
+*STEP
+*STATIC
+*DSLOAD
+STOP, P, 0.1
+SEND, P, 0.2
+*DSLOAD, AMPLITUDE=HALF
+STET, P, 0.8
+*END STEP
