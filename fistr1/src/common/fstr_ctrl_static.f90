@@ -168,11 +168,11 @@ contains
         else if( type_name_list(i)(1:2) == 'PP'  ) then; lid = 10
         else if( type_name_list(i)(1:2) == 'P0'  ) then; lid = 10
         else if( type_name_list(i)(1:2) == 'PX'  ) then
-          lid = 10; params(1,:)=1.d0; params(2,:)=0.d0; params(3,:)=0.d0
+          lid = 10; params(1,i)=1.d0; params(2,i)=0.d0; params(3,i)=0.d0
         else if( type_name_list(i)(1:2) == 'PY'  ) then
-          lid = 10; params(1,:)=0.d0; params(2,:)=1.d0; params(3,:)=0.d0
+          lid = 10; params(1,i)=0.d0; params(2,i)=1.d0; params(3,i)=0.d0
         else if( type_name_list(i)(1:2) == 'PZ'  ) then
-          lid = 10; params(1,:)=0.d0; params(2,:)=0.d0; params(3,:)=1.d0
+          lid = 10; params(1,i)=0.d0; params(2,i)=0.d0; params(3,i)=1.d0
         else if( type_name_list(i)(1:2) == 'P1'  ) then; lid = 10
         else if( type_name_list(i)(1:2) == 'P2'  ) then; lid = 20
         else if( type_name_list(i)(1:2) == 'P3'  ) then; lid = 30
