@@ -23,6 +23,9 @@ module fstr_setup_util
     integer(kind=kint) :: version = 0  !< !VERSION
     integer(kind=kint) :: cid = 0      !< material of the last !MATERIAL, 0 before the first one
     integer(kind=kint) :: cache = 1    !< material expected at the next !MATERIAL
+    integer(kind=kint) :: step = 0     !< *STEP of an inp file the card is in, 0 before the first one
+    !> step of an inp file from which each !BOUNDARY entry is not active, 0 if it is active to the end
+    integer(kind=kint), pointer :: boundary_end(:) => null()
   end type fstr_card_state
 
   !> Package of all data needs to initialize
@@ -694,6 +697,22 @@ contains
       end if
     end do
   end subroutine get_amp_id
+
+  !> Number of the section that hecmw1 split the section isect from by the solid formulations of the inp element
+  !> names, kept as the integer item of a SOLID section, or isect itself if it is not split from another section
+  function get_original_section( hecMESH, isect ) result( orig )
+    implicit none
+    type (hecmwST_local_mesh) :: hecMESH
+    integer(kind=kint) :: isect
+    integer(kind=kint) :: orig
+
+    integer(kind=kint) :: ihead
+
+    orig = isect
+    if( hecMESH%section%sect_type(isect) /= HECMW_SECT_TYPE_SOLID ) return
+    ihead = hecMESH%section%sect_I_index(isect-1)
+    if( hecMESH%section%sect_I_index(isect)-ihead == 1 ) orig = hecMESH%section%sect_I_item(ihead+1)
+  end function get_original_section
 
   !------------------------------------------------------------------------------
 

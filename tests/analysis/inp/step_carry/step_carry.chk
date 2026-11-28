@@ -1,0 +1,4 @@
+# the steps of this inp file and their conditions are read with no warning
+no:^ Warning:
+# a displacement replaced in a later step is not active together with the new one
+no:overwritten

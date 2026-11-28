@@ -1,0 +1,54 @@
+**
+** A step of a geometrically nonlinear static analysis with amplitudes, read from this inp file alone.
+** The amplitude is taken at the time of the step, whose time period 2.0 is given by the data line of
+** *STATIC. The load at the tip in -z and the displacement of the tip in x follow the amplitude A1, which
+** rises to 1.0 at time 1.0 and goes down to 0.5 at the end of the step.
+**
+*HEADING
+cantilever, 4 x 1 x 1 C3D8 elements
+*NODE, NSET=NALL
+1, 0.0, 0.0, 0.0
+2, 1.0, 0.0, 0.0
+3, 2.0, 0.0, 0.0
+4, 3.0, 0.0, 0.0
+5, 4.0, 0.0, 0.0
+6, 0.0, 1.0, 0.0
+7, 1.0, 1.0, 0.0
+8, 2.0, 1.0, 0.0
+9, 3.0, 1.0, 0.0
+10, 4.0, 1.0, 0.0
+11, 0.0, 0.0, 1.0
+12, 1.0, 0.0, 1.0
+13, 2.0, 0.0, 1.0
+14, 3.0, 0.0, 1.0
+15, 4.0, 0.0, 1.0
+16, 0.0, 1.0, 1.0
+17, 1.0, 1.0, 1.0
+18, 2.0, 1.0, 1.0
+19, 3.0, 1.0, 1.0
+20, 4.0, 1.0, 1.0
+*ELEMENT, TYPE=C3D8, ELSET=EALL
+1, 1, 2, 7, 6, 11, 12, 17, 16
+2, 2, 3, 8, 7, 12, 13, 18, 17
+3, 3, 4, 9, 8, 13, 14, 19, 18
+4, 4, 5, 10, 9, 14, 15, 20, 19
+*NSET, NSET=FIX
+1, 6, 11, 16
+*NSET, NSET=TIP
+5, 10, 15, 20
+*MATERIAL, NAME=M
+*ELASTIC
+1000.0, 0.3
+*SOLID SECTION, ELSET=EALL, MATERIAL=M
+*AMPLITUDE, NAME=A1
+0.0, 0.0, 1.0, 1.0, 2.0, 0.5
+*BOUNDARY
+FIX, 1, 3
+*STEP, NLGEOM
+*STATIC, DIRECT
+0.5, 2.0
+*CLOAD, AMPLITUDE=A1
+TIP, 3, -1.0
+*BOUNDARY, AMPLITUDE=A1
+TIP, 1, 1, 0.04
+*END STEP
