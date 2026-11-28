@@ -220,15 +220,17 @@ contains
 
   !----------------------------------------------------------------------
   !> Read in !HYPERELASTIC
-  integer function fstr_ctrl_get_HYPERELASTIC( ctrl, mattype, nlgeom, matval )
+  integer function fstr_ctrl_get_HYPERELASTIC( ctrl, mattype, nlgeom, matval, dict )
     integer(kind=kint), intent(in)    :: ctrl
     integer(kind=kint), intent(inout) :: mattype
     integer(kind=kint), intent(out)   :: nlgeom
     real(kind=kreal),intent(inout)    :: matval(:)
+    type(DICT_STRUCT), pointer        :: dict
 
     integer(kind=kint) :: rcode, depends, ipt
     real(kind=kreal), allocatable :: fval(:,:)
     character(len=HECMW_NAME_LEN) :: data_fmt
+    type( tTable )        :: mattable
     character(len=256) :: s
 
     fstr_ctrl_get_HYPERELASTIC = -1
@@ -261,9 +263,8 @@ contains
       endif
       if( fstr_ctrl_get_HYPERELASTIC ==0 ) then
         if( fval(2,1)==0.d0 ) stop "We cannot deal with incompressible material currently"
-        matval(M_PLCONST1) = fval(1,1)
-        matval(M_PLCONST2) = 0.d0
-        matval(M_PLCONST3) = fval(2,1)
+        call init_table( mattable, 0, 2, 1, fval )
+        call dict_add_key( dict, MC_HYPERELASTIC, mattable )
         ! matval(M_YOUNGS) = fval(1,1)
         ! matval(M_POISSON) = fval(2,1)
       endif
@@ -288,9 +289,8 @@ contains
         end block
       endif
       if( fstr_ctrl_get_HYPERELASTIC ==0 ) then
-        matval(M_PLCONST1) = fval(1,1)
-        matval(M_PLCONST2) = fval(2,1)
-        matval(M_PLCONST3) = fval(3,1)
+        call init_table( mattable, 0, 3, 1, fval )
+        call dict_add_key( dict, MC_HYPERELASTIC, mattable )
       endif
       mattype = MOONEYRIVLIN
 
@@ -313,9 +313,8 @@ contains
         end block
       endif
       if( fstr_ctrl_get_HYPERELASTIC ==0 ) then
-        matval(M_PLCONST1) = fval(1,1)
-        matval(M_PLCONST2) = fval(2,1)
-        matval(M_PLCONST3) = fval(3,1)
+        call init_table( mattable, 0, 3, 1, fval )
+        call dict_add_key( dict, MC_HYPERELASTIC, mattable )
       endif
       mattype = ARRUDABOYCE
 
@@ -358,21 +357,14 @@ contains
         end block
       endif
       if( fstr_ctrl_get_HYPERELASTIC ==0 ) then
-        matval(M_PLCONST1) = fval(1,1)
-        matval(M_PLCONST2) = fval(2,1)
-        matval(M_PLCONST3) = fval(3,1)
-        matval(M_PLCONST4) = fval(4,1)
-        matval(M_PLCONST5) = fval(5,1)
-        matval(M_PLCONST6) = fval(6,1)
-        matval(M_PLCONST7) = fval(7,1)
-        matval(M_PLCONST8) = fval(8,1)
-        matval(M_PLCONST9) = fval(9,1)
-        matval(M_PLCONST10) = fval(10,1)
+        call init_table( mattable, 0, 10, 1, fval )
+        call dict_add_key( dict, MC_HYPERELASTIC, mattable )
       endif
       mattype = MOONEYRIVLIN_ANISO
 
     endif
 
+    call finalize_table( mattable )
     if( allocated(fval) ) deallocate(fval)
   end function fstr_ctrl_get_HYPERELASTIC
 

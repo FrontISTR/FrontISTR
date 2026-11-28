@@ -203,10 +203,12 @@ contains
     real(kind=kreal) :: dibdc(3,3,3)
     real(kind=kreal) :: d2ibdc2(3,3,3,3,3)
     real(kind=kreal) :: constant(3), coef
+    logical :: ierr
 
     call cderiv( ctn, itn, inv1b, inv2b, inv3b,            &
       dibdc, d2ibdc2, strain    )
-    constant(1:3)=matl%variables(M_PLCONST1:M_PLCONST3)
+    call fetch_TableData( MC_HYPERELASTIC, matl%dict, constant, ierr )
+    if( ierr ) stop "Fail to get hyperelastic constants!"
     coef = constant(2)
 
     do l=1,3 
@@ -247,9 +249,11 @@ contains
     real(kind=kreal) :: d2ibdc2(3,3,3,3,3)
     real(kind=kreal) :: constant(3), coef
     real(kind=kreal) :: PKstress(3,3)
+    logical :: ierr
 
 
-    constant(1:3)=matl%variables(M_PLCONST1:M_PLCONST3)
+    call fetch_TableData( MC_HYPERELASTIC, matl%dict, constant, ierr )
+    if( ierr ) stop "Fail to get hyperelastic constants!"
     coef = constant(2)
     call cderiv( ctn, itn,      &
       inv1b, inv2b, inv3b,           &
@@ -291,9 +295,16 @@ contains
     real(kind=kreal) :: dibdc(3,3,3)
     real(kind=kreal) :: d2ibdc2(3,3,3,3,3)
     real(kind=kreal) :: constant(3)
+    logical :: ierr
 
 
-    constant(1:3)=matl%variables(M_PLCONST1:M_PLCONST3)
+    if( matl%mtype==NEOHOOKE ) then
+      call fetch_TableData( MC_HYPERELASTIC, matl%dict, constant(1:3:2), ierr )
+      constant(2) = 0.d0
+    else
+      call fetch_TableData( MC_HYPERELASTIC, matl%dict, constant, ierr )
+    endif
+    if( ierr ) stop "Fail to get hyperelastic constants!"
     if( present(hdflag) ) then
       if( hdflag == 1 ) then
         constant(3)=0.d0
@@ -339,8 +350,15 @@ contains
     real(kind=kreal) :: d2ibdc2(3,3,3,3,3)
     real(kind=kreal) :: constant(3)
     real(kind=kreal) :: dudc(3,3)
+    logical :: ierr
 
-    constant(1:3)=matl%variables(M_PLCONST1:M_PLCONST3)
+    if( matl%mtype==NEOHOOKE ) then
+      call fetch_TableData( MC_HYPERELASTIC, matl%dict, constant(1:3:2), ierr )
+      constant(2) = 0.d0
+    else
+      call fetch_TableData( MC_HYPERELASTIC, matl%dict, constant, ierr )
+    endif
+    if( ierr ) stop "Fail to get hyperelastic constants!"
     if( present(hdflag) ) then
       if( hdflag == 1 ) then
         constant(3)=0.d0
@@ -389,12 +407,15 @@ contains
     real(kind=kreal) :: inv1b, inv2b, inv3b, inv4b
     real(kind=kreal) :: dibdc(3,3,3)
     real(kind=kreal) :: d2ibdc2(3,3,3,3,3)
-    real(kind=kreal) :: constant(5)
+    real(kind=kreal) :: constant(5), outa(10)
     real(kind=kreal) :: dibdc_ani(3,3)
     real(kind=kreal) :: d2ibdc2_ani(3,3,3,3)
+    logical :: ierr
 
 
-    constant(1:5)=matl%variables(M_PLCONST1:M_PLCONST5)
+    call fetch_TableData( MC_HYPERELASTIC, matl%dict, outa, ierr )
+    if( ierr ) stop "Fail to get hyperelastic constants!"
+    constant(1:5)=outa(1:5)
     if( present(hdflag) ) then
       if( hdflag == 1 ) then
         constant(3)=0.d0
@@ -441,12 +462,15 @@ contains
     real(kind=kreal) :: inv1b, inv2b, inv3b, inv4b
     real(kind=kreal) :: dibdc(3,3,3)
     real(kind=kreal) :: d2ibdc2(3,3,3,3,3)
-    real(kind=kreal) :: constant(5)
+    real(kind=kreal) :: constant(5), outa(10)
     real(kind=kreal) :: dudc(3,3)
     real(kind=kreal) :: dibdc_ani(3,3)
     real(kind=kreal) :: d2ibdc2_ani(3,3,3,3)
+    logical :: ierr
 
-    constant(1:5)=matl%variables(M_PLCONST1:M_PLCONST5)
+    call fetch_TableData( MC_HYPERELASTIC, matl%dict, outa, ierr )
+    if( ierr ) stop "Fail to get hyperelastic constants!"
+    constant(1:5)=outa(1:5)
     if( present(hdflag) ) then
       if( hdflag == 1 ) then
         constant(3)=0.d0

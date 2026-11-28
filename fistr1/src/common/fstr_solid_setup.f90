@@ -1835,7 +1835,8 @@ contains
     if( fstr_ctrl_get_HYPERELASTIC( ctrl,                                        &
         fstrSOLID%materials(cid)%mtype,       &
         fstrSOLID%materials(cid)%nlgeom_flag, &
-        fstrSOLID%materials(cid)%variables )/=0 ) then
+        fstrSOLID%materials(cid)%variables,   &
+        fstrSOLID%materials(cid)%dict)/=0 ) then
       write(*,*) '### Error: Fail in read in elasticity definition : ' , cid
       write(ILOG,*) '### Error: Fail in read in elasticity definition : ', cid
       stop HECMW_EXIT_INPUT
