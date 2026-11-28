@@ -551,8 +551,8 @@ contains
           grp_ID(i) = hecMESH%elem_group%n_grp + no_count
         else
           grp_ID(i) = -1
-          if(cashb < hecMESH%surf_group%n_grp)then
-            if(hecmw_streqr(hecMESH%surf_group%grp_name(cashb), grp_id_name(i))) then
+          if(cashb < hecMESH%elem_group%n_grp)then
+            if(hecmw_streqr(hecMESH%elem_group%grp_name(cashb), grp_id_name(i))) then
               grp_ID(i) = cashb
               cashb = cashb + 1
               cycle
@@ -561,7 +561,7 @@ contains
           do id = 1, hecMESH%elem_group%n_grp
             if(hecmw_streqr(hecMESH%elem_group%grp_name(id), grp_id_name(i))) then
               grp_ID(i) = id
-              cashb = cashb + 1
+              cashb = id + 1
               exit
             end if
           end do
