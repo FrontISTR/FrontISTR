@@ -52,6 +52,7 @@ contains
       time, tincr, u ,temperature)
     !----------------------------------------------------------------------*
 
+    use m_fstr, only: tSolidQuad, fstr_get_solid_quad
     use mMechGauss
     use m_MatMatrix
     use m_common_struct
@@ -72,6 +73,7 @@ contains
 
     !---------------------------------------------------------------------
 
+    type(tSolidQuad) :: quad
     integer(kind=kint) :: flag
     integer(kind=kint), parameter :: ndof = 3
     real(kind=kreal) :: D(6, 6), B(6, NDOF*nn), DB(6, NDOF*nn)
@@ -93,9 +95,10 @@ contains
     elem(:, :) = ecoord(:, :)
     if( flag == UPDATELAG ) elem(:, :) = ecoord(:, :)+u(:, :)
 
-    do LX = 1, NumOfQuadPoints(etype)
+    call fstr_get_solid_quad( etype, size(gausses, kind=kint), quad )
+    do LX = 1, quad%npoints
 
-      call getQuadPoint( etype, LX, naturalCoord(:) )
+      naturalCoord(:) = quad%points(:, LX)
       call getGlobalDeriv(etype, nn, naturalcoord, elem, det, gderiv)
 
       if( cdsys_ID > 0 ) then
@@ -117,7 +120,7 @@ contains
         D(:, :) = D(:, :)-mat
       endif
 
-      wg = getWeight(etype, LX)*det
+      wg = quad%weights(LX)*det
       B(1:6, 1:nn*ndof) = 0.0D0
       do j = 1, nn
         B(1, 3*j-2)=gderiv(j, 1)
@@ -409,6 +412,7 @@ contains
 
     !---------------------------------------------------------------------
 
+    type(tSolidQuad) :: quad
     real(kind=kreal) :: ALP, ALP0, D(6, 6), B(6, ndof*nn)
     real(kind=kreal) :: det, ecoord(3, nn)
     integer(kind=kint) :: j, LX, serr
@@ -435,9 +439,10 @@ contains
     ecoord(3, :) = ZZ(:)
 
     ! LOOP FOR INTEGRATION POINTS
-    do LX = 1, NumOfQuadPoints(etype)
+    call fstr_get_solid_quad( etype, size(gausses, kind=kint), quad )
+    do LX = 1, quad%npoints
 
-      call getQuadPoint( etype, LX, naturalCoord(:) )
+      naturalCoord(:) = quad%points(:, LX)
       call getShapeFunc( ETYPE, naturalcoord, H(1:nn) )
       call getGlobalDeriv( etype, nn, naturalcoord, ecoord, det, gderiv )
 
@@ -450,7 +455,7 @@ contains
       end if
 
       ! WEIGHT VALUE AT GAUSSIAN POINT
-      wg = getWeight(etype, LX)*det
+      wg = quad%weights(LX)*det
       B(1:6,1:nn*NDOF)=0.0D0
       do J=1,nn
         B(1,3*J-2)=gderiv(j,1)
@@ -817,6 +822,7 @@ contains
     real(kind=kreal), intent(in)      :: reftemp  !< reference temperature
 
     ! LOCAL VARIABLES
+    type(tSolidQuad)   :: quad
     integer(kind=kint) :: flag
     integer(kind=kint), parameter :: ndof = 3
     real(kind=kreal)   :: B(6,ndof*nn), B1(6,ndof*nn), spfunc(nn), ina(1)
@@ -845,9 +851,10 @@ contains
     call fetch_TableData( MC_ORTHOEXP, gausses(1)%pMaterial%dict, alpo(:), ierr, ina )
     if( .not. ierr ) matlaniso = .true.
 
-    do LX = 1, NumOfQuadPoints(etype)
+    call fstr_get_solid_quad( etype, size(gausses, kind=kint), quad )
+    do LX = 1, quad%npoints
 
-      call getQuadPoint( etype, LX, naturalCoord(:) )
+      naturalCoord(:) = quad%points(:, LX)
       call getGlobalDeriv(etype, nn, naturalcoord, elem, det, gderiv)
 
       if( cdsys_ID > 0 ) then
@@ -986,7 +993,7 @@ contains
       end if
 
       ! calculate the Internal Force
-      WG=getWeight( etype, LX )*DET
+      WG=quad%weights(LX)*DET
       qf(1:nn*ndof)                                                          &
         = qf(1:nn*ndof)+matmul( gausses(LX)%stress(1:6), B(1:6,1:nn*ndof) )*WG
 
@@ -997,7 +1004,7 @@ contains
   end subroutine UPDATE_C3
   !
   !----------------------------------------------------------------------*
-  subroutine NodalStress_C3(etype, nn, gausses, ndstrain, ndstress)
+  subroutine NodalStress_C3(nn, gausses, ndstrain, ndstress)
     !----------------------------------------------------------------------*
     !
     ! Calculate Strain and Stress increment of solid elements
@@ -1006,7 +1013,7 @@ contains
 
     !---------------------------------------------------------------------
 
-    integer(kind=kint), intent(in) :: etype, nn
+    integer(kind=kint), intent(in) :: nn
     type(tGaussStatus), intent(in) :: gausses(:)
     real(kind=kreal), intent(out)  :: ndstrain(nn,6)
     real(kind=kreal), intent(out)  :: ndstress(nn,6)
@@ -1020,7 +1027,7 @@ contains
 
     TEMP(:) = 0.0D0
 
-    IC = NumOfQuadPoints(etype)
+    IC = size(gausses)
 
     do i = 1, IC
       TEMP(1:6)  = TEMP(1:6) +gausses(i)%strain_out(1:6)
@@ -1038,7 +1045,7 @@ contains
 
 
   !----------------------------------------------------------------------*
-  subroutine ElementStress_C3(etype, gausses, strain, stress)
+  subroutine ElementStress_C3(gausses, strain, stress)
     !----------------------------------------------------------------------*
     !
     ! Calculate Strain and Stress increment of solid elements
@@ -1047,7 +1054,6 @@ contains
 
     !---------------------------------------------------------------------
 
-    integer(kind=kint), intent(in) :: etype
     type(tGaussStatus), intent(in) :: gausses(:)
     real(kind=kreal), intent(out)  :: strain(6)
     real(kind=kreal), intent(out)  :: stress(6)
@@ -1060,7 +1066,7 @@ contains
 
     strain(:) = 0.0D0; stress(:) = 0.0D0
 
-    IC = NumOfQuadPoints(etype)
+    IC = size(gausses)
 
     do i = 1, IC
       strain(:) = strain(:)+gausses(i)%strain_out(1:6)

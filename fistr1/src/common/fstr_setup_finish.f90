@@ -288,6 +288,7 @@ contains
     call fstr_element_init( hecMESH, fstrSOLID, p%PARAM%solution_type )
     call fstr_check_shell_j2_inputs(hecMESH, fstrSOLID, fstrPARAM)
     call fstr_check_up_inputs(hecMESH, fstrSOLID)
+    call fstr_check_reduced_inputs(hecMESH, fstrSOLID)
     call fstr_check_ndof4_inputs(hecMESH, p%PARAM%solution_type)
     call fstr_check_shell_gauss_output(hecMESH, fstrSOLID)
     if( p%PARAM%solution_type==kstSTATIC .or. p%PARAM%solution_type==kstDYNAMIC .or.   &
@@ -330,6 +331,23 @@ contains
       call hecmw_abort(hecmw_comm_get_comm())
     enddo
   end subroutine fstr_check_up_inputs
+
+  !> The reduced integration of the plane elements has no axisymmetric form.
+  subroutine fstr_check_reduced_inputs(hecMESH, fstrSOLID)
+    type(hecmwST_local_mesh), intent(in) :: hecMESH
+    type(fstr_solid), intent(in) :: fstrSOLID
+    integer(kind=kint) :: i, sect_opt
+
+    do i = 1, hecMESH%n_elem
+      if( hecMESH%elem_type(i) /= 241 .and. hecMESH%elem_type(i) /= 242 ) cycle
+      sect_opt = hecMESH%section%sect_opt(hecMESH%section_ID(i))
+      if( sect_opt /= HECMW_SECT_OPT_ASYMMETRY .and. sect_opt /= HECMW_SECT_OPT_ASYMMETRY_RI ) cycle
+      if( .not. fstr_element_is_reduced(fstrSOLID%elements(i)) ) cycle
+      write(*,*) '###ERROR### : FORM241=RI and FORM242=RI are not supported for axisymmetric sections'
+      write(ILOG,*) '###ERROR### : FORM241=RI and FORM242=RI are not supported for axisymmetric sections'
+      call hecmw_abort(hecmw_comm_get_comm())
+    enddo
+  end subroutine fstr_check_reduced_inputs
 
   subroutine fstr_check_ndof4_inputs(hecMESH, solution_type)
     type(hecmwST_local_mesh), intent(in) :: hecMESH

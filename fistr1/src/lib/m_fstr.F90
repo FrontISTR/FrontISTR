@@ -86,6 +86,16 @@ module m_fstr
   integer(kind=kint), parameter :: kel361IC     =  3
   integer(kind=kint), parameter :: kel361FBAR   =  4
   integer(kind=kint), parameter :: kel361UP     =  5
+  integer(kind=kint), parameter :: kel361RI     =  6
+
+  integer(kind=kint), parameter :: kel241FI     =  1
+  integer(kind=kint), parameter :: kel241RI     =  2
+
+  integer(kind=kint), parameter :: kel242FI     =  1
+  integer(kind=kint), parameter :: kel242RI     =  2
+
+  integer(kind=kint), parameter :: kel362FI     =  1
+  integer(kind=kint), parameter :: kel362RI     =  2
 
   integer(kind=kint), parameter :: kel611EULER      =  1
   integer(kind=kint), parameter :: kel611TIMOSHENKO =  2
@@ -672,14 +682,24 @@ module m_fstr
     !integer              :: iset=0
     !integer              :: orien_ID=0
     real(kind=kreal)     :: thickness=0.d0
+    integer              :: elemopt241=kel241FI
+    integer              :: elemopt242=kel242FI
     integer              :: elemopt341=0
     !integer              :: elemopt342=0
     !integer              :: elemopt351=0
     !integer              :: elemopt352=0
     integer              :: elemopt361=0
-    !integer              :: elemopt362=0
+    integer              :: elemopt362=kel362FI
     integer              :: elemopt611=0
   end type tSection
+
+  !> Integration points of the material state of a plane or solid element:
+  !> gausses(i) of the element is the state at points(:,i).
+  type tSolidQuad
+    integer(kind=kint) :: npoints = 0
+    real(kind=kreal)   :: points(3,27)
+    real(kind=kreal)   :: weights(27)
+  end type tSolidQuad
 
 contains
 
@@ -697,6 +717,93 @@ contains
     endif
     call hecmw_abort( hecmw_comm_get_comm(), code )
   end subroutine fstr_abort
+
+  !> Whether the section selects the reduced integration of the element type.
+  !> The section is read only here and when gausses(:) is allocated: afterwards the
+  !> size of gausses(:) tells the rule of the element.
+  logical function fstr_section_is_reduced( etype, section )
+    use elementInfo, only: fe_quad4n, fe_quad8n, fe_hex8n, fe_hex20n
+    integer(kind=kint), intent(in) :: etype
+    type(tSection), intent(in)     :: section
+
+    select case( etype )
+    case( fe_quad4n )
+      fstr_section_is_reduced = section%elemopt241 == kel241RI
+    case( fe_quad8n )
+      fstr_section_is_reduced = section%elemopt242 == kel242RI
+    case( fe_hex8n )
+      fstr_section_is_reduced = section%elemopt361 == kel361RI
+    case( fe_hex20n )
+      fstr_section_is_reduced = section%elemopt362 == kel362RI
+    case default
+      fstr_section_is_reduced = .false.
+    end select
+  end function fstr_section_is_reduced
+
+  !> Number of material states of an element, which is the size of its gausses(:).
+  integer(kind=kint) function fstr_material_point_count( etype, reduced )
+    use elementInfo, only: fe_quad4n, fe_quad8n, fe_hex8n, fe_hex20n, NumOfQuadPoints
+    integer(kind=kint), intent(in) :: etype
+    logical, intent(in)            :: reduced
+
+    fstr_material_point_count = NumOfQuadPoints( etype )
+    if( .not. reduced ) return
+    select case( etype )
+    case( fe_quad4n, fe_hex8n )
+      fstr_material_point_count = 1
+    case( fe_quad8n )
+      fstr_material_point_count = 4
+    case( fe_hex20n )
+      fstr_material_point_count = 8
+    end select
+  end function fstr_material_point_count
+
+  !> Whether the element holds the material states of a reduced rule.
+  logical function fstr_element_is_reduced( element )
+    use elementInfo, only: NumOfQuadPoints
+    type(tElement), intent(in) :: element
+
+    fstr_element_is_reduced = .false.
+    if( associated(element%gausses) ) &
+      fstr_element_is_reduced = size(element%gausses) < NumOfQuadPoints( element%etype )
+  end function fstr_element_is_reduced
+
+  !> Points and weights of the material states of an element, chosen by their number.
+  !> The rule changes only the points: the shape functions remain those of etype.
+  subroutine fstr_get_solid_quad( etype, nstate, quad )
+    use elementInfo, only: fe_quad4n, fe_quad8n, fe_hex8n, fe_hex20n, NumOfQuadPoints, getQuadPoint, getWeight
+    use Quadrature, only: gauss2d1, weight2d1, gauss2d2, weight2d2, gauss3d1, weight3d1, gauss3d2, weight3d2
+    integer(kind=kint), intent(in) :: etype
+    integer(kind=kint), intent(in) :: nstate !< size of gausses(:) of the element
+    type(tSolidQuad), intent(out)  :: quad
+    integer(kind=kint) :: i
+
+    quad%npoints = nstate
+    if( nstate == NumOfQuadPoints( etype ) ) then
+      do i = 1, nstate
+        call getQuadPoint( etype, i, quad%points(:,i) )
+        quad%weights(i) = getWeight( etype, i )
+      enddo
+      return
+    endif
+
+    if( nstate /= fstr_material_point_count( etype, .true. ) ) &
+      stop "The material states of the element do not match any integration rule"
+    select case( etype )
+    case( fe_quad4n )
+      quad%points(1:2,1) = gauss2d1(:,1)
+      quad%weights(1)    = weight2d1(1)
+    case( fe_quad8n )
+      quad%points(1:2,1:nstate) = gauss2d2(:,1:nstate)
+      quad%weights(1:nstate)    = weight2d2(1:nstate)
+    case( fe_hex8n )
+      quad%points(:,1) = gauss3d1(:,1)
+      quad%weights(1)  = weight3d1(1)
+    case( fe_hex20n )
+      quad%points(:,1:nstate) = gauss3d2(:,1:nstate)
+      quad%weights(1:nstate)  = weight3d2(1:nstate)
+    end select
+  end subroutine fstr_get_solid_quad
 
   subroutine fstr_nullify_initial_condition( cond )
     implicit none
@@ -1192,7 +1299,7 @@ contains
     fstrPARAM%fg_couple_window= 0
 
     ! for restart control
-    fstrPARAM%restart_version = 6
+    fstrPARAM%restart_version = 8
 
     ! for contact analysis
     fstrPARAM%contact_algo = kcaSLagrange  ! default: Standard Lagrange

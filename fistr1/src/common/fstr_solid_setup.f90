@@ -319,11 +319,43 @@ contains
     enddo
   end subroutine
 
+  !> Mean initial temperature of the nodes of an element, in the order of fstr_UpdateNewton.
+  !> It does not change during the analysis, so that a restart finds the same value.
+  real(kind=kreal) function fstr_initial_element_temperature( hecMESH, icel )
+    use m_fstr
+    type(hecmwST_local_mesh), intent(in) :: hecMESH
+    integer(kind=kint), intent(in)       :: icel
+    integer(kind=kint) :: j, k, n, nod, initt
+
+    initt = 0
+    if( associated(g_InitialCnd) ) then
+      do j = 1, size(g_InitialCnd)
+        if( g_InitialCnd(j)%cond_name == "temperature" ) then
+          initt = j
+          exit
+        endif
+      enddo
+    endif
+
+    fstr_initial_element_temperature = 0.d0
+    n = hecMESH%elem_node_index(icel) - hecMESH%elem_node_index(icel-1)
+    do k = 1, n
+      nod = hecMESH%elem_node_item(hecMESH%elem_node_index(icel-1)+k)
+      if( initt > 0 ) then
+        fstr_initial_element_temperature = fstr_initial_element_temperature + g_InitialCnd(initt)%realval(nod)
+      else if( hecMESH%hecmw_flag_initcon == 1 ) then
+        fstr_initial_element_temperature = fstr_initial_element_temperature + hecMESH%node_init_val_item(nod)
+      endif
+    enddo
+    fstr_initial_element_temperature = fstr_initial_element_temperature/n
+  end function fstr_initial_element_temperature
+
   !> Initialize elements info in static calculation
   subroutine fstr_element_init( hecMESH, fstrSOLID, solution_type )
     use elementInfo
     use mMechGauss
     use m_fstr_FiniteRotationKinematics, only: fstr_uses_finite_rotation_kinematics
+    use m_static_LIB_hourglass, only: hourglass_shear_modulus
     use m_fstr
     type(hecmwST_local_mesh),target :: hecMESH
     type(fstr_solid)                :: fstrSOLID
@@ -353,11 +385,15 @@ contains
       if( hecMESH%elem_type(i)==301 ) fstrSOLID%elements(i)%etype=111
       if (hecmw_is_etype_link(fstrSOLID%elements(i)%etype)) cycle
       if (hecmw_is_etype_patch(fstrSOLID%elements(i)%etype)) cycle
-      ng = NumOfQuadPoints( fstrSOLID%elements(i)%etype )
+
+      isect= hecMESH%section_ID(i)
+      if( isect<0 .or. isect>hecMESH%section%n_sect )   &
+        stop "Error in element's section definition"
+      ng = fstr_material_point_count( fstrSOLID%elements(i)%etype, &
+        fstr_section_is_reduced( fstrSOLID%elements(i)%etype, fstrSOLID%sections(isect) ) )
       if( ng > fstrSOLID%maxn_gauss ) fstrSOLID%maxn_gauss = ng
       if(ng>0) allocate( fstrSOLID%elements(i)%gausses( ng ) )
 
-      isect= hecMESH%section_ID(i)
       ndof = getSpaceDimension( fstrSOLID%elements(i)%etype )
       if (ndof == 2) then              ! why do this???
         id=hecMESH%section%sect_opt(isect)
@@ -370,8 +406,6 @@ contains
         endif
       endif
 
-      if( isect<0 .or. isect>hecMESH%section%n_sect )   &
-        stop "Error in element's section definition"
       id = hecMESH%section%sect_mat_ID_item(isect)
       fstrSOLID%materials(id)%cdsys_ID = hecMESH%section%sect_orien_ID(isect)
       nn = hecMESH%elem_node_index(i)-hecMESH%elem_node_index(i-1)
@@ -399,6 +433,12 @@ contains
           fstrSOLID%elements(i)%aux = 0.0d0
         endif
         fstrSOLID%elements(i)%p(1) = 0.0d0
+      endif
+
+      if( ( fstrSOLID%elements(i)%etype == fe_quad4n .or. fstrSOLID%elements(i)%etype == fe_hex8n ) .and. &
+          fstr_element_is_reduced( fstrSOLID%elements(i) ) ) then
+        fstrSOLID%elements(i)%hg_shear = hourglass_shear_modulus( fstrSOLID%elements(i)%gausses(1)%pMaterial, &
+          fstr_initial_element_temperature( hecMESH, i ) )
       endif
 
     enddo
@@ -2748,7 +2788,10 @@ contains
       else
         fstrSOLID%sections(i)%elemopt361 = kel361FI
       end if
+      fstrSOLID%sections(i)%elemopt241 = kel241FI
+      fstrSOLID%sections(i)%elemopt242 = kel242FI
       fstrSOLID%sections(i)%elemopt341 = kel341FI
+      fstrSOLID%sections(i)%elemopt362 = kel362FI
       fstrSOLID%sections(i)%elemopt611 = kel611EULER
       ! INTERFACE sections are skipped in the loop below and keep this thickness
       fstrSOLID%sections(i)%thickness = 1.0d0

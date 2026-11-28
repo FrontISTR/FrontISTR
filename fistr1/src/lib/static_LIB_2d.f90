@@ -20,6 +20,7 @@ contains
   subroutine STF_C2( ETYPE,NN,ecoord,gausses,PARAM1,stiff         &
       ,ISET, u)
     !----------------------------------------------------------------------*
+    use m_fstr, only: tSolidQuad, fstr_get_solid_quad
     use mMechGauss
     use m_MatMatrix
     integer(kind=kint), intent(in) :: ETYPE
@@ -31,6 +32,7 @@ contains
     real(kind=kreal), intent(in), optional :: u(:,:)
 
     ! LOCAL VARIABLES
+    type(tSolidQuad) :: quad
     integer(kind=kint) :: flag
     integer(kind=kint) NDOF
     parameter(NDOF=2)
@@ -56,7 +58,8 @@ contains
       PAI=4.d0*atan(1.d0)
     endif
     !* LOOP OVER ALL INTEGRATION POINTS
-    do LX=1,NumOfQuadPoints( ETYPE )
+    call fstr_get_solid_quad( ETYPE, size(gausses, kind=kint), quad )
+    do LX=1,quad%npoints
       call MatlMatrix( gausses(LX), ISET, D, 1.d0, 1.d0, cdsys, 0.d0 )
       if( .not. present(u) ) flag=INFINITESIMAL    ! enforce to infinitesimal deformation analysis
 
@@ -67,17 +70,17 @@ contains
         stop
       endif
 
-      call getQuadPoint( ETYPE, LX, localcoord )
+      localcoord(1:2) = quad%points(1:2,LX)
       call getGlobalDeriv( etype, nn, localcoord, ecoord, det, gderiv )
       !
       if(ISET==2) then
         call getShapeFunc( ETYPE, localcoord, H(:) )
         RR=dot_product( H(1:NN), ecoord(1,1:NN) )
-        WG=getWeight( ETYPE, LX )*DET*RR*2.d0*PAI
+        WG=quad%weights(LX)*DET*RR*2.d0*PAI
       else
         RR=THICK
         H(:)=0.d0
-        WG=getWeight( ETYPE, LX )*DET*RR
+        WG=quad%weights(LX)*DET*RR
       end if
       do J=1,NN
         B(1,2*J-1)=gderiv(J,1)
@@ -306,6 +309,7 @@ contains
     !
     ! THERMAL LOAD OF PLANE ELEMENT
     !
+    use m_fstr, only: tSolidQuad, fstr_get_solid_quad
     use mMaterial
     use m_MatMatrix
     use m_ElasticLinear
@@ -316,6 +320,7 @@ contains
     real(kind=kreal),intent(out)   :: VECT(NN*2)
     integer(kind=kint) ISET
     ! LOCAL VARIABLES
+    type(tSolidQuad) :: quad
     integer(kind=kint) NDOF
     parameter(NDOF=2)
     real(kind=kreal) ALP,PP,D(4,4),B(4,NDOF*NN)
@@ -342,8 +347,9 @@ contains
     ALP = gausses(1)%pMaterial%variables(M_EXPANSION)
     pp = gausses(1)%pMaterial%variables(M_POISSON)
     !* LOOP OVER ALL INTEGRATION POINTS
-    do LX=1,NumOfQuadPoints( ETYPE )
-      call getQuadPoint( ETYPE, LX, localcoord )
+    call fstr_get_solid_quad( ETYPE, size(gausses, kind=kint), quad )
+    do LX=1,quad%npoints
+      localcoord(1:2) = quad%points(1:2,LX)
       call getShapeFunc( ETYPE, localcoord, H(1:NN) )
       call getShapeDeriv( ETYPE, localcoord, deriv(:,:) )
       XJ(1,1:2)=matmul( XX(1:NN), deriv(1:NN,1:2) )
@@ -355,10 +361,10 @@ contains
       TEMP0=dot_product(H(1:NN),T0(1:NN))
       if(ISET==2) then
         RR=dot_product(H(1:NN),XX(1:NN))
-        WG=getWeight( ETYPE, LX )*DET*RR*2.d0*PAI
+        WG=quad%weights(LX)*DET*RR*2.d0*PAI
       else
         RR=THICK
-        WG=getWeight( ETYPE, LX )*DET*RR
+        WG=quad%weights(LX)*DET*RR
       end if
       DUM=1.d0/DET
       XJI(1,1)= XJ(2,2)*DUM
@@ -435,6 +441,7 @@ contains
     real(kind=kreal),   intent(in)     :: reftemp  !< reference temperature
 
 
+    type(tSolidQuad)   :: quad
     integer(kind=kint), parameter :: ndof=2
     real(kind=kreal)   :: D(4,4), B(4,ndof*nn)
     real(kind=kreal)   :: H(nn)
@@ -462,10 +469,11 @@ contains
       PAI=4.d0*atan(1.d0)
     endif
     !* LOOP OVER ALL INTEGRATION POINTS
-    do LX=1, NumOfQuadPoints(etype)
+    call fstr_get_solid_quad( etype, size(gausses, kind=kint), quad )
+    do LX=1, quad%npoints
       call MatlMatrix( gausses(LX), ISET, D, 1.d0, 1.d0, cdsys, 0.d0 )
 
-      call getQuadPoint( etype, LX, localCoord(:) )
+      localCoord(1:2) = quad%points(1:2,LX)
       call getGlobalDeriv( etype, nn, localcoord, ecoord, det, gderiv )
       !
       EPSTH = 0.d0
@@ -485,7 +493,7 @@ contains
         EPSTH(1:2)=alp*(ttc-reftemp)-alp0*(tt0-reftemp)
       end if
       !
-      WG=getWeight( etype, LX )*DET
+      WG=quad%weights(LX)*DET
       if(ISET==2) then
         call getShapeFunc( ETYPE, localcoord, H(:) )
         RR=dot_product( H(1:NN), ecoord(1,1:NN) )
@@ -524,15 +532,44 @@ contains
     !
   end subroutine UPDATE_C2
   !
+  !> Stiffness of the one point 241 (FORM241=RI): the center point, which STF_C2 takes
+  !> from the size of gausses, and the hourglass control.
+  subroutine STF_C2D4RI( etype, nn, ecoord, gausses, thick, stiff, iset, u, hg_shear )
+    use mMechGauss
+    use m_static_LIB_hourglass, only: add_hourglass_stiffness
+    integer(kind=kint), intent(in) :: etype, nn, iset
+    real(kind=kreal), intent(in)   :: ecoord(2,nn), thick, u(:,:), hg_shear
+    type(tGaussStatus), intent(in) :: gausses(:)
+    real(kind=kreal), intent(out)  :: stiff(:,:)
+
+    call STF_C2( etype, nn, ecoord, gausses, thick, stiff, iset, u )
+    call add_hourglass_stiffness( etype, nn, 2, ecoord, thick, hg_shear, stiff )
+  end subroutine STF_C2D4RI
+
+  !> Internal force of the one point 241 (FORM241=RI).
+  subroutine UPDATE_C2D4RI( etype, nn, ecoord, gausses, thick, iset, u, ddu, qf, &
+      TT, T0, TN, reftemp, hg_shear )
+    use mMechGauss
+    use m_static_LIB_hourglass, only: add_hourglass_force
+    integer(kind=kint), intent(in)    :: etype, nn, iset
+    real(kind=kreal), intent(in)      :: ecoord(3,nn), thick, u(2,nn), ddu(2,nn)
+    real(kind=kreal), intent(in)      :: TT(nn), T0(nn), TN(nn), reftemp, hg_shear
+    type(tGaussStatus), intent(inout) :: gausses(:)
+    real(kind=kreal), intent(out)     :: qf(:)
+
+    call UPDATE_C2( etype, nn, ecoord, gausses, thick, iset, u, ddu, qf, TT, T0, TN, reftemp )
+    call add_hourglass_force( etype, nn, 2, ecoord(1:2,1:nn), thick, hg_shear, u+ddu, qf )
+  end subroutine UPDATE_C2D4RI
+
   !----------------------------------------------------------------------*
-  subroutine NodalStress_C2(ETYPE,NN,gausses,ndstrain,ndstress)
+  subroutine NodalStress_C2(NN,gausses,ndstrain,ndstress)
     !----------------------------------------------------------------------*
     !
     ! Calculate Strain and Stress increment of solid elements
     !
     use mMechGauss
 
-    integer(kind=kint), intent(in) :: ETYPE,NN
+    integer(kind=kint), intent(in) :: NN
     type(tGaussStatus), intent(in) :: gausses(:)
     real(kind=kreal), intent(out)  :: ndstrain(NN,4)
     real(kind=kreal), intent(out)  :: ndstress(NN,4)
@@ -541,7 +578,7 @@ contains
     real(kind=kreal) :: TEMP(8)
 
     TEMP(:)=0.d0
-    IC = NumOfQuadPoints(etype)
+    IC = size(gausses)
     do i=1,IC
       TEMP(1:4) = TEMP(1:4) + gausses(i)%strain_out(1:4)
       TEMP(5:8) = TEMP(5:8) + gausses(i)%stress_out(1:4)
@@ -555,13 +592,12 @@ contains
   end subroutine
 
   !----------------------------------------------------------------------*
-  subroutine ElementStress_C2(ETYPE,gausses,strain,stress)
+  subroutine ElementStress_C2(gausses,strain,stress)
     !----------------------------------------------------------------------*
     !
     ! Calculate Strain and Stress increment of solid elements
     !
     use mMechGauss
-    integer(kind=kint), intent(in) :: ETYPE
     type(tGaussStatus), intent(in) :: gausses(:)
     real(kind=kreal), intent(out)  :: strain(4)
     real(kind=kreal), intent(out)  :: stress(4)
@@ -569,7 +605,7 @@ contains
     integer          :: i,ic
 
     strain(:)=0.d0; stress(:)=0.d0
-    IC = NumOfQuadPoints(etype)
+    IC = size(gausses)
     do i=1,IC
       strain(:) = strain(:) + gausses(i)%strain_out(1:4)
       stress(:) = stress(:) + gausses(i)%stress_out(1:4)

@@ -8,8 +8,31 @@ module m_fstr_NodalStress
   use mMechGauss, only: fstr_element_average_plstrain, fstr_shell_output_point_count
 
   implicit none
-  private :: NodalStress_INV3, NodalStress_INV2, inverse_func
+  private :: NodalStress_INV3, NodalStress_INV2, inverse_func, corner_extrapolation
+
+  !> The points of each rule of 362 from which the corner nodes are extrapolated.
+  !> Both rules have 8 of them, but at different positions and in a different order.
+  integer(kind=kint), parameter, private :: hex20_fi_points(8) = (/ 1, 3, 7, 9, 19, 21, 25, 27 /)
+  integer(kind=kint), parameter, private :: hex20_ri_points(8) = (/ 1, 2, 3, 4, 5, 6, 7, 8 /)
+  !> The same for 242.
+  integer(kind=kint), parameter, private :: quad8_fi_points(4) = (/ 1, 3, 7, 9 /)
+  integer(kind=kint), parameter, private :: quad8_ri_points(4) = (/ 1, 2, 3, 4 /)
 contains
+
+  !> Matrix that extrapolates the values at points(:) of a rule to the corner nodes.
+  subroutine corner_extrapolation( etype, corner_type, nstate, points, inv_func )
+    integer(kind=kint), intent(in) :: etype, corner_type, nstate, points(:)
+    real(kind=kreal), intent(out)  :: inv_func(:,:)
+    real(kind=kreal)   :: func(size(points),size(points))
+    type(tSolidQuad)   :: quad
+    integer(kind=kint) :: i
+
+    call fstr_get_solid_quad( etype, nstate, quad )
+    do i = 1, size(points)
+      call getShapeFunc( corner_type, quad%points(:,points(i)), func(i,:) )
+    enddo
+    call inverse_func( size(points), func, inv_func )
+  end subroutine corner_extrapolation
 
   !> Read stored shell tensors or evaluate one elastic thickness point without changing history.
   subroutine fstr_get_shell_gauss_output(hecMESH, fstrSOLID, icel, k, strain, stress)
@@ -76,6 +99,7 @@ contains
     real(kind=kreal)   :: beam_disp(6,2)
     real(kind=kreal)   :: triad_cur(9,4), triad_ref(9,4)
     real(kind=kreal), allocatable :: func(:,:), inv_func(:,:)
+    real(kind=kreal)   :: inv_func_ri(8,8)
 
     !C** Shell33 variables
     integer(kind=kint) :: isect, ihead, ntot_lyr, nlyr, flag33, truss, cdsys_ID
@@ -143,17 +167,9 @@ contains
         call inverse_func( ic, func, inv_func )
         ni = ic
       else if( ic_type == fe_hex20n ) then
-        ic = 0
-        do i = 1, ni
-          if( i==1 .or. i==3 .or. i==7 .or. i==9 .or. &
-              i==19 .or. i==21 .or. i==25 .or. i==27 ) then
-            ic = ic + 1
-            call getQuadPoint( ic_type, i, naturalCoord )
-            call getShapeFunc( fe_hex8n, naturalCoord, func(ic,1:8) )
-          endif
-        enddo
-        call inverse_func( ic, func, inv_func )
-        ni = ic
+        call corner_extrapolation( ic_type, fe_hex8n, 27, hex20_fi_points, inv_func )
+        call corner_extrapolation( ic_type, fe_hex8n, 8, hex20_ri_points, inv_func_ri )
+        ni = 8
       endif
       !C** element loop
       do icel = is, iE
@@ -293,23 +309,35 @@ contains
             ndstrain(1:nn,1:6), ndstress(1:nn,1:6) )
           call ElementStress_C1( fstrSOLID%elements(icel)%gausses, estrain, estress )
 
-        else if( ic_type == fe_tet10n .or. ic_type == fe_hex8n .or. &
-            ic_type == fe_prism15n .or. ic_type == fe_hex20n ) then
+        else if( ic_type == fe_hex20n ) then
+          if( fstr_element_is_reduced( fstrSOLID%elements(icel) ) ) then
+            call NodalStress_INV3( ic_type, ni, fstrSOLID%elements(icel)%gausses, &
+              inv_func_ri, ndstrain(1:nn,1:6), ndstress(1:nn,1:6), &
+              tdstrain(1:nn,1:6), hex20_ri_points )
+          else
+            call NodalStress_INV3( ic_type, ni, fstrSOLID%elements(icel)%gausses, &
+              inv_func, ndstrain(1:nn,1:6), ndstress(1:nn,1:6), &
+              tdstrain(1:nn,1:6), hex20_fi_points )
+          endif
+          call ElementStress_C3( fstrSOLID%elements(icel)%gausses, estrain, estress )
+
+        else if( ic_type == fe_tet10n .or. ic_type == fe_prism15n .or. &
+            ( ic_type == fe_hex8n .and. .not. fstr_element_is_reduced( fstrSOLID%elements(icel) ) ) ) then
           call NodalStress_INV3( ic_type, ni, fstrSOLID%elements(icel)%gausses, &
             inv_func, ndstrain(1:nn,1:6), ndstress(1:nn,1:6), &
             tdstrain(1:nn,1:6) )
-          call ElementStress_C3( ic_type, fstrSOLID%elements(icel)%gausses, estrain, estress )
+          call ElementStress_C3( fstrSOLID%elements(icel)%gausses, estrain, estress )
 
         else if ( ic_type == 881 .or. ic_type == 891 ) then  !for selective es/ns smoothed fem
           cycle
         else
           if( ic_type == 341 .and. fstrSOLID%sections(isect)%elemopt341 == kel341SESNS ) cycle
 
-          call NodalStress_C3( ic_type, nn, fstrSOLID%elements(icel)%gausses, &
+          call NodalStress_C3( nn, fstrSOLID%elements(icel)%gausses, &
             ndstrain(1:nn,1:6), ndstress(1:nn,1:6) )
           !call NodalStress_C3( ic_type, nn, fstrSOLID%elements(icel)%gausses, &
             !                     ndstrain(1:nn,1:6), ndstress(1:nn,1:6), tdstrain(1:nn,1:6) )
-          call ElementStress_C3( ic_type, fstrSOLID%elements(icel)%gausses, estrain, estress )
+          call ElementStress_C3( fstrSOLID%elements(icel)%gausses, estrain, estress )
 
         endif
 
@@ -859,12 +887,13 @@ contains
   end subroutine NodalStress_ShellJ2
 
   !----------------------------------------------------------------------*
-  subroutine NodalStress_INV3( etype, ni, gausses, func, edstrain, edstress, tdstrain )
+  subroutine NodalStress_INV3( etype, ni, gausses, func, edstrain, edstress, tdstrain, points )
     !----------------------------------------------------------------------*
     use mMechGauss
     integer(kind=kint) :: etype, ni
     type(tGaussStatus) :: gausses(:)
     real(kind=kreal)   :: func(:, :), edstrain(:, :), edstress(:, :), tdstrain(:, :)
+    integer(kind=kint), intent(in), optional :: points(:) !< points of the rule of 362, in the order of func
     integer :: i, j, k, ic
 
     edstrain = 0.0d0
@@ -952,17 +981,13 @@ contains
       tdstrain(15,1:6) = ( tdstrain(3,1:6) + tdstrain(6,1:6) ) / 2.0
     else if( etype == fe_hex20n ) then
       do i = 1, ni
-        ic = 0
-        do j = 1, NumOfQuadPoints(etype)
-          if( j==1 .or. j==3 .or. j==7 .or. j==9 .or. &
-              j==19 .or. j==21 .or. j==25 .or. j==27 ) then
-            ic = ic + 1
-            do k = 1, 6
-              edstrain(i,k) = edstrain(i,k) + func(i,ic) * gausses(j)%strain_out(k)
-              edstress(i,k) = edstress(i,k) + func(i,ic) * gausses(j)%stress_out(k)
-              !              tdstrain(i,k) = tdstrain(i,k) + func(i,ic) * gausses(j)%tstrain(k)
-            enddo
-          endif
+        do ic = 1, ni
+          j = points(ic)
+          do k = 1, 6
+            edstrain(i,k) = edstrain(i,k) + func(i,ic) * gausses(j)%strain_out(k)
+            edstress(i,k) = edstress(i,k) + func(i,ic) * gausses(j)%stress_out(k)
+            !            tdstrain(i,k) = tdstrain(i,k) + func(i,ic) * gausses(j)%tstrain(k)
+          enddo
         enddo
       enddo
       edstrain(9,1:6) = ( edstrain(1,1:6) + edstrain(2,1:6) ) / 2.0
@@ -1035,7 +1060,9 @@ contains
     real(kind=kreal)   :: edstrain(8,4), edstress(8,4), tdstrain(8,4)
     real(kind=kreal)   :: s11, s22, s12, smises
     real(kind=kreal), allocatable :: func(:,:), inv_func(:,:)
+    real(kind=kreal)   :: inv_func_ri(4,4)
     integer(kind=kint), allocatable :: nnumber(:)
+    logical :: reduced
 
     tnstrain => fstrSOLID%tnstrain
     testrain => fstrSOLID%testrain
@@ -1075,28 +1102,32 @@ contains
         enddo
         call inverse_func( ni, func, inv_func )
       else if( ic_type == fe_quad8n ) then
-        ic = 0
-        do i = 1, ni
-          if( i==1 .or. i==3 .or. i==7 .or. i==9 ) then
-            ic = ic + 1
-            call getQuadPoint( ic_type, i, naturalCoord )
-            call getShapeFunc( fe_quad4n, naturalCoord, func(ic,1:4) )
-          endif
-        enddo
-        call inverse_func( ic, func, inv_func )
-        ni = ic
+        call corner_extrapolation( ic_type, fe_quad4n, 9, quad8_fi_points, inv_func )
+        call corner_extrapolation( ic_type, fe_quad4n, 4, quad8_ri_points, inv_func_ri )
+        ni = 4
       endif
       !C** element loop
       do icel = is, iE
         jS = hecMESH%elem_node_index(icel-1)
         ID_area = hecMESH%elem_ID(icel*2)
+        reduced = fstr_element_is_reduced( fstrSOLID%elements(icel) )
         !--- calculate nodal stress and strain
-        if( ic_type == fe_tri6n .or. ic_type == fe_quad4n .or. ic_type == fe_quad8n ) then
+        if( ic_type == fe_quad8n ) then
+          if( reduced ) then
+            call NodalStress_INV2( ic_type, ni, fstrSOLID%elements(icel)%gausses, &
+              inv_func_ri, edstrain(1:nn,1:4), edstress(1:nn,1:4), &
+              tdstrain(1:nn,1:4), quad8_ri_points )
+          else
+            call NodalStress_INV2( ic_type, ni, fstrSOLID%elements(icel)%gausses, &
+              inv_func, edstrain(1:nn,1:4), edstress(1:nn,1:4), &
+              tdstrain(1:nn,1:4), quad8_fi_points )
+          endif
+        else if( ic_type == fe_tri6n .or. ( ic_type == fe_quad4n .and. .not. reduced ) ) then
           call NodalStress_INV2( ic_type, ni, fstrSOLID%elements(icel)%gausses, &
             inv_func, edstrain(1:nn,1:4), edstress(1:nn,1:4), &
             tdstrain(1:nn,1:4) )
         else
-          call NodalStress_C2( ic_type, nn, fstrSOLID%elements(icel)%gausses, &
+          call NodalStress_C2( nn, fstrSOLID%elements(icel)%gausses, &
             edstrain(1:nn,1:4), edstress(1:nn,1:4) )
           !          call NodalStress_C2( ic_type, nn, fstrSOLID%elements(icel)%gausses, &
             !                               edstrain(1:nn,1:4), edstress(1:nn,1:4), tdstrain(1:nn,1:4) )
@@ -1119,7 +1150,7 @@ contains
         enddo
         !--- calculate elemental stress and strain
         !        if( ID_area == hecMESH%my_rank ) then
-        call ElementStress_C2( ic_type, fstrSOLID%elements(icel)%gausses, estrain, estress )
+        call ElementStress_C2( fstrSOLID%elements(icel)%gausses, estrain, estress )
 
         fstrSOLID%ESTRAIN(3*icel-2) = estrain(1)
         fstrSOLID%ESTRAIN(3*icel-1) = estrain(2)
@@ -1158,12 +1189,13 @@ contains
   end subroutine fstr_NodalStress2D
 
   !----------------------------------------------------------------------*
-  subroutine NodalStress_INV2( etype, ni, gausses, func, edstrain, edstress, tdstrain )
+  subroutine NodalStress_INV2( etype, ni, gausses, func, edstrain, edstress, tdstrain, points )
     !----------------------------------------------------------------------*
     use mMechGauss
     integer(kind=kint) :: etype, ni
     type(tGaussStatus) :: gausses(:)
     real(kind=kreal)   :: func(:,:), edstrain(:,:), edstress(:,:), tdstrain(:,:)
+    integer(kind=kint), intent(in), optional :: points(:) !< points of the rule of 242, in the order of func
     integer :: i, j, k, ic
 
     edstrain = 0.0d0
@@ -1201,16 +1233,13 @@ contains
       tdstrain(6,1:4) = ( tdstrain(3,1:4) + tdstrain(1,1:4) ) / 2.0
     else if( etype == fe_quad8n ) then
       do i = 1, ni
-        ic = 0
-        do j = 1, NumOfQuadPoints(etype)
-          if( j==1 .or. j==3 .or. j==7 .or. j==9 ) then
-            ic = ic + 1
-            do k = 1, 4
-              edstrain(i,k) = edstrain(i,k) + func(i,ic) * gausses(j)%strain_out(k)
-              edstress(i,k) = edstress(i,k) + func(i,ic) * gausses(j)%stress_out(k)
-              !              tdstrain(i,k) = tdstrain(i,k) + func(i,ic) * gausses(j)%tstrain(k)
-            enddo
-          endif
+        do ic = 1, ni
+          j = points(ic)
+          do k = 1, 4
+            edstrain(i,k) = edstrain(i,k) + func(i,ic) * gausses(j)%strain_out(k)
+            edstress(i,k) = edstress(i,k) + func(i,ic) * gausses(j)%stress_out(k)
+            !            tdstrain(i,k) = tdstrain(i,k) + func(i,ic) * gausses(j)%tstrain(k)
+          enddo
         enddo
       enddo
       edstrain(5,1:4) = ( edstrain(1,1:4) + edstrain(2,1:4) ) / 2.0
